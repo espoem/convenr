@@ -1,0 +1,34 @@
+# Runs convenr and its database. Works with `podman compose` and `docker compose`.
+name: convenr
+
+services:
+  db:
+    image: docker.io/library/postgres:18.7-alpine
+    environment:
+      POSTGRES_USER: convenr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-convenr}
+      POSTGRES_DB: convenr
+    volumes:
+      - db-data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U convenr -d convenr"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  web:
+    build:
+      context: .
+      dockerfile: Containerfile
+    environment:
+      DATABASE_URL: postgres://convenr:${POSTGRES_PASSWORD:-convenr}@db:5432/convenr
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

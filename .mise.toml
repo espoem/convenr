@@ -42,3 +42,25 @@ run = "nub scripts/generate-theme.ts"
 [tasks."theme:check"]
 description = "Fail when tokens.css does not match DESIGN.md"
 run = "nub scripts/generate-theme.ts --check"
+
+[tasks.up]
+description = "Build and start the application and PostgreSQL in containers"
+run = "scripts/compose.sh up --build --detach --wait"
+
+[tasks.down]
+description = "Stop the containers; the database volume is kept"
+run = "scripts/compose.sh down"
+
+[tasks."db:up"]
+description = "Start only PostgreSQL, for development with `mise run dev`"
+run = "scripts/compose.sh up --detach --wait db"
+
+[tasks."db:generate"]
+description = "Generate a SQL migration from the Drizzle schema"
+dir = "apps/web"
+run = "nubx drizzle-kit generate"
+
+[tasks."db:migrate"]
+description = "Apply pending SQL migrations"
+dir = "apps/web"
+run = "nubx drizzle-kit migrate"
