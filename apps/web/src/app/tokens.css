@@ -1,0 +1,66 @@
+/* Generated from DESIGN.md by scripts/generate-theme.ts. Do not edit. */
+
+:root {
+  --cv-background: #FAF6EE;
+  --cv-surface: #FFFDF9;
+  --cv-ink: #4D3320;
+  --cv-ink-muted: #816E5E;
+  --cv-action: #AB0F0F;
+  --cv-action-active: #B80909;
+  --cv-on-action: #FFFFFF;
+  --cv-earth: #80592F;
+  --cv-line: #D9CBB6;
+  --cv-available: #ABA446;
+  --cv-available-strong: #6A662B;
+  --cv-heat-0: #EEE6DB;
+  --cv-heat-1: #E6E2C4;
+  --cv-heat-2: #BCB66B;
+  --cv-heat-3: #898338;
+  --cv-heat-4: #6A662B;
+  --cv-cell-min-width: 2.75rem;
+  --cv-cell-min-height: 1.5rem;
+  --cv-touch-target: 2.75rem;
+  --cv-measure: 65ch;
+
+  --background: var(--cv-background);
+  --foreground: var(--cv-ink);
+  --card: var(--cv-surface);
+  --card-foreground: var(--cv-ink);
+  --popover: var(--cv-surface);
+  --popover-foreground: var(--cv-ink);
+  --primary: var(--cv-action);
+  --primary-foreground: var(--cv-on-action);
+  --secondary: var(--cv-heat-0);
+  --secondary-foreground: var(--cv-ink);
+  --muted: var(--cv-heat-0);
+  --muted-foreground: var(--cv-ink-muted);
+  --accent: var(--cv-heat-1);
+  --accent-foreground: var(--cv-ink);
+  --destructive: var(--cv-action-active);
+  --border: var(--cv-line);
+  --input: var(--cv-earth);
+  --ring: var(--cv-earth);
+  --radius: 0.375rem;
+}
+
+@theme inline {
+  --color-background: var(--cv-background);
+  --color-surface: var(--cv-surface);
+  --color-ink: var(--cv-ink);
+  --color-ink-muted: var(--cv-ink-muted);
+  --color-action: var(--cv-action);
+  --color-action-active: var(--cv-action-active);
+  --color-on-action: var(--cv-on-action);
+  --color-earth: var(--cv-earth);
+  --color-line: var(--cv-line);
+  --color-available: var(--cv-available);
+  --color-available-strong: var(--cv-available-strong);
+  --color-heat-0: var(--cv-heat-0);
+  --color-heat-1: var(--cv-heat-1);
+  --color-heat-2: var(--cv-heat-2);
+  --color-heat-3: var(--cv-heat-3);
+  --color-heat-4: var(--cv-heat-4);
+  --font-sans: 'Atkinson Hyperlegible Next Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: 'Bricolage Grotesque Variable', 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}

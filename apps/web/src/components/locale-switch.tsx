@@ -8,7 +8,7 @@ export function LocaleSwitch() {
   const current = useLocale();
   return (
     <nav aria-label={t("label")}>
-      <ul>
+      <ul className="flex gap-1">
         {routing.locales.map((locale) => (
           <li key={locale}>
             <Link
@@ -16,6 +16,7 @@ export function LocaleSwitch() {
               locale={locale}
               lang={locale}
               aria-current={locale === current ? "true" : undefined}
+              className="inline-flex min-h-11 items-center rounded-md px-3 underline-offset-4 hover:underline aria-[current=true]:font-semibold aria-[current=true]:text-action"
             >
               {t(locale)}
             </Link>
