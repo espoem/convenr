@@ -1,0 +1,24 @@
+min_version = "2026.11.0"
+
+[tools]
+node = "26.13.1"
+"npm:@nubjs/nub" = "0.11.1"
+
+[env]
+_.path = ["node_modules/.bin"]
+
+[tasks.install]
+description = "Install dependencies from the lockfile"
+run = "nub install"
+
+[tasks.lint]
+description = "Lint with oxlint; warnings fail"
+run = "nub run lint -- --deny-warnings"
+
+[tasks.format]
+description = "Format with oxfmt"
+run = "nub run format"
+
+[tasks."format:check"]
+description = "Fail when a file is not formatted"
+run = "nub run format:check"
