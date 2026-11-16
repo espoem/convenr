@@ -64,3 +64,23 @@ run = "nubx drizzle-kit generate"
 description = "Apply pending SQL migrations"
 dir = "apps/web"
 run = "nubx drizzle-kit migrate"
+
+[tasks.test]
+description = "Run unit tests"
+run = "nub run -r test"
+
+[tasks.e2e]
+description = "Run end-to-end tests against the production build (needs `mise run build` and a database)"
+run = "nub run --filter @convenr/web e2e"
+
+[tasks.check]
+description = "Everything CI checks except end-to-end tests"
+# Sequential: the build rewrites the generated route types that the type check reads.
+run = [
+  "mise run format:check",
+  "mise run lint",
+  "mise run theme:check",
+  "mise run typecheck",
+  "mise run test",
+  "mise run build",
+]
