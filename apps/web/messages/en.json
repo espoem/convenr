@@ -1,0 +1,20 @@
+{
+  "Meta": {
+    "title": "convenr",
+    "description": "Find a time that works for the whole group. Free, no account, no ads."
+  },
+  "Start": {
+    "heading": "Find a time that works for everyone",
+    "lead": "Create an event, share the link, and see when the group overlaps. No account needed.",
+    "status": "The app is being built. Creating events arrives in the next phase."
+  },
+  "LocaleSwitch": {
+    "label": "Language",
+    "cs": "Čeština",
+    "en": "English"
+  },
+  "NotFound": {
+    "heading": "Page not found",
+    "back": "Go to the start page"
+  }
+}

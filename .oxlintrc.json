@@ -10,6 +10,7 @@
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "error",
     "import/no-cycle": "error",
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
     "react/react-in-jsx-scope": "off"
   },
   "ignorePatterns": [

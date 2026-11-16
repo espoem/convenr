@@ -4,7 +4,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
-    "lint": "oxlint",
+    "lint": "oxlint --deny-warnings",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },

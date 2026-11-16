@@ -13,7 +13,7 @@ run = "nub install"
 
 [tasks.lint]
 description = "Lint with oxlint; warnings fail"
-run = "nub run lint -- --deny-warnings"
+run = "nub run lint"
 
 [tasks.format]
 description = "Format with oxfmt"
@@ -22,3 +22,15 @@ run = "nub run format"
 [tasks."format:check"]
 description = "Fail when a file is not formatted"
 run = "nub run format:check"
+
+[tasks.typecheck]
+description = "Type-check every workspace package"
+run = "nub run -r typecheck"
+
+[tasks.build]
+description = "Production build of the web application"
+run = "nub run --filter @convenr/web build"
+
+[tasks.dev]
+description = "Run the web application in development mode"
+run = "nub run --filter @convenr/web dev"

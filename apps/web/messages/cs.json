@@ -1,0 +1,20 @@
+{
+  "Meta": {
+    "title": "convenr",
+    "description": "Najděte čas, který vyhovuje celé skupině. Zdarma, bez účtu, bez reklam."
+  },
+  "Start": {
+    "heading": "Najděte čas, který vyhovuje všem",
+    "lead": "Vytvořte událost, pošlete odkaz a uvidíte, kdy se skupina překrývá. Účet není potřeba.",
+    "status": "Aplikace se staví. Vytváření událostí přijde v další fázi."
+  },
+  "LocaleSwitch": {
+    "label": "Jazyk",
+    "cs": "Čeština",
+    "en": "English"
+  },
+  "NotFound": {
+    "heading": "Stránka nenalezena",
+    "back": "Přejít na úvodní stránku"
+  }
+}
