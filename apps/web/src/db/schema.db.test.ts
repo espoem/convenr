@@ -86,7 +86,7 @@ describe("database schema", () => {
 			return row?.slotStart ?? "";
 		});
 
-		expect(stored).toMatch(/-04$/);
+		expect(stored).toMatch(/-04$/u);
 		expect(Temporal.Instant.from(stored).toString()).toBe("2027-04-05T15:00:00Z");
 	});
 
@@ -109,6 +109,6 @@ describe("database schema", () => {
 			"weekday_availability",
 		];
 
-		expect(await Promise.all(tables.map(rowCount))).toEqual([0, 0, 0, 0]);
+		expect(await Promise.all(tables.map((table) => rowCount(table)))).toEqual([0, 0, 0, 0]);
 	});
 });

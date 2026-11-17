@@ -25,7 +25,7 @@ describe("createEvent", () => {
 		}
 
 		expect(created.segment).toBe(`schuzka-vyboru-2027-${created.id}`);
-		expect(created.adminSecret).toMatch(/^[\w-]{43}$/);
+		expect(created.adminSecret).toMatch(/^[\w-]{43}$/u);
 		expect(created.deletionDate.toString()).toBe("2027-07-05");
 
 		const [row] = await db().select().from(events).where(eq(events.id, created.id));

@@ -13,12 +13,12 @@ describe("parseEnv", () => {
 	});
 
 	it("rejects a missing database URL", () => {
-		expect(() => parseEnv({})).toThrow(/DATABASE_URL/);
+		expect(() => parseEnv({})).toThrow(/DATABASE_URL/u);
 	});
 
 	it("rejects a URL for another database", () => {
 		expect(() => parseEnv({ DATABASE_URL: "mysql://user@localhost/convenr" })).toThrow(
-			/DATABASE_URL/,
+			/DATABASE_URL/u,
 		);
 	});
 });

@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useId, useRef, useState, useTransition, type ReactNode, type SubmitEvent } from "react";
 
 import { controlClass, Field } from "@/components/field";
 import { Button } from "@/components/ui/button";
+import { formText } from "@/lib/form-text";
 import { cn } from "@/lib/utils";
 import { changePasswordAction, joinAction, leaveAction } from "@/server/participant-actions";
 
@@ -50,12 +51,12 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 	const [problem, setProblem] = useState<Problem | null>(null);
 	const [pending, startTransition] = useTransition();
 
-	function submit(event: FormEvent<HTMLFormElement>) {
+	function submit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		const form = new FormData(event.currentTarget);
-		const name = String(form.get("name") ?? "");
-		const given = String(form.get("password") ?? "");
+		const name = formText(form, "name");
+		const given = formText(form, "password");
 
 		startTransition(async () => {
 			try {
@@ -146,8 +147,8 @@ function JoinedLine({
 
 	function changePassword(fields: HTMLFormElement, remove: boolean) {
 		const form = new FormData(fields);
-		const current = String(form.get("current") ?? "");
-		const next = String(form.get("next") ?? "");
+		const current = formText(form, "current");
+		const next = formText(form, "next");
 
 		startTransition(async () => {
 			try {

@@ -5,7 +5,7 @@ test.describe("start page", () => {
 		const context = await browser.newContext({ locale: "cs-CZ" });
 		const page = await context.newPage();
 		await page.goto("/");
-		await expect(page).toHaveURL(/\/cs$/);
+		await expect(page).toHaveURL(/\/cs$/u);
 		await expect(page.locator("html")).toHaveAttribute("lang", "cs");
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Najděte čas, který vyhovuje všem",
@@ -17,7 +17,7 @@ test.describe("start page", () => {
 		const context = await browser.newContext({ locale: "de-DE" });
 		const page = await context.newPage();
 		await page.goto("/");
-		await expect(page).toHaveURL(/\/en$/);
+		await expect(page).toHaveURL(/\/en$/u);
 		await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 			"Find a time that works for everyone",
 		);
@@ -30,7 +30,7 @@ test.describe("start page", () => {
 			.getByRole("navigation", { name: "Language" })
 			.getByRole("link", { name: "Čeština" })
 			.click();
-		await expect(page).toHaveURL(/\/cs$/);
+		await expect(page).toHaveURL(/\/cs$/u);
 		await expect(
 			page.getByRole("navigation", { name: "Jazyk" }).getByRole("link", { name: "Čeština" }),
 		).toHaveAttribute("aria-current", "true");

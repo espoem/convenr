@@ -1,8 +1,7 @@
 // Generates apps/web/src/app/tokens.css from the token block in DESIGN.md.
 // Usage: nub apps/web/scripts/generate-theme.ts [--check]
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 import { z } from "zod";
 
@@ -17,7 +16,7 @@ const tokensSchema = z.object({
 
 type Tokens = z.infer<typeof tokensSchema>;
 
-const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const repositoryRoot = join(import.meta.dirname, "..", "..", "..");
 const designPath = join(repositoryRoot, "DESIGN.md");
 const outputPath = join(repositoryRoot, "apps/web/src/app/tokens.css");
 
@@ -45,13 +44,13 @@ const shadcnColors = {
 
 function readTokens(): Tokens {
 	const design = readFileSync(designPath, "utf8");
-	const block = /```json tokens\n([\s\S]*?)\n```/.exec(design);
+	const tokensJson = /```json tokens\n([\s\S]*?)\n```/u.exec(design)?.[1] ?? "";
 
-	if (!block?.[1]) {
+	if (tokensJson === "") {
 		throw new Error("DESIGN.md has no ```json tokens block");
 	}
 
-	return tokensSchema.parse(JSON.parse(block[1]));
+	return tokensSchema.parse(JSON.parse(tokensJson));
 }
 
 function render(tokens: Tokens): string {
@@ -79,17 +78,19 @@ function render(tokens: Tokens): string {
 		lines.push(`  --${variable}: var(--cv-${token});`);
 	}
 
-	lines.push(`  --radius: ${tokens.radius.base};`);
-	lines.push("}", "", "@theme inline {");
+	lines.push(`  --radius: ${tokens.radius.base};`, "}", "", "@theme inline {");
 
 	for (const name of Object.keys(tokens.color)) {
 		lines.push(`  --color-${name}: var(--cv-${name});`);
 	}
 
-	lines.push(`  --font-sans: ${tokens.font.body};`);
-	lines.push(`  --font-heading: ${tokens.font.display};`);
-	lines.push(`  --font-mono: ${tokens.font.mono};`);
-	lines.push("}", "");
+	lines.push(
+		`  --font-sans: ${tokens.font.body};`,
+		`  --font-heading: ${tokens.font.display};`,
+		`  --font-mono: ${tokens.font.mono};`,
+		"}",
+		"",
+	);
 
 	return lines.join("\n");
 }

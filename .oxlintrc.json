@@ -1,9 +1,14 @@
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"options": {
+		"typeAware": true,
+		"typeCheck": true
+	},
 	"plugins": ["typescript", "unicorn", "oxc", "import", "react", "nextjs", "jsx-a11y", "vitest"],
 	"categories": {
 		"correctness": "error",
 		"suspicious": "error",
+		"pedantic": "error",
 		"perf": "warn"
 	},
 	"rules": {
@@ -12,6 +17,24 @@
 		"import/no-cycle": "error",
 		"import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
 		"react/react-in-jsx-scope": "off",
+		// Pedantic rules turned off, one reason each.
+		// Deep readonly types cannot be written for FormData, Request, Temporal or React props.
+		"typescript/prefer-readonly-parameter-types": "off",
+		// Rejects `onClick={() => setOpen(false)}`, the usual shape of a React handler.
+		"typescript/no-confusing-void-expression": "off",
+		// Fixed size caps; how large a module or component may be is a review decision.
+		"eslint/max-lines": "off",
+		"eslint/max-lines-per-function": "off",
+		"import/max-dependencies": "off",
+		// Results are unions; a test narrows one with `if (!result.ok) throw` before asserting on it.
+		"vitest/no-conditional-in-test": "off",
+		// Next.js server actions and cache() callbacks must be async even when they only return a promise.
+		"eslint/require-await": "off",
+		// tsc already rejects a missing return under a declared return type; the rule also rejects
+		// exhaustive switches and React effects that return a cleanup on one path only.
+		"typescript/consistent-return": "off",
+		// Flags zod's `.catch()` as a promise chain; top-level await would also delay every importer.
+		"unicorn/prefer-top-level-await": "off",
 		"oxc/no-accumulating-spread": "error",
 		"anti-slop/no-array-filter-map": "error",
 		"anti-slop/no-reduce-accumulator-copy": "error",

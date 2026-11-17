@@ -17,7 +17,7 @@ test.describe("security headers", () => {
 		const second = await page.request.get("/cs");
 		const policy = first?.headers()["content-security-policy"] ?? "";
 
-		expect(policy).toMatch(/script-src 'self' 'nonce-[\w+/=]+' 'strict-dynamic'/);
+		expect(policy).toMatch(/script-src 'self' 'nonce-[\w+/=]+' 'strict-dynamic'/u);
 		expect(policy).toContain("frame-ancestors 'none'");
 		expect(second.headers()["content-security-policy"]).not.toBe(policy);
 		expect(first?.headers()["referrer-policy"]).toBe("no-referrer");
@@ -28,7 +28,7 @@ test.describe("security headers", () => {
 			.getByRole("navigation", { name: "Jazyk" })
 			.getByRole("link", { name: "English" })
 			.click();
-		await expect(page).toHaveURL(/\/en$/);
+		await expect(page).toHaveURL(/\/en$/u);
 		expect(violations).toEqual([]);
 	});
 });

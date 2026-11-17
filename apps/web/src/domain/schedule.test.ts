@@ -4,7 +4,7 @@ import { type Schedule, scheduleSlots, slotKey, validateSchedule } from "./sched
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 const instant = (iso: string) => Temporal.Instant.from(iso);
-const keys = (schedule: Schedule) => scheduleSlots(schedule).map(slotKey);
+const keys = (schedule: Schedule) => scheduleSlots(schedule).map((slot) => slotKey(slot));
 
 const evening: Schedule = {
 	days: { mode: "range", first: date("2027-04-05"), last: date("2027-04-09") },
@@ -21,7 +21,7 @@ function mayFrom(last: string): Schedule {
 }
 
 function onDates(...isos: string[]): Schedule {
-	return { ...evening, days: { mode: "dates", dates: isos.map(date) } };
+	return { ...evening, days: { mode: "dates", dates: isos.map((iso) => date(iso)) } };
 }
 
 function onDateIn(iso: string, referenceZone: string): Schedule {

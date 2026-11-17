@@ -12,7 +12,7 @@ export function formatLocale(locale: Locale, acceptLanguage: string | null): str
 
 	const first = acceptLanguage?.split(",")[0]?.split(";")[0]?.trim() ?? "";
 
-	if (!/^en(-|$)/i.test(first)) {
+	if (!/^en(-|$)/iu.test(first)) {
 		return "en";
 	}
 

@@ -38,7 +38,9 @@ describe("P1 display name", () => {
 
 describe("P2 uniqueness key", () => {
 	it("treats names that differ only in case and spacing as the same name", () => {
-		expect(new Set(["Jana", "jana", " JANA "].map(keyOf))).toEqual(new Set(["jana"]));
+		expect(new Set(["Jana", "jana", " JANA "].map((name) => keyOf(name)))).toEqual(
+			new Set(["jana"]),
+		);
 	});
 
 	it("keeps names with different letters apart", () => {

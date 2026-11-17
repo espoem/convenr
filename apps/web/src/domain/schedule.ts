@@ -69,7 +69,7 @@ export function eventDates(days: Exclude<EventDays, { mode: "weekdays" }>): Temp
 	if (days.mode === "dates") {
 		const unique = new Map(days.dates.map((date) => [date.toString(), date]));
 
-		return [...unique.values()].toSorted(Temporal.PlainDate.compare);
+		return [...unique.values()].toSorted((a, b) => Temporal.PlainDate.compare(a, b));
 	}
 
 	const dates: Temporal.PlainDate[] = [];

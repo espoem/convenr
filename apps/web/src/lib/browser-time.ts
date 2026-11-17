@@ -6,7 +6,7 @@ import { useSyncExternalStore } from "react";
 
 const listeners = new Set<() => void>();
 
-let temporalReady = typeof globalThis.Temporal !== "undefined";
+let temporalReady = globalThis.Temporal !== undefined;
 let loading: Promise<void> | undefined;
 
 function subscribeToTemporal(listener: () => void): () => void {
@@ -23,7 +23,9 @@ function subscribeToTemporal(listener: () => void): () => void {
 				}
 			});
 
-	return () => listeners.delete(listener);
+	return () => {
+		listeners.delete(listener);
+	};
 }
 
 /** Whether `Temporal` can be used in this render. */
@@ -39,7 +41,7 @@ export function useTemporalReady(): boolean {
 export function useViewerZone(): string | null {
 	return useSyncExternalStore(
 		// The zone of a running page does not change.
-		() => () => undefined,
+		() => () => {},
 		() => Intl.DateTimeFormat().resolvedOptions().timeZone,
 		() => null,
 	);

@@ -26,7 +26,7 @@ export function datedGrid(slots: DatedSlot[], viewerZone: string): DatedGrid {
 
 	const columns = [
 		...new Map(placed.map((cell) => [cell.date.toString(), cell.date])).values(),
-	].toSorted(Temporal.PlainDate.compare);
+	].toSorted((a, b) => Temporal.PlainDate.compare(a, b));
 
 	const rows = [...new Set(placed.map((cell) => cell.minute))].toSorted(
 		(left, right) => left - right,

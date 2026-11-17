@@ -4,14 +4,14 @@ import { describe, expect, it } from "vitest";
 
 import { hashPassword, verifyPassword } from "./password";
 
-const unpadded = (bytes: Buffer) => bytes.toString("base64").replace(/=+$/, "");
+const unpadded = (bytes: Buffer) => bytes.toString("base64").replace(/=+$/u, "");
 
 describe("password hashes (ADR 0003)", () => {
 	it("stores Argon2id with the OWASP minimum parameters and a fresh salt", async () => {
 		const first = await hashPassword("tajne heslo");
 		const second = await hashPassword("tajne heslo");
 
-		expect(first).toMatch(/^\$argon2id\$v=19\$m=19456,t=2,p=1\$/);
+		expect(first).toMatch(/^\$argon2id\$v=19\$m=19456,t=2,p=1\$/u);
 		expect(first).not.toBe(second);
 	});
 
@@ -40,7 +40,7 @@ describe("password hashes (ADR 0003)", () => {
 	});
 
 	it("refuses to read a stored hash that is not an Argon2id PHC string", async () => {
-		await expect(verifyPassword("heslo", "$argon2id$v=19$bad")).rejects.toThrow(/PHC/);
+		await expect(verifyPassword("heslo", "$argon2id$v=19$bad")).rejects.toThrow(/PHC/u);
 	});
 
 	it("hashes many passwords at once without failing", async () => {

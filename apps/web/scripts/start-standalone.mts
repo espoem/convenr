@@ -1,10 +1,9 @@
 // Starts the standalone production server the same way the container image does:
 // the static assets are copied next to the server before it starts.
 import { cpSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
-const appDir = join(dirname(fileURLToPath(import.meta.url)), "..");
+const appDir = join(import.meta.dirname, "..");
 const standaloneApp = join(appDir, ".next/standalone/apps/web");
 
 if (!existsSync(join(standaloneApp, "server.js"))) {

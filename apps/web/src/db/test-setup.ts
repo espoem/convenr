@@ -18,7 +18,7 @@ export default async function setup(project: TestProject): Promise<void> {
 	const url = new URL(testDatabaseUrl);
 	const name = url.pathname.slice(1);
 
-	if (!/^\w+_test$/.test(name)) {
+	if (!/^\w+_test$/u.test(name)) {
 		throw new Error(`Refusing to recreate "${name}": a test database name ends in _test.`);
 	}
 

@@ -17,7 +17,7 @@ test("a weekday event shows stored times in every zone, from the first day of we
 	await page.getByLabel("Každý den od").selectOption({ label: "18:00" });
 	await page.getByLabel("do", { exact: true }).selectOption({ label: "19:00" });
 	await page.getByRole("button", { name: "Vytvořit událost" }).click();
-	await page.waitForURL(/\/created$/);
+	await page.waitForURL(/\/created$/u);
 
 	const share = await page.getByLabel("Odkaz pro účastníky").inputValue();
 
@@ -35,6 +35,6 @@ test("a weekday event shows stored times in every zone, from the first day of we
 			.getByRole("columnheader")
 			.evaluateAll((headers) => headers.map((header) => header.getAttribute("aria-label"))),
 	).toEqual(["neděle", "pondělí"]);
-	await expect(away.getByRole("button", { name: /^neděle, 18:00–18:30, / })).toBeVisible();
+	await expect(away.getByRole("button", { name: /^neděle, 18:00–18:30, /u })).toBeVisible();
 	await viewer.close();
 });

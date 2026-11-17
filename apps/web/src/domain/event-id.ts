@@ -2,7 +2,7 @@
 export const EVENT_ID_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 export const EVENT_ID_LENGTH = 12;
 
-const eventIdPattern = new RegExp(`^[${EVENT_ID_ALPHABET}]{${EVENT_ID_LENGTH}}$`);
+const eventIdPattern = new RegExp(`^[${EVENT_ID_ALPHABET}]{${EVENT_ID_LENGTH}}$`, "u");
 
 // The largest multiple of the alphabet size that fits in a byte. Bytes at or above it are
 // discarded so that every character is equally likely.

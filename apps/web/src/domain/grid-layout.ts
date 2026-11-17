@@ -13,7 +13,7 @@ export type GridLayout = {
 	blocks: GridColumn[][];
 };
 
-const WEEKDAY_KEY = /^w([1-7])-(\d{1,4})$/;
+const WEEKDAY_KEY = /^w([1-7])-(\d{1,4})$/u;
 
 /** A weekday event's grid by rule T3: as stored, with columns from the first day of week. */
 export function weekdayLayout(keys: string[], firstDayOfWeek: Weekday): GridLayout {
@@ -70,7 +70,7 @@ export function datedLayout(
 		column: {
 			kind: "date",
 			date: date.toString(),
-			cells: (grid.cells[index] ?? []).map((cell) => cell.map(slotKey)),
+			cells: (grid.cells[index] ?? []).map((cell) => cell.map((slot) => slotKey(slot))),
 		} satisfies GridColumn,
 	}));
 

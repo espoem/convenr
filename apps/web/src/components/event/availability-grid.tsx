@@ -101,7 +101,7 @@ export function AvailabilityGrid({
 	const keysOf = (cell: CellRef) => columns[cell.column]?.cells[cell.row] ?? [];
 
 	const isOn = (keys: readonly string[]) =>
-		keys.length > 0 && keys.every((key) => edit?.selection.has(key));
+		keys.length > 0 && keys.every((key) => edit?.selection.has(key) === true);
 
 	function keysWithin(from: CellRef, to: CellRef): string[] {
 		return columns.flatMap((column, columnIndex) =>

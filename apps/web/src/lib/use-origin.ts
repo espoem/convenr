@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 function ignoreChanges(): () => void {
-	return () => undefined;
+	return () => {};
 }
 
 /** The address the visitor reached the service under, or `null` during server rendering. */

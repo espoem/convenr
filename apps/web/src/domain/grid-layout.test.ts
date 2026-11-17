@@ -10,13 +10,13 @@ describe("T4 week blocks", () => {
 		const keys = scheduleSlots({
 			days: {
 				mode: "dates",
-				dates: ["2027-06-10", "2027-06-11", "2027-06-14", "2027-06-15"].map(date),
+				dates: ["2027-06-10", "2027-06-11", "2027-06-14", "2027-06-15"].map((iso) => date(iso)),
 			},
 			dailyStart: 17 * 60,
 			dailyEnd: 18 * 60,
 			slotLength: 30,
 			referenceZone: "Europe/Prague",
-		}).map(slotKey);
+		}).map((slot) => slotKey(slot));
 
 		const layout = datedLayout(keys, "Europe/Prague", 1);
 

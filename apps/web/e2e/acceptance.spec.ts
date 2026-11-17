@@ -41,7 +41,8 @@ function eventDates(): Temporal.PlainDate[] {
 	let first = Temporal.Now.plainDateISO(PRAGUE).add({ days: 14 });
 
 	for (;;) {
-		const dates = Array.from({ length: 5 }, (_, offset) => first.add({ days: offset }));
+		const start = first;
+		const dates = Array.from({ length: 5 }, (_, offset) => start.add({ days: offset }));
 
 		if (dates.every((date) => offsetHours(date) === 6)) {
 			return dates;
@@ -57,7 +58,7 @@ function day(date: Temporal.PlainDate): string {
 }
 
 function cell(page: Page, date: Temporal.PlainDate, start: string) {
-	return page.getByRole("button", { name: new RegExp(`^${day(date)}, ${start}–`) });
+	return page.getByRole("button", { name: new RegExp(`^${day(date)}, ${start}–`, "u") });
 }
 
 async function freshPage(browser: Browser, timezoneId = PRAGUE) {
@@ -92,7 +93,7 @@ test("ten people find the one hour that suits everyone (spec section 13)", async
 	await organizer.getByLabel("Délka políčka").selectOption({ label: "30 min" });
 	await expect(organizer.getByLabel("Časové pásmo události")).toHaveValue(PRAGUE);
 	await organizer.getByRole("button", { name: "Vytvořit událost" }).click();
-	await organizer.waitForURL(/\/created$/);
+	await organizer.waitForURL(/\/created$/u);
 
 	const share = await organizer.getByLabel("Odkaz pro účastníky").inputValue();
 
@@ -129,18 +130,18 @@ test("ten people find the one hour that suits everyone (spec section 13)", async
 	}
 
 	// The ten browsers work at the same time, as a group answering a shared link would.
-	await Promise.all(PEOPLE.map(respond));
+	await Promise.all(PEOPLE.map((name, index) => respond(name, index)));
 
 	// Step 4: a visitor who has not joined sees "10 of 10" in exactly the two common slots.
 	const visitor = await freshPage(browser);
 
 	await visitor.goto(share);
 
-	const everyone = visitor.getByRole("button", { name: /, 10 z 10$/ });
+	const everyone = visitor.getByRole("button", { name: /, 10 z 10$/u });
 
 	await expect(everyone).toHaveCount(2);
-	await expect(cell(visitor, fourth, "18:00")).toHaveAccessibleName(/10 z 10$/);
-	await expect(cell(visitor, fourth, "18:30")).toHaveAccessibleName(/10 z 10$/);
+	await expect(cell(visitor, fourth, "18:00")).toHaveAccessibleName(/10 z 10$/u);
+	await expect(cell(visitor, fourth, "18:30")).toHaveAccessibleName(/10 z 10$/u);
 	await visitor.context().close();
 
 	// Step 5: a participant with a password returns in a fresh browser.
@@ -166,8 +167,8 @@ test("ten people find the one hour that suits everyone (spec section 13)", async
 	await expect(
 		newYork.getByText("Mřížka ukazuje časy ve vašem pásmu, America/New York."),
 	).toBeVisible();
-	await expect(cell(newYork, fourth, "12:00")).toHaveAccessibleName(/10 z 10$/);
-	await expect(cell(newYork, fourth, "12:30")).toHaveAccessibleName(/10 z 10$/);
-	await expect(newYork.getByRole("button", { name: /, 10 z 10$/ })).toHaveCount(2);
+	await expect(cell(newYork, fourth, "12:00")).toHaveAccessibleName(/10 z 10$/u);
+	await expect(cell(newYork, fourth, "12:30")).toHaveAccessibleName(/10 z 10$/u);
+	await expect(newYork.getByRole("button", { name: /, 10 z 10$/u })).toHaveCount(2);
 	await newYork.context().close();
 });

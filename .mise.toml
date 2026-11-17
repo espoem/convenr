@@ -15,8 +15,14 @@ _.path = ["node_modules/.bin"]
 description = "Install dependencies from the lockfile and the Git hooks"
 run = ["nub install", "hk install --mise"]
 
+[tasks.typegen]
+description = "Generate the Next.js route types that the type checks read"
+dir = "apps/web"
+run = "nubx next typegen"
+
 [tasks.lint]
-description = "Lint with oxlint; warnings fail"
+description = "Lint and type-check with oxlint; warnings fail"
+depends = ["typegen"]
 run = "nub run lint"
 
 [tasks.format]

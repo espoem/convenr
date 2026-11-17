@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useId, useState, useTransition, type FormEvent } from "react";
+import { useId, useState, useTransition, type SubmitEvent } from "react";
 
 import { DatePicker } from "@/components/date-picker";
 import { controlClass, Field, FieldMessage } from "@/components/field";
@@ -18,6 +18,7 @@ import {
 } from "@/domain/schedule";
 import { useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
+import { formText } from "@/lib/form-text";
 import { updateLocalEvent } from "@/lib/local-events";
 import { createEventAction } from "@/server/event-actions";
 import type { NewEvent } from "@/server/events";
@@ -93,11 +94,11 @@ export function CreateEventForm({ options }: { options: CreateFormOptions }) {
 		);
 	}
 
-	function submit(event: FormEvent<HTMLFormElement>) {
+	function submit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		const form = new FormData(event.currentTarget);
-		const text = (name: string) => String(form.get(name) ?? "");
+		const text = (name: string) => formText(form, name);
 
 		function chosenDays(): NewEvent["days"] {
 			switch (mode) {
@@ -106,7 +107,7 @@ export function CreateEventForm({ options }: { options: CreateFormOptions }) {
 				case "dates":
 					return { mode, dates: dates.toSorted() };
 				case "weekdays":
-					return { mode, weekdays: weekdays.toSorted() };
+					return { mode, weekdays: weekdays.toSorted((a, b) => a - b) };
 			}
 		}
 

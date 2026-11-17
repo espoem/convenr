@@ -83,7 +83,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	// Rule B2: a stored token opens the event already joined, once the server confirms it.
 	useEffect(() => {
 		if (token === undefined) {
-			return undefined;
+			return;
 		}
 
 		let current = true;
@@ -147,7 +147,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	// Rule I6 for leaving the page; leaving edit mode asks inside the page.
 	useEffect(() => {
 		if (!dirty) {
-			return undefined;
+			return;
 		}
 
 		const warn = (unload: BeforeUnloadEvent) => unload.preventDefault();

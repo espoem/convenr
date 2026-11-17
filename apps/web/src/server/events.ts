@@ -228,7 +228,7 @@ export async function readEvent(id: string): Promise<EventView | undefined> {
 		schedule,
 		firstDayOfWeek: firstDayOfWeekOf(row),
 		deletionDate: Temporal.PlainDate.from(row.deletionDate),
-		slots: scheduleSlots(schedule).map(slotKey),
+		slots: scheduleSlots(schedule).map((slot) => slotKey(slot)),
 		participants: people.map((person) => ({
 			name: person.name,
 			available: keys.get(person.id) ?? [],

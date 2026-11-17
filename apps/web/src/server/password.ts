@@ -18,7 +18,9 @@ const waiting: (() => void)[] = [];
 
 async function limited<T>(work: () => Promise<T>): Promise<T> {
 	if (running >= MAX_CONCURRENT_HASHES) {
-		await new Promise<void>((resolve) => waiting.push(resolve));
+		await new Promise<void>((resolve) => {
+			waiting.push(resolve);
+		});
 	} else {
 		running += 1;
 	}
@@ -53,7 +55,7 @@ function derive(password: string, salt: Buffer, parameters: Parameters): Promise
 }
 
 // PHC strings use base64 without padding.
-const encode = (bytes: Buffer) => bytes.toString("base64").replace(/=+$/, "");
+const encode = (bytes: Buffer) => bytes.toString("base64").replace(/=+$/u, "");
 
 /** `$argon2id$v=19$m=…,t=…,p=…$salt$hash` for a new random salt. */
 export async function hashPassword(password: string): Promise<string> {
@@ -64,7 +66,7 @@ export async function hashPassword(password: string): Promise<string> {
 	return `$argon2id$v=19$m=${memory},t=${passes},p=${parallelism}$${encode(salt)}$${encode(key)}`;
 }
 
-const phcPattern = /^\$argon2id\$v=19\$m=(\d+),t=(\d+),p=(\d+)\$([\w+/]+)\$([\w+/]+)$/;
+const phcPattern = /^\$argon2id\$v=19\$m=(\d+),t=(\d+),p=(\d+)\$([\w+/]+)\$([\w+/]+)$/u;
 
 /** Whether `password` matches a stored hash, with the parameters stored in that hash. */
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {

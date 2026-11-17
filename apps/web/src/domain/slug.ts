@@ -120,7 +120,7 @@ function transliterate(character: string): string | undefined {
 	let ascii = "";
 
 	for (const part of character.normalize("NFKD").replaceAll(/\p{M}/gu, "")) {
-		if (/[a-z0-9]/.test(part)) {
+		if (/[a-z0-9]/u.test(part)) {
 			ascii += part;
 			continue;
 		}
@@ -159,7 +159,7 @@ export function slugify(name: string): string {
 		ascii += converted;
 	}
 
-	const hyphenated = ascii.replaceAll(/[^a-z0-9]+/g, "-").replaceAll(/^-+|-+$/g, "");
+	const hyphenated = ascii.replaceAll(/[^a-z0-9]+/gu, "-").replaceAll(/^-+|-+$/gu, "");
 
-	return hyphenated.slice(0, SLUG_MAX_LENGTH).replace(/-+$/, "");
+	return hyphenated.slice(0, SLUG_MAX_LENGTH).replace(/-+$/u, "");
 }

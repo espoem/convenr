@@ -29,7 +29,7 @@ describe("E10 event address", () => {
 describe("event id (ADR 0003)", () => {
 	it("has 12 characters from an alphabet of 57 without look-alikes or hyphens", () => {
 		expect(EVENT_ID_ALPHABET).toHaveLength(57);
-		expect(EVENT_ID_ALPHABET).not.toMatch(/[0O1lI-]/);
+		expect(EVENT_ID_ALPHABET).not.toMatch(/[0O1lI-]/u);
 
 		for (let attempt = 0; attempt < 200; attempt += 1) {
 			const generated = newEventId();

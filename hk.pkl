@@ -7,8 +7,13 @@ import "package://github.com/jdx/hk/releases/download/v2.13.0/hk@2.13.0#/Builtin
 // hook accepts also passes those CI gates.
 steps {
 	["oxfmt"] = Builtins.oxfmt
+	// oxlint type-checks the staged files and reads the generated route types.
+	["typegen"] {
+		glob = List("**/*.ts", "**/*.tsx", "**/*.mts")
+		check = "mise run typegen"
+	}
 	["oxlint"] = (Builtins.ox_lint) {
 		// Formatting first, so oxlint reads the formatted files.
-		depends = List("oxfmt")
+		depends = List("oxfmt", "typegen")
 	}
 }
