@@ -5,13 +5,15 @@ node = "26.13.1"
 "npm:@nubjs/nub" = "0.11.1"
 # Compose implementation used by `docker compose` and by `podman compose`.
 docker-compose = "5.7.0"
+# Git hooks; the configuration is hk.pkl.
+hk = "2.13.0"
 
 [env]
 _.path = ["node_modules/.bin"]
 
 [tasks.install]
-description = "Install dependencies from the lockfile"
-run = "nub install"
+description = "Install dependencies from the lockfile and the Git hooks"
+run = ["nub install", "hk install --mise"]
 
 [tasks.lint]
 description = "Lint with oxlint; warnings fail"

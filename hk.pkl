@@ -1,0 +1,14 @@
+amends "package://github.com/jdx/hk/releases/download/v2.13.0/hk@2.13.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.13.0/hk@2.13.0#/Builtins.pkl"
+
+// Top-level steps define the check, fix and pre-commit hooks. In pre-commit,
+// hk stashes unstaged changes, runs the steps on staged files and stages the fixes.
+// The commands match `mise run format:check` and `mise run lint`, so a commit the
+// hook accepts also passes those CI gates.
+steps {
+	["oxfmt"] = Builtins.oxfmt
+	["oxlint"] = (Builtins.ox_lint) {
+		// Formatting first, so oxlint reads the formatted files.
+		depends = List("oxfmt")
+	}
+}

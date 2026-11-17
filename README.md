@@ -18,6 +18,8 @@ mise install
 mise run install
 ```
 
+`mise run install` also installs a pre-commit hook that formats and lints the staged files.
+
 Run everything in containers:
 
 ```sh
