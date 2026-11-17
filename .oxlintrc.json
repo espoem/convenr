@@ -20,6 +20,7 @@
     "**/drizzle/**",
     "**/next-env.d.ts",
     "**/components/ui/**",
-    ".agents/**"
+    ".agents/**",
+    ".claude/**"
   ]
 }

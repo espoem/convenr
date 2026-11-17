@@ -78,4 +78,4 @@ compose.yaml   application and PostgreSQL
 
 ## License
 
-[AGPL-3.0-only](LICENSE). The vendored skill in `.agents/skills/impeccable` is under Apache-2.0.
+[AGPL-3.0-only](LICENSE). The skill installed in `.agents/skills/impeccable` is under Apache-2.0.

@@ -66,7 +66,7 @@ convenr is a small, warm tool for getting a group to agree on a time. It should 
 2. **Olive means availability.** The `heat` and `available` tokens appear only in the grid, its legend and its summaries.
 3. **Every grid cell has a 1-pixel `earth` outline.** The light heat steps have almost no contrast with the background, so the outline carries the shape.
 4. **Color never carries the count alone.** A slot's count is also available as text.
-5. **Text on the heat scale.** Grid cells contain no text. Where text must sit on a heat color, as in the legend, use `ink` on `heat-0` to `heat-2` (5.55:1 on `heat-2`) and `on-action` on `heat-4` (5.92:1). `heat-3` takes no text: white reaches 3.91:1 on it and `ink` 2.97:1.
+5. **Text on the heat scale.** Grid cells contain no text, not even the time. Time labels sit on the edge of the grid, beside the first visible column, and stay there when the grid scrolls sideways. Where text must sit on a heat color, as in the legend, use `ink` on `heat-0` to `heat-2` (5.55:1 on `heat-2`) and `on-action` on `heat-4` (5.92:1). `heat-3` takes no text: white reaches 3.91:1 on it and `ink` 2.97:1.
 6. **Destructive actions** use `action-active` as an outline and text color, and ask for confirmation inside the page.
 7. **Focus** is a 2-pixel `earth` ring with a 2-pixel offset. It is never removed.
 8. **Type.** Headings use the display face at weight 600 with tight tracking. Body text uses the body face at 16 pixels minimum. Times and counts use tabular figures.

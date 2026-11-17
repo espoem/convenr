@@ -8,6 +8,7 @@
     "**/drizzle/**",
     "**/tokens.css",
     "**/components/ui/**",
-    ".agents/**"
+    ".agents/**",
+    ".claude/**"
   ]
 }

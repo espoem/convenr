@@ -69,11 +69,11 @@ Phase 1 does not include:
 
 **E9. Unknown event.** Opening a link whose event id does not exist shows a "not found" page with a link to create an event. The response does not reveal whether the id ever existed.
 
-**E10. Event address.** The address of an event is `/{lang}/e/{slug}-{id}`. The id alone selects the event. The slug only makes the address readable.
+**E10. Event address.** The address of an event is `/{locale}/e/{slug}-{id}`. The id alone selects the event. The slug only makes the address readable.
 
 - The slug is derived from the event name: transliterated to ASCII, lower-cased, every run of other characters replaced by one hyphen, hyphens trimmed from both ends, cut to 60 characters. "Schůzka výboru 2027" becomes `schuzka-vyboru-2027`.
 - The id is the text after the last hyphen. An id never contains a hyphen.
-- If the name yields an empty slug, the address is `/{lang}/e/{id}`.
+- If the name yields an empty slug, the address is `/{locale}/e/{id}`.
 - An address with a missing or different slug and a valid id redirects to the address with the current slug. So a link keeps working after the event is renamed in F2.
 - The slug puts the event name into the link, where browser history and link previews can show it. The create form says so next to the name field.
 
@@ -179,10 +179,10 @@ Phase 1 does not include:
 
 | Page | Address | Content |
 |---|---|---|
-| Start | `/{lang}` | Create form (E1), list of my events (B3). |
-| Created | `/{lang}/e/{slug}-{id}/created` | Share link and admin link (E6). Shown once, right after creation. |
-| Event | `/{lang}/e/{slug}-{id}` | Event details, zone notices (T2, T3), planned deletion date (E7), grid, join form (P4), participant list. |
-| Manage | `/{lang}/e/{slug}-{id}/manage` | In Phase 1: a notice that managing the event is coming, and confirmation that the admin link is valid. |
+| Start | `/{locale}` | Create form (E1), list of my events (B3). |
+| Created | `/{locale}/e/{slug}-{id}/created` | Share link and admin link (E6). Shown once, right after creation. |
+| Event | `/{locale}/e/{slug}-{id}` | Event details, zone notices (T2, T3), planned deletion date (E7), grid, join form (P4), participant list. |
+| Manage | `/{locale}/e/{slug}-{id}/manage` | In Phase 1: a notice that managing the event is coming, and confirmation that the admin link is valid. |
 | Not found | any unknown address | Message and a link to the start page (E9). |
 
 ## 12. Errors
