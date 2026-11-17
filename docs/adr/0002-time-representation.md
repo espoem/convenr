@@ -16,8 +16,9 @@ Two existing open-source tools show the two approaches for weekday events. Crab 
 4. **Clock changes in dated events.** A wall-clock time that does not exist on a date produces no slot. A wall-clock time that occurs twice produces one slot, at its first occurrence.
 5. **The daily range stays within one day.** Start is at least 00:00 and end is at most 24:00. Ranges across midnight are not supported.
 6. **The first day of week is a display setting of the event.** It orders the columns of a weekday event and the weeks of the date picker. It does not change which slots exist.
-7. **Time arithmetic uses the `Temporal` API.** Node.js 26 provides it. Browsers that lack it get a polyfill. `Date` is not used for zone conversion.
+7. **Time arithmetic uses the `Temporal` API.** Node.js 26 and Bun provide it. A browser that lacks it loads `temporal-polyfill` (fullcalendar, MIT), and only that browser loads it. It was chosen over `@js-temporal/polyfill` for its size. nub provides no browser polyfills; its additions apply only to processes it starts. `Date` is not used for zone conversion.
 8. **Zone data comes from the runtime.** The server and the browser may disagree for a zone whose rules changed recently. The server's result is authoritative, because the server generates the slots and the browser only displays them.
+9. **Rendering is split by what depends on the viewer's zone.** The server renders the event page, including the details, the participant list and the join form. It renders the whole grid of a weekday event, because that grid does not depend on the viewer's zone. For a dated event it sends the slots and the count per slot. The browser lays out the columns and rows in its own zone (spec rule T1). Until it does, the page reserves the grid's space, so the layout does not jump. The viewer's zone is not stored in a cookie.
 
 ## Storage
 

@@ -19,19 +19,7 @@ Phase 1 does not include:
 
 ## 2. Terms
 
-| Term | Meaning |
-|---|---|
-| Event | One scheduling question: a name, a set of days, a daily time range and a slot length. |
-| Organizer | The person who created the event. Holds the admin link. |
-| Day mode | How the organizer chose the days: **date range**, **specific dates** or **weekdays**. |
-| Dated event | An event in date-range or specific-dates mode. Its days are calendar dates. |
-| Weekday event | An event in weekdays mode. Its days are days of the week with no dates. |
-| Reference zone | The IANA time zone the organizer set for the event. |
-| Slot | One cell of the grid: a start time and the event's slot length. |
-| Participant | A named person inside one event. |
-| Response | The set of slots one participant marked as available. |
-| Participant token | A secret that proves a browser may edit one participant's response. |
-| Admin link | The event URL plus a secret that gives organizer rights. |
+The terms are defined in the [glossary](../../GLOSSARY.md). This spec uses them with those meanings.
 
 ## 3. Event rules
 
@@ -71,7 +59,9 @@ Phase 1 does not include:
 
 **E10. Event address.** The address of an event is `/{locale}/e/{slug}-{id}`. The id alone selects the event. The slug only makes the address readable.
 
-- The slug is derived from the event name: transliterated to ASCII, lower-cased, every run of other characters replaced by one hyphen, hyphens trimmed from both ends, cut to 60 characters. "Schůzka výboru 2027" becomes `schuzka-vyboru-2027`.
+- The slug is derived from the event name: transliterated to plain ASCII letters and digits, lower-cased, every run of other characters replaced by one hyphen, hyphens trimmed from both ends, cut to 60 characters. "Schůzka výboru 2027" becomes `schuzka-vyboru-2027`.
+- Transliteration covers Latin letters with diacritics and special Latin letters such as `ß`, `ø`, `ł` and `đ`, and the Cyrillic and Greek alphabets. Punctuation, symbols and emoji count as separators.
+- If the name contains a letter or digit that cannot be transliterated, such as Chinese or Arabic script, the event gets no slug. A partial slug would misrepresent the name.
 - The id is the text after the last hyphen. An id never contains a hyphen.
 - If the name yields an empty slug, the address is `/{locale}/e/{id}`.
 - An address with a missing or different slug and a valid id redirects to the address with the current slug. So a link keeps working after the event is renamed in F2.
@@ -131,7 +121,7 @@ Phase 1 does not include:
 
 ## 7. Time display rules
 
-**T1. Dated events.** Slots are shown in the viewer's browser zone. Columns are the viewer's local dates that contain at least one slot. Rows are the viewer's local times of day at which at least one slot starts. A cell with no slot is blank and cannot be selected.
+**T1. Dated events.** Slots are shown in the viewer's browser zone. Columns are the viewer's local dates that contain at least one slot. Rows are the viewer's local times of day at which at least one slot starts. A cell with no slot is blank and cannot be selected. Where the viewer's clock moves back, the same local time occurs twice on one date: both slots share one cell, and selecting the cell selects both. This affects only night hours on one date a year and is accepted.
 
 **T2. Zone notice.** The event page always states the reference zone. When the viewer's zone differs from it on a dated event, the page also states the zone the grid is shown in.
 

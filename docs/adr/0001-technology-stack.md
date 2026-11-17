@@ -10,7 +10,20 @@ convenr is a free, open-source group scheduling web app. One developer builds it
 
 ### One server-side application
 
-The whole product is one Next.js application using the App Router. It owns the database and every domain rule. Pages read and write through server code in the same application. The public REST API (Phase F3) is served by route handlers in that application.
+The whole product is one Next.js application using the App Router. It owns the database and every domain rule. The public REST API (Phase F3) is served by route handlers in that application.
+
+### One data access layer, several entry points
+
+Added 2026-11-17, following the data security guide bundled with Next.js 16.
+
+Every read and write goes through a data access layer in `apps/web/src/server`. It validates input with Zod, checks the caller's secret, runs the query and returns only the fields the caller may see. No other code imports the database client.
+
+- **Pages** read through it in Server Components.
+- **The application's own forms** write through Server Actions that call it. A form then works without JavaScript, Next.js checks the `Origin` header against the host, and one response carries both the result and the updated page. Two limits follow. Actions from one browser run one after another. A new deployment changes the action ids, so a page that was open across a deployment reloads when an action is not found.
+- **The public REST API** in F3 is a set of route handlers over the same layer, for clients without the UI.
+- **An MCP server** for AI agents is possible later as another entry point over the same layer. It is not planned in a phase yet.
+
+An entry point never holds a domain rule, so all of them behave the same.
 
 ### Stack
 
@@ -41,7 +54,7 @@ TypeScript 7.0.2 was confirmed in F0: the type check and the production build of
 
 ### Rules that follow from the choices
 
-1. **Drizzle is a query builder here.** Queries are written explicitly. The relational query API and implicit lazy loading are not used. Migrations are SQL files in the repository.
+1. **Drizzle is a query builder here.** Queries are written explicitly. The relational query API and implicit lazy loading are not used. Migrations are SQL files in the repository. The server applies pending ones when it starts, under an advisory lock so that servers starting together apply them once.
 2. **The project layout stays compatible with pnpm.** The repository has a `pnpm-workspace.yaml` and a `pnpm-lock.yaml`, and nub runs in its pnpm compatibility mode. nub is younger than version 1.0, so the project must work with plain pnpm without changes.
 3. **Node.js is the supported runtime. Bun is checked.** CI runs the unit tests and the production build under Bun as a second job. A failure there is a bug to fix, but Bun-only APIs are not used.
 4. **No platform-specific APIs.** The application uses only what Node.js and PostgreSQL provide. This keeps a container host, AWS, Vercel and Cloudflare all possible. The hosting provider is not chosen yet.
