@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { db } from "./client";
 import {
   datedAvailability,
   events,
@@ -8,7 +9,6 @@ import {
   participantTokens,
   weekdayAvailability,
 } from "./schema";
-import { db } from "./client";
 
 const database = db();
 

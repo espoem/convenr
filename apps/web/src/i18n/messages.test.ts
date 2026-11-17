@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import cs from "../../messages/cs.json";
 import en from "../../messages/en.json";
-
 import { routing } from "./routing";
 
 type Entry = { kind: "text"; path: string; text: string } | { kind: "group"; entries: Entry[] };

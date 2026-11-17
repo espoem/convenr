@@ -2,8 +2,8 @@
 
 import { Fragment, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
-import { closesHour } from "@/domain/grid-layout";
 import type { GridView } from "@/domain/grid-labels";
+import { closesHour } from "@/domain/grid-layout";
 import { cn } from "@/lib/utils";
 
 export type CellRef = { column: number; row: number };

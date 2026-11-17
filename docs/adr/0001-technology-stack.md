@@ -50,7 +50,7 @@ An entry point never holds a domain rule, so all of them behave the same.
 
 "Latest stable" is the rule for every row, with one limit: the package tool is configured to refuse a release younger than 24 hours, so a pinned version is the newest one older than that. This is why oxlint, oxfmt, Tailwind CSS and React are one patch behind the versions that were current on 2026-11-16.
 
-Changed on 2026-11-17: a pre-commit hook run by hk 2.13.0, pinned in `.mise.toml`, formats and lints the staged files. The operator approved pinning the tools of this change on their release day, once, instead of waiting the 24 hours.
+Changed on 2026-11-17: a pre-commit hook run by hk 2.13.0, pinned in `.mise.toml`, formats and lints the staged files. oxfmt 0.79.0 also sorts imports and Tailwind classes. The operator approved pinning the tools of this change on their release day, once, instead of waiting the 24 hours.
 
 TypeScript 7.0.2 was confirmed in F0: the type check and the production build of Next.js 16.4.6 with next-intl pass under it.
 

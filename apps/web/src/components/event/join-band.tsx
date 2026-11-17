@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { controlClass, Field } from "@/components/field";
 import { Button } from "@/components/ui/button";
@@ -304,7 +304,7 @@ function JoinedLine({
       <p
         aria-live="polite"
         className={cn(
-          "text-sm empty:mt-0 mt-2",
+          "mt-2 text-sm empty:mt-0",
           message?.problem === true && "font-semibold text-action-active",
         )}
       >

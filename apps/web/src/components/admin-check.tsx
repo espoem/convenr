@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 import { updateLocalEvent } from "@/lib/local-events";
 import { checkAdminAction } from "@/server/event-actions";
