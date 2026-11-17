@@ -40,11 +40,19 @@ A change is done when `mise run check` and `mise run e2e` exit with code 0.
 7. **Secrets and privacy.** Follow ADR 0003. Never log headers, URL fragments, tokens, passwords or visitor addresses. Add no third-party analytics, fonts or scripts loaded from another host.
 8. **Database.** Drizzle is a typed SQL query builder here. Write queries explicitly. Migrations are SQL files made by `mise run db:generate`.
 9. **Private folders.** Folders listed in `.git/info/exclude` are local only. Never stage them, name them or link to them in a committed file.
-10. **Git.** `main` is protected. Work on a branch and open a pull request. Commits carry the operator's identity and no co-author trailers.
+10. **Git.** Until the operator says otherwise, work happens in local stacked branches: no pushes, pull requests or issues. Each branch is one reviewable step on top of the previous one, and each commit passes `mise run check`. Rewrite a branch's history before handing it over so that it holds no fix-up or work-in-progress commits. Commits carry the operator's identity and no co-author trailers.
+11. **Editing files.** Change source files with an editor tool, not with scripts that rewrite them by string replacement.
 
 ## Agent skills
 
-Project skills live in [`.agents/skills/`](.agents/skills/README.md). Use `impeccable` for interface design work, together with `DESIGN.md`. Install and update skills with the `skills` CLI as described there.
+Project skills live in [`.agents/skills/`](.agents/skills/README.md). Install and update them with the `skills` CLI as described there.
+
+When two sources disagree, the earlier one in this list wins: the operator's request, this file, `DESIGN.md`, `impeccable`, the `antislop` skills.
+
+- `impeccable` leads interface design work: direction, layout, type, color and copy.
+- `antislop`, `antislop-ui`, `antislop-human`, `antislop-layoutmobile` and `antislop-copywriting` are a checklist. Apply them while building and run their Delivery Gate before reporting interface work done. Their mode for this project is `during`; do not ask for it.
+- `antislop-code` governs code comments.
+- `install-anti-slop` installs and updates the anti-slop Oxlint rules in `tools/oxlint/anti-slop/`. `mise run lint` enforces them. Fix a finding; do not disable a rule.
 
 ### Issue tracker
 
