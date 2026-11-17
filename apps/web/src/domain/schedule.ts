@@ -10,6 +10,23 @@ export const MINUTES_PER_DAY = 24 * 60;
 /** ISO day of week: 1 is Monday, 7 is Sunday. */
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
+export const WEEKDAYS: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 7];
+
+/** The day of week `value` names, or `undefined` when it is not 1 to 7. */
+export function toWeekday(value: number): Weekday | undefined {
+  return WEEKDAYS.find((candidate) => candidate === value);
+}
+
+/** The seven days of the week in display order for a week starting on `first` (T4). */
+export function weekdaysFrom(first: Weekday): Weekday[] {
+  return [...WEEKDAYS.slice(first - 1), ...WEEKDAYS.slice(0, first - 1)];
+}
+
+/** The allowed slot length `value` names, or `undefined`. */
+export function toSlotLength(value: number): SlotLength | undefined {
+  return SLOT_LENGTHS.find((candidate) => candidate === value);
+}
+
 export type EventDays =
   | { mode: "range"; first: Temporal.PlainDate; last: Temporal.PlainDate }
   | { mode: "dates"; dates: Temporal.PlainDate[] }

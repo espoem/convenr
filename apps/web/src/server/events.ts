@@ -1,4 +1,6 @@
 // Creating and reading events: spec rules E1 to E7, E9, E10 and V1.
+import { timingSafeEqual } from "node:crypto";
+
 import { asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
@@ -135,6 +137,23 @@ export async function createEvent(
     });
 
   return { ok: true, id, segment: eventSegment(id, name), adminSecret, deletionDate: deletion };
+}
+
+/** Whether `secret` is the admin secret of event `id`, compared in constant time (ADR 0003). */
+export async function isAdminSecret(id: string, secret: string): Promise<boolean> {
+  const [row] = await db()
+    .select({ hash: events.adminSecretHash })
+    .from(events)
+    .where(eq(events.id, id));
+
+  if (row === undefined) {
+    return false;
+  }
+
+  const stored = Buffer.from(row.hash);
+  const given = Buffer.from(hashSecret(secret));
+
+  return stored.length === given.length && timingSafeEqual(stored, given);
 }
 
 export type EventView = {

@@ -9,7 +9,8 @@ import {
   type Schedule,
   slotKey,
   type SlotLength,
-  SLOT_LENGTHS,
+  toSlotLength,
+  toWeekday,
   type Weekday,
 } from "@/domain/schedule";
 import { env } from "@/env";
@@ -21,10 +22,8 @@ export type EventRow = typeof events.$inferSelect;
 /** The database or an open transaction on it. */
 export type Queries = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 
-const WEEKDAYS: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 7];
-
 function weekday(stored: number): Weekday {
-  const found = WEEKDAYS.find((candidate) => candidate === stored);
+  const found = toWeekday(stored);
 
   if (found === undefined) {
     throw new Error(`Stored weekday ${stored} is outside 1 to 7.`);
@@ -34,7 +33,7 @@ function weekday(stored: number): Weekday {
 }
 
 function slotLength(stored: number): SlotLength {
-  const found = SLOT_LENGTHS.find((candidate) => candidate === stored);
+  const found = toSlotLength(stored);
 
   if (found === undefined) {
     throw new Error(`Stored slot length ${stored} is not allowed.`);

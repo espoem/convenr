@@ -1,11 +1,15 @@
+"use client";
+
 import { useLocale, useTranslations } from "next-intl";
 
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
+/** The language switch of spec rule L3: it keeps the visitor on the same page. */
 export function LocaleSwitch() {
   const t = useTranslations("LocaleSwitch");
   const current = useLocale();
+  const pathname = usePathname();
 
   return (
     <nav aria-label={t("label")}>
@@ -13,7 +17,7 @@ export function LocaleSwitch() {
         {routing.locales.map((locale) => (
           <li key={locale}>
             <Link
-              href="/"
+              href={pathname}
               locale={locale}
               lang={locale}
               aria-current={locale === current ? "true" : undefined}
