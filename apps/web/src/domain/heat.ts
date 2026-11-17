@@ -3,22 +3,22 @@ export type HeatStep = 0 | 1 | 2 | 3 | 4;
 
 /** The heat step of a slot where `available` of `participants` are available (V2). */
 export function heatStep(available: number, participants: number): HeatStep {
-  if (available <= 0 || participants <= 0) {
-    return 0;
-  }
+	if (available <= 0 || participants <= 0) {
+		return 0;
+	}
 
-  // Integer comparisons avoid rounding at the 25 %, 50 % and 75 % boundaries.
-  if (4 * available <= participants) {
-    return 1;
-  }
+	// Integer comparisons avoid rounding at the 25 %, 50 % and 75 % boundaries.
+	if (4 * available <= participants) {
+		return 1;
+	}
 
-  if (2 * available <= participants) {
-    return 2;
-  }
+	if (2 * available <= participants) {
+		return 2;
+	}
 
-  if (4 * available <= 3 * participants) {
-    return 3;
-  }
+	if (4 * available <= 3 * participants) {
+		return 3;
+	}
 
-  return 4;
+	return 4;
 }

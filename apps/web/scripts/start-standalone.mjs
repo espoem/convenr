@@ -8,8 +8,8 @@ const appDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const standaloneApp = join(appDir, ".next/standalone/apps/web");
 
 if (!existsSync(join(standaloneApp, "server.js"))) {
-  console.error("No production build found. Run `mise run build` first.");
-  process.exit(1);
+	console.error("No production build found. Run `mise run build` first.");
+	process.exit(1);
 }
 
 cpSync(join(appDir, ".next/static"), join(standaloneApp, ".next/static"), { recursive: true });

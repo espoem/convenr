@@ -1,20 +1,28 @@
 {
-  "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "sortImports": true,
-  "sortTailwindcss": {
-    "stylesheet": "./apps/web/src/app/globals.css",
-    "functions": ["cn", "cva"]
-  },
-  "ignorePatterns": [
-    "docs/**",
-    "pnpm-lock.yaml",
-    "mise.lock",
-    ".mise/**",
-    "**/drizzle/**",
-    "**/tokens.css",
-    "**/components/ui/**",
-    ".agents/**",
-    ".claude/**",
-    "tools/oxlint/anti-slop/**"
-  ]
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"tabWidth": 2,
+	"overrides": [
+		{
+			"files": ["**/*.{md,markdown,mdx,yaml,yml,toml}"],
+			"options": { "useTabs": false }
+		}
+	],
+	"sortImports": true,
+	"sortTailwindcss": {
+		"stylesheet": "./apps/web/src/app/globals.css",
+		"functions": ["cn", "cva"]
+	},
+	"ignorePatterns": [
+		"docs/**",
+		"pnpm-lock.yaml",
+		"mise.lock",
+		".mise/**",
+		"**/drizzle/**",
+		"**/tokens.css",
+		"**/components/ui/**",
+		".agents/**",
+		".claude/**",
+		"tools/oxlint/anti-slop/**"
+	]
 }

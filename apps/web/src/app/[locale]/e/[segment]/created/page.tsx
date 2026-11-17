@@ -7,21 +7,21 @@ import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 
 export default async function CreatedPage({ params }: PageProps<"/[locale]/e/[segment]/created">) {
-  const { segment } = await params;
-  const id = eventIdFromSegment(segment);
+	const { segment } = await params;
+	const id = eventIdFromSegment(segment);
 
-  if (id === undefined) {
-    notFound();
-  }
+	if (id === undefined) {
+		notFound();
+	}
 
-  const t = await getTranslations("Created");
+	const t = await getTranslations("Created");
 
-  return (
-    <PageShell>
-      <main className="flex flex-col gap-6">
-        <h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
-        <CreatedLinks id={id} segment={segment} locale={await currentLocale()} />
-      </main>
-    </PageShell>
-  );
+	return (
+		<PageShell>
+			<main className="flex flex-col gap-6">
+				<h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
+				<CreatedLinks id={id} segment={segment} locale={await currentLocale()} />
+			</main>
+		</PageShell>
+	);
 }

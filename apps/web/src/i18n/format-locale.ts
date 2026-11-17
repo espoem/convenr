@@ -6,19 +6,19 @@ import type { Locale } from "./routing";
  * time, `en-US` 12-hour), and plain `en` otherwise.
  */
 export function formatLocale(locale: Locale, acceptLanguage: string | null): string {
-  if (locale !== "en") {
-    return locale;
-  }
+	if (locale !== "en") {
+		return locale;
+	}
 
-  const first = acceptLanguage?.split(",")[0]?.split(";")[0]?.trim() ?? "";
+	const first = acceptLanguage?.split(",")[0]?.split(";")[0]?.trim() ?? "";
 
-  if (!/^en(-|$)/i.test(first)) {
-    return "en";
-  }
+	if (!/^en(-|$)/i.test(first)) {
+		return "en";
+	}
 
-  try {
-    return Intl.getCanonicalLocales(first)[0] ?? "en";
-  } catch {
-    return "en";
-  }
+	try {
+		return Intl.getCanonicalLocales(first)[0] ?? "en";
+	} catch {
+		return "en";
+	}
 }

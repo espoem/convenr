@@ -7,11 +7,11 @@ import { useSyncExternalStore } from "react";
 import { z } from "zod";
 
 const localEventSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  segment: z.string(),
-  adminSecret: z.string().optional(),
-  participant: z.object({ name: z.string(), token: z.string() }).optional(),
+	id: z.string(),
+	name: z.string(),
+	segment: z.string(),
+	adminSecret: z.string().optional(),
+	participant: z.object({ name: z.string(), token: z.string() }).optional(),
 });
 
 export type LocalEvent = z.infer<typeof localEventSchema>;
@@ -29,53 +29,53 @@ let cachedEvents = noEvents;
 let inMemory: LocalEvents | undefined;
 
 function readText(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
+	try {
+		return localStorage.getItem(STORAGE_KEY);
+	} catch {
+		return null;
+	}
 }
 
 function parse(text: string | null): LocalEvents {
-  if (text === null) {
-    return noEvents;
-  }
+	if (text === null) {
+		return noEvents;
+	}
 
-  try {
-    return new Map(Object.entries(storedEvents.parse(JSON.parse(text))));
-  } catch {
-    return noEvents;
-  }
+	try {
+		return new Map(Object.entries(storedEvents.parse(JSON.parse(text))));
+	} catch {
+		return noEvents;
+	}
 }
 
 function snapshot(): LocalEvents {
-  if (inMemory !== undefined) {
-    return inMemory;
-  }
+	if (inMemory !== undefined) {
+		return inMemory;
+	}
 
-  const text = readText();
+	const text = readText();
 
-  if (text !== cachedText) {
-    cachedText = text;
-    cachedEvents = parse(text);
-  }
+	if (text !== cachedText) {
+		cachedText = text;
+		cachedEvents = parse(text);
+	}
 
-  return cachedEvents;
+	return cachedEvents;
 }
 
 function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  window.addEventListener("storage", listener);
+	listeners.add(listener);
+	window.addEventListener("storage", listener);
 
-  return () => {
-    listeners.delete(listener);
-    window.removeEventListener("storage", listener);
-  };
+	return () => {
+		listeners.delete(listener);
+		window.removeEventListener("storage", listener);
+	};
 }
 
 /** Every event this browser holds. Empty during server rendering. */
 export function useLocalEvents(): LocalEvents {
-  return useSyncExternalStore(subscribe, snapshot, () => noEvents);
+	return useSyncExternalStore(subscribe, snapshot, () => noEvents);
 }
 
 /**
@@ -83,27 +83,27 @@ export function useLocalEvents(): LocalEvents {
  * returns `undefined`.
  */
 export function updateLocalEvent(
-  id: string,
-  change: (current: LocalEvent | undefined) => LocalEvent | undefined,
+	id: string,
+	change: (current: LocalEvent | undefined) => LocalEvent | undefined,
 ): void {
-  const events = new Map(snapshot());
-  const next = change(events.get(id));
+	const events = new Map(snapshot());
+	const next = change(events.get(id));
 
-  // Deleting first moves a changed event to the end, which keeps rule B3's order.
-  events.delete(id);
+	// Deleting first moves a changed event to the end, which keeps rule B3's order.
+	events.delete(id);
 
-  if (next !== undefined) {
-    events.set(id, next);
-  }
+	if (next !== undefined) {
+		events.set(id, next);
+	}
 
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(events)));
-    inMemory = undefined;
-  } catch {
-    inMemory = events;
-  }
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(events)));
+		inMemory = undefined;
+	} catch {
+		inMemory = events;
+	}
 
-  for (const listener of listeners) {
-    listener();
-  }
+	for (const listener of listeners) {
+		listener();
+	}
 }

@@ -4,13 +4,13 @@ import { connection } from "next/server";
 import { db } from "@/db/client";
 
 export async function GET() {
-  await connection();
+	await connection();
 
-  try {
-    await db().execute(sql`select 1`);
+	try {
+		await db().execute(sql`select 1`);
 
-    return Response.json({ status: "ok", database: "ok" });
-  } catch {
-    return Response.json({ status: "error", database: "unreachable" }, { status: 503 });
-  }
+		return Response.json({ status: "ok", database: "ok" });
+	} catch {
+		return Response.json({ status: "error", database: "unreachable" }, { status: 503 });
+	}
 }

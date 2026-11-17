@@ -6,20 +6,20 @@ import { eventDates, type Schedule } from "./schedule";
  * date in the reference zone.
  */
 export function deletionDate(
-  schedule: Schedule,
-  lastChange: Temporal.Instant,
-  retentionDays: number,
+	schedule: Schedule,
+	lastChange: Temporal.Instant,
+	retentionDays: number,
 ): Temporal.PlainDate {
-  const { days, referenceZone } = schedule;
+	const { days, referenceZone } = schedule;
 
-  const base =
-    days.mode === "weekdays"
-      ? lastChange.toZonedDateTimeISO(referenceZone).toPlainDate()
-      : eventDates(days).at(-1);
+	const base =
+		days.mode === "weekdays"
+			? lastChange.toZonedDateTimeISO(referenceZone).toPlainDate()
+			: eventDates(days).at(-1);
 
-  if (base === undefined) {
-    throw new Error("A dated event without dates has no deletion date.");
-  }
+	if (base === undefined) {
+		throw new Error("A dated event without dates has no deletion date.");
+	}
 
-  return base.add({ days: retentionDays });
+	return base.add({ days: retentionDays });
 }

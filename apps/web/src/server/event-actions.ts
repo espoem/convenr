@@ -8,13 +8,13 @@ import { z } from "zod";
 import { createEvent, isAdminSecret, type NewEvent } from "./events";
 
 export async function createEventAction(input: NewEvent) {
-  const created = await createEvent(input);
+	const created = await createEvent(input);
 
-  return created.ok ? { ...created, deletionDate: created.deletionDate.toString() } : created;
+	return created.ok ? { ...created, deletionDate: created.deletionDate.toString() } : created;
 }
 
 export async function checkAdminAction(id: string, adminSecret: string): Promise<boolean> {
-  const args = z.tuple([z.string().max(64), z.string().max(128)]).safeParse([id, adminSecret]);
+	const args = z.tuple([z.string().max(64), z.string().max(128)]).safeParse([id, adminSecret]);
 
-  return args.success && (await isAdminSecret(...args.data));
+	return args.success && (await isAdminSecret(...args.data));
 }

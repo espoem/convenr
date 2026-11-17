@@ -13,8 +13,8 @@ const MIGRATION_LOCK = 4_242_001;
  * start at the same time apply them once.
  */
 export async function applyMigrations(database: Database): Promise<void> {
-  await database.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(${MIGRATION_LOCK})`);
-    await migrate(tx, { migrationsFolder: join(process.cwd(), "drizzle") });
-  });
+	await database.transaction(async (tx) => {
+		await tx.execute(sql`select pg_advisory_xact_lock(${MIGRATION_LOCK})`);
+		await migrate(tx, { migrationsFolder: join(process.cwd(), "drizzle") });
+	});
 }

@@ -3,9 +3,9 @@ import { slugify } from "./slug";
 
 /** The `{slug}-{id}` path segment of an event address by spec rule E10. */
 export function eventSegment(id: string, name: string): string {
-  const slug = slugify(name);
+	const slug = slugify(name);
 
-  return slug === "" ? id : `${slug}-${id}`;
+	return slug === "" ? id : `${slug}-${id}`;
 }
 
 /**
@@ -13,7 +13,7 @@ export function eventSegment(id: string, name: string): string {
  * text after the last hyphen is not an event id. The slug part is ignored (E10).
  */
 export function eventIdFromSegment(segment: string): string | undefined {
-  const candidate = segment.slice(segment.lastIndexOf("-") + 1);
+	const candidate = segment.slice(segment.lastIndexOf("-") + 1);
 
-  return isEventId(candidate) ? candidate : undefined;
+	return isEventId(candidate) ? candidate : undefined;
 }

@@ -19,24 +19,24 @@ import { type Joined, JoinBand } from "./join-band";
 import { SlotDetail } from "./slot-detail";
 
 export type BoardEvent = {
-  id: string;
-  name: string;
-  segment: string;
-  dated: boolean;
-  referenceZone: string;
-  firstDayOfWeek: Weekday;
-  slotLength: number;
-  /** Rows of one day, to reserve the grid's height before the browser lays it out. */
-  rowCount: number;
-  slots: string[];
-  participants: { name: string; available: string[] }[];
+	id: string;
+	name: string;
+	segment: string;
+	dated: boolean;
+	referenceZone: string;
+	firstDayOfWeek: Weekday;
+	slotLength: number;
+	/** Rows of one day, to reserve the grid's height before the browser lays it out. */
+	rowCount: number;
+	slots: string[];
+	participants: { name: string; available: string[] }[];
 };
 
 type EventBoardProps = {
-  event: BoardEvent;
-  /** A weekday event's grid, laid out by the server (ADR 0002 item 9). */
-  weekdayView: GridView | null;
-  formatLocale: string;
+	event: BoardEvent;
+	/** A weekday event's grid, laid out by the server (ADR 0002 item 9). */
+	weekdayView: GridView | null;
+	formatLocale: string;
 };
 
 const HEAT = ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"] as const;
@@ -44,476 +44,476 @@ const DETAIL_WIDTH = 288;
 const nobody: ReadonlySet<string> = new Set();
 
 function withoutParticipant(stored: LocalEvent | undefined): LocalEvent | undefined {
-  if (stored?.adminSecret === undefined) {
-    return undefined;
-  }
+	if (stored?.adminSecret === undefined) {
+		return undefined;
+	}
 
-  const { participant: _forgotten, ...rest } = stored;
+	const { participant: _forgotten, ...rest } = stored;
 
-  return rest;
+	return rest;
 }
 
 function sameSet(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
-  return left.size === right.size && [...left].every((key) => right.has(key));
+	return left.size === right.size && [...left].every((key) => right.has(key));
 }
 
 /** The event page below its header: join band, tabs, grid and participants (spec 6 and 8). */
 export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps) {
-  const t = useTranslations("Event");
-  const id = useId();
-  const router = useRouter();
-  const temporalReady = useTemporalReady();
-  const viewerZone = useViewerZone();
-  const stored = useLocalEvents().get(event.id);
-  const wrapper = useRef<HTMLDivElement>(null);
-  const [hasPassword, setHasPassword] = useState(false);
-  const [tab, setTab] = useState<"group" | "me">("group");
-  const [draft, setDraft] = useState<Set<string> | null>(null);
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [inspected, setInspected] = useState<{ cell: CellRef; x: number; y: number } | null>(null);
-  const [person, setPerson] = useState<string | null>(null);
-  const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | null>(null);
-  const [saving, startSaving] = useTransition();
+	const t = useTranslations("Event");
+	const id = useId();
+	const router = useRouter();
+	const temporalReady = useTemporalReady();
+	const viewerZone = useViewerZone();
+	const stored = useLocalEvents().get(event.id);
+	const wrapper = useRef<HTMLDivElement>(null);
+	const [hasPassword, setHasPassword] = useState(false);
+	const [tab, setTab] = useState<"group" | "me">("group");
+	const [draft, setDraft] = useState<Set<string> | null>(null);
+	const [confirmDiscard, setConfirmDiscard] = useState(false);
+	const [inspected, setInspected] = useState<{ cell: CellRef; x: number; y: number } | null>(null);
+	const [person, setPerson] = useState<string | null>(null);
+	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | null>(null);
+	const [saving, startSaving] = useTransition();
 
-  const token = stored?.participant?.token;
+	const token = stored?.participant?.token;
 
-  const joined: Joined | null =
-    stored?.participant === undefined ? null : { ...stored.participant, hasPassword };
+	const joined: Joined | null =
+		stored?.participant === undefined ? null : { ...stored.participant, hasPassword };
 
-  // Rule B2: a stored token opens the event already joined, once the server confirms it.
-  useEffect(() => {
-    if (token === undefined) {
-      return undefined;
-    }
+	// Rule B2: a stored token opens the event already joined, once the server confirms it.
+	useEffect(() => {
+		if (token === undefined) {
+			return undefined;
+		}
 
-    let current = true;
+		let current = true;
 
-    void identifyAction(event.id, token).then((found) => {
-      if (!current) {
-        return;
-      }
+		void identifyAction(event.id, token).then((found) => {
+			if (!current) {
+				return;
+			}
 
-      if (found === null) {
-        updateLocalEvent(event.id, withoutParticipant);
-      } else {
-        setHasPassword(found.hasPassword);
-      }
-    });
+			if (found === null) {
+				updateLocalEvent(event.id, withoutParticipant);
+			} else {
+				setHasPassword(found.hasPassword);
+			}
+		});
 
-    return () => {
-      current = false;
-    };
-  }, [event.id, token]);
+		return () => {
+			current = false;
+		};
+	}, [event.id, token]);
 
-  const view = useMemo(() => {
-    if (weekdayView !== null) {
-      return weekdayView;
-    }
+	const view = useMemo(() => {
+		if (weekdayView !== null) {
+			return weekdayView;
+		}
 
-    return temporalReady && viewerZone !== null
-      ? gridView(
-          datedLayout(event.slots, viewerZone, event.firstDayOfWeek),
-          event.slotLength,
-          formatLocale,
-        )
-      : null;
-  }, [weekdayView, temporalReady, viewerZone, event, formatLocale]);
+		return temporalReady && viewerZone !== null
+			? gridView(
+					datedLayout(event.slots, viewerZone, event.firstDayOfWeek),
+					event.slotLength,
+					formatLocale,
+				)
+			: null;
+	}, [weekdayView, temporalReady, viewerZone, event, formatLocale]);
 
-  const availableIn = useMemo(() => {
-    const names = new Map<string, Set<string>>();
+	const availableIn = useMemo(() => {
+		const names = new Map<string, Set<string>>();
 
-    for (const participant of event.participants) {
-      for (const key of participant.available) {
-        names.set(key, (names.get(key) ?? new Set()).add(participant.name));
-      }
-    }
+		for (const participant of event.participants) {
+			for (const key of participant.available) {
+				names.set(key, (names.get(key) ?? new Set()).add(participant.name));
+			}
+		}
 
-    return names;
-  }, [event.participants]);
+		return names;
+	}, [event.participants]);
 
-  const total = event.participants.length;
+	const total = event.participants.length;
 
-  const mine = useMemo(
-    () =>
-      new Set(
-        event.participants.find((participant) => participant.name === joined?.name)?.available,
-      ),
-    [event.participants, joined?.name],
-  );
+	const mine = useMemo(
+		() =>
+			new Set(
+				event.participants.find((participant) => participant.name === joined?.name)?.available,
+			),
+		[event.participants, joined?.name],
+	);
 
-  const selection = draft ?? mine;
-  const dirty = draft !== null && !sameSet(draft, mine);
+	const selection = draft ?? mine;
+	const dirty = draft !== null && !sameSet(draft, mine);
 
-  // Rule I6 for leaving the page; leaving edit mode asks inside the page.
-  useEffect(() => {
-    if (!dirty) {
-      return undefined;
-    }
+	// Rule I6 for leaving the page; leaving edit mode asks inside the page.
+	useEffect(() => {
+		if (!dirty) {
+			return undefined;
+		}
 
-    const warn = (unload: BeforeUnloadEvent) => unload.preventDefault();
+		const warn = (unload: BeforeUnloadEvent) => unload.preventDefault();
 
-    window.addEventListener("beforeunload", warn);
+		window.addEventListener("beforeunload", warn);
 
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+		return () => window.removeEventListener("beforeunload", warn);
+	}, [dirty]);
 
-  const namesIn = (keys: readonly string[]) => availableIn.get(keys[0] ?? "") ?? nobody;
+	const namesIn = (keys: readonly string[]) => availableIn.get(keys[0] ?? "") ?? nobody;
 
-  function showTab(next: "group" | "me") {
-    if (next === "group" && dirty) {
-      setConfirmDiscard(true);
+	function showTab(next: "group" | "me") {
+		if (next === "group" && dirty) {
+			setConfirmDiscard(true);
 
-      return;
-    }
+			return;
+		}
 
-    setConfirmDiscard(false);
-    setInspected(null);
-    setDraft(null);
-    setTab(next);
-  }
+		setConfirmDiscard(false);
+		setInspected(null);
+		setDraft(null);
+		setTab(next);
+	}
 
-  function formatTime(instant: string): string {
-    if (!temporalReady) {
-      return "";
-    }
+	function formatTime(instant: string): string {
+		if (!temporalReady) {
+			return "";
+		}
 
-    return Temporal.Instant.from(instant)
-      .toZonedDateTimeISO(viewerZone ?? event.referenceZone)
-      .toLocaleString(formatLocale, { hour: "numeric", minute: "2-digit" });
-  }
+		return Temporal.Instant.from(instant)
+			.toZonedDateTimeISO(viewerZone ?? event.referenceZone)
+			.toLocaleString(formatLocale, { hour: "numeric", minute: "2-digit" });
+	}
 
-  function joinedAs(name: string, newToken: string, withPassword: boolean) {
-    updateLocalEvent(event.id, (current) => ({
-      ...current,
-      id: event.id,
-      name: event.name,
-      segment: event.segment,
-      participant: { name, token: newToken },
-    }));
-    setHasPassword(withPassword);
-    setDraft(null);
-    setTab("me");
-    router.refresh();
-  }
+	function joinedAs(name: string, newToken: string, withPassword: boolean) {
+		updateLocalEvent(event.id, (current) => ({
+			...current,
+			id: event.id,
+			name: event.name,
+			segment: event.segment,
+			participant: { name, token: newToken },
+		}));
+		setHasPassword(withPassword);
+		setDraft(null);
+		setTab("me");
+		router.refresh();
+	}
 
-  function forget(left: boolean) {
-    updateLocalEvent(event.id, withoutParticipant);
-    setDraft(null);
-    setTab("group");
+	function forget(left: boolean) {
+		updateLocalEvent(event.id, withoutParticipant);
+		setDraft(null);
+		setTab("group");
 
-    if (left) {
-      router.refresh();
-    }
-  }
+		if (left) {
+			router.refresh();
+		}
+	}
 
-  function save() {
-    if (joined === null || draft === null) {
-      return;
-    }
+	function save() {
+		if (joined === null || draft === null) {
+			return;
+		}
 
-    const keys = [...draft];
+		const keys = [...draft];
 
-    startSaving(async () => {
-      try {
-        const saved = await saveAction(event.id, joined.token, keys);
+		startSaving(async () => {
+			try {
+				const saved = await saveAction(event.id, joined.token, keys);
 
-        if (saved.ok) {
-          setSaveMessage("saved");
-          router.refresh();
+				if (saved.ok) {
+					setSaveMessage("saved");
+					router.refresh();
 
-          return;
-        }
+					return;
+				}
 
-        if (saved.problem === "not-joined") {
-          forget(false);
-        }
+				if (saved.problem === "not-joined") {
+					forget(false);
+				}
 
-        setSaveMessage("failed");
-      } catch {
-        setSaveMessage("failed");
-      }
-    });
-  }
+				setSaveMessage("failed");
+			} catch {
+				setSaveMessage("failed");
+			}
+		});
+	}
 
-  function inspect(cell: CellRef | null, box: DOMRect | null) {
-    const area = wrapper.current?.getBoundingClientRect();
+	function inspect(cell: CellRef | null, box: DOMRect | null) {
+		const area = wrapper.current?.getBoundingClientRect();
 
-    if (cell === null || box === null || area === undefined) {
-      setInspected(null);
+		if (cell === null || box === null || area === undefined) {
+			setInspected(null);
 
-      return;
-    }
+			return;
+		}
 
-    const beside = box.right - area.left + 8;
+		const beside = box.right - area.left + 8;
 
-    const x =
-      beside + DETAIL_WIDTH > area.width
-        ? Math.max(box.left - area.left - DETAIL_WIDTH - 8, 0)
-        : beside;
+		const x =
+			beside + DETAIL_WIDTH > area.width
+				? Math.max(box.left - area.left - DETAIL_WIDTH - 8, 0)
+				: beside;
 
-    setInspected({ cell, x, y: box.top - area.top });
-  }
+		setInspected({ cell, x, y: box.top - area.top });
+	}
 
-  const zoneNotice = (() => {
-    if (viewerZone === null || viewerZone === event.referenceZone) {
-      return null;
-    }
+	const zoneNotice = (() => {
+		if (viewerZone === null || viewerZone === event.referenceZone) {
+			return null;
+		}
 
-    return event.dated
-      ? t("shownInZone", { zone: viewerZone.replaceAll("_", " ") })
-      : t("weekdaysNotConverted", { zone: event.referenceZone.replaceAll("_", " ") });
-  })();
+		return event.dated
+			? t("shownInZone", { zone: viewerZone.replaceAll("_", " ") })
+			: t("weekdaysNotConverted", { zone: event.referenceZone.replaceAll("_", " ") });
+	})();
 
-  const detailKeys =
-    inspected === null || view === null
-      ? []
-      : (view.layout.blocks.flat()[inspected.cell.column]?.cells[inspected.cell.row] ?? []);
+	const detailKeys =
+		inspected === null || view === null
+			? []
+			: (view.layout.blocks.flat()[inspected.cell.column]?.cells[inspected.cell.row] ?? []);
 
-  const detailNames = namesIn(detailKeys);
-  const detailTime = inspected === null ? undefined : view?.rows[inspected.cell.row];
+	const detailNames = namesIn(detailKeys);
+	const detailTime = inspected === null ? undefined : view?.rows[inspected.cell.row];
 
-  function renderGrid() {
-    if (view === null) {
-      // ADR 0002 item 9: the space is reserved until the browser lays out the dated grid.
-      return <div aria-hidden style={{ height: `${(event.rowCount + 2) * 1.75}rem` }} />;
-    }
+	function renderGrid() {
+		if (view === null) {
+			// ADR 0002 item 9: the space is reserved until the browser lays out the dated grid.
+			return <div aria-hidden style={{ height: `${(event.rowCount + 2) * 1.75}rem` }} />;
+		}
 
-    if (tab === "group") {
-      return (
-        <AvailabilityGrid
-          view={view}
-          slotLength={event.slotLength}
-          label={t("groupGrid")}
-          fill={(keys) => {
-            const names = namesIn(keys);
+		if (tab === "group") {
+			return (
+				<AvailabilityGrid
+					view={view}
+					slotLength={event.slotLength}
+					label={t("groupGrid")}
+					fill={(keys) => {
+						const names = namesIn(keys);
 
-            if (person !== null) {
-              return names.has(person) ? "bg-heat-4" : "bg-heat-0";
-            }
+						if (person !== null) {
+							return names.has(person) ? "bg-heat-4" : "bg-heat-0";
+						}
 
-            return HEAT[heatStep(names.size, total)];
-          }}
-          describe={(keys) => t("count", { available: namesIn(keys).size, total })}
-          onInspect={inspect}
-          inspected={inspected?.cell}
-        />
-      );
-    }
+						return HEAT[heatStep(names.size, total)];
+					}}
+					describe={(keys) => t("count", { available: namesIn(keys).size, total })}
+					onInspect={inspect}
+					inspected={inspected?.cell}
+				/>
+			);
+		}
 
-    return (
-      <AvailabilityGrid
-        view={view}
-        slotLength={event.slotLength}
-        label={t("myGrid")}
-        fill={(keys) => (keys.every((key) => selection.has(key)) ? "bg-heat-4" : "bg-heat-0")}
-        describe={(keys) =>
-          keys.every((key) => selection.has(key)) ? t("youCan") : t("youCannot")
-        }
-        edit={{
-          selection,
-          onChange: (next) => {
-            setSaveMessage(null);
-            setDraft(next);
-          },
-        }}
-      />
-    );
-  }
+		return (
+			<AvailabilityGrid
+				view={view}
+				slotLength={event.slotLength}
+				label={t("myGrid")}
+				fill={(keys) => (keys.every((key) => selection.has(key)) ? "bg-heat-4" : "bg-heat-0")}
+				describe={(keys) =>
+					keys.every((key) => selection.has(key)) ? t("youCan") : t("youCannot")
+				}
+				edit={{
+					selection,
+					onChange: (next) => {
+						setSaveMessage(null);
+						setDraft(next);
+					},
+				}}
+			/>
+		);
+	}
 
-  return (
-    <div className="flex flex-col gap-6">
-      <JoinBand
-        eventId={event.id}
-        joined={joined}
-        onJoined={joinedAs}
-        onForget={forget}
-        onPasswordChange={setHasPassword}
-        formatTime={formatTime}
-      />
+	return (
+		<div className="flex flex-col gap-6">
+			<JoinBand
+				eventId={event.id}
+				joined={joined}
+				onJoined={joinedAs}
+				onForget={forget}
+				onPasswordChange={setHasPassword}
+				formatTime={formatTime}
+			/>
 
-      <div className="flex flex-col gap-4">
-        <div role="tablist" aria-label={t("tabs")} className="flex gap-1 border-b border-earth">
-          {(["me", "group"] as const).map((name) => (
-            <button
-              key={name}
-              id={`${id}-${name}-tab`}
-              type="button"
-              role="tab"
-              aria-selected={tab === name}
-              aria-controls={`${id}-panel`}
-              onClick={() => showTab(name)}
-              className="-mb-px min-h-11 rounded-t-md border border-transparent px-5 text-ink-muted aria-selected:border-earth aria-selected:border-b-background aria-selected:bg-background aria-selected:font-semibold aria-selected:text-ink"
-            >
-              {t(`tab.${name}`)}
-            </button>
-          ))}
-        </div>
+			<div className="flex flex-col gap-4">
+				<div role="tablist" aria-label={t("tabs")} className="flex gap-1 border-b border-earth">
+					{(["me", "group"] as const).map((name) => (
+						<button
+							key={name}
+							id={`${id}-${name}-tab`}
+							type="button"
+							role="tab"
+							aria-selected={tab === name}
+							aria-controls={`${id}-panel`}
+							onClick={() => showTab(name)}
+							className="-mb-px min-h-11 rounded-t-md border border-transparent px-5 text-ink-muted aria-selected:border-earth aria-selected:border-b-background aria-selected:bg-background aria-selected:font-semibold aria-selected:text-ink"
+						>
+							{t(`tab.${name}`)}
+						</button>
+					))}
+				</div>
 
-        <div
-          id={`${id}-panel`}
-          role="tabpanel"
-          aria-labelledby={`${id}-${tab}-tab`}
-          className="flex flex-col gap-4"
-        >
-          {confirmDiscard ? (
-            <div role="alert" className="flex flex-col gap-3 rounded-lg border border-earth p-4">
-              <p>{t("unsaved")}</p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => {
-                    setDraft(null);
-                    setConfirmDiscard(false);
-                    setTab("group");
-                  }}
-                >
-                  {t("discardAndLeave")}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setConfirmDiscard(false)}>
-                  {t("keepEditing")}
-                </Button>
-              </div>
-            </div>
-          ) : null}
+				<div
+					id={`${id}-panel`}
+					role="tabpanel"
+					aria-labelledby={`${id}-${tab}-tab`}
+					className="flex flex-col gap-4"
+				>
+					{confirmDiscard ? (
+						<div role="alert" className="flex flex-col gap-3 rounded-lg border border-earth p-4">
+							<p>{t("unsaved")}</p>
+							<div className="flex flex-wrap gap-2">
+								<Button
+									type="button"
+									variant="destructive"
+									onClick={() => {
+										setDraft(null);
+										setConfirmDiscard(false);
+										setTab("group");
+									}}
+								>
+									{t("discardAndLeave")}
+								</Button>
+								<Button type="button" variant="outline" onClick={() => setConfirmDiscard(false)}>
+									{t("keepEditing")}
+								</Button>
+							</div>
+						</div>
+					) : null}
 
-          {zoneNotice === null ? null : <p className="max-w-[65ch] font-semibold">{zoneNotice}</p>}
+					{zoneNotice === null ? null : <p className="max-w-[65ch] font-semibold">{zoneNotice}</p>}
 
-          {tab === "group" ? (
-            <>
-              <div
-                className="flex items-center gap-2 text-sm tabular-nums"
-                aria-label={t("legendLabel", { total })}
-              >
-                <span>{t("count", { available: 0, total })}</span>
-                <span aria-hidden className="flex border border-earth">
-                  {HEAT.map((step) => (
-                    <span key={step} className={cn("h-5 w-6", step)} />
-                  ))}
-                </span>
-                <span>{t("count", { available: total, total })}</span>
-              </div>
-              <p className="max-w-[65ch] text-ink-muted">{t("groupHint")}</p>
-            </>
-          ) : null}
+					{tab === "group" ? (
+						<>
+							<div
+								className="flex items-center gap-2 text-sm tabular-nums"
+								aria-label={t("legendLabel", { total })}
+							>
+								<span>{t("count", { available: 0, total })}</span>
+								<span aria-hidden className="flex border border-earth">
+									{HEAT.map((step) => (
+										<span key={step} className={cn("h-5 w-6", step)} />
+									))}
+								</span>
+								<span>{t("count", { available: total, total })}</span>
+							</div>
+							<p className="max-w-[65ch] text-ink-muted">{t("groupHint")}</p>
+						</>
+					) : null}
 
-          {tab === "me" && joined === null ? (
-            <p className="max-w-[65ch]">{t("joinFirst")}</p>
-          ) : null}
+					{tab === "me" && joined === null ? (
+						<p className="max-w-[65ch]">{t("joinFirst")}</p>
+					) : null}
 
-          {tab === "me" && joined !== null ? (
-            <>
-              <p className="max-w-[65ch] text-ink-muted">{t("meHint")}</p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDraft(new Set(event.slots))}
-                >
-                  {t("selectAll")}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setDraft(new Set())}>
-                  {t("selectNone")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    setDraft(new Set(event.slots.filter((key) => !selection.has(key))))
-                  }
-                >
-                  {t("invert")}
-                </Button>
-              </div>
-            </>
-          ) : null}
+					{tab === "me" && joined !== null ? (
+						<>
+							<p className="max-w-[65ch] text-ink-muted">{t("meHint")}</p>
+							<div className="flex flex-wrap gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => setDraft(new Set(event.slots))}
+								>
+									{t("selectAll")}
+								</Button>
+								<Button type="button" variant="outline" onClick={() => setDraft(new Set())}>
+									{t("selectNone")}
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() =>
+										setDraft(new Set(event.slots.filter((key) => !selection.has(key))))
+									}
+								>
+									{t("invert")}
+								</Button>
+							</div>
+						</>
+					) : null}
 
-          {tab === "group" || joined !== null ? (
-            <div ref={wrapper} className="relative">
-              <div className="max-h-[75dvh] max-w-full overflow-auto overscroll-x-contain pt-2">
-                {renderGrid()}
-              </div>
-              {tab === "group" && inspected !== null && detailTime !== undefined ? (
-                <SlotDetail
-                  heading={`${view?.columns[inspected.cell.column]?.long ?? ""} · ${detailTime.start}–${detailTime.end}`}
-                  available={event.participants
-                    .filter((participant) => detailNames.has(participant.name))
-                    .map((participant) => participant.name)}
-                  unavailable={event.participants
-                    .filter((participant) => !detailNames.has(participant.name))
-                    .map((participant) => participant.name)}
-                  x={inspected.x}
-                  y={inspected.y}
-                  onClose={() => setInspected(null)}
-                />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </div>
+					{tab === "group" || joined !== null ? (
+						<div ref={wrapper} className="relative">
+							<div className="max-h-[75dvh] max-w-full overflow-auto overscroll-x-contain pt-2">
+								{renderGrid()}
+							</div>
+							{tab === "group" && inspected !== null && detailTime !== undefined ? (
+								<SlotDetail
+									heading={`${view?.columns[inspected.cell.column]?.long ?? ""} · ${detailTime.start}–${detailTime.end}`}
+									available={event.participants
+										.filter((participant) => detailNames.has(participant.name))
+										.map((participant) => participant.name)}
+									unavailable={event.participants
+										.filter((participant) => !detailNames.has(participant.name))
+										.map((participant) => participant.name)}
+									x={inspected.x}
+									y={inspected.y}
+									onClose={() => setInspected(null)}
+								/>
+							) : null}
+						</div>
+					) : null}
+				</div>
+			</div>
 
-      {tab === "me" && joined !== null ? (
-        <div className="sticky bottom-0 z-20 -mx-4 border-t border-line bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:-mx-6 sm:px-6">
-          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-            <p
-              aria-live="polite"
-              className={cn(
-                "mr-auto text-sm",
-                saveMessage === "failed" && "font-semibold text-action-active",
-              )}
-            >
-              {saveMessage === null ? "" : t(saveMessage)}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!dirty || saving}
-              onClick={() => setDraft(null)}
-              className="flex-1 sm:flex-none"
-            >
-              {t("discard")}
-            </Button>
-            <Button
-              type="button"
-              disabled={!dirty || saving}
-              onClick={save}
-              className="flex-1 sm:flex-none"
-            >
-              {saving ? t("saving") : t("save")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
+			{tab === "me" && joined !== null ? (
+				<div className="sticky bottom-0 z-20 -mx-4 border-t border-line bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:-mx-6 sm:px-6">
+					<div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+						<p
+							aria-live="polite"
+							className={cn(
+								"mr-auto text-sm",
+								saveMessage === "failed" && "font-semibold text-action-active",
+							)}
+						>
+							{saveMessage === null ? "" : t(saveMessage)}
+						</p>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={!dirty || saving}
+							onClick={() => setDraft(null)}
+							className="flex-1 sm:flex-none"
+						>
+							{t("discard")}
+						</Button>
+						<Button
+							type="button"
+							disabled={!dirty || saving}
+							onClick={save}
+							className="flex-1 sm:flex-none"
+						>
+							{saving ? t("saving") : t("save")}
+						</Button>
+					</div>
+				</div>
+			) : null}
 
-      <section aria-labelledby={`${id}-people`} className="flex flex-col gap-3">
-        <h2 id={`${id}-people`} className="text-xl">
-          {t("participants", { count: total })}
-        </h2>
-        {total === 0 ? (
-          <p className="text-ink-muted">{t("noParticipants")}</p>
-        ) : (
-          <>
-            <p className="max-w-[65ch] text-sm text-ink-muted">{t("filterHint")}</p>
-            <ul className="flex flex-wrap gap-2">
-              {event.participants.map((participant) => (
-                <li key={participant.name}>
-                  <button
-                    type="button"
-                    aria-pressed={person === participant.name}
-                    onClick={() => {
-                      setPerson(person === participant.name ? null : participant.name);
-                      showTab("group");
-                    }}
-                    className="min-h-11 rounded-md border border-earth px-3 aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
-                  >
-                    {participant.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
-    </div>
-  );
+			<section aria-labelledby={`${id}-people`} className="flex flex-col gap-3">
+				<h2 id={`${id}-people`} className="text-xl">
+					{t("participants", { count: total })}
+				</h2>
+				{total === 0 ? (
+					<p className="text-ink-muted">{t("noParticipants")}</p>
+				) : (
+					<>
+						<p className="max-w-[65ch] text-sm text-ink-muted">{t("filterHint")}</p>
+						<ul className="flex flex-wrap gap-2">
+							{event.participants.map((participant) => (
+								<li key={participant.name}>
+									<button
+										type="button"
+										aria-pressed={person === participant.name}
+										onClick={() => {
+											setPerson(person === participant.name ? null : participant.name);
+											showTab("group");
+										}}
+										className="min-h-11 rounded-md border border-earth px-3 aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
+									>
+										{participant.name}
+									</button>
+								</li>
+							))}
+						</ul>
+					</>
+				)}
+			</section>
+		</div>
+	);
 }

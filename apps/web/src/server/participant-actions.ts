@@ -14,56 +14,56 @@ const password = z.string().max(512).nullable();
 
 /** A lockout's end as an ISO instant string. */
 function serializable<Result extends { ok: boolean }>(result: Result | PasswordRefusal) {
-  return "retryAt" in result ? { ...result, retryAt: result.retryAt.toString() } : result;
+	return "retryAt" in result ? { ...result, retryAt: result.retryAt.toString() } : result;
 }
 
 export async function joinAction(id: string, name: string, pass: string | null) {
-  const args = z.tuple([eventId, z.string().max(400), password]).safeParse([id, name, pass]);
+	const args = z.tuple([eventId, z.string().max(400), password]).safeParse([id, name, pass]);
 
-  if (!args.success) {
-    return { ok: false, problem: "invalid-name" } as const;
-  }
+	if (!args.success) {
+		return { ok: false, problem: "invalid-name" } as const;
+	}
 
-  const [event, displayName, given] = args.data;
+	const [event, displayName, given] = args.data;
 
-  return serializable(await join(event, displayName, given ?? undefined));
+	return serializable(await join(event, displayName, given ?? undefined));
 }
 
 export async function identifyAction(id: string, held: string) {
-  const args = z.tuple([eventId, token]).safeParse([id, held]);
+	const args = z.tuple([eventId, token]).safeParse([id, held]);
 
-  return args.success ? ((await identify(...args.data)) ?? null) : null;
+	return args.success ? ((await identify(...args.data)) ?? null) : null;
 }
 
 export async function saveAction(id: string, held: string, keys: string[]) {
-  const args = z
-    .tuple([eventId, token, z.array(z.string().max(40)).max(10_000)])
-    .safeParse([id, held, keys]);
+	const args = z
+		.tuple([eventId, token, z.array(z.string().max(40)).max(10_000)])
+		.safeParse([id, held, keys]);
 
-  return args.success
-    ? saveResponse(...args.data)
-    : ({ ok: false, problem: "unknown-slot" } as const);
+	return args.success
+		? saveResponse(...args.data)
+		: ({ ok: false, problem: "unknown-slot" } as const);
 }
 
 export async function changePasswordAction(
-  id: string,
-  held: string,
-  current: string | null,
-  next: string | null,
+	id: string,
+	held: string,
+	current: string | null,
+	next: string | null,
 ) {
-  const args = z.tuple([eventId, token, password, password]).safeParse([id, held, current, next]);
+	const args = z.tuple([eventId, token, password, password]).safeParse([id, held, current, next]);
 
-  if (!args.success) {
-    return { ok: false, problem: "invalid-password" } as const;
-  }
+	if (!args.success) {
+		return { ok: false, problem: "invalid-password" } as const;
+	}
 
-  const [event, holder, given, wanted] = args.data;
+	const [event, holder, given, wanted] = args.data;
 
-  return serializable(await changePassword(event, holder, given ?? undefined, wanted));
+	return serializable(await changePassword(event, holder, given ?? undefined, wanted));
 }
 
 export async function leaveAction(id: string, held: string) {
-  const args = z.tuple([eventId, token]).safeParse([id, held]);
+	const args = z.tuple([eventId, token]).safeParse([id, held]);
 
-  return args.success ? leave(...args.data) : ({ ok: false, problem: "not-joined" } as const);
+	return args.success ? leave(...args.data) : ({ ok: false, problem: "not-joined" } as const);
 }
