@@ -1,0 +1,8 @@
+# Formatting-only commits that `git blame` skips.
+# Local setup: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub reads this file without setup.
+
+# Sort imports and Tailwind classes with oxfmt 0.79
+f13ffc1b3f0f2d922ce8af151d4e5b7c5803b6fe
+# Indent code, JSON and CSS with tabs
+3813757b9d10230f9cbe77b73bb7cd623e5c60cd
