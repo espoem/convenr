@@ -16,5 +16,6 @@ let cached: Env | undefined;
 /** Reads and validates the server environment on first use, so a build needs no database. */
 export function env(): Env {
   cached ??= parseEnv(process.env);
+
   return cached;
 }

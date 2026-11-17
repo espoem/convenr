@@ -9,6 +9,7 @@
     "**/tokens.css",
     "**/components/ui/**",
     ".agents/**",
-    ".claude/**"
+    ".claude/**",
+    "tools/oxlint/anti-slop/**"
   ]
 }

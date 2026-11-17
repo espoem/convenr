@@ -6,6 +6,7 @@ import { routing } from "@/i18n/routing";
 export function LocaleSwitch() {
   const t = useTranslations("LocaleSwitch");
   const current = useLocale();
+
   return (
     <nav aria-label={t("label")}>
       <ul className="flex gap-1">

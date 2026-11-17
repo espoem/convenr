@@ -4,6 +4,7 @@ import { LocaleSwitch } from "@/components/locale-switch";
 
 export default function StartPage() {
   const t = useTranslations("Start");
+
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-10 px-4 py-6 sm:px-6">
       <header className="flex items-center justify-between gap-4">

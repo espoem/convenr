@@ -39,11 +39,11 @@ run = "nub run --filter @convenr/web dev"
 
 [tasks.theme]
 description = "Generate tokens.css from DESIGN.md"
-run = "nub scripts/generate-theme.ts"
+run = "nub apps/web/scripts/generate-theme.ts"
 
 [tasks."theme:check"]
 description = "Fail when tokens.css does not match DESIGN.md"
-run = "nub scripts/generate-theme.ts --check"
+run = "nub apps/web/scripts/generate-theme.ts --check"
 
 [tasks.up]
 description = "Build and start the application and PostgreSQL in containers"

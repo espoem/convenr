@@ -38,9 +38,11 @@ test.describe("start page", () => {
 
   test("does not scroll sideways", async ({ page }) => {
     await page.goto("/cs");
+
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
+
     expect(overflow).toBeLessThanOrEqual(0);
   });
 

@@ -12,11 +12,13 @@ export function generateStaticParams() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Meta");
+
   return { title: t("title"), description: t("description") };
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/[locale]">) {
   const locale = await getLocale();
+
   return (
     <html lang={locale}>
       <body>

@@ -13,4 +13,5 @@ if (!existsSync(join(standaloneApp, "server.js"))) {
 }
 
 cpSync(join(appDir, ".next/static"), join(standaloneApp, ".next/static"), { recursive: true });
+
 await import(join(standaloneApp, "server.js"));

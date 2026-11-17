@@ -7,13 +7,17 @@ type Database = ReturnType<typeof createDatabase>;
 
 function createDatabase() {
   const pool = new Pool({ connectionString: env().DATABASE_URL, max: 10 });
+
   return drizzle(pool);
 }
 
 // One pool per process. Development reloads modules, so the pool is kept on globalThis there.
-const holder = globalThis as typeof globalThis & { convenrDatabase?: Database };
+declare global {
+  var convenrDatabase: Database | undefined;
+}
 
 export function db(): Database {
-  holder.convenrDatabase ??= createDatabase();
-  return holder.convenrDatabase;
+  globalThis.convenrDatabase ??= createDatabase();
+
+  return globalThis.convenrDatabase;
 }
