@@ -72,7 +72,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const [confirmDiscard, setConfirmDiscard] = useState(false);
 	const [inspected, setInspected] = useState<{ cell: CellRef; x: number; y: number } | null>(null);
 	const [person, setPerson] = useState<string | null>(null);
-	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | null>(null);
+	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | "changed" | null>(null);
 	const [saving, startSaving] = useTransition();
 
 	const token = stored?.participant?.token;
@@ -141,8 +141,19 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		[event.participants, joined?.name],
 	);
 
-	const selection = draft ?? mine;
-	const dirty = draft !== null && !sameSet(draft, mine);
+	// Edits of slots the organizer removed meanwhile drop out (Phase 2 rule M9).
+	const edits = useMemo(() => {
+		if (draft === null) {
+			return null;
+		}
+
+		const slots = new Set(event.slots);
+
+		return new Set([...draft].filter((key) => slots.has(key)));
+	}, [draft, event.slots]);
+
+	const selection = edits ?? mine;
+	const dirty = edits !== null && !sameSet(edits, mine);
 
 	// Rule I6 for leaving the page; leaving edit mode asks inside the page.
 	useEffect(() => {
@@ -207,11 +218,11 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	}
 
 	function save() {
-		if (joined === null || draft === null) {
+		if (joined === null || edits === null) {
 			return;
 		}
 
-		const keys = [...draft];
+		const keys = [...edits];
 
 		startSaving(async () => {
 			try {
@@ -224,10 +235,15 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					return;
 				}
 
-				if (saved.problem === "not-joined") {
-					forget(false);
+				if (saved.problem === "unknown-slot") {
+					// The organizer changed the days or times; load them and keep the valid edits.
+					setSaveMessage("changed");
+					router.refresh();
+
+					return;
 				}
 
+				forget(false);
 				setSaveMessage("failed");
 			} catch {
 				setSaveMessage("failed");
@@ -459,7 +475,9 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 							aria-live="polite"
 							className={cn(
 								"mr-auto text-sm",
-								saveMessage === "failed" && "font-semibold text-action-active",
+								saveMessage !== null &&
+									saveMessage !== "saved" &&
+									"font-semibold text-action-active",
 							)}
 						>
 							{saveMessage === null ? "" : t(saveMessage)}

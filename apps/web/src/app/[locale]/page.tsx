@@ -1,26 +1,13 @@
 import { getTranslations } from "next-intl/server";
-import { headers } from "next/headers";
 
-import { CreateEventForm, type CreateFormOptions } from "@/components/create-event-form";
+import { CreateEventForm } from "@/components/create-event-form";
 import { MyEvents } from "@/components/my-events";
 import { PageShell } from "@/components/page-shell";
-import { localFirstDayOfWeek, timeLabel, weekdayNames } from "@/domain/calendar-labels";
-import { currentLocale } from "@/i18n/current-locale";
-import { formatLocale } from "@/i18n/format-locale";
+import { eventFormOptions } from "@/i18n/event-form-options";
 
 export default async function StartPage() {
 	const t = await getTranslations("Start");
-	const format = formatLocale(await currentLocale(), (await headers()).get("accept-language"));
-
-	const options: CreateFormOptions = {
-		formatLocale: format,
-		hours: Array.from({ length: 25 }, (_, hour) =>
-			hour === 24 ? t("midnight") : timeLabel(hour * 60, format),
-		),
-		zones: Intl.supportedValuesOf("timeZone"),
-		weekdays: weekdayNames(format),
-		firstDayOfWeek: localFirstDayOfWeek(format),
-	};
+	const options = await eventFormOptions();
 
 	return (
 		<PageShell>

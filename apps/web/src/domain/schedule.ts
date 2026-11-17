@@ -86,7 +86,11 @@ export function eventDates(days: Exclude<EventDays, { mode: "weekdays" }>): Temp
 	return dates;
 }
 
-function dayProblems(days: EventDays, today: Temporal.PlainDate): ScheduleProblem[] {
+function dayProblems(
+	days: EventDays,
+	today: Temporal.PlainDate,
+	keptDates: ReadonlySet<string>,
+): ScheduleProblem[] {
 	if (days.mode === "weekdays") {
 		if (days.weekdays.length === 0) {
 			return ["E2.no-days"];
@@ -117,7 +121,9 @@ function dayProblems(days: EventDays, today: Temporal.PlainDate): ScheduleProble
 		problems.push("E2.too-many-dates");
 	}
 
-	if (dates.some((date) => Temporal.PlainDate.compare(date, today) < 0)) {
+	const past = (date: Temporal.PlainDate) => Temporal.PlainDate.compare(date, today) < 0;
+
+	if (dates.some((date) => past(date) && !keptDates.has(date.toString()))) {
 		problems.push("E2.date-in-past");
 	}
 
@@ -141,13 +147,25 @@ function timeProblems(schedule: Schedule): ScheduleProblem[] {
 }
 
 /**
- * Problems that make a schedule invalid by rules E2 and E3. `now` is the moment of
- * creation; a date before today in the reference zone is refused.
+ * Problems that make a schedule invalid by rules E2 and E3. `now` is the moment of the
+ * change; a date before today in the reference zone is refused unless it is one of
+ * `keptDates`, the dates an edited event already had (Phase 2 rule M4).
  */
-export function validateSchedule(schedule: Schedule, now: Temporal.Instant): ScheduleProblem[] {
+export function validateSchedule(
+	schedule: Schedule,
+	now: Temporal.Instant,
+	keptDates: ReadonlySet<string> = new Set(),
+): ScheduleProblem[] {
 	const today = now.toZonedDateTimeISO(schedule.referenceZone).toPlainDate();
 
-	return [...dayProblems(schedule.days, today), ...timeProblems(schedule)];
+	return [...dayProblems(schedule.days, today, keptDates), ...timeProblems(schedule)];
+}
+
+/** The dates of a dated schedule as ISO strings; none for a weekday schedule. */
+export function scheduleDates(schedule: Schedule): Set<string> {
+	const { days } = schedule;
+
+	return new Set(days.mode === "weekdays" ? [] : eventDates(days).map(String));
 }
 
 function* dailyMinutes(schedule: Schedule): Generator<number> {

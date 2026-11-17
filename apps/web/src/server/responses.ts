@@ -2,7 +2,7 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { datedAvailability, weekdayAvailability } from "@/db/schema";
+import { datedAvailability, events, weekdayAvailability } from "@/db/schema";
 import { scheduleSlots, slotKey } from "@/domain/schedule";
 
 import { participantByToken, scheduleOf, touchEvent } from "./event-rows";
@@ -11,7 +11,9 @@ export type SaveResult = { ok: true } | { ok: false; problem: "not-joined" | "un
 
 /**
  * Replaces the response of the token's participant with `keys` in one step (R2). The later
- * of two saves wins as a whole (R3). A key the event does not have refuses the save (R4).
+ * of two saves wins as a whole (R3). A key the event does not have refuses the save (R4). The
+ * event row stays locked from the check to the write, so an organizer's change that removes
+ * slots happens wholly before or after the save (Phase 2 rule M9).
  */
 export async function saveResponse(
 	eventId: string,
@@ -19,25 +21,27 @@ export async function saveResponse(
 	keys: string[],
 	now = Temporal.Now.instant(),
 ): Promise<SaveResult> {
-	const found = await participantByToken(db(), eventId, token);
+	return db().transaction(async (tx): Promise<SaveResult> => {
+		await tx.select({ id: events.id }).from(events).where(eq(events.id, eventId)).for("update");
 
-	if (found === undefined) {
-		return { ok: false, problem: "not-joined" };
-	}
+		const found = await participantByToken(tx, eventId, token);
 
-	const slots = new Map(
-		scheduleSlots(scheduleOf(found.event)).map((slot) => [slotKey(slot), slot]),
-	);
+		if (found === undefined) {
+			return { ok: false, problem: "not-joined" };
+		}
 
-	const chosen = [...new Set(keys)].map((key) => slots.get(key));
+		const slots = new Map(
+			scheduleSlots(scheduleOf(found.event)).map((slot) => [slotKey(slot), slot]),
+		);
 
-	if (chosen.includes(undefined)) {
-		return { ok: false, problem: "unknown-slot" };
-	}
+		const chosen = [...new Set(keys)].map((key) => slots.get(key));
 
-	const participantId = found.participant.id;
+		if (chosen.includes(undefined)) {
+			return { ok: false, problem: "unknown-slot" };
+		}
 
-	await db().transaction(async (tx) => {
+		const participantId = found.participant.id;
+
 		await tx.delete(datedAvailability).where(eq(datedAvailability.participantId, participantId));
 		await tx
 			.delete(weekdayAvailability)
@@ -63,7 +67,7 @@ export async function saveResponse(
 		}
 
 		await touchEvent(tx, found.event, now);
-	});
 
-	return { ok: true };
+		return { ok: true };
+	});
 }

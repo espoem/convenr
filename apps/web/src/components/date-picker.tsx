@@ -29,7 +29,17 @@ export function DatePicker({
 }: DatePickerProps) {
 	const t = useTranslations("Create");
 	const today = Temporal.Now.plainDateISO();
-	const [month, setMonth] = useState(() => today.toPlainYearMonth());
+
+	// An edited event may already hold past dates (Phase 2 rule M4); the calendar reaches back
+	// to the earliest of them.
+	const earliest = [
+		today.toPlainYearMonth(),
+		...selected.map((iso) => Temporal.PlainYearMonth.from(iso)),
+	]
+		.toSorted((a, b) => Temporal.PlainYearMonth.compare(a, b))
+		.at(0);
+
+	const [month, setMonth] = useState(() => earliest ?? today.toPlainYearMonth());
 	const first = month.toPlainDate({ day: 1 });
 	const lead = (first.dayOfWeek - firstDayOfWeek + 7) % 7;
 	const start = first.subtract({ days: lead });
@@ -44,7 +54,7 @@ export function DatePicker({
 					type="button"
 					variant="outline"
 					aria-label={t("previousMonth")}
-					disabled={Temporal.PlainYearMonth.compare(month, today.toPlainYearMonth()) <= 0}
+					disabled={Temporal.PlainYearMonth.compare(month, earliest ?? month) <= 0}
 					onClick={() => setMonth(month.subtract({ months: 1 }))}
 				>
 					<ChevronLeft aria-hidden />
@@ -97,7 +107,7 @@ export function DatePicker({
 												day: "numeric",
 												month: "long",
 											})}
-											disabled={past}
+											disabled={past && !on}
 											onClick={() => onToggle(iso)}
 											className="size-11 rounded-md border border-line tabular-nums hover:border-earth disabled:border-transparent disabled:text-ink-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
 										>

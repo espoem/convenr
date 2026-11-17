@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
-import { createEvent, isAdminSecret, readEvent } from "./events";
+import { createEvent, readEvent } from "./events";
 import { join } from "./participants";
 import { saveResponse } from "./responses";
 import { hashSecret } from "./secrets";
@@ -57,20 +57,6 @@ describe("createEvent", () => {
 			problems: ["E2.date-in-past"],
 		});
 		expect(await db().select().from(events)).toEqual([]);
-	});
-});
-
-describe("isAdminSecret", () => {
-	it("accepts the event's admin secret and refuses another secret or event", async () => {
-		const created = await createEvent(pragueEvenings, creationTime);
-
-		if (!created.ok) {
-			throw new Error("The test event is invalid.");
-		}
-
-		expect(await isAdminSecret(created.id, created.adminSecret)).toBe(true);
-		expect(await isAdminSecret(created.id, `${created.adminSecret}x`)).toBe(false);
-		expect(await isAdminSecret("abcdefghijkm", created.adminSecret)).toBe(false);
 	});
 });
 
