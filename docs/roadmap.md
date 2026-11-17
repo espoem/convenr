@@ -60,7 +60,7 @@ Each phase ships on its own and is usable by real people.
 - Manage page behind the admin link: rename, extend the days or the time range, narrow them after a confirmation that names how many participants lose availability, delete a response, delete the event. Slot length, day mode and reference zone are locked once the first response exists.
 - Best windows: filter by a minimum duration and a minimum number of people.
 - A switch to show a dated event in the reference zone instead of the viewer's zone.
-- Results reload every 15 seconds and when the page becomes visible again.
+- The page checks every 15 seconds, and when it becomes visible again, whether the event has changed, and reloads the results only when it has.
 - Retention: an expired event stops being served at once, and a scheduled command deletes it from the database. The period is an instance setting with the default 90 days. It can be set to keep events permanently.
 - Aggregate usage counts (section 5).
 

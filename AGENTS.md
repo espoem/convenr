@@ -5,7 +5,7 @@ convenr is a free group scheduling web app that works without an account. This f
 ## Read first
 
 - [`docs/roadmap.md`](docs/roadmap.md): phases, principles and decisions.
-- [`docs/spec/phase-1.md`](docs/spec/phase-1.md): numbered rules for the current phase. Cite a rule by its number.
+- [`docs/spec/phase-2.md`](docs/spec/phase-2.md): numbered rules for the current phase, on top of [`docs/spec/phase-1.md`](docs/spec/phase-1.md). Cite a rule by its number.
 - [`docs/adr/`](docs/adr/): technology stack, time representation, identifiers and secrets.
 - [`DESIGN.md`](DESIGN.md): the only source of colors, type, radii and sizes.
 - [`apps/web/AGENTS.md`](apps/web/AGENTS.md): read the bundled Next.js docs before writing Next.js code.
