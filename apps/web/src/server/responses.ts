@@ -24,7 +24,7 @@ export async function saveResponse(
 	return db().transaction(async (tx): Promise<SaveResult> => {
 		await tx.select({ id: events.id }).from(events).where(eq(events.id, eventId)).for("update");
 
-		const found = await participantByToken(tx, eventId, token);
+		const found = await participantByToken(tx, eventId, token, now);
 
 		if (found === undefined) {
 			return { ok: false, problem: "not-joined" };

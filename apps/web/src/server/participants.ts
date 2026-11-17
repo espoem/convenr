@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { events, participants, participantTokens } from "@/db/schema";
 import { parseDisplayName } from "@/domain/display-name";
 
-import { participantByToken, type Queries, touchEvent } from "./event-rows";
+import { isLive, participantByToken, type Queries, touchEvent } from "./event-rows";
 import { hashPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, verifyPassword } from "./password";
 import { hashSecret, newSecret } from "./secrets";
 
@@ -139,7 +139,7 @@ export async function join(
 		// The lock orders joins of one event, so the limit and the name check hold (P2, P3).
 		const [event] = await tx.select().from(events).where(eq(events.id, eventId)).for("update");
 
-		if (event === undefined) {
+		if (event === undefined || !isLive(event, now)) {
 			return { ok: false, problem: "not-found" } as const;
 		}
 
@@ -190,8 +190,8 @@ export async function join(
 }
 
 /** The name the holder of `token` joined `eventId` under, for rule B2. */
-export async function identify(eventId: string, token: string) {
-	const found = await participantByToken(db(), eventId, token);
+export async function identify(eventId: string, token: string, now = Temporal.Now.instant()) {
+	const found = await participantByToken(db(), eventId, token, now);
 
 	return found === undefined
 		? undefined
@@ -214,7 +214,7 @@ export async function changePassword(
 	next: string | null,
 	now = Temporal.Now.instant(),
 ): Promise<PasswordChangeResult> {
-	const found = await participantByToken(db(), eventId, token);
+	const found = await participantByToken(db(), eventId, token, now);
 
 	if (found === undefined) {
 		return { ok: false, problem: "not-joined" };
@@ -249,7 +249,7 @@ export async function changePassword(
 
 /** Deletes the token's participant with its response, password and tokens by rule P9. */
 export async function leave(eventId: string, token: string, now = Temporal.Now.instant()) {
-	const found = await participantByToken(db(), eventId, token);
+	const found = await participantByToken(db(), eventId, token, now);
 
 	if (found === undefined) {
 		return { ok: false, problem: "not-joined" } as const;

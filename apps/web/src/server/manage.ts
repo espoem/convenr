@@ -11,6 +11,7 @@ import type { Schedule, Slot } from "@/domain/schedule";
 import {
 	type EventRow,
 	firstDayOfWeekOf,
+	isLive,
 	type Queries,
 	scheduleOf,
 	touchEvent,
@@ -34,11 +35,20 @@ export type UpdateEventResult =
 	/** How many participants would lose part of their availability (M5). */
 	| { status: "confirm"; losing: number };
 
-async function adminRow(queries: Queries, id: string, secret: string, lock: boolean) {
+/** The live event `id` when `secret` is its admin secret (M1, X3), locked for a change. */
+async function adminRow(
+	queries: Queries,
+	id: string,
+	secret: string,
+	lock: boolean,
+	now: Temporal.Instant,
+) {
 	const query = queries.select().from(events).where(eq(events.id, id));
 	const [row] = lock ? await query.for("update") : await query;
 
-	return row !== undefined && matchesSecret(row.adminSecretHash, secret) ? row : undefined;
+	return row !== undefined && isLive(row, now) && matchesSecret(row.adminSecretHash, secret)
+		? row
+		: undefined;
 }
 
 function inputOf(row: EventRow): NewEvent {
@@ -71,8 +81,9 @@ function inputOf(row: EventRow): NewEvent {
 export async function readManagedEvent(
 	id: string,
 	secret: string,
+	now = Temporal.Now.instant(),
 ): Promise<ManagedEvent | undefined> {
-	const row = await adminRow(db(), id, secret, false);
+	const row = await adminRow(db(), id, secret, false, now);
 
 	if (row === undefined) {
 		return undefined;
@@ -194,7 +205,7 @@ export async function updateEvent(
 	const after: Schedule = { days, dailyStart, dailyEnd, slotLength, referenceZone };
 
 	return db().transaction(async (tx): Promise<UpdateEventResult> => {
-		const row = await adminRow(tx, id, secret, true);
+		const row = await adminRow(tx, id, secret, true, now);
 
 		if (row === undefined) {
 			return { status: "denied" };
@@ -248,7 +259,7 @@ export async function removeParticipant(
 	now = Temporal.Now.instant(),
 ): Promise<boolean> {
 	return db().transaction(async (tx) => {
-		const row = await adminRow(tx, id, secret, true);
+		const row = await adminRow(tx, id, secret, true, now);
 
 		if (row === undefined) {
 			return false;
@@ -270,9 +281,13 @@ export async function removeParticipant(
 }
 
 /** Deletes the event with its participants and responses at once and for good (M8). */
-export async function removeEvent(id: string, secret: string): Promise<boolean> {
+export async function removeEvent(
+	id: string,
+	secret: string,
+	now = Temporal.Now.instant(),
+): Promise<boolean> {
 	return db().transaction(async (tx) => {
-		const row = await adminRow(tx, id, secret, true);
+		const row = await adminRow(tx, id, secret, true, now);
 
 		if (row === undefined) {
 			return false;

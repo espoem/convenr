@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { DATABASE_URL } from "./e2e/database";
+
 const port = Number(process.env["E2E_PORT"] ?? 3100);
 const baseURL = `http://127.0.0.1:${port}`;
 
@@ -28,8 +30,7 @@ export default defineConfig({
 		env: {
 			PORT: String(port),
 			HOSTNAME: "127.0.0.1",
-			DATABASE_URL:
-				process.env["DATABASE_URL"] ?? "postgres://convenr:convenr@127.0.0.1:5432/convenr",
+			DATABASE_URL,
 		},
 		timeout: 60_000,
 	},

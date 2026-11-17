@@ -31,3 +31,19 @@ export function deletionDate(
 
 	return base.add({ days: retention });
 }
+
+/**
+ * The instant the event expires: the end of its deletion date in the reference zone (Phase 2
+ * rule X3), or `null` when events are kept.
+ */
+export function expiresAt(
+	schedule: Schedule,
+	lastChange: Temporal.Instant,
+	retention: Retention,
+): Temporal.Instant | null {
+	const date = deletionDate(schedule, lastChange, retention);
+
+	return date === null
+		? null
+		: date.add({ days: 1 }).toZonedDateTime({ timeZone: schedule.referenceZone }).toInstant();
+}

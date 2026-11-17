@@ -56,13 +56,16 @@ An instance is one container image and one PostgreSQL database.
 2. Provide a PostgreSQL 18 database.
 3. Run the image with these settings:
 
-   | Variable       | Required | Meaning                                       |
-   | -------------- | -------- | --------------------------------------------- |
-   | `DATABASE_URL` | yes      | `postgres://user:password@host:5432/database` |
-   | `PORT`         | no       | Port to listen on. Default `3000`.            |
-   | `HOSTNAME`     | no       | Address to bind. Default `0.0.0.0`.           |
+   | Variable         | Required | Meaning                                                                                                                         |
+   | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`   | yes      | `postgres://user:password@host:5432/database`                                                                                   |
+   | `PORT`           | no       | Port to listen on. Default `3000`.                                                                                              |
+   | `HOSTNAME`       | no       | Address to bind. Default `0.0.0.0`.                                                                                             |
+   | `RETENTION_DAYS` | no       | Days after an event's last date (or last change, for days of the week) until it is deleted. Default `90`; `never` keeps events. |
 
 4. Put a reverse proxy that terminates TLS in front of it, and point a health check at `/api/health`.
+
+The server deletes expired events every hour. To delete them from outside, for example from a scheduler, run `node apps/web/scripts/purge.mts` in the image with the same settings, or `mise run purge` in a checkout.
 
 The image contains a plain Node.js server and uses no platform-specific API, so any host that runs containers works. `compose.yaml` is a working example of the whole setup. Change `POSTGRES_PASSWORD` before using it anywhere but your own machine.
 

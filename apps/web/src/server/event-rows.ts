@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 
 import type { Database } from "@/db/client";
 import { events, participants, participantTokens } from "@/db/schema";
+import { expiresAt } from "@/domain/retention";
 import {
 	type EventDays,
 	type Schedule,
@@ -12,6 +13,7 @@ import {
 	toWeekday,
 	type Weekday,
 } from "@/domain/schedule";
+import { env } from "@/env";
 
 import { hashSecret } from "./secrets";
 
@@ -91,8 +93,27 @@ export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.
 	await queries.update(events).set({ changedAt: now.toString() }).where(eq(events.id, row.id));
 }
 
-/** The participant of `eventId` that holds `token`, with its event, or `undefined`. */
-export async function participantByToken(queries: Queries, eventId: string, token: string) {
+/**
+ * Whether the event has not expired yet. From the end of its deletion date an event is unknown
+ * to every page, action and version check, even before the purge deletes it (Phase 2 rule X3).
+ */
+export function isLive(row: EventRow, now: Temporal.Instant): boolean {
+	const end = expiresAt(
+		scheduleOf(row),
+		Temporal.Instant.from(row.changedAt),
+		env().RETENTION_DAYS,
+	);
+
+	return end === null || Temporal.Instant.compare(now, end) < 0;
+}
+
+/** The participant of a live event `eventId` that holds `token`, with its event, or `undefined`. */
+export async function participantByToken(
+	queries: Queries,
+	eventId: string,
+	token: string,
+	now: Temporal.Instant,
+) {
 	const [found] = await queries
 		.select({ participant: participants, event: events })
 		.from(participantTokens)
@@ -100,5 +121,5 @@ export async function participantByToken(queries: Queries, eventId: string, toke
 		.innerJoin(events, eq(events.id, participants.eventId))
 		.where(and(eq(participantTokens.tokenHash, hashSecret(token)), eq(events.id, eventId)));
 
-	return found;
+	return found !== undefined && isLive(found.event, now) ? found : undefined;
 }

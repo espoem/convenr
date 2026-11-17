@@ -3,6 +3,8 @@
 	"compilerOptions": {
 		"jsx": "react-jsx",
 		"incremental": true,
+		// The purge command imports `src/server/purge.ts` by its file name, as plain Node needs.
+		"allowImportingTsExtensions": true,
 		"plugins": [{ "name": "next" }],
 		"paths": {
 			"@/*": ["./src/*"]

@@ -19,7 +19,7 @@ import {
 } from "@/domain/schedule";
 import { env } from "@/env";
 
-import { datedSlotKey, firstDayOfWeekOf, scheduleOf, weekdaySlotKey } from "./event-rows";
+import { datedSlotKey, firstDayOfWeekOf, isLive, scheduleOf, weekdaySlotKey } from "./event-rows";
 import { hashSecret, newSecret } from "./secrets";
 
 export const EVENT_NAME_MAX_LENGTH = 100;
@@ -180,19 +180,35 @@ async function availableKeys(dayMode: string, participantIds: string[]) {
 	return byParticipant;
 }
 
-/** Everything anyone with the share link sees (V1), or `undefined` for an unknown id (E9). */
-/** The version of event `id`, or `null` when the event no longer exists (Phase 2 rule F4). */
-export async function eventVersion(id: string): Promise<string | null> {
-	const [row] = await db()
-		.select({ version: events.changedAt })
-		.from(events)
-		.where(eq(events.id, id));
+/** The live event `id` (Phase 2 rule X3), or `undefined`. */
+async function liveRow(id: string, now: Temporal.Instant) {
+	const [row] = await db().select().from(events).where(eq(events.id, id));
 
-	return row === undefined ? null : Temporal.Instant.from(row.version).toString();
+	return row !== undefined && isLive(row, now) ? row : undefined;
 }
 
-export async function readEvent(id: string): Promise<EventView | undefined> {
-	const [row] = await db().select().from(events).where(eq(events.id, id));
+/**
+ * The version of event `id`, or `null` when the event no longer exists or has expired (Phase 2
+ * rules F4 and X3).
+ */
+export async function eventVersion(
+	id: string,
+	now = Temporal.Now.instant(),
+): Promise<string | null> {
+	const row = await liveRow(id, now);
+
+	return row === undefined ? null : Temporal.Instant.from(row.changedAt).toString();
+}
+
+/**
+ * Everything anyone with the share link sees (V1), or `undefined` for an unknown (E9) or
+ * expired (Phase 2 rule X3) event.
+ */
+export async function readEvent(
+	id: string,
+	now = Temporal.Now.instant(),
+): Promise<EventView | undefined> {
+	const row = await liveRow(id, now);
 
 	if (row === undefined) {
 		return undefined;

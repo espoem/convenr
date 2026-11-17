@@ -45,6 +45,10 @@ run = "nub run --filter @convenr/web build"
 description = "Run the web application in development mode"
 run = "nub run --filter @convenr/web dev"
 
+[tasks.purge]
+description = "Delete expired events now; the server also does it every hour"
+run = "node --env-file-if-exists=.env apps/web/scripts/purge.mts"
+
 [tasks.theme]
 description = "Generate tokens.css from DESIGN.md"
 run = "nub apps/web/scripts/generate-theme.ts"
