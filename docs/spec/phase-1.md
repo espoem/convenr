@@ -113,7 +113,7 @@ The terms are defined in the [glossary](../../GLOSSARY.md). This spec uses them 
 
 **V2. Heat map.** Each slot shows how many participants are available in it. The fill has five steps, chosen by the share of participants who are available: none, up to 25 %, up to 50 %, up to 75 %, and above 75 %. With no participants, every slot shows the "none" step.
 
-**V3. Slot detail.** Selecting a slot shows its start and end time, the count as "3 of 5", and two name lists: available and not available.
+**V3. Slot detail.** Pointing at a slot with a mouse, tapping it, or moving the keyboard focus to it shows its date, start and end time, the count as "3 of 5", and two name lists: available and not available. On a touch screen the detail opens as a panel at the bottom of the screen, so it does not cover the grid.
 
 **V4. Participant filter.** Selecting a participant's name shows only that participant's availability on the grid. Selecting it again returns to the heat map.
 
@@ -127,13 +127,13 @@ The terms are defined in the [glossary](../../GLOSSARY.md). This spec uses them 
 
 **T3. Weekday events.** Slots are shown as stored, in the reference zone, for every viewer. When the viewer's zone differs from the reference zone, a notice says that the times are in the reference zone and are not converted.
 
-**T4. Column order.** A dated event's columns are in date order. A weekday event's columns start at the event's first day of week. The date picker on the create form also starts its weeks on that day.
+**T4. Column order.** A dated event's columns are in date order. Columns of one calendar week, which starts on the event's first day of week, form one block; a gap separates the blocks. A weekday event's columns start at the event's first day of week. The date picker on the create form also starts its weeks on that day.
 
 **T5. Formats.** Dates and times are formatted for the page language: 24-hour time for Czech, the browser's convention for English.
 
 ## 8. Interaction rules
 
-**I1. Two modes.** The grid is in view mode by default and shows the heat map. A participant with a token can switch to edit mode, which shows only their own selection.
+**I1. Two modes.** Two tabs above the grid switch the mode. "Group" is the view mode and the default: it shows the heat map. "Me" is the edit mode for a participant with a token: it shows only their own selection. The join form sits above the tabs; once the browser holds a token, it shrinks to one line naming the participant.
 
 **I2. Painting.** In edit mode, pressing a cell toggles it. Dragging from a cell applies that cell's new state to every cell in the rectangle between the start cell and the current cell.
 
@@ -144,6 +144,8 @@ The terms are defined in the [glossary](../../GLOSSARY.md). This spec uses them 
 **I5. Cell size.** A cell is at least 44 CSS pixels wide and 24 CSS pixels high.
 
 **I6. Unsaved edits.** Leaving edit mode or the page with unsaved edits asks for confirmation inside the page.
+
+**I7. Whole-grid selection.** In edit mode, three buttons change the whole selection: select all slots, clear the selection, and invert it. Like painting, they change only the unsaved edits.
 
 ## 9. Browser storage rules
 
