@@ -1,0 +1,397 @@
+{
+  "id": "0587b295-f4c7-406e-adae-547b93427543",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.dated_availability": {
+      "name": "dated_availability",
+      "schema": "",
+      "columns": {
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slot_start": {
+          "name": "slot_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dated_availability_participant_id_participants_id_fk": {
+          "name": "dated_availability_participant_id_participants_id_fk",
+          "tableFrom": "dated_availability",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "dated_availability_participant_id_slot_start_pk": {
+          "name": "dated_availability_participant_id_slot_start_pk",
+          "columns": [
+            "participant_id",
+            "slot_start"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.events": {
+      "name": "events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "day_mode": {
+          "name": "day_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "range_first": {
+          "name": "range_first",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "range_last": {
+          "name": "range_last",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dates": {
+          "name": "dates",
+          "type": "date[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weekdays": {
+          "name": "weekdays",
+          "type": "smallint[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daily_start": {
+          "name": "daily_start",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "daily_end": {
+          "name": "daily_end",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slot_length": {
+          "name": "slot_length",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_zone": {
+          "name": "reference_zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_day_of_week": {
+          "name": "first_day_of_week",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "admin_secret_hash": {
+          "name": "admin_secret_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deletion_date": {
+          "name": "deletion_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "changed_at": {
+          "name": "changed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "events_days_match_mode": {
+          "name": "events_days_match_mode",
+          "value": "case \"events\".\"day_mode\"\n        when 'range' then \"events\".\"range_first\" is not null and \"events\".\"range_last\" is not null\n          and \"events\".\"dates\" is null and \"events\".\"weekdays\" is null\n        when 'dates' then \"events\".\"dates\" is not null\n          and \"events\".\"range_first\" is null and \"events\".\"range_last\" is null and \"events\".\"weekdays\" is null\n        else \"events\".\"weekdays\" is not null\n          and \"events\".\"range_first\" is null and \"events\".\"range_last\" is null and \"events\".\"dates\" is null\n      end"
+        },
+        "events_daily_range": {
+          "name": "events_daily_range",
+          "value": "\"events\".\"daily_start\" >= 0 and \"events\".\"daily_end\" <= 1440 and \"events\".\"daily_start\" < \"events\".\"daily_end\""
+        },
+        "events_slot_length": {
+          "name": "events_slot_length",
+          "value": "\"events\".\"slot_length\" in (15, 30, 60)"
+        },
+        "events_first_day_of_week": {
+          "name": "events_first_day_of_week",
+          "value": "\"events\".\"first_day_of_week\" between 1 and 7"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.participant_tokens": {
+      "name": "participant_tokens",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participant_tokens_participant_id_participants_id_fk": {
+          "name": "participant_tokens_participant_id_participants_id_fk",
+          "tableFrom": "participant_tokens",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.participants": {
+      "name": "participants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_key": {
+          "name": "name_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_attempts": {
+          "name": "failed_attempts",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participants_event_id_events_id_fk": {
+          "name": "participants_event_id_events_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "participants_event_name": {
+          "name": "participants_event_name",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "name_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.weekday_availability": {
+      "name": "weekday_availability",
+      "schema": "",
+      "columns": {
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weekday": {
+          "name": "weekday",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minute": {
+          "name": "minute",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "weekday_availability_participant_id_participants_id_fk": {
+          "name": "weekday_availability_participant_id_participants_id_fk",
+          "tableFrom": "weekday_availability",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "weekday_availability_participant_id_weekday_minute_pk": {
+          "name": "weekday_availability_participant_id_weekday_minute_pk",
+          "columns": [
+            "participant_id",
+            "weekday",
+            "minute"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "weekday_availability_weekday": {
+          "name": "weekday_availability_weekday",
+          "value": "\"weekday_availability\".\"weekday\" between 1 and 7"
+        },
+        "weekday_availability_minute": {
+          "name": "weekday_availability_minute",
+          "value": "\"weekday_availability\".\"minute\" between 0 and 1439"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

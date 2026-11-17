@@ -68,11 +68,13 @@ dir = "apps/web"
 run = "nubx drizzle-kit migrate"
 
 [tasks.test]
-description = "Run unit tests"
+description = "Run unit tests and database tests; starts PostgreSQL"
+depends = ["db:up"]
 run = "nub run -r test"
 
 [tasks.e2e]
-description = "Run end-to-end tests against the production build (needs `mise run build` and a database)"
+description = "Run end-to-end tests against the production build (needs `mise run build`); starts PostgreSQL"
+depends = ["db:up"]
 run = "nub run --filter @convenr/web e2e"
 
 [tasks.check]

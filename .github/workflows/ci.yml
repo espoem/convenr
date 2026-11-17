@@ -51,7 +51,7 @@ jobs:
         run: nub ci
       - name: Unit tests
         working-directory: apps/web
-        run: bun --bun x vitest run
+        run: bun --bun x vitest run --project unit
       - name: Build
         working-directory: apps/web
         run: bun --bun x next build

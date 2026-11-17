@@ -20,7 +20,7 @@ Run every command through mise from the repository root.
 | Format                                          | `mise run format`                     |
 | Lint                                            | `mise run lint`                       |
 | Type check                                      | `mise run typecheck`                  |
-| Unit tests                                      | `mise run test`                       |
+| Unit and database tests (starts PostgreSQL)     | `mise run test`                       |
 | Regenerate the theme after a `DESIGN.md` change | `mise run theme`                      |
 | Everything CI checks except end-to-end tests    | `mise run check`                      |
 | End-to-end tests (needs a build)                | `mise run e2e`                        |
@@ -38,7 +38,7 @@ A change is done when `mise run check` and `mise run e2e` exit with code 0.
 5. **Text.** Every string a visitor sees lives in `apps/web/messages/cs.json` and `en.json`. Both files have the same keys.
 6. **Time.** Follow ADR 0002. Use `Temporal`, never `Date` arithmetic.
 7. **Secrets and privacy.** Follow ADR 0003. Never log headers, URL fragments, tokens, passwords or visitor addresses. Add no third-party analytics, fonts or scripts loaded from another host.
-8. **Database.** Drizzle is a typed SQL query builder here. Write queries explicitly. Migrations are SQL files made by `mise run db:generate`.
+8. **Database.** Drizzle is a typed SQL query builder here. Write queries explicitly. Migrations are SQL files made by `mise run db:generate`. The server applies pending migrations when it starts. Database tests are named `*.db.test.ts`.
 9. **Private folders.** Folders listed in `.git/info/exclude` are local only. Never stage them, name them or link to them in a committed file.
 10. **Git.** Until the operator says otherwise, work happens in local stacked branches: no pushes, pull requests or issues. Each branch is one reviewable step on top of the previous one, and each commit passes `mise run check`. Rewrite a branch's history before handing it over so that it holds no fix-up or work-in-progress commits. Commits carry the operator's identity and no co-author trailers.
 11. **Editing files.** Change source files with an editor tool, not with scripts that rewrite them by string replacement.
