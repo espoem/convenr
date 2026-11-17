@@ -21,6 +21,7 @@ import { env } from "@/env";
 
 import { datedSlotKey, firstDayOfWeekOf, isLive, scheduleOf, weekdaySlotKey } from "./event-rows";
 import { hashSecret, newSecret } from "./secrets";
+import { countCreated } from "./usage";
 
 export const EVENT_NAME_MAX_LENGTH = 100;
 export const DESCRIPTION_MAX_LENGTH = 500;
@@ -113,9 +114,8 @@ export async function createEvent(
 	// About 70 random bits make a collision negligible; the primary key would refuse one.
 	const id = newEventId();
 
-	await db()
-		.insert(events)
-		.values({
+	await db().transaction(async (tx) => {
+		await tx.insert(events).values({
 			id,
 			name,
 			description,
@@ -130,6 +130,8 @@ export async function createEvent(
 			createdAt: now.toString(),
 			changedAt: now.toString(),
 		});
+		await countCreated(tx, now);
+	});
 
 	return { ok: true, id, segment: eventSegment(id, name), adminSecret };
 }

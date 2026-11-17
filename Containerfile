@@ -18,9 +18,10 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 WORKDIR /app
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
-# The purge command (Phase 2 rule X4), runnable with plain Node next to the server.
-COPY --from=build --chown=node:node /repo/apps/web/scripts/purge.mts ./apps/web/scripts/purge.mts
-COPY --from=build --chown=node:node /repo/apps/web/src/server/purge.ts ./apps/web/src/server/purge.ts
+# The purge and usage commands (Phase 2 rules X4, U7), runnable with plain Node next to the server.
+COPY --from=build --chown=node:node /repo/apps/web/scripts/purge.mts /repo/apps/web/scripts/usage.mts ./apps/web/scripts/
+COPY --from=build --chown=node:node /repo/apps/web/src/server/maintenance.ts ./apps/web/src/server/maintenance.ts
+COPY --from=build --chown=node:node /repo/apps/web/src/domain/usage.ts ./apps/web/src/domain/usage.ts
 USER node
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]

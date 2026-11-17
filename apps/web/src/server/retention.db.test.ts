@@ -6,9 +6,9 @@ import { events } from "@/db/schema";
 import { env } from "@/env";
 
 import { createEvent, eventVersion, type NewEvent, readEvent } from "./events";
+import { runMaintenance } from "./maintenance";
 import { readManagedEvent } from "./manage";
 import { identify, join } from "./participants";
-import { purgeExpired } from "./purge";
 import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
 
 // With the default 90 days: the range ends on 6 April 2027, so its deletion date is 5 July and
@@ -29,7 +29,7 @@ async function created(input: NewEvent) {
 }
 
 async function purge(now: Temporal.Instant) {
-	return purgeExpired(db().$client, env().RETENTION_DAYS, now.toString());
+	return runMaintenance(db().$client, env().RETENTION_DAYS, now.toString());
 }
 
 async function count(table: string): Promise<number | undefined> {
@@ -73,7 +73,7 @@ describe("expiry (X3)", () => {
 	});
 });
 
-describe("purgeExpired (X4)", () => {
+describe("the purge (X4)", () => {
 	it("deletes expired events with every row that belongs to them, and only those", async () => {
 		const dated = await created(pragueEvenings);
 		const weekly = await created(mondayEvenings);
@@ -96,7 +96,7 @@ describe("purgeExpired (X4)", () => {
 	it("deletes nothing the second time and nothing with never", async () => {
 		await created(pragueEvenings);
 
-		expect(await purgeExpired(db().$client, "never", datedExpiry.toString())).toBe(0);
+		expect(await runMaintenance(db().$client, "never", datedExpiry.toString())).toBe(0);
 		expect(await purge(datedExpiry)).toBe(1);
 		expect(await purge(datedExpiry)).toBe(0);
 	});

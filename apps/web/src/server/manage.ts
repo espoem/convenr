@@ -18,6 +18,7 @@ import {
 } from "./event-rows";
 import { type NewEvent, newEventSchema, storedDays } from "./events";
 import { matchesSecret } from "./secrets";
+import { countDeleted } from "./usage";
 
 export type ManagedEvent = NewEvent & {
 	id: string;
@@ -293,6 +294,7 @@ export async function removeEvent(
 			return false;
 		}
 
+		await countDeleted(tx, row, now);
 		await tx.delete(events).where(eq(events.id, id));
 
 		return true;

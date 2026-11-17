@@ -15,15 +15,15 @@ export async function register() {
 	await applyMigrations(db());
 
 	const { env } = await import("@/env");
-	const { purgeExpired } = await import("@/server/purge");
+	const { runMaintenance } = await import("@/server/maintenance");
 
-	// Phase 2 rule X4: expired events are deleted at start and then every hour. Each run is
-	// idempotent, so several servers on one database may run it side by side.
+	// Phase 2 rules U3, U4 and X4: usage counts by age and the purge of expired events run at
+	// start and then every hour. Several servers on one database may run them side by side.
 	async function purge() {
 		try {
-			await purgeExpired(db().$client, env().RETENTION_DAYS, Temporal.Now.instant().toString());
+			await runMaintenance(db().$client, env().RETENTION_DAYS, Temporal.Now.instant().toString());
 		} catch (error) {
-			console.error("The purge of expired events failed; it runs again in an hour.", error);
+			console.error("The maintenance pass failed; it runs again in an hour.", error);
 		}
 	}
 

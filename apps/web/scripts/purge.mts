@@ -1,10 +1,11 @@
-// The purge command of Phase 2 rule X4: deletes expired events once and prints how many. An
+// The purge command of Phase 2 rule X4: runs the maintenance pass once (usage counts by age,
+// then the purge) and prints how many expired events it deleted. An
 // operator can schedule it from outside; the server also runs it every hour. It reads the same
 // DATABASE_URL and RETENTION_DAYS as the server and needs only Node and `pg`, so it also runs
 // in the container image: `node apps/web/scripts/purge.mts`.
 import { Pool } from "pg";
 
-import { purgeExpired } from "../src/server/purge.ts";
+import { runMaintenance } from "../src/server/maintenance.ts";
 
 function retention(text: string | undefined): number | "never" {
 	if (text === undefined || text === "") {
@@ -34,7 +35,7 @@ if (connectionString === undefined || connectionString === "") {
 const pool = new Pool({ connectionString, max: 1 });
 
 try {
-	const deleted = await purgeExpired(
+	const deleted = await runMaintenance(
 		pool,
 		retention(process.env["RETENTION_DAYS"]),
 		Temporal.Now.instant().toString(),

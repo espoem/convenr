@@ -49,6 +49,10 @@ run = "nub run --filter @convenr/web dev"
 description = "Delete expired events now; the server also does it every hour"
 run = "node --env-file-if-exists=.env apps/web/scripts/purge.mts"
 
+[tasks.usage]
+description = "Print the daily usage counts; optional first and last day, e.g. 2027-03-01 2027-03-31"
+run = "node --env-file-if-exists=.env apps/web/scripts/usage.mts"
+
 [tasks.theme]
 description = "Generate tokens.css from DESIGN.md"
 run = "nub apps/web/scripts/generate-theme.ts"

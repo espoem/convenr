@@ -8,6 +8,7 @@ import { parseDisplayName } from "@/domain/display-name";
 import { isLive, participantByToken, type Queries, touchEvent } from "./event-rows";
 import { hashPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, verifyPassword } from "./password";
 import { hashSecret, newSecret } from "./secrets";
+import { countFirstResponse } from "./usage";
 
 export const MAX_PARTICIPANTS = 100;
 export const MAX_FAILED_ATTEMPTS = 5;
@@ -177,6 +178,7 @@ export async function join(
 		}
 
 		await touchEvent(tx, event, now);
+		await countFirstResponse(tx, event, now);
 
 		return { ok: true, name: name.name, token: await issueToken(tx, row.id) } as const;
 	});
