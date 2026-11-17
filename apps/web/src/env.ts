@@ -4,7 +4,7 @@ const schema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
 });
 
-export type Env = z.infer<typeof schema>;
+type Env = z.infer<typeof schema>;
 
 /** Validates a set of environment variables. Throws when a required one is missing or malformed. */
 export function parseEnv(source: Record<string, string | undefined>): Env {

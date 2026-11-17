@@ -13,7 +13,7 @@ export default function StartPage() {
       <main className="flex flex-col gap-4">
         <h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
         <p className="max-w-[65ch] text-lg">{t("lead")}</p>
-        <p className="max-w-[65ch] border-l-2 border-earth pl-3 text-ink-muted">{t("status")}</p>
+        <p className="max-w-[65ch] text-ink-muted">{t("status")}</p>
       </main>
     </div>
   );

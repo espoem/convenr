@@ -16,7 +16,7 @@ export function LocaleSwitch() {
               locale={locale}
               lang={locale}
               aria-current={locale === current ? "true" : undefined}
-              className="inline-flex min-h-11 items-center rounded-md px-3 underline-offset-4 hover:underline aria-[current=true]:font-semibold aria-[current=true]:text-action"
+              className="inline-flex min-h-11 items-center rounded-md px-3 underline-offset-4 hover:underline aria-[current=true]:font-semibold aria-[current=true]:underline"
             >
               {t(locale)}
             </Link>
