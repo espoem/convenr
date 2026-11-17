@@ -4,6 +4,11 @@ export async function register() {
 		return;
 	}
 
+	const { installSafeConsole } = await import("@/server/safe-log");
+
+	// Before anything can fail, so that no logged query error carries its values.
+	installSafeConsole();
+
 	const { db } = await import("@/db/client");
 	const { applyMigrations } = await import("@/db/migrate");
 
