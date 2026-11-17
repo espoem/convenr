@@ -53,6 +53,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 		referenceZone: schedule.referenceZone,
 		firstDayOfWeek: event.firstDayOfWeek,
 		slotLength: schedule.slotLength,
+		version: event.version,
 		rowCount: (schedule.dailyEnd - schedule.dailyStart) / schedule.slotLength,
 		slots: event.slots,
 		participants: event.participants,

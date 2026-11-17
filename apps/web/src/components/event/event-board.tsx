@@ -13,6 +13,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import { type LocalEvent, updateLocalEvent, useLocalEvents } from "@/lib/local-events";
 import { cn } from "@/lib/utils";
+import { useVersionCheck } from "@/lib/version-check";
 import { identifyAction, saveAction } from "@/server/participant-actions";
 
 import { AvailabilityGrid, type CellRef } from "./availability-grid";
@@ -28,6 +29,8 @@ export type BoardEvent = {
 	referenceZone: string;
 	firstDayOfWeek: Weekday;
 	slotLength: number;
+	/** The instant of the last change, for the version check (Phase 2 rule F1). */
+	version: string;
 	/** Rows of one day, to reserve the grid's height before the browser lays it out. */
 	rowCount: number;
 	slots: string[];
@@ -62,6 +65,7 @@ function sameSet(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean
 /** The event page below its header: join band, tabs, grid and participants (spec 6 and 8). */
 export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps) {
 	const t = useTranslations("Event");
+	const tJoin = useTranslations("Join");
 	const id = useId();
 	const router = useRouter();
 	const temporalReady = useTemporalReady();
@@ -74,20 +78,29 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const [confirmDiscard, setConfirmDiscard] = useState(false);
 	const [inspected, setInspected] = useState<{ cell: CellRef; x: number; y: number } | null>(null);
 	const [person, setPerson] = useState<string | null>(null);
-	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | "changed" | null>(null);
+	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | null>(null);
 	const [saving, startSaving] = useTransition();
 	// Rule Z1: not stored, so every visit starts in the viewer's zone.
 	const [inReferenceZone, setInReferenceZone] = useState(false);
 	const [chosenWindow, setChosenWindow] = useState<Window | null>(null);
+	// Rule F4: the organizer deleted this browser's participant, or it left in another tab.
+	const [dropped, setDropped] = useState(false);
+
+	useVersionCheck(event.id, event.version);
 
 	const token = stored?.participant?.token;
 
 	const joined: Joined | null =
 		stored?.participant === undefined ? null : { ...stored.participant, hasPassword };
 
-	// Rule B2: a stored token opens the event already joined, once the server confirms it.
+	const listed = event.participants.some((participant) => participant.name === joined?.name);
+	const confirmedToken = useRef<string | null>(null);
+
+	// Rule B2: a stored token opens the event already joined, once the server confirms it. When
+	// the name later leaves the list, the server is asked again (Phase 2 rule F4); right after
+	// joining the name is missing too, until the page reloads, so the list alone cannot decide.
 	useEffect(() => {
-		if (token === undefined) {
+		if (token === undefined || (listed && confirmedToken.current === token)) {
 			return;
 		}
 
@@ -99,8 +112,13 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 			}
 
 			if (found === null) {
+				confirmedToken.current = null;
 				updateLocalEvent(event.id, withoutParticipant);
+				setDraft(null);
+				setTab("group");
+				setDropped(true);
 			} else {
+				confirmedToken.current = token;
 				setHasPassword(found.hasPassword);
 			}
 		});
@@ -108,7 +126,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		return () => {
 			current = false;
 		};
-	}, [event.id, token]);
+	}, [event.id, token, listed]);
 
 	const zoneDiffers = event.dated && viewerZone !== null && viewerZone !== event.referenceZone;
 	const shownZone = inReferenceZone ? event.referenceZone : viewerZone;
@@ -157,7 +175,10 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		[event.participants, joined?.name],
 	);
 
-	// Edits of slots the organizer removed meanwhile drop out (Phase 2 rule M9).
+	// Edits of slots the organizer removed meanwhile drop out, and the page says so (Phase 2
+	// rules M9 and F3).
+	const lostEdits = draft !== null && [...draft].some((key) => !event.slots.includes(key));
+
 	const edits = useMemo(() => {
 		if (draft === null) {
 			return null;
@@ -218,6 +239,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 			participant: { name, token: newToken },
 		}));
 		setHasPassword(withPassword);
+		setDropped(false);
 		setDraft(null);
 		setTab("me");
 		router.refresh();
@@ -240,6 +262,8 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 
 		const keys = [...edits];
 
+		// The draft keeps only what is saved, which ends the notice about lost edits.
+		setDraft(new Set(keys));
 		startSaving(async () => {
 			try {
 				const saved = await saveAction(event.id, joined.token, keys);
@@ -252,8 +276,9 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 				}
 
 				if (saved.problem === "unknown-slot") {
-					// The organizer changed the days or times; load them and keep the valid edits.
-					setSaveMessage("changed");
+					// The organizer changed the days or times; the reload drops the lost edits and
+					// `lostEdits` says so.
+					setSaveMessage(null);
 					router.refresh();
 
 					return;
@@ -357,8 +382,15 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		);
 	}
 
+	const barMessage = lostEdits ? "changed" : saveMessage;
+
 	return (
 		<div className="flex flex-col gap-6">
+			{dropped && joined === null ? (
+				<output className="block max-w-[65ch] font-semibold text-action-active">
+					{tJoin("problem.not-joined")}
+				</output>
+			) : null}
 			<JoinBand
 				eventId={event.id}
 				joined={joined}
@@ -516,12 +548,10 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 							aria-live="polite"
 							className={cn(
 								"mr-auto text-sm",
-								saveMessage !== null &&
-									saveMessage !== "saved" &&
-									"font-semibold text-action-active",
+								barMessage !== null && barMessage !== "saved" && "font-semibold text-action-active",
 							)}
 						>
-							{saveMessage === null ? "" : t(saveMessage)}
+							{barMessage === null ? "" : t(barMessage)}
 						</p>
 						<Button
 							type="button"

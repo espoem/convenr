@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import { createEvent, type CreateEventResult, type NewEvent } from "./events";
+import { createEvent, type CreateEventResult, eventVersion, type NewEvent } from "./events";
 import {
 	type ManagedEvent,
 	readManagedEvent,
@@ -20,6 +20,13 @@ const adminSecret = z.string().max(128);
 
 export async function createEventAction(input: NewEvent): Promise<CreateEventResult> {
 	return createEvent(input);
+}
+
+/** The event's version for the page's check (Phase 2 rule F1), `null` once it is gone. */
+export async function eventVersionAction(id: string): Promise<string | null> {
+	const args = eventId.safeParse(id);
+
+	return args.success ? eventVersion(args.data) : null;
 }
 
 /** The event for its manage page, or `null` when the secret does not fit (Phase 2 rule M1). */

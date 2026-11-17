@@ -234,10 +234,15 @@ export async function changePassword(
 		return checked;
 	}
 
-	await db()
-		.update(participants)
-		.set({ passwordHash: next === null ? null : await hashPassword(next) })
-		.where(eq(participants.id, found.participant.id));
+	const passwordHash = next === null ? null : await hashPassword(next);
+
+	await db().transaction(async (tx) => {
+		await tx
+			.update(participants)
+			.set({ passwordHash })
+			.where(eq(participants.id, found.participant.id));
+		await touchEvent(tx, found.event, now);
+	});
 
 	return { ok: true };
 }

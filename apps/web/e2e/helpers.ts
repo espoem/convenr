@@ -1,7 +1,8 @@
 import { type Browser, expect as baseExpect, type Page } from "@playwright/test";
 
-// Several browsers in one test on a busy machine can take longer than the default 5 seconds.
-export const expect = baseExpect.configure({ timeout: 15_000 });
+// Several browsers in one test, next to the other tests' browsers, can take far longer than the
+// default 5 seconds on a busy machine: joins and saves took over 15 seconds at a load of 50.
+export const expect = baseExpect.configure({ timeout: 45_000 });
 
 /** A browser of its own, so that local storage and the joined participant stay apart. */
 export async function freshPage(browser: Browser, timezoneId = "Europe/Prague"): Promise<Page> {
@@ -46,7 +47,7 @@ export async function createEvent(page: Page, name: string, first: Temporal.Plai
 }
 
 /** Marks cells one at a time: each click must land before the next one counts. */
-async function mark(page: Page, date: Temporal.PlainDate, starts: string[]): Promise<void> {
+export async function mark(page: Page, date: Temporal.PlainDate, starts: string[]): Promise<void> {
 	const [start, ...rest] = starts;
 
 	if (start === undefined) {
@@ -58,14 +59,8 @@ async function mark(page: Page, date: Temporal.PlainDate, starts: string[]): Pro
 	await mark(page, date, rest);
 }
 
-/** A participant in a fresh browser who joins and marks the slots starting at `starts`. */
-export async function respond(
-	browser: Browser,
-	share: string,
-	name: string,
-	date: Temporal.PlainDate,
-	starts: string[],
-) {
+/** A participant in a fresh browser who has joined and sees their own grid. */
+export async function joinAs(browser: Browser, share: string, name: string): Promise<Page> {
 	const page = await freshPage(browser);
 
 	await page.goto(share);
@@ -74,6 +69,19 @@ export async function respond(
 	await page.getByLabel("Vaše jméno").fill(name);
 	await page.getByRole("button", { name: "Pokračovat" }).click();
 	await expect(page.getByRole("tab", { name: "Já" })).toHaveAttribute("aria-selected", "true");
+
+	return page;
+}
+
+/** A participant in a fresh browser who joins and saves the slots starting at `starts`. */
+export async function respond(
+	browser: Browser,
+	share: string,
+	name: string,
+	date: Temporal.PlainDate,
+	starts: string[],
+) {
+	const page = await joinAs(browser, share, name);
 
 	await mark(page, date, starts);
 	await page.getByRole("button", { name: "Uložit" }).click();

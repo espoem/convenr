@@ -139,6 +139,8 @@ export type EventView = {
 	name: string;
 	description: string;
 	segment: string;
+	/** The instant of the last change, compared by the page's version check (Phase 2 rule F1). */
+	version: string;
 	schedule: Schedule;
 	firstDayOfWeek: Weekday;
 	/** `null` when the instance keeps events permanently (Phase 2 rule X2). */
@@ -179,6 +181,16 @@ async function availableKeys(dayMode: string, participantIds: string[]) {
 }
 
 /** Everything anyone with the share link sees (V1), or `undefined` for an unknown id (E9). */
+/** The version of event `id`, or `null` when the event no longer exists (Phase 2 rule F4). */
+export async function eventVersion(id: string): Promise<string | null> {
+	const [row] = await db()
+		.select({ version: events.changedAt })
+		.from(events)
+		.where(eq(events.id, id));
+
+	return row === undefined ? null : Temporal.Instant.from(row.version).toString();
+}
+
 export async function readEvent(id: string): Promise<EventView | undefined> {
 	const [row] = await db().select().from(events).where(eq(events.id, id));
 
@@ -204,6 +216,7 @@ export async function readEvent(id: string): Promise<EventView | undefined> {
 		name: row.name,
 		description: row.description,
 		segment: eventSegment(row.id, row.name),
+		version: Temporal.Instant.from(row.changedAt).toString(),
 		schedule,
 		firstDayOfWeek: firstDayOfWeekOf(row),
 		deletionDate: deletionDate(
