@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 
 import type { Database } from "@/db/client";
 import { events, participants, participantTokens } from "@/db/schema";
-import { deletionDate } from "@/domain/retention";
 import {
 	type EventDays,
 	type Schedule,
@@ -13,7 +12,6 @@ import {
 	toWeekday,
 	type Weekday,
 } from "@/domain/schedule";
-import { env } from "@/env";
 
 import { hashSecret } from "./secrets";
 
@@ -85,14 +83,12 @@ export function datedSlotKey(row: { slotStart: string }): string {
 	return slotKey({ kind: "dated", start: Temporal.Instant.from(row.slotStart) });
 }
 
-/** Records a change to the event or a response, which moves a weekday event's deletion (E7). */
+/**
+ * Records a change to the event or a response. It moves the version (Phase 2 rule F5) and with
+ * it a weekday event's deletion date (E7).
+ */
 export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.Instant) {
-	const deletion = deletionDate(scheduleOf(row), now, env().RETENTION_DAYS);
-
-	await queries
-		.update(events)
-		.set({ changedAt: now.toString(), deletionDate: deletion.toString() })
-		.where(eq(events.id, row.id));
+	await queries.update(events).set({ changedAt: now.toString() }).where(eq(events.id, row.id));
 }
 
 /** The participant of `eventId` that holds `token`, with its event, or `undefined`. */

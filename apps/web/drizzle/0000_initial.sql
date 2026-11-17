@@ -19,9 +19,11 @@ CREATE TABLE "events" (
 	"reference_zone" text NOT NULL,
 	"first_day_of_week" smallint NOT NULL,
 	"admin_secret_hash" text NOT NULL,
-	"deletion_date" date NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"changed_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"activation_counted_at" timestamp with time zone,
+	"size_counted_at" timestamp with time zone,
+	"first_response_counted_at" timestamp with time zone,
 	CONSTRAINT "events_days_match_mode" CHECK (case "events"."day_mode"
         when 'range' then "events"."range_first" is not null and "events"."range_last" is not null
           and "events"."dates" is null and "events"."weekdays" is null
@@ -51,6 +53,15 @@ CREATE TABLE "participants" (
 	"locked_until" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "participants_event_name" UNIQUE("event_id","name_key")
+);
+--> statement-breakpoint
+CREATE TABLE "usage_counts" (
+	"day" date NOT NULL,
+	"metric" text NOT NULL,
+	"bucket" smallint DEFAULT 0 NOT NULL,
+	"count" integer DEFAULT 0 NOT NULL,
+	CONSTRAINT "usage_counts_day_metric_bucket_pk" PRIMARY KEY("day","metric","bucket"),
+	CONSTRAINT "usage_counts_bucket" CHECK ("usage_counts"."bucket" between 0 and 100)
 );
 --> statement-breakpoint
 CREATE TABLE "weekday_availability" (

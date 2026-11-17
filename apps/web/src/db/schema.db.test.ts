@@ -24,7 +24,6 @@ const rangeEvent = {
 	referenceZone: "Europe/Prague",
 	firstDayOfWeek: 1,
 	adminSecretHash: "hash",
-	deletionDate: "2027-07-08",
 } satisfies typeof events.$inferInsert;
 
 async function rowCount(table: string): Promise<number> {

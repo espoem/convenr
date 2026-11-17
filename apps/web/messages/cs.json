@@ -80,6 +80,7 @@
 	"Event": {
 		"referenceZone": "Časy v pásmu {zone}",
 		"deletion": "událost se smaže {date}",
+		"kept": "událost se nemaže",
 		"shareLink": "Odkaz pro účastníky",
 		"shownInZone": "Mřížka ukazuje časy ve vašem pásmu, {zone}.",
 		"weekdaysNotConverted": "Časy jsou v pásmu {zone} a nepřevádějí se na váš čas.",

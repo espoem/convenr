@@ -1,9 +1,13 @@
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import { type Browser, expect as baseExpect, type Page, test } from "@playwright/test";
 
 // The acceptance test of spec section 13, in the 390 by 844 viewport it is defined for.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined for the phone viewport.");
 
 test.setTimeout(180_000);
+
+// Ten browsers join at once, each with an Argon2id hash on the server. On a busy machine one
+// answer can take several seconds, longer than the default wait of 5 seconds.
+const expect = baseExpect.configure({ timeout: 15_000 });
 
 const PRAGUE = "Europe/Prague";
 const NEW_YORK = "America/New_York";

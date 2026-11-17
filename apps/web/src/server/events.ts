@@ -73,7 +73,6 @@ export type CreateEventResult =
 			segment: string;
 			/** Shown once in the admin link and never stored (E6). */
 			adminSecret: string;
-			deletionDate: Temporal.PlainDate;
 	  }
 	/** Field paths that failed validation, and rule codes such as `E2.too-many-dates`. */
 	| { ok: false; problems: string[] };
@@ -112,7 +111,6 @@ export async function createEvent(
 	}
 
 	const adminSecret = newSecret();
-	const deletion = deletionDate(schedule, now, env().RETENTION_DAYS);
 
 	// About 70 random bits make a collision negligible; the primary key would refuse one.
 	const id = newEventId();
@@ -131,12 +129,11 @@ export async function createEvent(
 			referenceZone,
 			firstDayOfWeek: parsed.data.firstDayOfWeek,
 			adminSecretHash: hashSecret(adminSecret),
-			deletionDate: deletion.toString(),
 			createdAt: now.toString(),
 			changedAt: now.toString(),
 		});
 
-	return { ok: true, id, segment: eventSegment(id, name), adminSecret, deletionDate: deletion };
+	return { ok: true, id, segment: eventSegment(id, name), adminSecret };
 }
 
 /** Whether `secret` is the admin secret of event `id`, compared in constant time (ADR 0003). */
@@ -163,7 +160,8 @@ export type EventView = {
 	segment: string;
 	schedule: Schedule;
 	firstDayOfWeek: Weekday;
-	deletionDate: Temporal.PlainDate;
+	/** `null` when the instance keeps events permanently (Phase 2 rule X2). */
+	deletionDate: Temporal.PlainDate | null;
 	/** Slot keys of the event, in time order. */
 	slots: string[];
 	/** In joining order, each with the keys of the slots they marked (V1). */
@@ -227,7 +225,11 @@ export async function readEvent(id: string): Promise<EventView | undefined> {
 		segment: eventSegment(row.id, row.name),
 		schedule,
 		firstDayOfWeek: firstDayOfWeekOf(row),
-		deletionDate: Temporal.PlainDate.from(row.deletionDate),
+		deletionDate: deletionDate(
+			schedule,
+			Temporal.Instant.from(row.changedAt),
+			env().RETENTION_DAYS,
+		),
 		slots: scheduleSlots(schedule).map((slot) => slotKey(slot)),
 		participants: people.map((person) => ({
 			name: person.name,

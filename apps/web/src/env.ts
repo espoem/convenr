@@ -2,8 +2,8 @@ import { z } from "zod";
 
 const schema = z.object({
 	DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/u }),
-	/** Days between an event's last date or last change and its deletion (spec rule E7). */
-	RETENTION_DAYS: z.coerce.number().int().min(1).default(90),
+	/** Days between an event's last date or last change and its deletion, or `never` (X1). */
+	RETENTION_DAYS: z.union([z.literal("never"), z.coerce.number().int().min(1)]).default(90),
 });
 
 type Env = z.infer<typeof schema>;

@@ -80,6 +80,7 @@
 	"Event": {
 		"referenceZone": "Times in {zone}",
 		"deletion": "the event will be deleted on {date}",
+		"kept": "the event is kept",
 		"shareLink": "Link for participants",
 		"shownInZone": "The grid shows times in your zone, {zone}.",
 		"weekdaysNotConverted": "Times are in {zone} and are not converted to your time.",

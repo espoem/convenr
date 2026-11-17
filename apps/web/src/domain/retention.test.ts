@@ -21,7 +21,7 @@ describe("E7 planned deletion date", () => {
 
 		const change = Temporal.Instant.from("2027-04-01T10:00:00Z");
 
-		expect(deletionDate(schedule, change, 90).toString()).toBe("2027-07-19");
+		expect(deletionDate(schedule, change, 90)?.toString()).toBe("2027-07-19");
 	});
 
 	it("is 90 days after the last change of a weekday event, as a date in the reference zone", () => {
@@ -29,6 +29,14 @@ describe("E7 planned deletion date", () => {
 		// 23:30 UTC on 31 March is already 1 April in Prague.
 		const change = Temporal.Instant.from("2027-03-31T23:30:00Z");
 
-		expect(deletionDate(schedule, change, 90).toString()).toBe("2027-06-30");
+		expect(deletionDate(schedule, change, 90)?.toString()).toBe("2027-06-30");
+	});
+
+	it("follows the current setting and is absent with never (X2)", () => {
+		const schedule: Schedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
+		const change = Temporal.Instant.from("2027-04-01T10:00:00Z");
+
+		expect(deletionDate(schedule, change, 30)?.toString()).toBe("2027-05-01");
+		expect(deletionDate(schedule, change, "never")).toBeNull();
 	});
 });

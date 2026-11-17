@@ -71,13 +71,15 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 					<p className="text-ink-muted">
 						{t("referenceZone", { zone: schedule.referenceZone.replaceAll("_", " ") })}
 						{" · "}
-						{t("deletion", {
-							date: event.deletionDate.toLocaleString(format, {
-								day: "numeric",
-								month: "long",
-								year: "numeric",
-							}),
-						})}
+						{event.deletionDate === null
+							? t("kept")
+							: t("deletion", {
+									date: event.deletionDate.toLocaleString(format, {
+										day: "numeric",
+										month: "long",
+										year: "numeric",
+									}),
+								})}
 					</p>
 					<div className="max-w-2xl">
 						<ShareLink

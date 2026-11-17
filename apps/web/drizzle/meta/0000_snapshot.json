@@ -1,5 +1,5 @@
 {
-  "id": "0587b295-f4c7-406e-adae-547b93427543",
+  "id": "297b130c-a8f8-43f7-9959-b99fd926bc3e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -140,12 +140,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "deletion_date": {
-          "name": "deletion_date",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -159,6 +153,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "activation_counted_at": {
+          "name": "activation_counted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "size_counted_at": {
+          "name": "size_counted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_response_counted_at": {
+          "name": "first_response_counted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -317,6 +329,59 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usage_counts": {
+      "name": "usage_counts",
+      "schema": "",
+      "columns": {
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metric": {
+          "name": "metric",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bucket": {
+          "name": "bucket",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "usage_counts_day_metric_bucket_pk": {
+          "name": "usage_counts_day_metric_bucket_pk",
+          "columns": [
+            "day",
+            "metric",
+            "bucket"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "usage_counts_bucket": {
+          "name": "usage_counts_bucket",
+          "value": "\"usage_counts\".\"bucket\" between 0 and 100"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.weekday_availability": {
