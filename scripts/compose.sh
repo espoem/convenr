@@ -15,5 +15,12 @@ if [ -z "$engine" ]; then
   fi
 fi
 
+# `podman compose` delegates to an external provider. Use the docker-compose that
+# .mise.toml pins, so Podman and Docker run the same implementation.
+if [ "$engine" = podman ] && [ -z "${PODMAN_COMPOSE_PROVIDER:-}" ]; then
+  PODMAN_COMPOSE_PROVIDER="$(command -v docker-compose || true)"
+  export PODMAN_COMPOSE_PROVIDER PODMAN_COMPOSE_WARNING_LOGS=false
+fi
+
 cd "$(dirname "$0")/.."
 exec "$engine" compose "$@"

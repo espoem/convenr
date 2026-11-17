@@ -2,6 +2,23 @@
 
 lockfile_version = 4
 
+[[tools.docker-compose]]
+version = "5.7.0"
+backend = "github:docker/compose"
+specifiers = ["5.7.0"]
+
+[tools.docker-compose."platforms.linux-x64"]
+checksum = "sha256:7758048ad38e580f22559603312874fec8bb638d021a9e64182385fc17cc12a2"
+checksum_source = "mise-versions"
+url = "https://github.com/docker/compose/releases/download/v5.7.0/docker-compose-linux-x86_64"
+url_api = "https://api.github.com/repos/docker/compose/releases/assets/702117317"
+
+[tools.docker-compose."platforms.macos-arm64"]
+checksum = "sha256:54495ff81dd8cae11861455f0308a293a530149beba8f1d90ff3f295b11cf035"
+checksum_source = "mise-versions"
+url = "https://github.com/docker/compose/releases/download/v5.7.0/docker-compose-darwin-aarch64"
+url_api = "https://api.github.com/repos/docker/compose/releases/assets/702117350"
+
 [[tools.node]]
 version = "26.13.1"
 backend = "core:node"
