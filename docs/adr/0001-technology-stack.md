@@ -14,28 +14,30 @@ The whole product is one Next.js application using the App Router. It owns the d
 
 ### Stack
 
-| Area | Choice | Version checked on 2026-11-16 |
+| Area | Choice | Version pinned in F0 |
 |---|---|---|
 | Framework | Next.js, App Router | 16.4.6 |
-| UI library | React | 19.3.1 |
+| UI library | React | 19.3.0 |
 | Language | TypeScript, `strict` and `noUncheckedIndexedAccess` on | 7.0.2 |
-| Components | shadcn components, copied into the repository | CLI 4.23.0 |
-| Styling | Tailwind CSS, theme generated from `DESIGN.md` tokens | 4.3.5 |
-| Database | PostgreSQL in every environment | pinned in the compose file in F0 |
-| Data access | Drizzle, used as a typed SQL query builder and for migrations | drizzle-orm 0.45.4 |
+| Components | shadcn components on Base UI, copied into the repository | CLI 4.23.0 |
+| Styling | Tailwind CSS, theme generated from `DESIGN.md` tokens | 4.3.3 |
+| Database | PostgreSQL in every environment | 18.7 |
+| Data access | Drizzle, used as a typed SQL query builder and for migrations | drizzle-orm 0.45.4, drizzle-kit 0.31.11, driver pg 8.23.1 |
 | Validation and API contract | Zod schemas, shared by forms, server code and the API description | 4.6.7 |
 | Internationalization | next-intl, Czech and English, language prefix in the address | 4.15.1 |
-| Lint | oxlint | 1.94.0 |
-| Format | oxfmt | 0.79.0 |
+| Lint | oxlint | 1.93.0 |
+| Format | oxfmt | 0.78.0 |
 | Unit tests | Vitest | 5.1.0 |
 | End-to-end tests | Playwright | 1.65.1 |
-| Runtime | Node.js LTS | 26 |
-| Node toolkit | nub for installing, running scripts and running files | 0.11 |
+| Runtime | Node.js LTS | 26.13.1 |
+| Node toolkit | nub for installing, running scripts and running files | 0.11.1 |
 | Tool versions | mise, pinned in `.mise.toml` | not applicable |
 | Containers | One application image and a compose file that works with Docker and Podman | not applicable |
 | CI | GitHub Actions | not applicable |
 
-"Latest stable" is the rule for every row. F0 pins the exact versions that are current when the skeleton is created.
+"Latest stable" is the rule for every row, with one limit: the package tool is configured to refuse a release younger than 24 hours, so a pinned version is the newest one older than that. This is why oxlint, oxfmt, Tailwind CSS and React are one patch behind the versions that were current on 2026-11-16.
+
+TypeScript 7.0.2 was confirmed in F0: the type check and the production build of Next.js 16.4.6 with next-intl pass under it.
 
 ### Rules that follow from the choices
 
@@ -60,7 +62,7 @@ docs/               roadmap, specifications, ADRs
 .agents/            project skills for coding agents
 AGENTS.md           project rules for coding agents
 DESIGN.md           design tokens and component rules
-compose.yaml        application, PostgreSQL, scheduler
+compose.yaml        application and PostgreSQL; the scheduler service arrives in F2
 .mise.toml          tool versions and tasks
 ```
 
@@ -93,4 +95,5 @@ The heat scale has five steps: `#EEE6DB` (none), `#E6E2C4`, `#BCB66B`, `#898338`
 - One image and one database make up a full instance.
 - The REST API is not a separate deployable. If it ever needs to be, the Zod contract and the generated SDKs stay valid.
 - The project depends on a toolkit that has not reached version 1.0. The pnpm-compatible layout limits that risk.
-- TypeScript 7 and the chosen libraries must be confirmed to work together when the skeleton is built. If a library does not yet support TypeScript 7, F0 pins the newest TypeScript version that all of them support and records it here.
+- The shadcn CLI starts `pnpm` by name. With nub as the package tool, a `pnpm` command that forwards to nub must be on the path while the CLI runs.
+- Fonts are self-hosted variable fonts (Bricolage Grotesque and Atkinson Hyperlegible Next, both under the SIL Open Font License), so no visitor request goes to a font host.

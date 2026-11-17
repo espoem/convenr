@@ -67,6 +67,8 @@ Phase 1 does not include:
 
 **E8. Immutability in Phase 1.** Nothing about an event can be changed in Phase 1. Editing arrives with the manage page in F2.
 
+**E9. Unknown event.** Opening a link whose event id does not exist shows a "not found" page with a link to create an event. The response does not reveal whether the id ever existed.
+
 **E10. Event address.** The address of an event is `/{lang}/e/{slug}-{id}`. The id alone selects the event. The slug only makes the address readable.
 
 - The slug is derived from the event name: transliterated to ASCII, lower-cased, every run of other characters replaced by one hyphen, hyphens trimmed from both ends, cut to 60 characters. "Schůzka výboru 2027" becomes `schuzka-vyboru-2027`.
@@ -74,8 +76,6 @@ Phase 1 does not include:
 - If the name yields an empty slug, the address is `/{lang}/e/{id}`.
 - An address with a missing or different slug and a valid id redirects to the address with the current slug. So a link keeps working after the event is renamed in F2.
 - The slug puts the event name into the link, where browser history and link previews can show it. The create form says so next to the name field.
-
-**E9. Unknown event.** Opening a link whose event id does not exist shows a "not found" page with a link to create an event. The response does not reveal whether the id ever existed.
 
 ## 4. Participant rules
 

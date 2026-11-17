@@ -19,6 +19,7 @@
     "**/coverage/**",
     "**/drizzle/**",
     "**/next-env.d.ts",
-    "**/components/ui/**"
+    "**/components/ui/**",
+    ".agents/**"
   ]
 }
