@@ -1,13 +1,13 @@
-import { type Browser, expect as baseExpect, type Page, test } from "@playwright/test";
+import { test } from "@playwright/test";
+
+// Ten browsers join at once, each with an Argon2id hash on the server, so this test relies on
+// the longer wait of the shared `expect`.
+import { cell, expect, freshPage } from "./helpers";
 
 // The acceptance test of spec section 13, in the 390 by 844 viewport it is defined for.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined for the phone viewport.");
 
 test.setTimeout(180_000);
-
-// Ten browsers join at once, each with an Argon2id hash on the server. On a busy machine one
-// answer can take several seconds, longer than the default wait of 5 seconds.
-const expect = baseExpect.configure({ timeout: 15_000 });
 
 const PRAGUE = "Europe/Prague";
 const NEW_YORK = "America/New_York";
@@ -54,26 +54,6 @@ function eventDates(): Temporal.PlainDate[] {
 
 		first = first.add({ days: 7 });
 	}
-}
-
-/** The accessible name of a cell starts with the day as the Czech page writes it. */
-function day(date: Temporal.PlainDate): string {
-	return date.toLocaleString("cs", { weekday: "long", day: "numeric", month: "long" });
-}
-
-function cell(page: Page, date: Temporal.PlainDate, start: string) {
-	return page.getByRole("button", { name: new RegExp(`^${day(date)}, ${start}–`, "u") });
-}
-
-async function freshPage(browser: Browser, timezoneId = PRAGUE) {
-	const context = await browser.newContext({
-		locale: "cs-CZ",
-		timezoneId,
-		viewport: { width: 390, height: 844 },
-		hasTouch: true,
-	});
-
-	return context.newPage();
 }
 
 test("ten people find the one hour that suits everyone (spec section 13)", async ({ browser }) => {

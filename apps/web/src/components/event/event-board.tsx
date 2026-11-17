@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { maximalWindows, sameWindow, type Window } from "@/domain/best-windows";
 import { gridView, type GridView } from "@/domain/grid-labels";
 import { datedLayout } from "@/domain/grid-layout";
 import { heatStep } from "@/domain/heat";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { identifyAction, saveAction } from "@/server/participant-actions";
 
 import { AvailabilityGrid, type CellRef } from "./availability-grid";
+import { BestWindows } from "./best-windows";
 import { type Joined, JoinBand } from "./join-band";
 import { SlotDetail } from "./slot-detail";
 
@@ -74,6 +76,9 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const [person, setPerson] = useState<string | null>(null);
 	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | "changed" | null>(null);
 	const [saving, startSaving] = useTransition();
+	// Rule Z1: not stored, so every visit starts in the viewer's zone.
+	const [inReferenceZone, setInReferenceZone] = useState(false);
+	const [chosenWindow, setChosenWindow] = useState<Window | null>(null);
 
 	const token = stored?.participant?.token;
 
@@ -105,19 +110,30 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		};
 	}, [event.id, token]);
 
+	const zoneDiffers = event.dated && viewerZone !== null && viewerZone !== event.referenceZone;
+	const shownZone = inReferenceZone ? event.referenceZone : viewerZone;
+
 	const view = useMemo(() => {
 		if (weekdayView !== null) {
 			return weekdayView;
 		}
 
-		return temporalReady && viewerZone !== null
+		return temporalReady && shownZone !== null
 			? gridView(
-					datedLayout(event.slots, viewerZone, event.firstDayOfWeek),
+					datedLayout(event.slots, shownZone, event.firstDayOfWeek),
 					event.slotLength,
 					formatLocale,
 				)
 			: null;
-	}, [weekdayView, temporalReady, viewerZone, event, formatLocale]);
+	}, [weekdayView, temporalReady, shownZone, event, formatLocale]);
+
+	const windows = useMemo(
+		() => (view === null ? [] : maximalWindows(view.layout, event.slotLength, event.participants)),
+		[view, event.slotLength, event.participants],
+	);
+
+	// A window from before a reload or a zone switch may no longer exist.
+	const highlight = windows.find((window) => sameWindow(chosenWindow, window)) ?? null;
 
 	const availableIn = useMemo(() => {
 		const names = new Map<string, Set<string>>();
@@ -275,9 +291,13 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 			return null;
 		}
 
-		return event.dated
-			? t("shownInZone", { zone: viewerZone.replaceAll("_", " ") })
-			: t("weekdaysNotConverted", { zone: event.referenceZone.replaceAll("_", " ") });
+		if (!event.dated) {
+			return t("weekdaysNotConverted", { zone: event.referenceZone.replaceAll("_", " ") });
+		}
+
+		return inReferenceZone
+			? t("shownInReferenceZone", { zone: event.referenceZone.replaceAll("_", " ") })
+			: t("shownInZone", { zone: viewerZone.replaceAll("_", " ") });
 	})();
 
 	const detailKeys =
@@ -312,6 +332,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					describe={(keys) => t("count", { available: namesIn(keys).size, total })}
 					onInspect={inspect}
 					inspected={inspected?.cell}
+					highlight={highlight}
 				/>
 			);
 		}
@@ -393,7 +414,27 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 						</div>
 					) : null}
 
-					{zoneNotice === null ? null : <p className="max-w-[65ch] font-semibold">{zoneNotice}</p>}
+					{zoneNotice === null ? null : (
+						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+							<p className="max-w-[65ch] font-semibold">{zoneNotice}</p>
+							{zoneDiffers ? (
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => {
+										setInspected(null);
+										setInReferenceZone(!inReferenceZone);
+									}}
+								>
+									{inReferenceZone
+										? t("showViewerZone")
+										: t("showReferenceZone", {
+												zone: event.referenceZone.replaceAll("_", " "),
+											})}
+								</Button>
+							) : null}
+						</div>
+					)}
 
 					{tab === "group" ? (
 						<>
@@ -502,6 +543,21 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					</div>
 				</div>
 			) : null}
+
+			{view === null ? null : (
+				<BestWindows
+					view={view}
+					windows={windows}
+					names={event.participants.map((participant) => participant.name)}
+					slotLength={event.slotLength}
+					formatLocale={formatLocale}
+					selected={highlight}
+					onSelect={(window) => {
+						setChosenWindow(window);
+						showTab("group");
+					}}
+				/>
+			)}
 
 			<section aria-labelledby={`${id}-people`} className="flex flex-col gap-3">
 				<h2 id={`${id}-people`} className="text-xl">

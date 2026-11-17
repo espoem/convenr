@@ -26,7 +26,27 @@ type AvailabilityGridProps = {
 	/** View mode: a cell was pointed at, tapped or focused, or `null` when the pointer left. */
 	onInspect?: ((cell: CellRef | null, box: DOMRect | null) => void) | undefined;
 	inspected?: CellRef | null | undefined;
+	/** Rows `first` to `last` of one column, outlined as one shape (Phase 2 rule W4). */
+	highlight?: { column: number; first: number; last: number } | null | undefined;
 };
+
+// An ink edge with a surface strip inside stays visible on every heat step, the darkest included.
+const EDGE = "var(--color-ink)";
+const GAP = "var(--color-surface)";
+
+function outline(sides: { top: boolean; bottom: boolean }): string {
+	const edges = [
+		[3, 0],
+		[-3, 0],
+		...(sides.top ? [[0, 3]] : []),
+		...(sides.bottom ? [[0, -3]] : []),
+	];
+
+	return [
+		...edges.map(([x = 0, y = 0]) => `inset ${x}px ${y}px 0 ${EDGE}`),
+		...edges.map(([x = 0, y = 0]) => `inset ${x * 2}px ${y * 2}px 0 ${GAP}`),
+	].join(", ");
+}
 
 const ARROWS = new Map([
 	["ArrowLeft", { column: -1, row: 0 }],
@@ -83,6 +103,7 @@ export function AvailabilityGrid({
 	edit,
 	onInspect,
 	inspected,
+	highlight,
 }: AvailabilityGridProps) {
 	const table = useRef<HTMLTableElement>(null);
 	const cells = useRef(new Map<string, HTMLButtonElement>());
@@ -259,10 +280,23 @@ export function AvailabilityGrid({
 									(anchor !== null && within(cell, anchor, focus)) ||
 									(inspected?.column === index && inspected.row === row);
 
+								const inWindow =
+									highlight?.column === index && row >= highlight.first && row <= highlight.last;
+
 								return (
 									<Fragment key={cellId(cell)}>
 										{index > 0 && blockStarts.has(index) ? <td aria-hidden /> : null}
 										<td
+											style={
+												inWindow
+													? {
+															boxShadow: outline({
+																top: row === highlight.first,
+																bottom: row === highlight.last,
+															}),
+														}
+													: undefined
+											}
 											className={cn(
 												"h-7 min-w-(--cv-cell-min-width) border-r border-b border-earth p-0 sm:w-18",
 												solid ? "[border-bottom-style:solid]" : "[border-bottom-style:dotted]",

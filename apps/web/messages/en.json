@@ -136,7 +136,18 @@
 		"closeDetail": "Close detail",
 		"participants": "Participants ({count})",
 		"noParticipants": "Nobody has joined yet.",
-		"filterHint": "Choose a name to see only that participant's availability. Choose it again to return to the group."
+		"filterHint": "Choose a name to see only that participant's availability. Choose it again to return to the group.",
+		"shownInReferenceZone": "The grid shows times in the event's zone, {zone}.",
+		"showReferenceZone": "Show times in {zone}",
+		"showViewerZone": "Show times in your zone",
+		"windowsHeading": "Best times",
+		"minDuration": "At least",
+		"minPeople": "People at least",
+		"durationMinutes": "{minutes} min",
+		"durationHours": "{hours} h",
+		"durationHoursMinutes": "{hours} h {minutes} min",
+		"windowsNoParticipants": "The best times appear once someone joins.",
+		"windowsNone": "No time passes the filters. Try a shorter length or fewer people."
 	},
 	"Join": {
 		"heading": "Add your availability",

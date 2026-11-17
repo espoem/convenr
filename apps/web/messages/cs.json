@@ -136,7 +136,18 @@
 		"closeDetail": "Zavřít detail",
 		"participants": "Účastníci ({count})",
 		"noParticipants": "Zatím se nikdo nezapsal.",
-		"filterHint": "Vyberte jméno a mřížka ukáže jen dostupnost toho účastníka. Dalším klepnutím se vrátíte ke skupině."
+		"filterHint": "Vyberte jméno a mřížka ukáže jen dostupnost toho účastníka. Dalším klepnutím se vrátíte ke skupině.",
+		"shownInReferenceZone": "Mřížka ukazuje časy v pásmu události, {zone}.",
+		"showReferenceZone": "Ukázat časy v pásmu {zone}",
+		"showViewerZone": "Ukázat časy ve vašem pásmu",
+		"windowsHeading": "Nejlepší časy",
+		"minDuration": "Délka aspoň",
+		"minPeople": "Lidí aspoň",
+		"durationMinutes": "{minutes} min",
+		"durationHours": "{hours} h",
+		"durationHoursMinutes": "{hours} h {minutes} min",
+		"windowsNoParticipants": "Nejlepší časy se ukážou, až se někdo zapíše.",
+		"windowsNone": "Žádný čas nesplňuje filtry. Zkuste snížit délku nebo počet lidí."
 	},
 	"Join": {
 		"heading": "Zapište svou dostupnost",

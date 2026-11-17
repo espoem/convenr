@@ -1,46 +1,12 @@
-import { type Browser, expect as baseExpect, type Page, test } from "@playwright/test";
+import { type Page, test } from "@playwright/test";
+
+import { cell, createEvent, expect, freshPage, respond } from "./helpers";
 
 // Steps 1 to 3 of the Phase 2 acceptance test (Phase 2 spec section 10). Step 4, expiry,
 // belongs to the retention rules.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
 
-// Four browsers in one test, like the Phase 1 acceptance test, need its time budget.
 test.setTimeout(180_000);
-
-const expect = baseExpect.configure({ timeout: 15_000 });
-
-async function freshPage(browser: Browser): Promise<Page> {
-	const context = await browser.newContext({
-		locale: "cs-CZ",
-		timezoneId: "Europe/Prague",
-		viewport: { width: 390, height: 844 },
-		hasTouch: true,
-	});
-
-	return context.newPage();
-}
-
-/** The accessible name of a cell starts with the day as the Czech page writes it. */
-function cell(page: Page, date: Temporal.PlainDate, start: string) {
-	const day = date.toLocaleString("cs", { weekday: "long", day: "numeric", month: "long" });
-
-	return page.getByRole("button", { name: new RegExp(`^${day}, ${start}–`, "u") });
-}
-
-/** A participant in a fresh browser who joins and marks one slot. */
-async function respond(browser: Browser, share: string, name: string, date: Temporal.PlainDate) {
-	const page = await freshPage(browser);
-
-	await page.goto(share);
-	await page.getByLabel("Vaše jméno").fill(name);
-	await page.getByRole("button", { name: "Pokračovat" }).click();
-	await expect(page.getByRole("tab", { name: "Já" })).toHaveAttribute("aria-selected", "true");
-	await cell(page, date, "20:00").click();
-	await expect(cell(page, date, "20:00")).toHaveAttribute("aria-pressed", "true");
-	await page.getByRole("button", { name: "Uložit" }).click();
-	await expect(page.getByText("Uloženo.")).toBeVisible();
-	await page.context().close();
-}
 
 async function expectGone(page: Page, link: string) {
 	await page.goto(link);
@@ -54,21 +20,10 @@ test("the organizer narrows the hours, deletes a participant and then the event"
 	const organizer = await freshPage(browser);
 
 	// Step 1: an event with two participants who marked 20:00.
-	await organizer.goto("/cs");
-	await organizer.getByLabel("Název").fill("Zkouška kapely");
-	await organizer.getByText("Dny po sobě").click();
-	await organizer.getByLabel("První den").fill(first.toString());
-	await organizer.getByLabel("Poslední den").fill(first.add({ days: 1 }).toString());
-	await organizer.getByLabel("Každý den od").selectOption({ label: "17:00" });
-	await organizer.getByLabel("do", { exact: true }).selectOption({ label: "21:00" });
-	await organizer.getByRole("button", { name: "Vytvořit událost" }).click();
-	await organizer.waitForURL(/\/created$/u);
+	const { share, admin } = await createEvent(organizer, "Zkouška kapely", first);
 
-	const share = await organizer.getByLabel("Odkaz pro účastníky").inputValue();
-	const admin = await organizer.getByLabel("Odkaz pro správu").inputValue();
-
-	await respond(browser, share, "Jana", first);
-	await respond(browser, share, "Petr", first);
+	await respond(browser, share, "Jana", first, ["20:00"]);
+	await respond(browser, share, "Petr", first, ["20:00"]);
 
 	// Step 2: narrowing the hours names how many participants lose availability (M5).
 	await organizer.goto(admin);
@@ -96,7 +51,6 @@ test("the organizer narrows the hours, deletes a participant and then the event"
 	await organizer.getByRole("button", { name: "Smazat natrvalo" }).click();
 	await organizer.waitForURL(/\/cs$/u);
 	await expect(organizer.getByText("Zkouška kapely")).toHaveCount(0);
-
 	await expectGone(organizer, share);
 	await expectGone(organizer, admin);
 	await organizer.context().close();
