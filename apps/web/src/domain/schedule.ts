@@ -53,6 +53,15 @@ export type ScheduleProblem =
 	| "end_not_after_start"
 	| "not_on_slot_boundary";
 
+/**
+ * A broken rule and the field it concerns, as a path into the schedule such as
+ * `["days", "dates", 2]`, so that a client can point at the field.
+ */
+export type ScheduleIssue<Code extends string = ScheduleProblem> = {
+	code: Code;
+	path: (string | number)[];
+};
+
 export type DatedSlot = { kind: "dated"; start: Temporal.Instant };
 
 export type WeekdaySlot = { kind: "weekday"; weekday: Weekday; minute: number };
@@ -86,79 +95,108 @@ export function eventDates(days: Exclude<EventDays, { mode: "weekdays" }>): Temp
 	return dates;
 }
 
-function dayProblems(
+/** Indexes of the values that repeat an earlier one. */
+function repeats(values: readonly (string | number)[]): number[] {
+	return values.flatMap((value, index) => (values.indexOf(value) < index ? [index] : []));
+}
+
+function dayIssues(
 	days: EventDays,
 	today: Temporal.PlainDate,
 	keptDates: ReadonlySet<string>,
-): ScheduleProblem[] {
+): ScheduleIssue[] {
 	if (days.mode === "weekdays") {
 		if (days.weekdays.length === 0) {
-			return ["no_days"];
+			return [{ code: "no_days", path: ["days", "weekdays"] }];
 		}
 
-		return new Set(days.weekdays).size === days.weekdays.length ? [] : ["duplicate_day"];
+		return repeats(days.weekdays).map((index) => ({
+			code: "duplicate_day",
+			path: ["days", "weekdays", index],
+		}));
 	}
 
-	const problems: ScheduleProblem[] = [];
+	const issues: ScheduleIssue[] = [];
 
 	if (days.mode === "range" && Temporal.PlainDate.compare(days.first, days.last) > 0) {
-		return ["range_reversed"];
+		return [{ code: "range_reversed", path: ["days", "last"] }];
 	}
 
 	if (days.mode === "dates") {
 		if (days.dates.length === 0) {
-			return ["no_days"];
+			return [{ code: "no_days", path: ["days", "dates"] }];
 		}
 
-		if (new Set(days.dates.map(String)).size !== days.dates.length) {
-			problems.push("duplicate_day");
+		for (const index of repeats(days.dates.map(String))) {
+			issues.push({ code: "duplicate_day", path: ["days", "dates", index] });
 		}
 	}
 
-	const dates = eventDates(days);
-
-	if (dates.length > MAX_DATES) {
-		problems.push("too_many_dates");
+	if (eventDates(days).length > MAX_DATES) {
+		issues.push({
+			code: "too_many_dates",
+			path: days.mode === "range" ? ["days", "last"] : ["days", "dates"],
+		});
 	}
 
-	const past = (date: Temporal.PlainDate) => Temporal.PlainDate.compare(date, today) < 0;
+	const past = (date: Temporal.PlainDate) =>
+		Temporal.PlainDate.compare(date, today) < 0 && !keptDates.has(date.toString());
 
-	if (dates.some((date) => past(date) && !keptDates.has(date.toString()))) {
-		problems.push("date_in_past");
+	if (days.mode === "range") {
+		// A range starts at its earliest date, so a past date in it is a problem of the first.
+		if (eventDates(days).some((date) => past(date))) {
+			issues.push({ code: "date_in_past", path: ["days", "first"] });
+		}
+	} else {
+		for (const [index, date] of days.dates.entries()) {
+			if (past(date)) {
+				issues.push({ code: "date_in_past", path: ["days", "dates", index] });
+			}
+		}
 	}
 
-	return problems;
+	return issues;
 }
 
-function timeProblems(schedule: Schedule): ScheduleProblem[] {
+function timeIssues(schedule: Schedule): ScheduleIssue[] {
 	const { dailyStart, dailyEnd, slotLength } = schedule;
 
-	if (dailyStart < 0 || dailyEnd > MINUTES_PER_DAY) {
-		return ["out_of_day"];
+	const outside: ScheduleIssue[] = [];
+
+	if (dailyStart < 0) {
+		outside.push({ code: "out_of_day", path: ["dailyStart"] });
+	}
+
+	if (dailyEnd > MINUTES_PER_DAY) {
+		outside.push({ code: "out_of_day", path: ["dailyEnd"] });
+	}
+
+	if (outside.length > 0) {
+		return outside;
 	}
 
 	if (dailyEnd <= dailyStart) {
-		return ["end_not_after_start"];
+		return [{ code: "end_not_after_start", path: ["dailyEnd"] }];
 	}
 
-	return dailyStart % slotLength === 0 && dailyEnd % slotLength === 0
-		? []
-		: ["not_on_slot_boundary"];
+	return (["dailyStart", "dailyEnd"] as const).flatMap((field): ScheduleIssue[] =>
+		schedule[field] % slotLength === 0 ? [] : [{ code: "not_on_slot_boundary", path: [field] }],
+	);
 }
 
 /**
- * Problems that make a schedule invalid. `now` is the moment of the
- * change; a date before today in the reference zone is refused unless it is one of
+ * Problems that make a schedule invalid, each at the field it concerns. `now` is the moment of
+ * the change; a date before today in the reference zone is refused unless it is one of
  * `keptDates`, the dates an edited event already had.
  */
 export function validateSchedule(
 	schedule: Schedule,
 	now: Temporal.Instant,
 	keptDates: ReadonlySet<string> = new Set(),
-): ScheduleProblem[] {
+): ScheduleIssue[] {
 	const today = now.toZonedDateTimeISO(schedule.referenceZone).toPlainDate();
 
-	return [...dayProblems(schedule.days, today, keptDates), ...timeProblems(schedule)];
+	return [...dayIssues(schedule.days, today, keptDates), ...timeIssues(schedule)];
 }
 
 /** The dates of a dated schedule as ISO strings; none for a weekday schedule. */

@@ -47,7 +47,13 @@ describe("createEvent", () => {
 			creationTime,
 		);
 
-		expect(created).toEqual({ ok: false, problems: ["name", "referenceZone"] });
+		expect(created).toEqual({
+			ok: false,
+			problems: [
+				{ kind: "input", code: "too_small", path: ["name"] },
+				{ kind: "input", code: "unknown_time_zone", path: ["referenceZone"] },
+			],
+		});
 		expect(
 			await createEvent(
 				{ ...pragueEvenings, days: { mode: "range", first: "2027-02-01", last: "2027-02-02" } },
@@ -55,7 +61,7 @@ describe("createEvent", () => {
 			),
 		).toEqual({
 			ok: false,
-			problems: ["date_in_past"],
+			problems: [{ kind: "rule", code: "date_in_past", path: ["days", "first"] }],
 		});
 		expect(await db().select().from(events)).toEqual([]);
 	});

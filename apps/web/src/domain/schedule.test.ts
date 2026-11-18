@@ -29,9 +29,11 @@ function onDateIn(iso: string, referenceZone: string): Schedule {
 }
 
 describe("days", () => {
-	it("accepts a range of 31 dates and refuses 32", () => {
+	it("accepts a range of 31 dates and refuses 32 at its last date", () => {
 		expect(validateSchedule(mayFrom("2027-05-31"), now)).toEqual([]);
-		expect(validateSchedule(mayFrom("2027-06-01"), now)).toEqual(["too_many_dates"]);
+		expect(validateSchedule(mayFrom("2027-06-01"), now)).toEqual([
+			{ code: "too_many_dates", path: ["days", "last"] },
+		]);
 	});
 
 	it("refuses a range whose last date is before its first", () => {
@@ -40,22 +42,28 @@ describe("days", () => {
 			days: { mode: "range", first: date("2027-04-09"), last: date("2027-04-05") },
 		};
 
-		expect(validateSchedule(reversed, now)).toEqual(["range_reversed"]);
+		expect(validateSchedule(reversed, now)).toEqual([
+			{ code: "range_reversed", path: ["days", "last"] },
+		]);
 	});
 
-	it("refuses no dates and duplicate dates", () => {
-		expect(validateSchedule(onDates(), now)).toEqual(["no_days"]);
-		expect(validateSchedule(onDates("2027-04-05", "2027-04-05"), now)).toEqual(["duplicate_day"]);
+	it("refuses no dates, and each date that repeats an earlier one", () => {
+		expect(validateSchedule(onDates(), now)).toEqual([
+			{ code: "no_days", path: ["days", "dates"] },
+		]);
+		expect(validateSchedule(onDates("2027-04-05", "2027-04-06", "2027-04-05"), now)).toEqual([
+			{ code: "duplicate_day", path: ["days", "dates", 2] },
+		]);
 		expect(validateSchedule(onDates("2027-04-05", "2027-05-20"), now)).toEqual([]);
 	});
 
 	it("refuses no weekdays and duplicate weekdays", () => {
 		expect(validateSchedule({ ...evening, days: { mode: "weekdays", weekdays: [] } }, now)).toEqual(
-			["no_days"],
+			[{ code: "no_days", path: ["days", "weekdays"] }],
 		);
 		expect(
 			validateSchedule({ ...evening, days: { mode: "weekdays", weekdays: [2, 2] } }, now),
-		).toEqual(["duplicate_day"]);
+		).toEqual([{ code: "duplicate_day", path: ["days", "weekdays", 1] }]);
 	});
 
 	it("refuses a date before today in the reference zone, and accepts today", () => {
@@ -63,11 +71,27 @@ describe("days", () => {
 
 		expect(validateSchedule(onDateIn("2027-03-01", "Europe/Prague"), now)).toEqual([]);
 		expect(validateSchedule(onDateIn("2027-02-28", "Europe/Prague"), now)).toEqual([
-			"date_in_past",
+			{ code: "date_in_past", path: ["days", "dates", 0] },
 		]);
 		// At 23:30 UTC it is already 2 March in Auckland.
 		expect(validateSchedule(onDateIn("2027-03-01", "Pacific/Auckland"), lateEvening)).toEqual([
-			"date_in_past",
+			{ code: "date_in_past", path: ["days", "dates", 0] },
+		]);
+	});
+
+	it("names each past date of a list, and the first date of a range", () => {
+		expect(validateSchedule(onDates("2027-04-05", "2027-02-01", "2027-02-02"), now)).toEqual([
+			{ code: "date_in_past", path: ["days", "dates", 1] },
+			{ code: "date_in_past", path: ["days", "dates", 2] },
+		]);
+
+		const started: Schedule = {
+			...evening,
+			days: { mode: "range", first: date("2027-02-27"), last: date("2027-03-02") },
+		};
+
+		expect(validateSchedule(started, now)).toEqual([
+			{ code: "date_in_past", path: ["days", "first"] },
 		]);
 	});
 });
@@ -78,12 +102,14 @@ describe("daily time range", () => {
 	});
 
 	it("refuses a range outside one day, a range that does not end after it starts, and odd times", () => {
-		expect(validateSchedule({ ...evening, dailyEnd: 24 * 60 + 30 }, now)).toEqual(["out_of_day"]);
+		expect(validateSchedule({ ...evening, dailyEnd: 24 * 60 + 30 }, now)).toEqual([
+			{ code: "out_of_day", path: ["dailyEnd"] },
+		]);
 		expect(validateSchedule({ ...evening, dailyEnd: evening.dailyStart }, now)).toEqual([
-			"end_not_after_start",
+			{ code: "end_not_after_start", path: ["dailyEnd"] },
 		]);
 		expect(validateSchedule({ ...evening, dailyStart: 17 * 60 + 10 }, now)).toEqual([
-			"not_on_slot_boundary",
+			{ code: "not_on_slot_boundary", path: ["dailyStart"] },
 		]);
 	});
 });

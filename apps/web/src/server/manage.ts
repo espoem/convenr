@@ -16,7 +16,14 @@ import {
 	scheduleOf,
 	touchEvent,
 } from "./event-rows";
-import { type NewEvent, newEventSchema, storedDays } from "./events";
+import {
+	type EventProblem,
+	inputProblems,
+	type NewEvent,
+	newEventSchema,
+	ruleProblems,
+	storedDays,
+} from "./events";
 import { matchesSecret } from "./secrets";
 import { countDeleted } from "./usage";
 
@@ -32,8 +39,7 @@ export type ManagedEvent = NewEvent & {
 export type UpdateEventResult =
 	| { status: "saved"; segment: string }
 	| { status: "denied" }
-	/** Field paths and problem codes such as `date_in_past` or `field_locked`. */
-	| { status: "invalid"; problems: string[] }
+	| { status: "invalid"; problems: EventProblem[] }
 	/** How many participants would lose part of their availability. */
 	| { status: "confirm"; losing: number };
 
@@ -197,10 +203,7 @@ export async function updateEvent(
 	const parsed = newEventSchema.safeParse(input);
 
 	if (!parsed.success) {
-		return {
-			status: "invalid",
-			problems: parsed.error.issues.map((issue) => issue.path.join(".")),
-		};
+		return { status: "invalid", problems: inputProblems(parsed.error) };
 	}
 
 	const { name, description, days, dailyStart, dailyEnd, slotLength, referenceZone } = parsed.data;
@@ -219,10 +222,10 @@ export async function updateEvent(
 			.where(eq(participants.eventId, id));
 
 		const before = scheduleOf(row);
-		const problems = editProblems(before, after, (people?.total ?? 0) > 0, now);
+		const issues = editProblems(before, after, (people?.total ?? 0) > 0, now);
 
-		if (problems.length > 0) {
-			return { status: "invalid", problems };
+		if (issues.length > 0) {
+			return { status: "invalid", problems: ruleProblems(issues) };
 		}
 
 		const removed = removedSlots(before, after);

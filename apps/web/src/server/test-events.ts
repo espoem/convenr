@@ -30,7 +30,7 @@ export async function freshEvent(input: NewEvent = pragueEvenings): Promise<stri
 	const created = await createEvent(input, creationTime);
 
 	if (!created.ok) {
-		throw new Error(`The test event is invalid: ${created.problems.join(", ")}`);
+		throw new Error(`The test event is invalid: ${JSON.stringify(created.problems)}`);
 	}
 
 	return created.id;

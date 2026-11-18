@@ -99,7 +99,7 @@ describe("updateEvent", () => {
 		expect((await readManagedEvent(id, secret))?.locked).toBe(true);
 		expect(await updateEvent(id, secret, pragueEvenings, null, later)).toEqual({
 			status: "invalid",
-			problems: ["field_locked"],
+			problems: [{ kind: "rule", code: "field_locked", path: ["slotLength"] }],
 		});
 	});
 

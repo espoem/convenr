@@ -18,7 +18,7 @@ import {
 } from "@/domain/schedule";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import { formText } from "@/lib/form-text";
-import type { NewEvent } from "@/server/events";
+import type { EventProblem, NewEvent } from "@/server/events";
 
 export type EventFormOptions = {
 	formatLocale: string;
@@ -33,8 +33,7 @@ export type EventFormOptions = {
 export type FormOutcome =
 	| { status: "done" }
 	| { status: "failed" }
-	/** Field paths and problem codes such as `date_in_past`. */
-	| { status: "invalid"; problems: string[] }
+	| { status: "invalid"; problems: EventProblem[] }
 	/** How many participants lose part of their availability. */
 	| { status: "confirm"; losing: number };
 
@@ -67,6 +66,11 @@ const DAY_PROBLEMS = new Set<string>([
 	"date_in_past",
 	"field_locked",
 ]);
+
+/** A broken rule by its code, a value of the wrong form by its field path such as `days.dates.2`. */
+function problemName(problem: EventProblem): string {
+	return problem.kind === "rule" ? problem.code : problem.path.join(".");
+}
 
 /** The message key for a problem the server reported: a problem code or a field path. */
 function problemKey(problem: string) {
@@ -143,7 +147,7 @@ export function EventForm({
 			const outcome = await onSubmit(input, confirmedLosing);
 
 			setFailed(outcome.status === "failed");
-			setProblems(outcome.status === "invalid" ? outcome.problems : []);
+			setProblems(outcome.status === "invalid" ? outcome.problems.map(problemName) : []);
 			setPendingLoss(outcome.status === "confirm" ? { input, losing: outcome.losing } : null);
 		});
 	}

@@ -1,6 +1,7 @@
 // Changing an event's schedule: what stays fixed once people joined, and which slots disappear.
 import {
 	type Schedule,
+	type ScheduleIssue,
 	type ScheduleProblem,
 	scheduleDates,
 	scheduleSlots,
@@ -12,25 +13,29 @@ import {
 export type EditProblem = ScheduleProblem | "field_locked";
 
 /**
- * Problems of changing `before` into `after`. Once the event has participants, slot length,
- * day mode and reference zone stay as they are. Dates the event already had may lie in the
- * past; added dates may not.
+ * Problems of changing `before` into `after`, each at the field it concerns. Once the event has
+ * participants, slot length, day mode and reference zone stay as they are. Dates the event
+ * already had may lie in the past; added dates may not.
  */
 export function editProblems(
 	before: Schedule,
 	after: Schedule,
 	hasParticipants: boolean,
 	now: Temporal.Instant,
-): EditProblem[] {
-	const locked =
-		hasParticipants &&
-		(after.slotLength !== before.slotLength ||
-			after.days.mode !== before.days.mode ||
-			after.referenceZone !== before.referenceZone);
+): ScheduleIssue<EditProblem>[] {
+	const changed = [
+		{ path: ["slotLength"], differs: after.slotLength !== before.slotLength },
+		{ path: ["days", "mode"], differs: after.days.mode !== before.days.mode },
+		{ path: ["referenceZone"], differs: after.referenceZone !== before.referenceZone },
+	];
 
-	const problems: EditProblem[] = validateSchedule(after, now, scheduleDates(before));
+	const locked = hasParticipants
+		? changed.flatMap(({ path, differs }) =>
+				differs ? [{ code: "field_locked" as const, path }] : [],
+			)
+		: [];
 
-	return locked ? ["field_locked", ...problems] : problems;
+	return [...locked, ...validateSchedule(after, now, scheduleDates(before))];
 }
 
 /** The slots of `before` that `after` no longer has. */

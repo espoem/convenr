@@ -6,11 +6,13 @@ import { db } from "@/db/client";
 import { datedAvailability, events, participants, weekdayAvailability } from "@/db/schema";
 import { characterCount } from "@/domain/display-name";
 import { eventSegment } from "@/domain/event-address";
+import type { EditProblem } from "@/domain/event-edit";
 import { newPublicId } from "@/domain/public-id";
 import { deletionDate } from "@/domain/retention";
 import {
 	MAX_DATES,
 	type Schedule,
+	type ScheduleIssue,
 	scheduleSlots,
 	slotKey,
 	SLOT_LENGTHS,
@@ -39,16 +41,19 @@ function isTimeZone(zone: string): boolean {
 	}
 }
 
+// `params.code` names a custom check in a problem, as zod names its own checks.
+const tooLong = { params: { code: "too_long" } };
+
 export const newEventSchema = z.object({
 	name: z
 		.string()
 		.trim()
 		.min(1)
-		.refine((name) => characterCount(name) <= EVENT_NAME_MAX_LENGTH),
+		.refine((name) => characterCount(name) <= EVENT_NAME_MAX_LENGTH, tooLong),
 	description: z
 		.string()
 		.trim()
-		.refine((text) => characterCount(text) <= DESCRIPTION_MAX_LENGTH),
+		.refine((text) => characterCount(text) <= DESCRIPTION_MAX_LENGTH, tooLong),
 	days: z.discriminatedUnion("mode", [
 		z.object({ mode: z.literal("range"), first: isoDate, last: isoDate }),
 		// The upper bounds only stop oversized input; validateSchedule applies the real limits.
@@ -58,11 +63,32 @@ export const newEventSchema = z.object({
 	dailyStart: z.int(),
 	dailyEnd: z.int(),
 	slotLength: z.literal(SLOT_LENGTHS),
-	referenceZone: z.string().refine(isTimeZone),
+	referenceZone: z.string().refine(isTimeZone, { params: { code: "unknown_time_zone" } }),
 	firstDayOfWeek: weekday,
 });
 
 export type NewEvent = z.input<typeof newEventSchema>;
+
+/**
+ * Why a new or edited event was refused, at a path into `NewEvent` such as
+ * `["days", "dates", 2]`. An `input` problem is a value of the wrong form, named by the check
+ * it failed; a `rule` problem is a valid value that breaks a rule of the event.
+ */
+export type EventProblem =
+	| { kind: "input"; code: string; path: PropertyKey[] }
+	| { kind: "rule"; code: EditProblem; path: PropertyKey[] };
+
+export function inputProblems(error: z.ZodError): EventProblem[] {
+	return error.issues.map((issue) => ({
+		kind: "input",
+		code: issue.code === "custom" ? String(issue.params?.["code"] ?? "invalid_value") : issue.code,
+		path: issue.path,
+	}));
+}
+
+export function ruleProblems(issues: ScheduleIssue<EditProblem>[]): EventProblem[] {
+	return issues.map((issue) => ({ kind: "rule", ...issue }));
+}
 
 export type CreateEventResult =
 	| {
@@ -73,8 +99,7 @@ export type CreateEventResult =
 			/** Shown once in the admin link and never stored. */
 			adminSecret: string;
 	  }
-	/** Field paths that failed validation, and problem codes such as `too_many_dates`. */
-	| { ok: false; problems: string[] };
+	| { ok: false; problems: EventProblem[] };
 
 export function storedDays(days: Schedule["days"]) {
 	const none = { rangeFirst: null, rangeLast: null, dates: null, weekdays: null };
@@ -98,15 +123,15 @@ export async function createEvent(
 	const parsed = newEventSchema.safeParse(input);
 
 	if (!parsed.success) {
-		return { ok: false, problems: parsed.error.issues.map((issue) => issue.path.join(".")) };
+		return { ok: false, problems: inputProblems(parsed.error) };
 	}
 
 	const { name, description, days, dailyStart, dailyEnd, slotLength, referenceZone } = parsed.data;
 	const schedule: Schedule = { days, dailyStart, dailyEnd, slotLength, referenceZone };
-	const problems = validateSchedule(schedule, now);
+	const issues = validateSchedule(schedule, now);
 
-	if (problems.length > 0) {
-		return { ok: false, problems };
+	if (issues.length > 0) {
+		return { ok: false, problems: ruleProblems(issues) };
 	}
 
 	const adminSecret = newSecret("admin");

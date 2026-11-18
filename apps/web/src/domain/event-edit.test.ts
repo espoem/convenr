@@ -34,25 +34,32 @@ describe("editProblems", () => {
 		};
 
 		expect(editProblems(before, extended, true, now)).toEqual([]);
-		expect(editProblems(before, backdated, true, now)).toEqual(["date_in_past"]);
+		expect(editProblems(before, backdated, true, now)).toEqual([
+			{ code: "date_in_past", path: ["days", "dates", 0] },
+		]);
 	});
 
-	it("locks slot length, day mode and zone once someone joined", () => {
-		const changes: Schedule[] = [
-			{ ...before, slotLength: 30 },
-			{ ...before, referenceZone: "Europe/London" },
-			{ ...before, days: { mode: "range", first: date("2027-04-06"), last: date("2027-04-07") } },
+	it("locks slot length, day mode and zone once someone joined, at the changed field", () => {
+		const changes: [Schedule, string[]][] = [
+			[{ ...before, slotLength: 30 }, ["slotLength"]],
+			[{ ...before, referenceZone: "Europe/London" }, ["referenceZone"]],
+			[
+				{ ...before, days: { mode: "range", first: date("2027-04-06"), last: date("2027-04-07") } },
+				["days", "mode"],
+			],
 		];
 
-		for (const after of changes) {
-			expect(editProblems(before, after, true, now)).toContain("field_locked");
-			expect(editProblems(before, after, false, now)).not.toContain("field_locked");
+		for (const [after, path] of changes) {
+			const locked = { code: "field_locked", path };
+
+			expect(editProblems(before, after, true, now)).toContainEqual(locked);
+			expect(editProblems(before, after, false, now)).not.toContainEqual(locked);
 		}
 	});
 
 	it("still applies the time range limits to the new times", () => {
 		expect(editProblems(before, { ...before, dailyEnd: 16 * 60 }, true, now)).toEqual([
-			"end_not_after_start",
+			{ code: "end_not_after_start", path: ["dailyEnd"] },
 		]);
 	});
 });
