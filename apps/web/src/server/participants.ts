@@ -11,6 +11,7 @@ import {
 	availableKeys,
 	liveEvent,
 	participantByToken,
+	participantForChange,
 	type ParticipantView,
 	type Queries,
 	scheduleOf,
@@ -481,30 +482,56 @@ export async function changePassword(
 	}
 
 	const passwordHash = next === null ? null : await hashPassword(next);
+	const checkedHash = found.participant.passwordHash;
 
-	await db().transaction(async (tx) => {
-		await tx
-			.update(participants)
-			.set({ passwordHash })
-			.where(eq(participants.id, found.participant.id));
-		await touchEvent(tx, found.event, now);
-	});
+	const written = await db().transaction(
+		async (tx): Promise<PasswordChangeResult | { ok: false; problem: "password_replaced" }> => {
+			// The participant may have left, or the event expired, while the password was hashed.
+			const locked = await participantForChange(tx, eventId, token, now);
 
-	return { ok: true };
+			if (locked === undefined) {
+				return { ok: false, problem: "not_joined" };
+			}
+
+			const [changed] = await tx
+				.update(participants)
+				.set({ passwordHash })
+				.where(
+					and(
+						eq(participants.id, locked.participant.id),
+						sql`${participants.passwordHash} is not distinct from ${checkedHash}`,
+					),
+				)
+				.returning({ id: participants.id });
+
+			if (changed === undefined) {
+				return { ok: false, problem: "password_replaced" };
+			}
+
+			await touchEvent(tx, locked.event, now);
+
+			return { ok: true };
+		},
+	);
+
+	// Another change replaced the password after this one checked it: check against the new one.
+	return !written.ok && written.problem === "password_replaced"
+		? changePassword(eventId, token, current, next, now)
+		: written;
 }
 
 /** Deletes the token's participant with its response, password and tokens. */
 export async function leave(eventId: string, token: string, now = Temporal.Now.instant()) {
-	const found = await participantByToken(db(), eventId, token, now);
+	return db().transaction(async (tx) => {
+		const found = await participantForChange(tx, eventId, token, now);
 
-	if (found === undefined) {
-		return { ok: false, problem: "not_joined" } as const;
-	}
+		if (found === undefined) {
+			return { ok: false, problem: "not_joined" } as const;
+		}
 
-	await db().transaction(async (tx) => {
 		await tx.delete(participants).where(eq(participants.id, found.participant.id));
 		await touchEvent(tx, found.event, now);
-	});
 
-	return { ok: true } as const;
+		return { ok: true } as const;
+	});
 }

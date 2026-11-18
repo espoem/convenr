@@ -188,3 +188,23 @@ export async function participantByToken(
 
 	return found !== undefined && isLive(found.event, now) ? found : undefined;
 }
+
+/**
+ * The participant that holds `token`, as `participantByToken` finds them, with the event row
+ * locked for a change. The token is checked before the lock, so a wrong token never waits for
+ * or holds it, and again under the lock, since the participant may have left in between.
+ */
+export async function participantForChange(
+	queries: Queries,
+	eventId: string,
+	token: string,
+	now: Temporal.Instant,
+) {
+	if ((await participantByToken(queries, eventId, token, now)) === undefined) {
+		return;
+	}
+
+	await queries.select({ id: events.id }).from(events).where(eq(events.id, eventId)).for("update");
+
+	return participantByToken(queries, eventId, token, now);
+}

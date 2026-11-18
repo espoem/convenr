@@ -2,10 +2,10 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { datedAvailability, events, weekdayAvailability } from "@/db/schema";
+import { datedAvailability, weekdayAvailability } from "@/db/schema";
 import { scheduleSlots, slotKey } from "@/domain/schedule";
 
-import { participantByToken, scheduleOf, touchEvent } from "./event-rows";
+import { participantForChange, scheduleOf, touchEvent } from "./event-rows";
 
 export type SaveResult = { ok: true } | { ok: false; problem: "not_joined" | "unknown_slot" };
 
@@ -22,9 +22,7 @@ export async function saveResponse(
 	now = Temporal.Now.instant(),
 ): Promise<SaveResult> {
 	return db().transaction(async (tx): Promise<SaveResult> => {
-		await tx.select({ id: events.id }).from(events).where(eq(events.id, eventId)).for("update");
-
-		const found = await participantByToken(tx, eventId, token, now);
+		const found = await participantForChange(tx, eventId, token, now);
 
 		if (found === undefined) {
 			return { ok: false, problem: "not_joined" };

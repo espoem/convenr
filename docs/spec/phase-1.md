@@ -85,7 +85,7 @@ The terms are defined in the [glossary](../../GLOSSARY.md). This spec uses them 
 
 **P5. Password.** A password is optional and belongs to one participant in one event. It is 4 to 128 characters long. The service stores only a hash.
 
-**P6. Setting and changing a password.** A browser that holds the participant token can set a password when none is stored. Changing or removing a stored password requires the current password.
+**P6. Setting and changing a password.** A browser that holds the participant token can set a password when none is stored. Changing or removing a stored password requires the current password. A change is written only over the password it was checked against: when another change replaced the password in the meantime, the change is checked again against the password now stored, so of two changes that gave the same current password at the same time, one wins and the other is checked against what the winner stored, which refuses it with `wrong_password` when the winner set another password.
 
 **P7. Failed attempts.** The service counts wrong passwords per participant, not per visitor. The attempt that brings the count to 5 locks the participant for 15 minutes and starts the count again at 0. While locked, every attempt for that participant is refused unchecked, and the service says when to try again. A lockout always ends after its 15 minutes. An attempt is counted when it is made, before its password is checked, so attempts sent at the same time count one by one and no more than 5 are checked between the start of a count and its lockout. A correct password takes back only its own attempt: wrong passwords counted before or alongside it stay counted, and a lockout set by other attempts stays. When the attempt of a correct password was the one that locked, the lockout is lifted again and the count is back to 4. A participant who left or was deleted while their password was checked is treated as gone: a password change gets `not_joined`, and a join looks up the name again.
 
@@ -202,6 +202,7 @@ The tests name no rule numbers. This list is the only link from rules to tests; 
 - `apps/web/src/domain/event-address.test.ts` and `apps/web/src/domain/slug.test.ts` cover E10.
 - `apps/web/src/domain/display-name.test.ts` covers P1 and P2.
 - `apps/web/src/server/participants.db.test.ts` covers P7, and also P2 to P4, P6, P8 and P9 against the database.
+- `apps/web/src/server/event-lock.db.test.ts` covers P6 for two password changes that gave the same current password at the same time.
 - `apps/web/src/server/password-attempts.db.test.ts` covers P7 under parallel guesses: no more than 5 passwords are verified before the lockout, a correct password checked alongside them leaves their lockout in place and takes back only its own attempt, and a participant deleted during an attempt is gone.
 - `apps/web/src/server/responses.db.test.ts` covers R3 and R4.
 - `apps/web/src/domain/heat.test.ts` covers V2.

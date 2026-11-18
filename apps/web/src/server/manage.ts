@@ -11,7 +11,7 @@ import type { Schedule, Slot } from "@/domain/schedule";
 import {
 	type EventRow,
 	firstDayOfWeekOf,
-	isLive,
+	liveEvent,
 	type Queries,
 	scheduleOf,
 	touchEvent,
@@ -49,20 +49,26 @@ export type RemoveParticipantResult =
 	| { status: "denied" }
 	| { status: "not_found" };
 
-/** The live event `id` when `secret` is its admin secret, locked for a change. */
+/**
+ * The live event `id` when `secret` is its admin secret. With `lock`, the row is locked for a
+ * change, and only after the secret fits: a wrong secret never waits for or holds the lock. The
+ * row is read again under the lock, since it may have changed or expired in between.
+ */
 async function adminRow(
 	queries: Queries,
 	id: string,
 	secret: string,
-	lock: boolean,
+	lock: "lock" | "read",
 	now: Temporal.Instant,
-) {
-	const query = queries.select().from(events).where(eq(events.id, id));
-	const [row] = lock ? await query.for("update") : await query;
+): Promise<EventRow | undefined> {
+	const fits = (row: EventRow | undefined) =>
+		row !== undefined && matchesSecret(row.adminSecretHash, secret) ? row : undefined;
 
-	return row !== undefined && isLive(row, now) && matchesSecret(row.adminSecretHash, secret)
-		? row
-		: undefined;
+	const read = fits(await liveEvent(queries, id, now, "read"));
+
+	return read === undefined || lock === "read"
+		? read
+		: fits(await liveEvent(queries, id, now, "lock"));
 }
 
 /** Whether `row` already holds every column of `values`; lists are compared element by element. */
@@ -106,7 +112,7 @@ export async function readManagedEvent(
 	secret: string,
 	now = Temporal.Now.instant(),
 ): Promise<ManagedEvent | undefined> {
-	const row = await adminRow(db(), id, secret, false, now);
+	const row = await adminRow(db(), id, secret, "read", now);
 
 	if (row === undefined) {
 		return undefined;
@@ -217,7 +223,7 @@ export async function updateEvent(
 	now = Temporal.Now.instant(),
 ): Promise<UpdateEventResult> {
 	return db().transaction(async (tx): Promise<UpdateEventResult> => {
-		const row = await adminRow(tx, id, secret, true, now);
+		const row = await adminRow(tx, id, secret, "lock", now);
 
 		if (row === undefined) {
 			return { status: "denied" };
@@ -292,7 +298,7 @@ export async function removeParticipant(
 	now = Temporal.Now.instant(),
 ): Promise<RemoveParticipantResult> {
 	return db().transaction(async (tx): Promise<RemoveParticipantResult> => {
-		const row = await adminRow(tx, id, secret, true, now);
+		const row = await adminRow(tx, id, secret, "lock", now);
 
 		if (row === undefined) {
 			return { status: "denied" };
@@ -320,7 +326,7 @@ export async function removeEvent(
 	now = Temporal.Now.instant(),
 ): Promise<boolean> {
 	return db().transaction(async (tx) => {
-		const row = await adminRow(tx, id, secret, true, now);
+		const row = await adminRow(tx, id, secret, "lock", now);
 
 		if (row === undefined) {
 			return false;
