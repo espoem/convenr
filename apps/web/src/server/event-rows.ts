@@ -156,6 +156,22 @@ export function isLive(row: EventRow, now: Temporal.Instant): boolean {
 	return end === null || Temporal.Instant.compare(now, end) < 0;
 }
 
+/**
+ * The live event `id`, or `undefined` once it has expired or never existed. With `lock`, the
+ * row stays locked until the transaction ends, so changes of one event happen one after another.
+ */
+export async function liveEvent(
+	queries: Queries,
+	id: string,
+	now: Temporal.Instant,
+	lock: "lock" | "read",
+): Promise<EventRow | undefined> {
+	const query = queries.select().from(events).where(eq(events.id, id));
+	const [row] = lock === "lock" ? await query.for("update") : await query;
+
+	return row !== undefined && isLive(row, now) ? row : undefined;
+}
+
 /** The participant of a live event `eventId` that holds `token`, with its event, or `undefined`. */
 export async function participantByToken(
 	queries: Queries,

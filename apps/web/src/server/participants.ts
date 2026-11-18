@@ -2,14 +2,14 @@
 import { and, count, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { events, participants, participantTokens } from "@/db/schema";
+import { participants, participantTokens } from "@/db/schema";
 import { parseDisplayName } from "@/domain/display-name";
 import { newPublicId } from "@/domain/public-id";
 import type { Schedule } from "@/domain/schedule";
 
 import {
 	availableKeys,
-	isLive,
+	liveEvent,
 	participantByToken,
 	type ParticipantView,
 	type Queries,
@@ -149,25 +149,75 @@ export async function join(
 		return { ok: false, problem: "invalid_name" };
 	}
 
-	const existing = await participantByName(eventId, name.key);
-
-	if (existing !== undefined) {
-		if (password.kind === "new") {
-			return { ok: false, problem: "name_exists" };
-		}
-
-		if (password.kind === "current" && existing.passwordHash === null) {
-			return { ok: false, problem: "no_password" };
-		}
-
-		const given = password.kind === "none" ? undefined : password.password;
-		const checked = await checkPassword(existing, given, now);
-
-		return checked.ok
-			? { ok: true, name: existing.displayName, token: await issueToken(db(), existing.id) }
-			: checked;
+	// An expired event is unknown: no name in it is looked up and no password is tried.
+	if ((await liveEvent(db(), eventId, now, "read")) === undefined) {
+		return { ok: false, problem: "not_found" };
 	}
 
+	const existing = await participantByName(eventId, name.key);
+
+	const joined =
+		existing === undefined
+			? await joinNew(eventId, name, password, now)
+			: await joinExisting(eventId, existing, password, now);
+
+	// Another browser took or freed the name between the lookup and the lock.
+	if (!joined.ok && joined.problem === "name_taken") {
+		return join(eventId, rawName, password, now);
+	}
+
+	return joined;
+}
+
+type NameTaken = { ok: false; problem: "name_taken" };
+
+/** A token for a used name, issued under the event lock once the password fits. */
+async function joinExisting(
+	eventId: string,
+	existing: ParticipantRow,
+	password: JoinPassword,
+	now: Temporal.Instant,
+): Promise<JoinResult | NameTaken> {
+	if (password.kind === "new") {
+		return { ok: false, problem: "name_exists" };
+	}
+
+	if (password.kind === "current" && existing.passwordHash === null) {
+		return { ok: false, problem: "no_password" };
+	}
+
+	const given = password.kind === "none" ? undefined : password.password;
+	const checked = await checkPassword(existing, given, now);
+
+	if (!checked.ok) {
+		return checked;
+	}
+
+	return db().transaction(async (tx): Promise<JoinResult | NameTaken> => {
+		// The event may have expired or been deleted, or the participant left, while the
+		// password was checked.
+		if ((await liveEvent(tx, eventId, now, "lock")) === undefined) {
+			return { ok: false, problem: "not_found" };
+		}
+
+		const [still] = await tx
+			.select({ id: participants.id })
+			.from(participants)
+			.where(eq(participants.id, existing.id));
+
+		return still === undefined
+			? { ok: false, problem: "name_taken" }
+			: { ok: true, name: existing.displayName, token: await issueToken(tx, existing.id) };
+	});
+}
+
+/** A new participant under a name nobody in the event uses. */
+async function joinNew(
+	eventId: string,
+	name: { name: string; key: string },
+	password: JoinPassword,
+	now: Temporal.Instant,
+): Promise<JoinResult | NameTaken> {
 	if (password.kind === "current") {
 		return { ok: false, problem: "name_unknown" };
 	}
@@ -181,11 +231,11 @@ export async function join(
 	// Hashing takes a while, so it happens before the event row is locked.
 	const passwordHash = chosen === undefined ? null : await hashPassword(chosen);
 
-	const created = await db().transaction(async (tx) => {
+	return db().transaction(async (tx) => {
 		// The lock orders joins of one event, so the participant limit and the name check hold.
-		const [event] = await tx.select().from(events).where(eq(events.id, eventId)).for("update");
+		const event = await liveEvent(tx, eventId, now, "lock");
 
-		if (event === undefined || !isLive(event, now)) {
+		if (event === undefined) {
 			return { ok: false, problem: "not_found" } as const;
 		}
 
@@ -229,13 +279,6 @@ export async function join(
 
 		return { ok: true, name: name.name, token: await issueToken(tx, row.id) } as const;
 	});
-
-	// Someone else joined under this name between the first lookup and the lock.
-	if (!created.ok && created.problem === "name_taken") {
-		return join(eventId, rawName, password, now);
-	}
-
-	return created;
 }
 
 /** The name the holder of `token` joined `eventId` under, so a stored token reopens the event already joined. */

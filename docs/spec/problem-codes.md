@@ -25,7 +25,7 @@ Returned as `problem` in a failed result.
 | Code | Meaning | Rules |
 |---|---|---|
 | `invalid_name` | The display name is empty after trimming, longer than 40 characters or has a control character. | P1 |
-| `name_taken` | Another browser created the same name between the check and the write. Used only inside the service: the join is retried as a join of the existing participant. | P2, P4 |
+| `name_taken` | Another browser created the same name, or the participant under it left, between the check and the write. Used only inside the service: the join is retried with the name as it now stands. | P2, P4 |
 | `event_full` | The event already has 100 participants. | P3 |
 | `password_required` | The name belongs to a participant with a password and none was given. | P4 |
 | `wrong_password` | The password does not match. | P4, P7 |

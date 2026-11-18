@@ -2,13 +2,14 @@ import { sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
-import { events } from "@/db/schema";
+import { events, participants } from "@/db/schema";
 import { env } from "@/env";
 
 import { createEvent, eventVersion, type NewEvent, readEvent } from "./events";
 import { runMaintenance } from "./maintenance";
-import { readManagedEvent } from "./manage";
-import { identify, join } from "./participants";
+import { readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
+import { changePassword, identify, join, leave, readParticipant } from "./participants";
+import { saveResponse } from "./responses";
 import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
 
 // With the default 90 days: the range ends on 6 April 2027, so its deletion date is 5 July and
@@ -70,6 +71,56 @@ describe("expiry", () => {
 			ok: false,
 			problem: "not_found",
 		});
+	});
+
+	it("refuses every action on an expired event before it reads a name, a token or a secret", async () => {
+		const { id, adminSecret } = await created(pragueEvenings);
+		const jana = await join(id, "Jana", { kind: "new", password: "heslo-1234" }, creationTime);
+
+		if (!jana.ok) {
+			throw new Error("Jana could not join.");
+		}
+
+		const notFound = { ok: false, problem: "not_found" };
+		const notJoined = { ok: false, problem: "not_joined" };
+
+		expect(await join(id, "Jana", undefined, datedExpiry)).toEqual(notFound);
+		expect(await join(id, "Jana", { kind: "current", password: "spatne" }, datedExpiry)).toEqual(
+			notFound,
+		);
+		expect(
+			await join(id, "Jana", { kind: "current", password: "heslo-1234" }, datedExpiry),
+		).toEqual(notFound);
+		expect(await readParticipant(id, jana.token, datedExpiry)).toBeUndefined();
+		expect(await saveResponse(id, jana.token, [], datedExpiry)).toEqual(notJoined);
+		expect(
+			await changePassword(
+				id,
+				jana.token,
+				{ kind: "given", password: "heslo-1234" },
+				null,
+				datedExpiry,
+			),
+		).toEqual(notJoined);
+		expect(await leave(id, jana.token, datedExpiry)).toEqual(notJoined);
+		expect(await updateEvent(id, adminSecret, { name: "Jiná" }, null, datedExpiry)).toEqual({
+			status: "denied",
+		});
+		expect(await removeEvent(id, adminSecret, datedExpiry)).toBe(false);
+
+		const janaId = (await readManagedEvent(id, adminSecret, creationTime))?.participants[0]?.id;
+
+		expect(await removeParticipant(id, adminSecret, janaId ?? "", datedExpiry)).toEqual({
+			status: "denied",
+		});
+
+		// No token was issued and no failed attempt was counted.
+		expect(await count("participant_tokens")).toBe(1);
+		expect(await count("participants")).toBe(1);
+
+		const [row] = await db().select().from(participants);
+
+		expect(row?.failedAttempts).toBe(0);
 	});
 });
 

@@ -24,7 +24,7 @@ import { env } from "@/env";
 import {
 	availableKeys,
 	firstDayOfWeekOf,
-	isLive,
+	liveEvent,
 	type ParticipantView,
 	scheduleOf,
 } from "./event-rows";
@@ -184,13 +184,6 @@ export type EventView = {
 	participants: ParticipantView[];
 };
 
-/** The live event `id`, or `undefined` once it has expired or never existed. */
-async function liveRow(id: string, now: Temporal.Instant) {
-	const [row] = await db().select().from(events).where(eq(events.id, id));
-
-	return row !== undefined && isLive(row, now) ? row : undefined;
-}
-
 /**
  * The version of event `id`, or `null` when the event no longer exists or has expired.
  */
@@ -198,7 +191,7 @@ export async function eventVersion(
 	id: string,
 	now = Temporal.Now.instant(),
 ): Promise<string | null> {
-	const row = await liveRow(id, now);
+	const row = await liveEvent(db(), id, now, "read");
 
 	return row === undefined ? null : Temporal.Instant.from(row.changedAt).toString();
 }
@@ -211,7 +204,7 @@ export async function readEvent(
 	id: string,
 	now = Temporal.Now.instant(),
 ): Promise<EventView | undefined> {
-	const row = await liveRow(id, now);
+	const row = await liveEvent(db(), id, now, "read");
 
 	if (row === undefined) {
 		return undefined;
