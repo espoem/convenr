@@ -20,7 +20,7 @@ async function availability(eventId: string) {
 }
 
 describe("saveResponse", () => {
-	it("replaces the stored set as a whole, and the later save wins (R2, R3)", async () => {
+	it("replaces the stored set as a whole, and the later save wins", async () => {
 		const eventId = await freshEvent();
 		const token = await joined(eventId);
 
@@ -30,7 +30,7 @@ describe("saveResponse", () => {
 		expect(await availability(eventId)).toEqual(["2027-04-06T16:00:00Z"]);
 	});
 
-	it("refuses the whole save when one slot is not the event's (R4)", async () => {
+	it("refuses the whole save when one slot is not the event's", async () => {
 		const eventId = await freshEvent();
 		const token = await joined(eventId);
 

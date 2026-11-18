@@ -1,4 +1,4 @@
-// Localized names of days and times for spec rule T5. These need Temporal, so the server
+// Localized names of days and times. These need Temporal, so the server
 // computes them for anything it renders and the browser only for the dated grid.
 import { MINUTES_PER_DAY, toWeekday, type Weekday, WEEKDAYS } from "./schedule";
 

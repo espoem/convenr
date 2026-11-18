@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useLocalEvents } from "@/lib/local-events";
 
-/** Events this browser holds, newest first, with the role in each (spec rule B3). */
+/** Events this browser holds, newest first, with the role in each. */
 export function MyEvents() {
 	const t = useTranslations("MyEvents");
 	const events = [...useLocalEvents().values()].toReversed();

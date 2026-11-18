@@ -1,5 +1,4 @@
-// Tables of Phases 1 and 2. Rules E1 to E7, P1 to P9 and R1 of the Phase 1 spec, U1 to U6
-// of the Phase 2 spec, ADR 0002 and ADR 0003.
+// Tables of events, participants, responses, tokens and usage counts, as in ADR 0002 and ADR 0003.
 import { sql } from "drizzle-orm";
 import {
 	check,
@@ -38,9 +37,9 @@ export const events = pgTable(
 		/** SHA-256 of the admin secret, base64url. */
 		adminSecretHash: text().notNull(),
 		createdAt: instant().notNull().defaultNow(),
-		/** The version of Phase 2 rule F5, and the base of a weekday event's deletion date (E7). */
+		/** The event's version, and the base of a weekday event's deletion date. */
 		changedAt: instant().notNull().defaultNow(),
-		/** When the event entered the usage counts of Phase 2 rules U3, U4 and U5 (U6). */
+		/** When the event entered the activation counts, so that it counts once. */
 		activationCountedAt: instant(),
 		sizeCountedAt: instant(),
 		firstResponseCountedAt: instant(),
@@ -76,7 +75,7 @@ export const participants = pgTable(
 			.notNull()
 			.references(() => events.id, { onDelete: "cascade" }),
 		displayName: text().notNull(),
-		/** The display name lower-cased, for rule P2. */
+		/** The display name lower-cased, so that names differing in case are the same name. */
 		nameKey: text().notNull(),
 		/** Argon2id hash in PHC string format. */
 		passwordHash: text(),
@@ -124,8 +123,8 @@ export const weekdayAvailability = pgTable(
 );
 
 /**
- * Daily usage counts of Phase 2 rules U1 to U5. No column names an event. `bucket` is 0 for a
- * plain count, the participant count for `group_size`, and the bucket index of U5 for
+ * Daily usage counts. No column names an event. `bucket` is 0 for a
+ * plain count, the participant count for `group_size`, and the first-response bucket index for
  * `first_response`.
  */
 export const usageCounts = pgTable(

@@ -1,7 +1,7 @@
-// Usage counts recorded inside the server's own changes: Phase 2 rules U2, U5 and, for an
-// organizer's deletion, U3 and U4. Counts hold no names, contents or ids (U1). Events reaching
+// Usage counts recorded inside the server's own changes: creation, the first join and, for an
+// organizer's deletion, the age counts. Counts hold no names, contents or ids. Events reaching
 // an age and expired events are counted by the maintenance pass (`maintenance.ts`). The
-// `*_counted_at` columns make each event add to U3, U4 and U5 at most once (U6).
+// `*_counted_at` columns make each event add to the age and first-response counts at most once.
 import { count, eq, sql } from "drizzle-orm";
 
 import { events, participants, usageCounts } from "@/db/schema";
@@ -11,7 +11,7 @@ import type { EventRow, Queries } from "./event-rows";
 
 type Metric = (typeof usageCounts.$inferInsert)["metric"];
 
-/** Adds one to the count of `metric` and `bucket` on the UTC day of `now` (U1). */
+/** Adds one to the count of `metric` and `bucket` on the UTC day of `now`. */
 async function add(queries: Queries, now: Temporal.Instant, metric: Metric, bucket = 0) {
 	const day = now.toZonedDateTimeISO("UTC").toPlainDate().toString();
 
@@ -24,12 +24,12 @@ async function add(queries: Queries, now: Temporal.Instant, metric: Metric, buck
 		});
 }
 
-/** U2: an event was created at `now`. */
+/** Counts an event created at `now`. */
 export async function countCreated(queries: Queries, now: Temporal.Instant) {
 	await add(queries, now, "events_created");
 }
 
-/** U5: the first participant of `event` joined at `now`. */
+/** Counts the first participant of `event`, who joined at `now`, by time since creation. */
 export async function countFirstResponse(queries: Queries, event: EventRow, now: Temporal.Instant) {
 	if (event.firstResponseCountedAt !== null) {
 		return;
@@ -45,7 +45,7 @@ export async function countFirstResponse(queries: Queries, event: EventRow, now:
 }
 
 /**
- * U3 and U4 for an event the organizer deletes at `now`, unless the maintenance pass counted it
+ * The activation and group size counts for an event the organizer deletes at `now`, unless the maintenance pass counted it
  * already. Call it with the event row locked, before the delete.
  */
 export async function countDeleted(queries: Queries, event: EventRow, now: Temporal.Instant) {

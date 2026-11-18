@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-// Spec section 14: a weekday event keeps its times for every viewer (T3) and orders its
-// columns from the event's first day of week (T4).
+// A weekday event keeps its times for every viewer and orders its columns from the event's
+// first day of week.
 test("a weekday event shows stored times in every zone, from the first day of week", async ({
 	browser,
 }) => {

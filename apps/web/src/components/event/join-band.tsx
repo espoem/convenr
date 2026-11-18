@@ -15,10 +15,10 @@ type JoinBandProps = {
 	eventId: string;
 	joined: Joined | null;
 	onJoined: (name: string, token: string, hasPassword: boolean) => void;
-	/** The browser forgets its token; with `left` the participant was also deleted (P9). */
+	/** The browser forgets its token; with `left` the participant was also deleted. */
 	onForget: (left: boolean) => void;
 	onPasswordChange: (hasPassword: boolean) => void;
-	/** A lockout's end, formatted for the page (P7). */
+	/** A lockout's end, formatted for the page. */
 	formatTime: (instant: string) => string;
 };
 
@@ -28,7 +28,7 @@ function strong(text: ReactNode) {
 	return <strong>{text}</strong>;
 }
 
-/** Spec rules P4 to P9. Above the tabs; one line once the browser holds a token (I1). */
+/** Joining, passwords and leaving. Above the tabs; one line once the browser holds a token. */
 export function JoinBand(props: JoinBandProps) {
 	return (
 		<section

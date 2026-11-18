@@ -1,4 +1,4 @@
-// Days, daily time range and slots of an event: spec rules E2 to E5 and ADR 0002.
+// Days, daily time range and slots of an event, as in ADR 0002.
 
 export const SLOT_LENGTHS = [15, 30, 60] as const;
 
@@ -17,7 +17,7 @@ export function toWeekday(value: number): Weekday | undefined {
 	return WEEKDAYS.find((candidate) => candidate === value);
 }
 
-/** The seven days of the week in display order for a week starting on `first` (T4). */
+/** The seven days of the week in display order for a week starting on `first`. */
 export function weekdaysFrom(first: Weekday): Weekday[] {
 	return [...WEEKDAYS.slice(first - 1), ...WEEKDAYS.slice(0, first - 1)];
 }
@@ -147,9 +147,9 @@ function timeProblems(schedule: Schedule): ScheduleProblem[] {
 }
 
 /**
- * Problems that make a schedule invalid by rules E2 and E3. `now` is the moment of the
+ * Problems that make a schedule invalid. `now` is the moment of the
  * change; a date before today in the reference zone is refused unless it is one of
- * `keptDates`, the dates an edited event already had (Phase 2 rule M4).
+ * `keptDates`, the dates an edited event already had.
  */
 export function validateSchedule(
 	schedule: Schedule,
@@ -179,7 +179,7 @@ function* dailyMinutes(schedule: Schedule): Generator<number> {
 }
 
 /**
- * Every slot of a valid schedule by rules E4 and E5, in time order. A dated event walks
+ * Every slot of a valid schedule, in time order. A dated event walks
  * wall-clock times in the reference zone: a time that does not exist on a date gives no
  * slot, and a time that occurs twice gives one slot at its first occurrence.
  */

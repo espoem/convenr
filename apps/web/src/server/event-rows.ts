@@ -86,8 +86,8 @@ export function datedSlotKey(row: { slotStart: string }): string {
 }
 
 /**
- * Records a change to the event or a response. It moves the version (Phase 2 rule F5) and with
- * it a weekday event's deletion date (E7).
+ * Records a change to the event or a response. It moves the version and with
+ * it a weekday event's deletion date.
  */
 export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.Instant) {
 	await queries.update(events).set({ changedAt: now.toString() }).where(eq(events.id, row.id));
@@ -95,7 +95,7 @@ export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.
 
 /**
  * Whether the event has not expired yet. From the end of its deletion date an event is unknown
- * to every page, action and version check, even before the purge deletes it (Phase 2 rule X3).
+ * to every page, action and version check, even before the purge deletes it.
  */
 export function isLive(row: EventRow, now: Temporal.Instant): boolean {
 	const end = expiresAt(

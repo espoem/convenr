@@ -1,5 +1,5 @@
-// The maintenance pass: the usage counts of events that reach an age (Phase 2 rules U3, U4)
-// and the purge of expired events (X4), which counts them first when they were deleted before
+// The maintenance pass: the usage counts of events that reach an age
+// and the purge of expired events, which counts them first when they were deleted before
 // those ages. It imports only the usage constants, so that the purge command
 // (`scripts/purge.mts`) runs it with plain Node, also in the container image.
 import {
@@ -16,7 +16,7 @@ export type MaintenanceClient = {
 
 // Each statement marks an event counted in the same step that counts it, and a concurrent run
 // waits for the row and then finds it marked, so several servers may run the pass side by side
-// and every event still adds at most once (U6). An event that reaches an age counts on the UTC
+// and every event still adds at most once. An event that reaches an age counts on the UTC
 // day it did, so a late run counts the same.
 const COUNT_AGES = `
 with counted as (
@@ -52,7 +52,7 @@ insert into usage_counts (day, metric, bucket, count)
 select reached::date, metric, bucket, count(*) from counts group by reached::date, metric, bucket
 on conflict (day, metric, bucket) do update set count = usage_counts.count + excluded.count`;
 
-// The expiry is the SQL form of `expiresAt` in `src/domain/retention.ts` (X3): the end of the
+// The expiry is the SQL form of `expiresAt` in `src/domain/retention.ts`: the end of the
 // deletion date in the reference zone. A database test keeps the two in step. Deleting an
 // event deletes its participants, tokens and responses through the foreign keys.
 const PURGE = `

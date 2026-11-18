@@ -1,5 +1,5 @@
 "use client";
-// The event page's version check: Phase 2 rules F1, F2 and F4.
+// The event page's version check: polls the event's version and refreshes the page when it moves.
 
 import { useEffect } from "react";
 

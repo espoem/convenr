@@ -1,4 +1,4 @@
-// The usage command of Phase 2 rule U7: prints the daily usage counts. Without arguments it
+// The usage command: prints the daily usage counts. Without arguments it
 // covers the last 30 days up to today in UTC; `node apps/web/scripts/usage.mts 2027-03-01
 // 2027-03-31` covers a range, both days included. It reads DATABASE_URL and needs only Node
 // and `pg`, so it also runs in the container image.

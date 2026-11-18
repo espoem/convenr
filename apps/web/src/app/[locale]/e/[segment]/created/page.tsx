@@ -11,7 +11,7 @@ export default async function CreatedPage({ params }: PageProps<"/[locale]/e/[se
 	const { segment } = await params;
 	const id = eventIdFromSegment(segment);
 
-	// An unknown, deleted or expired event has no links to show (E9, X3).
+	// An unknown, deleted or expired event has no links to show.
 	if (id === undefined || (await eventVersion(id)) === null) {
 		notFound();
 	}

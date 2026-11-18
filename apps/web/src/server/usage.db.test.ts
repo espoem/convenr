@@ -46,7 +46,7 @@ beforeEach(async () => {
 });
 
 describe("usage counts", () => {
-	it("count creations and the first response once per event (U2, U5, U6)", async () => {
+	it("count creations and the first response once per event", async () => {
 		const { id } = await created();
 
 		await created();
@@ -59,7 +59,7 @@ describe("usage counts", () => {
 		]);
 	});
 
-	it("count activation at 7 days and group size at 30 days, on the day reached (U3, U4, U6)", async () => {
+	it("count activation at 7 days and group size at 30 days, on the day reached", async () => {
 		const { id } = await created();
 
 		await joinAll(id, ["Jana", "Petr"], after(1));
@@ -84,7 +84,7 @@ describe("usage counts", () => {
 		]);
 	});
 
-	it("count an event the organizer deletes before the ages, and only what is left (U3, U4)", async () => {
+	it("count an event the organizer deletes before the ages, and only what is left", async () => {
 		const early = await created();
 		const later = await created();
 
@@ -105,7 +105,7 @@ describe("usage counts", () => {
 		]);
 	});
 
-	it("count an expired event before the purge deletes it (U3, U4, X4)", async () => {
+	it("count an expired event before the purge deletes it", async () => {
 		// Expires at the end of 30 May 2027. One event is older than 30 days by then, the other
 		// is made 2 days old so the purge deletes it before either age.
 		await created(mondayEvenings);

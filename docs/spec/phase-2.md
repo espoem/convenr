@@ -123,4 +123,16 @@ Phase 2 is done when this end-to-end test passes on a clean clone in CI:
 
 ## 11. Rule coverage outside the acceptance test
 
-Unit tests cover M4, M5, W1 to W3, X2, X3, U5 and U7. Database tests cover M3, M8, X3, X4, F5 and U2 to U6. An end-to-end test covers F1 to F3: a second browser's save appears within one check interval without a reload, and the first browser's unsaved edits stay.
+The tests name no rule numbers. This list is the only link from rules to tests.
+
+- `apps/web/src/domain/event-edit.test.ts` covers M3 to M5.
+- `apps/web/src/domain/best-windows.test.ts` covers W1 to W3.
+- `apps/web/src/domain/retention.test.ts` covers X2 and X3, and `apps/web/src/env.test.ts` covers X1.
+- `apps/web/src/domain/usage.test.ts` covers U5 and U7.
+- `apps/web/src/server/manage.db.test.ts` covers M1, M3, M5 to M9 against the database.
+- `apps/web/src/server/retention.db.test.ts` covers X3 and X4.
+- `apps/web/src/server/version.db.test.ts` covers F5.
+- `apps/web/src/server/usage.db.test.ts` covers U2 to U6.
+- `apps/web/e2e/freshness.spec.ts` covers F1 to F4: a second browser's save appears within one check interval without a reload, and the first browser's unsaved edits stay.
+- `apps/web/e2e/results.spec.ts` covers W4 and Z1.
+- `apps/web/e2e/manage-and-expire.spec.ts` is the acceptance test of section 10.

@@ -1,5 +1,5 @@
-// Managing an event behind the admin link: Phase 2 rules M1 to M8. Every change locks the event
-// row first, so it and a participant's save (M9) happen one after the other.
+// Managing an event behind the admin link. Every change locks the event
+// row first, so it and a participant's save happen one after the other.
 import { and, asc, count, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db/client";
@@ -23,7 +23,7 @@ import { countDeleted } from "./usage";
 export type ManagedEvent = NewEvent & {
 	id: string;
 	segment: string;
-	/** Slot length, day mode and reference zone are locked (M3). */
+	/** Slot length, day mode and reference zone are locked because people joined. */
 	locked: boolean;
 	participants: { id: string; name: string }[];
 };
@@ -31,12 +31,12 @@ export type ManagedEvent = NewEvent & {
 export type UpdateEventResult =
 	| { status: "saved"; segment: string }
 	| { status: "denied" }
-	/** Field paths and rule codes such as `E2.date-in-past` or `M3.locked`. */
+	/** Field paths and problem codes such as `date_in_past` or `field_locked`. */
 	| { status: "invalid"; problems: string[] }
-	/** How many participants would lose part of their availability (M5). */
+	/** How many participants would lose part of their availability. */
 	| { status: "confirm"; losing: number };
 
-/** The live event `id` when `secret` is its admin secret (M1, X3), locked for a change. */
+/** The live event `id` when `secret` is its admin secret, locked for a change. */
 async function adminRow(
 	queries: Queries,
 	id: string,
@@ -78,7 +78,7 @@ function inputOf(row: EventRow): NewEvent {
 	};
 }
 
-/** The event as the manage page edits it, or `undefined` without a valid secret (M1). */
+/** The event as the manage page edits it, or `undefined` without a valid secret. */
 export async function readManagedEvent(
 	id: string,
 	secret: string,
@@ -182,8 +182,8 @@ async function deleteAvailability(queries: Queries, eventId: string, removed: Sl
 }
 
 /**
- * Changes the event's fields by rules M2 to M6. A change that takes availability away from
- * participants needs `confirmedLosing` to match how many lose it (M5); the count is asked for
+ * Changes the event's fields. A change that takes availability away from
+ * participants needs `confirmedLosing` to match how many lose it; the count is asked for
  * again when it changed in the meantime.
  */
 export async function updateEvent(
@@ -252,7 +252,7 @@ export async function updateEvent(
 	});
 }
 
-/** Deletes a participant like rule P9 does, on the organizer's request (M7). */
+/** Deletes a participant on the organizer's request, like a participant leaving does. */
 export async function removeParticipant(
 	id: string,
 	secret: string,
@@ -281,7 +281,7 @@ export async function removeParticipant(
 	});
 }
 
-/** Deletes the event with its participants and responses at once and for good (M8). */
+/** Deletes the event with its participants and responses at once and for good. */
 export async function removeEvent(
 	id: string,
 	secret: string,

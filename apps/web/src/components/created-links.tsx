@@ -10,7 +10,7 @@ import { useOrigin } from "@/lib/use-origin";
 
 type CreatedLinksProps = { id: string; segment: string; locale: Locale };
 
-/** The two links of spec rule E6. The admin link exists only in this browser's storage. */
+/** The share link and the admin link. The admin link exists only in this browser's storage. */
 export function CreatedLinks({ id, segment, locale }: CreatedLinksProps) {
 	const t = useTranslations("Created");
 	const origin = useOrigin();

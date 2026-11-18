@@ -9,7 +9,7 @@ import type { GridView } from "@/domain/grid-labels";
 
 type BestWindowsProps = {
 	view: GridView;
-	/** Every maximal window of the grid (W1). */
+	/** Every maximal window of the grid. */
 	windows: Window[];
 	names: string[];
 	slotLength: number;
@@ -18,7 +18,7 @@ type BestWindowsProps = {
 	onSelect: (window: Window | null) => void;
 };
 
-/** The list of best windows below the grid: Phase 2 rules W1 to W5. */
+/** The list of best windows below the grid, with filters by people and length. */
 export function BestWindows({
 	view,
 	windows,
@@ -31,7 +31,7 @@ export function BestWindows({
 	const t = useTranslations("Event");
 	const id = useId();
 	const [minSlots, setMinSlots] = useState(1);
-	// `null` follows the highest count as responses change (W2) until the viewer picks a number.
+	// `null` follows the highest count as responses change until the viewer picks a number.
 	const [chosenPeople, setChosenPeople] = useState<number | null>(null);
 	const highest = mostPeople(windows);
 	const minPeople = chosenPeople ?? Math.max(highest, 1);

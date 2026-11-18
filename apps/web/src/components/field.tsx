@@ -37,7 +37,7 @@ export function Field({ id, label, hint, error, locked, children, className }: F
 	);
 }
 
-/** The lock and the reason below a control that cannot change (DESIGN.md rule 12). */
+/** The lock and the reason below a control that cannot change. */
 export function LockedNote({ id, text }: { id: string; text: string }) {
 	return (
 		<p id={id} className="flex max-w-(--cv-measure) items-start gap-1.5 text-sm text-ink-muted">

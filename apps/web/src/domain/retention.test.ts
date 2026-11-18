@@ -12,7 +12,7 @@ const evenings: Omit<Schedule, "days"> = {
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 
-describe("E7 planned deletion date", () => {
+describe("planned deletion date", () => {
 	it("is 90 days after the last date of a dated event, whenever it last changed", () => {
 		const schedule: Schedule = {
 			...evenings,
@@ -32,7 +32,7 @@ describe("E7 planned deletion date", () => {
 		expect(deletionDate(schedule, change, 90)?.toString()).toBe("2027-06-30");
 	});
 
-	it("follows the current setting and is absent with never (X2)", () => {
+	it("follows the current setting and is absent with never", () => {
 		const schedule: Schedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
 		const change = Temporal.Instant.from("2027-04-01T10:00:00Z");
 
@@ -41,7 +41,7 @@ describe("E7 planned deletion date", () => {
 	});
 });
 
-describe("X3 expiry", () => {
+describe("expiry", () => {
 	it("comes at the end of the deletion date in the reference zone", () => {
 		const schedule: Schedule = {
 			...evenings,

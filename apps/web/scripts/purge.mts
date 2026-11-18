@@ -1,4 +1,4 @@
-// The purge command of Phase 2 rule X4: runs the maintenance pass once (usage counts by age,
+// The purge command: runs the maintenance pass once (usage counts by age,
 // then the purge) and prints how many expired events it deleted. An
 // operator can schedule it from outside; the server also runs it every hour. It reads the same
 // DATABASE_URL and RETENTION_DAYS as the server and needs only Node and `pg`, so it also runs

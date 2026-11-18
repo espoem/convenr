@@ -19,7 +19,7 @@ const twoEvenings = datedSlots({
 	referenceZone: "Europe/Prague",
 });
 
-describe("T1 dated event in the viewer's zone", () => {
+describe("dated event in the viewer's zone", () => {
 	it("shows a Prague evening at midday for a viewer in New York", () => {
 		const grid = datedGrid(twoEvenings, "America/New_York");
 

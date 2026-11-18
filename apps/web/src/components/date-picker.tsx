@@ -18,7 +18,7 @@ type DatePickerProps = {
 	describedBy: string;
 };
 
-/** A month calendar for choosing single dates (spec rule E2), weeks starting by rule T4. */
+/** A month calendar for choosing single dates, weeks starting on the event's first day of the week. */
 export function DatePicker({
 	selected,
 	onToggle,
@@ -30,7 +30,7 @@ export function DatePicker({
 	const t = useTranslations("Create");
 	const today = Temporal.Now.plainDateISO();
 
-	// An edited event may already hold past dates (Phase 2 rule M4); the calendar reaches back
+	// An edited event may already hold past dates; the calendar reaches back
 	// to the earliest of them.
 	const earliest = [
 		today.toPlainYearMonth(),

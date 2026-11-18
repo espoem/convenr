@@ -22,14 +22,14 @@ export async function createEventAction(input: NewEvent): Promise<CreateEventRes
 	return createEvent(input);
 }
 
-/** The event's version for the page's check (Phase 2 rule F1), `null` once it is gone. */
+/** The event's version for the page's check, `null` once it is gone. */
 export async function eventVersionAction(id: string): Promise<string | null> {
 	const args = eventId.safeParse(id);
 
 	return args.success ? eventVersion(args.data) : null;
 }
 
-/** The event for its manage page, or `null` when the secret does not fit (Phase 2 rule M1). */
+/** The event for its manage page, or `null` when the secret does not fit. */
 export async function loadManageAction(id: string, secret: string): Promise<ManagedEvent | null> {
 	const args = z.tuple([eventId, adminSecret]).safeParse([id, secret]);
 

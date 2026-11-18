@@ -19,8 +19,8 @@ import type { ManagedEvent } from "@/server/manage";
 type ManageEventProps = { id: string; options: EventFormOptions };
 
 /**
- * The manage page of Phase 2 rules M1 to M8. The admin secret comes from the address fragment,
- * which never reaches the server in an address (ADR 0003 item 2), or from local storage (B1).
+ * The manage page. The admin secret comes from the address fragment,
+ * which never reaches the server in an address (ADR 0003 item 2), or from local storage.
  */
 export function ManageEvent({ id, options }: ManageEventProps) {
 	const t = useTranslations("Manage");
@@ -138,7 +138,7 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 		act(
 			() => removeEventAction(id, secret),
 			() => {
-				// Returning nothing removes the record from this browser (rule B1).
+				// Returning nothing removes the record from this browser.
 				updateLocalEvent(id, () => {});
 				router.push("/");
 			},

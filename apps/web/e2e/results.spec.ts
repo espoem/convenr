@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 
 import { createEvent, expect, freshPage, respond } from "./helpers";
 
-// The best windows (Phase 2 rules W1 to W4) and the zone switch (Z1).
+// The best windows and the zone switch.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
 
 test.setTimeout(180_000);

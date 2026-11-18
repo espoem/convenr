@@ -25,7 +25,7 @@ async function tokenOf(name: string, password?: string): Promise<string> {
 	return joined.token;
 }
 
-describe("P4 joining", () => {
+describe("joining", () => {
 	it("creates a participant under the normalized name and gives a token", async () => {
 		const joined = await join(eventId, "  Jana   Nováková ", undefined, creationTime);
 
@@ -35,7 +35,7 @@ describe("P4 joining", () => {
 		]);
 	});
 
-	it("gives another token to the same participant for a used name without a password (P2, P8)", async () => {
+	it("gives another token to the same participant for a used name without a password", async () => {
 		const first = await tokenOf("Jana");
 		const second = await tokenOf(" JANA ");
 
@@ -67,7 +67,7 @@ describe("P4 joining", () => {
 		});
 	});
 
-	it("refuses participant 101 (P3)", async () => {
+	it("refuses participant 101", async () => {
 		await db()
 			.insert(participants)
 			.values(
@@ -84,7 +84,7 @@ describe("P4 joining", () => {
 		});
 	});
 
-	it("keeps one participant when the same new name joins twice at once (P2)", async () => {
+	it("keeps one participant when the same new name joins twice at once", async () => {
 		const results = await Promise.all([tokenOf("Jana"), tokenOf("jana")]);
 
 		expect(new Set(results).size).toBe(2);
@@ -92,7 +92,7 @@ describe("P4 joining", () => {
 	});
 });
 
-describe("P7 failed attempts", () => {
+describe("failed attempts", () => {
 	it("locks for 15 minutes after the fifth wrong password in a row", async () => {
 		await tokenOf("Jana", "tajne");
 
@@ -130,7 +130,7 @@ describe("P7 failed attempts", () => {
 	});
 });
 
-describe("P6 passwords", () => {
+describe("passwords", () => {
 	it("sets a password with the token alone, then needs it to change or remove it", async () => {
 		const token = await tokenOf("Jana");
 
@@ -159,7 +159,7 @@ describe("P6 passwords", () => {
 	});
 });
 
-describe("P9 leaving", () => {
+describe("leaving", () => {
 	it("removes the participant with the response and every token, and frees the name", async () => {
 		const token = await tokenOf("Jana", "tajne");
 		const other = await join(eventId, "Jana", "tajne", creationTime);

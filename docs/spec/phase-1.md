@@ -196,4 +196,14 @@ No step creates an account or enters an email address.
 
 ## 14. Rule coverage outside the acceptance test
 
-Unit tests cover E2 to E5 (including both clock-change days in Europe/Prague), E10, P1, P2, P7, R3, R4, V2 and T1. A second end-to-end test covers a weekday event with T3 and T4.
+The tests name no rule numbers. This list is the only link from rules to tests; [problem-codes.md](problem-codes.md) links the refusal codes to rules.
+
+- `apps/web/src/domain/schedule.test.ts` covers E2 to E5, including both clock-change days in Europe/Prague.
+- `apps/web/src/domain/event-address.test.ts` and `apps/web/src/domain/slug.test.ts` cover E10.
+- `apps/web/src/domain/display-name.test.ts` covers P1 and P2.
+- `apps/web/src/server/participants.db.test.ts` covers P7, and also P2 to P4, P6, P8 and P9 against the database.
+- `apps/web/src/server/responses.db.test.ts` covers R3 and R4.
+- `apps/web/src/domain/heat.test.ts` covers V2.
+- `apps/web/src/domain/dated-grid.test.ts` covers T1.
+- `apps/web/e2e/create-and-respond.spec.ts` is the acceptance test of section 13.
+- `apps/web/e2e/weekday-event.spec.ts` covers a weekday event with T3 and T4, and `apps/web/src/domain/grid-layout.test.ts` covers T3 and T4 as unit tests.

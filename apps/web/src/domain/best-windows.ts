@@ -1,4 +1,4 @@
-// The best windows below the grid: Phase 2 rules W1 to W3.
+// The best windows below the grid: the longest runs of slots that suit the most people.
 import type { GridLayout } from "./grid-layout";
 
 export type Window = {
@@ -15,7 +15,7 @@ export type WindowFilters = { minSlots: number; minPeople: number };
 
 const LIMIT = 5;
 
-/** The participants available in a cell: in each of its slots, of which there can be two (T1). */
+/** The participants available in a cell: in each of its slots, of which there can be two. */
 function availableIn(keys: readonly string[], available: ReadonlySet<string>[]): Set<number> {
 	return new Set(
 		available.flatMap((slots, person) =>
@@ -51,7 +51,7 @@ function isSubset(people: ReadonlySet<number>, of: ReadonlySet<number> | undefin
 }
 
 /**
- * Every maximal window with at least one person (W1): extending it by a slot at either end
+ * Every maximal window with at least one person: extending it by a slot at either end
  * would lose one of its people.
  */
 export function maximalWindows(
@@ -99,12 +99,12 @@ export function sameWindow(a: Window | null, b: Window): boolean {
 	return a?.column === b.column && a.first === b.first && a.last === b.last;
 }
 
-/** The most people in any single window, the starting minimum of the people filter (W2). */
+/** The most people in any single window, the starting minimum of the people filter. */
 export function mostPeople(windows: readonly Window[]): number {
 	return Math.max(0, ...windows.map((window) => window.people.length));
 }
 
-/** The windows that pass the filters (W2), at most five in the order of rule W3. */
+/** The windows that pass the filters, at most five, the most people and the longest first. */
 export function bestWindows(windows: readonly Window[], filters: WindowFilters): Window[] {
 	return windows
 		.filter(

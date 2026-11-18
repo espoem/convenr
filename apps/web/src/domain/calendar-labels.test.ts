@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { localFirstDayOfWeek, timeLabel, weekdayNames } from "./calendar-labels";
 
-describe("T5 labels", () => {
+describe("labels", () => {
 	it("writes 24-hour time in Czech and British English, 12-hour in American English", () => {
 		expect(timeLabel(18 * 60 + 30, "cs")).toBe("18:30");
 		expect(timeLabel(18 * 60 + 30, "en-GB")).toBe("18:30");

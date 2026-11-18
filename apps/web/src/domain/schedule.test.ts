@@ -28,7 +28,7 @@ function onDateIn(iso: string, referenceZone: string): Schedule {
 	return { ...evening, referenceZone, days: { mode: "dates", dates: [date(iso)] } };
 }
 
-describe("E2 days", () => {
+describe("days", () => {
 	it("accepts a range of 31 dates and refuses 32", () => {
 		expect(validateSchedule(mayFrom("2027-05-31"), now)).toEqual([]);
 		expect(validateSchedule(mayFrom("2027-06-01"), now)).toEqual(["too_many_dates"]);
@@ -72,7 +72,7 @@ describe("E2 days", () => {
 	});
 });
 
-describe("E3 daily time range", () => {
+describe("daily time range", () => {
 	it("accepts the whole day", () => {
 		expect(validateSchedule({ ...evening, dailyStart: 0, dailyEnd: 24 * 60 }, now)).toEqual([]);
 	});
@@ -88,7 +88,7 @@ describe("E3 daily time range", () => {
 	});
 });
 
-describe("E4 slots of a dated event", () => {
+describe("slots of a dated event", () => {
 	it("walks the wall clock in the reference zone and identifies slots by UTC instant", () => {
 		const oneDay: Schedule = {
 			...evening,
@@ -146,7 +146,7 @@ describe("E4 slots of a dated event", () => {
 	});
 });
 
-describe("E5 slots of a weekday event", () => {
+describe("slots of a weekday event", () => {
 	it("identifies slots by day of week and minute, sorted by ISO day, never converted", () => {
 		const weekly: Schedule = {
 			...evening,

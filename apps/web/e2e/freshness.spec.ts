@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 
 import { cell, createEvent, expect, freshPage, joinAs, mark } from "./helpers";
 
-// The version check (Phase 2 rules F1 to F4). A check runs every 15 seconds, so each change
+// The version check. A check runs every 15 seconds, so each change
 // must show within one interval plus the time to load the page again.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
 
@@ -18,7 +18,7 @@ test("an open page shows other people's changes and keeps its own unsaved edits"
 	const { share, admin } = await createEvent(organizer, "Živá událost", first);
 	const jana = await joinAs(browser, share, "Jana");
 
-	// Jana's unsaved edit stays while Petr's save appears without a reload (F1 to F3).
+	// Jana's unsaved edit stays while Petr's save appears without a reload.
 	await mark(jana, first, ["18:00", "20:30"]);
 
 	const petr = await joinAs(browser, share, "Petr");
@@ -33,7 +33,7 @@ test("an open page shows other people's changes and keeps its own unsaved edits"
 	await expect(jana.getByRole("button", { name: "Uložit" })).toBeEnabled();
 
 	// The organizer ends the day at 19:00: Jana's edit at 20:30 drops out and her page says so,
-	// while the one at 18:00 stays (F3).
+	// while the one at 18:00 stays.
 	await organizer.goto(admin);
 	await organizer.getByLabel("do", { exact: true }).selectOption({ label: "19:00" });
 	await organizer.getByRole("button", { name: "Uložit změny" }).click();
@@ -43,13 +43,13 @@ test("an open page shows other people's changes and keeps its own unsaved edits"
 	await expect(cell(jana, first, "18:00")).toHaveAttribute("aria-pressed", "true");
 	await expect(cell(jana, first, "20:30")).toHaveCount(0);
 
-	// The organizer deletes Jana: her page drops the token and says why (F4).
+	// The organizer deletes Jana: her page drops the token and says why.
 	await organizer.getByRole("button", { name: "Smazat účastníka Jana" }).click();
 	await organizer.getByRole("button", { name: "Smazat účastníka", exact: true }).click();
 	await expect(jana.getByText("Tento prohlížeč už v události není zapsaný.")).toBeVisible(INTERVAL);
 	await expect(jana.getByLabel("Vaše jméno")).toBeVisible();
 
-	// The organizer deletes the event: the open page shows the not-found content (F4).
+	// The organizer deletes the event: the open page shows the not-found content.
 	await organizer.getByRole("button", { name: "Smazat událost" }).click();
 	await organizer.getByRole("button", { name: "Smazat natrvalo" }).click();
 	await expect(jana.getByRole("heading", { level: 1 })).toHaveText("Stránka nenalezena", INTERVAL);

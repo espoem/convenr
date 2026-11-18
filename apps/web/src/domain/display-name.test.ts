@@ -14,7 +14,7 @@ function keyOf(raw: string): string | undefined {
 	return result.ok ? result.key : undefined;
 }
 
-describe("P1 display name", () => {
+describe("display name", () => {
 	it("trims and collapses runs of whitespace to one space", () => {
 		expect(nameOf("  Jana \t\n Nováková  ")).toBe("Jana Nováková");
 	});
@@ -36,7 +36,7 @@ describe("P1 display name", () => {
 	});
 });
 
-describe("P2 uniqueness key", () => {
+describe("uniqueness key", () => {
 	it("treats names that differ only in case and spacing as the same name", () => {
 		expect(new Set(["Jana", "jana", " JANA "].map((name) => keyOf(name)))).toEqual(
 			new Set(["jana"]),

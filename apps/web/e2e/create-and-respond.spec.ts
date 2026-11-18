@@ -4,7 +4,8 @@ import { test } from "@playwright/test";
 // the longer wait of the shared `expect`.
 import { cell, expect, freshPage } from "./helpers";
 
-// The acceptance test of spec section 13, in the 390 by 844 viewport it is defined for.
+// The first acceptance test: an organizer creates an event, ten people respond and one
+// window suits everyone, in the 390 by 844 viewport it is defined for.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined for the phone viewport.");
 
 test.setTimeout(180_000);
@@ -39,7 +40,7 @@ function offsetHours(date: Temporal.PlainDate): number {
 /**
  * Five consecutive dates at least two weeks ahead, all in a week when Prague is 6 hours
  * ahead of New York. The server checks dates against its own clock, which a browser test
- * cannot fix, so the test picks the dates from today instead (spec section 13, step 1).
+ * cannot fix, so the test picks the dates from today instead.
  */
 function eventDates(): Temporal.PlainDate[] {
 	let first = Temporal.Now.plainDateISO(PRAGUE).add({ days: 14 });
@@ -56,7 +57,7 @@ function eventDates(): Temporal.PlainDate[] {
 	}
 }
 
-test("ten people find the one hour that suits everyone (spec section 13)", async ({ browser }) => {
+test("ten people find the one hour that suits everyone", async ({ browser }) => {
 	const dates = eventDates();
 	const [first, , , fourth, last] = dates;
 
@@ -144,7 +145,7 @@ test("ten people find the one hour that suits everyone (spec section 13)", async
 	await expect(returning.locator('tbody button[aria-pressed="true"]')).toHaveCount(3);
 	await returning.context().close();
 
-	// Step 6: in New York the common window is 12:00 to 13:00 on the same date (T1, T2).
+	// Step 6: in New York the common window is 12:00 to 13:00 on the same date, with a zone notice.
 	const newYork = await freshPage(browser, NEW_YORK);
 
 	await newYork.goto(share);

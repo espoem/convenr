@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { formatLocale } from "./format-locale";
 
-describe("T5 format locale", () => {
+describe("format locale", () => {
 	it("formats Czech pages in Czech whatever the browser asks for", () => {
 		expect(formatLocale("cs", "en-US,en;q=0.9")).toBe("cs");
 	});

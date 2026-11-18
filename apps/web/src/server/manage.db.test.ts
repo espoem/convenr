@@ -44,7 +44,7 @@ beforeEach(async () => {
 	await db().delete(events);
 });
 
-describe("readManagedEvent (M1)", () => {
+describe("readManagedEvent", () => {
 	it("returns the editable fields only for the event's admin secret", async () => {
 		const { id, secret } = await managedEvent();
 
@@ -59,7 +59,7 @@ describe("readManagedEvent (M1)", () => {
 });
 
 describe("updateEvent", () => {
-	it("refuses a wrong secret without changing anything (M1)", async () => {
+	it("refuses a wrong secret without changing anything", async () => {
 		const { id } = await managedEvent();
 
 		expect(
@@ -70,7 +70,7 @@ describe("updateEvent", () => {
 		expect((await readEvent(id))?.name).toBe(pragueEvenings.name);
 	});
 
-	it("renames the event and returns the new address segment (M6)", async () => {
+	it("renames the event and returns the new address segment", async () => {
 		const { id, secret } = await managedEvent();
 		const renamed = { ...pragueEvenings, name: "Zkouška" };
 
@@ -80,7 +80,7 @@ describe("updateEvent", () => {
 		});
 	});
 
-	it("locks slot length, day mode and zone once a participant joined (M3)", async () => {
+	it("locks slot length, day mode and zone once a participant joined", async () => {
 		const { id, secret } = await managedEvent();
 
 		const shorter = await updateEvent(
@@ -102,7 +102,7 @@ describe("updateEvent", () => {
 		});
 	});
 
-	it("asks to confirm how many participants lose availability, then removes it (M5)", async () => {
+	it("asks to confirm how many participants lose availability, then removes it", async () => {
 		const { id, secret } = await managedEvent();
 
 		await respond(id, "Jana", [FIVE, SIX]);
@@ -129,7 +129,7 @@ describe("updateEvent", () => {
 		expect(view?.slots).not.toContain(SIX);
 	});
 
-	it("needs no confirmation when nobody marked a removed slot (M5)", async () => {
+	it("needs no confirmation when nobody marked a removed slot", async () => {
 		const { id, secret } = await managedEvent();
 
 		await respond(id, "Jana", [FIVE]);
@@ -137,7 +137,7 @@ describe("updateEvent", () => {
 		expect((await updateEvent(id, secret, narrowed, null, later)).status).toBe("saved");
 	});
 
-	it("makes a later save with a removed slot fail as a whole (M9)", async () => {
+	it("makes a later save with a removed slot fail as a whole", async () => {
 		const { id, secret } = await managedEvent();
 		const token = await respond(id, "Jana", []);
 
@@ -150,7 +150,7 @@ describe("updateEvent", () => {
 	});
 });
 
-describe("removeParticipant (M7)", () => {
+describe("removeParticipant", () => {
 	it("deletes the participant with their response and frees the name", async () => {
 		const { id, secret } = await managedEvent();
 
@@ -165,7 +165,7 @@ describe("removeParticipant (M7)", () => {
 	});
 });
 
-describe("removeEvent (M8)", () => {
+describe("removeEvent", () => {
 	it("deletes the event and every row that belongs to it", async () => {
 		const { id, secret } = await managedEvent();
 

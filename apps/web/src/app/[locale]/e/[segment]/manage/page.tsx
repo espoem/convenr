@@ -8,7 +8,7 @@ import { eventFormOptions } from "@/i18n/event-form-options";
 import { Link } from "@/i18n/navigation";
 import { readEvent } from "@/server/events";
 
-/** The manage page (Phase 2 section 8). Its content waits for the admin secret (M1). */
+/** The manage page. Its content waits for the admin secret. */
 export default async function ManagePage({ params }: PageProps<"/[locale]/e/[segment]/manage">) {
 	const { segment } = await params;
 	const id = eventIdFromSegment(segment);

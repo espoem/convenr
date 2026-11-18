@@ -31,7 +31,7 @@ export async function generateMetadata({
 	return { title: event?.name ?? "convenr", robots: { index: false, follow: false } };
 }
 
-/** The event page of spec section 11; unknown ids show the not-found page (E9). */
+/** The event page; unknown ids show the not-found page. */
 export default async function EventPage({ params }: PageProps<"/[locale]/e/[segment]">) {
 	const event = await eventOf((await params).segment);
 

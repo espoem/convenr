@@ -18,7 +18,7 @@ beforeEach(async () => {
 	await db().delete(events);
 });
 
-describe("eventVersion (F5)", () => {
+describe("eventVersion", () => {
 	it("moves forward with every change to the event, its participants or their responses", async () => {
 		const created = await createEvent(pragueEvenings, creationTime);
 

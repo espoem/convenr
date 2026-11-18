@@ -7,7 +7,7 @@ import { localFirstDayOfWeek, timeLabel, weekdayNames } from "@/domain/calendar-
 import { currentLocale } from "./current-locale";
 import { formatLocale } from "./format-locale";
 
-/** Labels and choices of the event form, formatted on the server for the page (T5). */
+/** Labels and choices of the event form, formatted on the server for the page. */
 export async function eventFormOptions(): Promise<EventFormOptions> {
 	const t = await getTranslations("Start");
 	const format = formatLocale(await currentLocale(), (await headers()).get("accept-language"));

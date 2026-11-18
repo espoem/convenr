@@ -5,7 +5,7 @@ import { scheduleSlots, slotKey } from "./schedule";
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 
-describe("T4 week blocks", () => {
+describe("week blocks", () => {
 	it("splits a dated event into one block per calendar week starting on Monday", () => {
 		const keys = scheduleSlots({
 			days: {
@@ -43,7 +43,7 @@ describe("T4 week blocks", () => {
 	});
 });
 
-describe("T3 weekday events", () => {
+describe("weekday events", () => {
 	it("orders columns from the first day of week and keeps times as stored", () => {
 		const layout = weekdayLayout(["w1-1080", "w7-1080", "w1-1110", "w7-1110"], 7);
 

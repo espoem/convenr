@@ -17,7 +17,7 @@ export async function register() {
 	const { env } = await import("@/env");
 	const { runMaintenance } = await import("@/server/maintenance");
 
-	// Phase 2 rules U3, U4 and X4: usage counts by age and the purge of expired events run at
+	// Usage counts by age and the purge of expired events run at
 	// start and then every hour. Several servers on one database may run them side by side.
 	async function purge() {
 		try {

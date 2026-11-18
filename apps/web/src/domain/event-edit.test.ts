@@ -19,7 +19,7 @@ const before: Schedule = {
 const now = Temporal.Instant.from("2027-04-06T08:00:00Z");
 
 describe("editProblems", () => {
-	it("keeps past dates the event already had and refuses added past dates (M4)", () => {
+	it("keeps past dates the event already had and refuses added past dates", () => {
 		const extended: Schedule = {
 			...before,
 			days: {
@@ -37,7 +37,7 @@ describe("editProblems", () => {
 		expect(editProblems(before, backdated, true, now)).toEqual(["date_in_past"]);
 	});
 
-	it("locks slot length, day mode and zone once someone joined (M3)", () => {
+	it("locks slot length, day mode and zone once someone joined", () => {
 		const changes: Schedule[] = [
 			{ ...before, slotLength: 30 },
 			{ ...before, referenceZone: "Europe/London" },
@@ -50,14 +50,14 @@ describe("editProblems", () => {
 		}
 	});
 
-	it("still applies the limits of E3 to the new times (M2)", () => {
+	it("still applies the time range limits to the new times", () => {
 		expect(editProblems(before, { ...before, dailyEnd: 16 * 60 }, true, now)).toEqual([
 			"end_not_after_start",
 		]);
 	});
 });
 
-describe("removedSlots (M5)", () => {
+describe("removedSlots", () => {
 	it("lists the slots a narrower time range drops", () => {
 		const removed = removedSlots(before, { ...before, dailyEnd: 18 * 60 });
 

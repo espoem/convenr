@@ -15,7 +15,7 @@ beforeEach(async () => {
 });
 
 describe("createEvent", () => {
-	it("creates an event with a share segment, an admin secret and a deletion date (E6, E7, E10)", async () => {
+	it("creates an event with a share segment, an admin secret and a deletion date", async () => {
 		const created = await createEvent(pragueEvenings, creationTime);
 
 		expect(created).toMatchObject({ ok: true });
@@ -61,11 +61,11 @@ describe("createEvent", () => {
 });
 
 describe("readEvent", () => {
-	it("returns nothing for an unknown id (E9)", async () => {
+	it("returns nothing for an unknown id", async () => {
 		expect(await readEvent("abcdefghijkm")).toBeUndefined();
 	});
 
-	it("shows details, slots and every participant's availability to anyone (V1)", async () => {
+	it("shows details, slots and every participant's availability to anyone", async () => {
 		const id = await freshEvent();
 		const jana = await join(id, "Jana", undefined, creationTime);
 
@@ -95,7 +95,7 @@ describe("readEvent", () => {
 		});
 	});
 
-	it("moves a weekday event's deletion date with each change (E7)", async () => {
+	it("moves a weekday event's deletion date with each change", async () => {
 		const id = await freshEvent(mondayEvenings);
 		const later = Temporal.Instant.from("2027-05-10T08:00:00Z");
 

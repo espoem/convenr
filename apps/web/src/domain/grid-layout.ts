@@ -1,4 +1,4 @@
-// Columns, rows and week blocks of the availability grid: spec rules T1, T3 and T4.
+// Columns, rows and week blocks of the availability grid.
 import { datedGrid } from "./dated-grid";
 import { type DatedSlot, slotKey, type Weekday, weekdaysFrom } from "./schedule";
 
@@ -15,7 +15,7 @@ export type GridLayout = {
 
 const WEEKDAY_KEY = /^w([1-7])-(\d{1,4})$/u;
 
-/** A weekday event's grid by rule T3: as stored, with columns from the first day of week. */
+/** A weekday event's grid: as stored, with columns from the first day of week. */
 export function weekdayLayout(keys: string[], firstDayOfWeek: Weekday): GridLayout {
 	const parsed = keys.flatMap((key) => {
 		const match = WEEKDAY_KEY.exec(key);
@@ -50,8 +50,7 @@ function weekStart(date: Temporal.PlainDate, first: Weekday): string {
 }
 
 /**
- * A dated event's grid in the viewer's zone by rule T1, with one block per calendar week
- * by rule T4.
+ * A dated event's grid in the viewer's zone, with one block per calendar week.
  */
 export function datedLayout(
 	keys: string[],

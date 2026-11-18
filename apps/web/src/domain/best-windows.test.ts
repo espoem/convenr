@@ -7,7 +7,7 @@ import { weekdayLayout } from "./grid-layout";
 const keys = ["w1-1020", "w1-1050", "w1-1080", "w1-1110", "w2-1020", "w2-1050"];
 const layout = weekdayLayout(keys, 1);
 
-describe("maximalWindows (W1)", () => {
+describe("maximalWindows", () => {
 	it("lists only windows that cannot grow without losing someone", () => {
 		const participants = [
 			{ available: ["w1-1020", "w1-1050", "w1-1080"] },
@@ -42,7 +42,7 @@ describe("maximalWindows (W1)", () => {
 	});
 });
 
-describe("bestWindows (W2, W3)", () => {
+describe("bestWindows", () => {
 	const windows: Window[] = [
 		{ column: 1, first: 0, last: 0, people: [0, 1] },
 		{ column: 0, first: 0, last: 3, people: [0] },

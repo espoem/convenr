@@ -12,7 +12,7 @@ export function characterCount(text: string): number {
 }
 
 /**
- * Normalizes a display name by spec rule P1 and derives the key that rule P2 compares.
+ * Normalizes a display name and derives the key that decides whether two names are the same.
  * Control characters are refused: they cannot be typed in the join form and would make
  * two names look equal while comparing as different.
  */

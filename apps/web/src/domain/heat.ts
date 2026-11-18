@@ -1,7 +1,7 @@
-/** Heat steps of spec rule V2: 0 none, 1 up to 25 %, 2 up to 50 %, 3 up to 75 %, 4 above 75 %. */
+/** Heat steps: 0 none, 1 up to 25 %, 2 up to 50 %, 3 up to 75 %, 4 above 75 %. */
 export type HeatStep = 0 | 1 | 2 | 3 | 4;
 
-/** The heat step of a slot where `available` of `participants` are available (V2). */
+/** The heat step of a slot where `available` of `participants` are available. */
 export function heatStep(available: number, participants: number): HeatStep {
 	if (available <= 0 || participants <= 0) {
 		return 0;

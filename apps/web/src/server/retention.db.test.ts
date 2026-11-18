@@ -48,7 +48,7 @@ beforeEach(async () => {
 	}
 });
 
-describe("expiry (X3)", () => {
+describe("expiry", () => {
 	it("makes the event unknown to pages, actions and the version check at once", async () => {
 		const { id, adminSecret } = await created(pragueEvenings);
 		const jana = await join(id, "Jana", undefined, creationTime);
@@ -73,7 +73,7 @@ describe("expiry (X3)", () => {
 	});
 });
 
-describe("the purge (X4)", () => {
+describe("the purge", () => {
 	it("deletes expired events with every row that belongs to them, and only those", async () => {
 		const dated = await created(pragueEvenings);
 		const weekly = await created(mondayEvenings);

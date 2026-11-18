@@ -16,7 +16,7 @@ function cellKey(date: Temporal.PlainDate, minute: number): string {
 	return `${date.toString()}/${minute}`;
 }
 
-/** The grid of a dated event as a viewer in `viewerZone` sees it, by spec rule T1. */
+/** The grid of a dated event as a viewer in `viewerZone` sees it. */
 export function datedGrid(slots: DatedSlot[], viewerZone: string): DatedGrid {
 	const placed = slots.map((slot) => {
 		const local = slot.start.toZonedDateTimeISO(viewerZone);

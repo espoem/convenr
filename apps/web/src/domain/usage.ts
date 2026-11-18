@@ -1,19 +1,19 @@
-// Usage counts: Phase 2 rules U1 to U7. This file imports nothing, so that the maintenance pass
+// Usage counts: ages, buckets and the report. This file imports nothing, so that the maintenance pass
 // and the usage command run it with plain Node.
 
-/** Age in days at which an event enters the activation counts (U3). */
+/** Age in days at which an event enters the activation counts. */
 export const ACTIVATION_AGE_DAYS = 7;
 
-/** Age in days at which an event enters the group size histogram (U4). */
+/** Age in days at which an event enters the group size histogram. */
 export const GROUP_SIZE_AGE_DAYS = 30;
 
-/** Participants an event needs to count as activated (U3). */
+/** Participants an event needs to count as activated. */
 export const ACTIVATED_AT = 2;
 
-/** The largest bucket of the group size histogram: the participant limit (U4). */
+/** The largest bucket of the group size histogram: the participant limit. */
 export const MAX_GROUP_BUCKET = 100;
 
-/** Upper ends of the buckets of U5 in hours; the last bucket is 7 days or more. */
+/** Upper ends of the first-response buckets in hours; the last bucket is 7 days or more. */
 const FIRST_RESPONSE_LIMITS_HOURS = [1, 6, 24, 72, 168];
 
 const FIRST_RESPONSE_BUCKETS = [
@@ -25,7 +25,7 @@ const FIRST_RESPONSE_BUCKETS = [
 	"7 days or more",
 ];
 
-/** The bucket of U5 (0 to 5) for the time from creation to the first join. */
+/** The first-response bucket (0 to 5) for the time from creation to the first join. */
 export function firstResponseBucket(created: Temporal.Instant, joined: Temporal.Instant): number {
 	const hours = created.until(joined, { largestUnit: "hours" }).total("hours");
 	const bucket = FIRST_RESPONSE_LIMITS_HOURS.findIndex((limit) => hours < limit);
@@ -58,7 +58,7 @@ export function medianBucket(histogram: ReadonlyMap<number, number>): number | n
 	return null;
 }
 
-/** The share of evaluated events that were activated (U7), or `null` with none evaluated. */
+/** The share of evaluated events that were activated, or `null` with none evaluated. */
 export function activationRate(evaluated: number, activated: number): number | null {
 	return evaluated === 0 ? null : activated / evaluated;
 }
@@ -80,7 +80,7 @@ function daysBetween(from: Temporal.PlainDate, to: Temporal.PlainDate): Temporal
 const HEADER = ["day", "created", "activation", "median group", "median first response"];
 
 /**
- * The table of U7: per day from `from` to `to`, the events created, the activation rate, the
+ * The usage table: per day from `from` to `to`, the events created, the activation rate, the
  * median group size and the bucket that holds the median time to first response. A day
  * without data shows a dash.
  */

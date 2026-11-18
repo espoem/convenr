@@ -5,7 +5,7 @@ import { activationRate, firstResponseBucket, medianBucket, usageReport } from "
 const created = Temporal.Instant.from("2027-03-01T12:00:00Z");
 const after = (hours: number) => created.add({ minutes: Math.round(hours * 60) });
 
-describe("firstResponseBucket (U5)", () => {
+describe("firstResponseBucket", () => {
 	it("puts each time in the first bucket whose upper end it stays under", () => {
 		expect(firstResponseBucket(created, after(0))).toBe(0);
 		expect(firstResponseBucket(created, after(0.99))).toBe(0);
@@ -19,7 +19,7 @@ describe("firstResponseBucket (U5)", () => {
 	});
 });
 
-describe("medianBucket (U7)", () => {
+describe("medianBucket", () => {
 	it("finds the bucket that holds the middle value", () => {
 		expect(medianBucket(new Map([[3, 1]]))).toBe(3);
 		expect(
@@ -36,14 +36,14 @@ describe("medianBucket (U7)", () => {
 	});
 });
 
-describe("activationRate (U3, U7)", () => {
+describe("activationRate", () => {
 	it("is the activated share of the evaluated events", () => {
 		expect(activationRate(4, 1)).toBe(0.25);
 		expect(activationRate(0, 0)).toBeNull();
 	});
 });
 
-describe("usageReport (U7)", () => {
+describe("usageReport", () => {
 	it("prints one line per day of the range, with a dash where a day has no data", () => {
 		const report = usageReport(
 			[

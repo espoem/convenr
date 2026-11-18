@@ -16,7 +16,7 @@ describe("parseEnv", () => {
 		expect(() => parseEnv({})).toThrow(/DATABASE_URL/u);
 	});
 
-	it("reads the retention period as days or never (X1)", () => {
+	it("reads the retention period as days or never", () => {
 		const url = "postgres://user@localhost/convenr";
 
 		expect(parseEnv({ DATABASE_URL: url }).RETENTION_DAYS).toBe(90);

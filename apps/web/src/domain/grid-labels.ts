@@ -1,4 +1,4 @@
-// Text of the grid's headers and slot details by spec rule T5.
+// Text of the grid's headers and slot details.
 import { timeLabel, weekdayNames } from "./calendar-labels";
 import type { GridLayout } from "./grid-layout";
 

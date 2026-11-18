@@ -5,7 +5,7 @@ import { EVENT_ID_ALPHABET, EVENT_ID_LENGTH, isEventId, newEventId } from "./eve
 
 const id = "Ab3dEf7hJk9m";
 
-describe("E10 event address", () => {
+describe("event address", () => {
 	it("puts the slug before the id", () => {
 		expect(eventSegment(id, "Schůzka výboru 2027")).toBe(`schuzka-vyboru-2027-${id}`);
 	});

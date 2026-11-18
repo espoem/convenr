@@ -1,7 +1,7 @@
 import type { Locale } from "./routing";
 
 /**
- * The locale that formats dates and times by spec rule T5: Czech pages use Czech conventions,
+ * The locale that formats dates and times: Czech pages use Czech conventions,
  * English pages use the English variant the browser asks for first (`en-GB` writes 24-hour
  * time, `en-US` 12-hour), and plain `en` otherwise.
  */

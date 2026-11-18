@@ -7,7 +7,8 @@ import { Pool } from "pg";
 import { DATABASE_URL } from "./database";
 import { cell, createEvent, expect, freshPage, respond } from "./helpers";
 
-// The acceptance test of Phase 2 (Phase 2 spec section 10), in the phone viewport.
+// The second acceptance test: an organizer narrows an event, deletes participants and an
+// event, and an expired event disappears, in the phone viewport.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
 
 test.setTimeout(180_000);
@@ -41,7 +42,7 @@ test("the organizer manages an event and expired events disappear", async ({ bro
 	await respond(browser, a.share, "Jana", first, ["20:00"]);
 	await respond(browser, a.share, "Petr", first, ["20:00"]);
 
-	// Step 2: narrowing the hours names how many participants lose availability (M5).
+	// Step 2: narrowing the hours names how many participants lose availability.
 	await organizer.goto(a.admin);
 	await expect(organizer.getByLabel("Délka políčka")).toBeDisabled();
 	await organizer.getByLabel("do", { exact: true }).selectOption({ label: "19:00" });
@@ -59,7 +60,7 @@ test("the organizer manages an event and expired events disappear", async ({ bro
 	await expect(cell(viewer, first, "19:00")).toHaveCount(0);
 	await viewer.context().close();
 
-	// Step 3: deleting a participant, then A (M7, M8). No row of A remains; responses go with
+	// Step 3: deleting a participant, then A. No row of A remains; responses go with
 	// their participants.
 	await organizer.getByRole("button", { name: "Smazat účastníka Jana" }).click();
 	await organizer.getByRole("button", { name: "Smazat účastníka", exact: true }).click();
@@ -81,7 +82,7 @@ test("the organizer manages an event and expired events disappear", async ({ bro
 	).toBe(0);
 
 	// Step 4: B's dates move into the past, so its deletion date has passed. B is unknown at
-	// once (X3), and the purge command deletes it (X4).
+	// once, and the purge command deletes it.
 	await database.query(
 		"update events set range_first = '2020-01-01', range_last = '2020-01-02' where id = $1",
 		[idOf(b.share)],

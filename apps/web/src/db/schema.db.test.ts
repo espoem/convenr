@@ -54,7 +54,7 @@ beforeEach(async () => {
 });
 
 describe("database schema", () => {
-	it("refuses a second participant whose name key is already used in the event (P2)", async () => {
+	it("refuses a second participant whose name key is already used in the event", async () => {
 		await addParticipant("jana");
 
 		await expect(addParticipant("jana")).rejects.toMatchObject({

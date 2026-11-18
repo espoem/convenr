@@ -1,11 +1,10 @@
 import { eventDates, type Schedule } from "./schedule";
 
-/** The retention period in days, or `never` to keep events permanently (Phase 2 rule X1). */
+/** The retention period in days, or `never` to keep events permanently. */
 export type Retention = number | "never";
 
 /**
- * The planned deletion date by spec rule E7, computed from the current setting (Phase 2
- * rule X2). A dated event is deleted `retention` days after its last date. A weekday event is
+ * The planned deletion date, computed from the current retention setting. A dated event is deleted `retention` days after its last date. A weekday event is
  * deleted `retention` days after `lastChange`, taken as a date in the reference zone. With
  * `never` there is no deletion date.
  */
@@ -33,8 +32,8 @@ export function deletionDate(
 }
 
 /**
- * The instant the event expires: the end of its deletion date in the reference zone (Phase 2
- * rule X3), or `null` when events are kept.
+ * The instant the event expires: the end of its deletion date in the reference zone, or
+ * `null` when events are kept.
  */
 export function expiresAt(
 	schedule: Schedule,

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { heatStep } from "./heat";
 
-describe("V2 heat steps", () => {
+describe("heat steps", () => {
 	it.each([
 		[0, 0, 0],
 		[0, 5, 0],

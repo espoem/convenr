@@ -1,5 +1,5 @@
 "use client";
-// The browser's own record of its events: spec rules B1 to B4 and ADR 0003 item 10.
+// The browser's own record of its events, as in ADR 0003 item 10.
 // Storage can be missing, full or blocked; the record then lives in memory until the page
 // unloads, so the current visit still works.
 
@@ -16,7 +16,7 @@ const localEventSchema = z.object({
 
 export type LocalEvent = z.infer<typeof localEventSchema>;
 
-/** Events by id, in the order they were last changed, the most recent last (rule B3). */
+/** Events by id, in the order they were last changed, the most recent last. */
 export type LocalEvents = ReadonlyMap<string, LocalEvent>;
 
 const STORAGE_KEY = "convenr.events";
@@ -89,7 +89,7 @@ export function updateLocalEvent(
 	const events = new Map(snapshot());
 	const next = change(events.get(id));
 
-	// Deleting first moves a changed event to the end, which keeps rule B3's order.
+	// Deleting first moves a changed event to the end, which keeps the most recent last.
 	events.delete(id);
 
 	if (next !== undefined) {

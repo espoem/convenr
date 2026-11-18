@@ -1,4 +1,4 @@
-// Creating and reading events: spec rules E1 to E7, E9, E10 and V1.
+// Creating and reading events.
 import { asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
@@ -51,7 +51,7 @@ export const newEventSchema = z.object({
 		.refine((text) => characterCount(text) <= DESCRIPTION_MAX_LENGTH),
 	days: z.discriminatedUnion("mode", [
 		z.object({ mode: z.literal("range"), first: isoDate, last: isoDate }),
-		// The upper bounds only stop oversized input; validateSchedule applies rule E2.
+		// The upper bounds only stop oversized input; validateSchedule applies the real limits.
 		z.object({ mode: z.literal("dates"), dates: z.array(isoDate).max(MAX_DATES * 2) }),
 		z.object({ mode: z.literal("weekdays"), weekdays: z.array(weekday).max(14) }),
 	]),
@@ -70,10 +70,10 @@ export type CreateEventResult =
 			id: string;
 			/** `{slug}-{id}` or `{id}`, the path segment of the share link. */
 			segment: string;
-			/** Shown once in the admin link and never stored (E6). */
+			/** Shown once in the admin link and never stored. */
 			adminSecret: string;
 	  }
-	/** Field paths that failed validation, and rule codes such as `E2.too-many-dates`. */
+	/** Field paths that failed validation, and problem codes such as `too_many_dates`. */
 	| { ok: false; problems: string[] };
 
 export function storedDays(days: Schedule["days"]) {
@@ -90,7 +90,7 @@ export function storedDays(days: Schedule["days"]) {
 	return { ...none, weekdays: days.weekdays };
 }
 
-/** Creates an event by rules E1 to E7. */
+/** Creates an event. */
 export async function createEvent(
 	input: NewEvent,
 	now = Temporal.Now.instant(),
@@ -141,15 +141,15 @@ export type EventView = {
 	name: string;
 	description: string;
 	segment: string;
-	/** The instant of the last change, compared by the page's version check (Phase 2 rule F1). */
+	/** The instant of the last change, compared by the page's version check. */
 	version: string;
 	schedule: Schedule;
 	firstDayOfWeek: Weekday;
-	/** `null` when the instance keeps events permanently (Phase 2 rule X2). */
+	/** `null` when the instance keeps events permanently. */
 	deletionDate: Temporal.PlainDate | null;
 	/** Slot keys of the event, in time order. */
 	slots: string[];
-	/** In joining order, each with the keys of the slots they marked (V1). */
+	/** In joining order, each with the keys of the slots they marked. */
 	participants: { name: string; available: string[] }[];
 };
 
@@ -182,7 +182,7 @@ async function availableKeys(dayMode: string, participantIds: string[]) {
 	return byParticipant;
 }
 
-/** The live event `id` (Phase 2 rule X3), or `undefined`. */
+/** The live event `id`, or `undefined` once it has expired or never existed. */
 async function liveRow(id: string, now: Temporal.Instant) {
 	const [row] = await db().select().from(events).where(eq(events.id, id));
 
@@ -190,8 +190,7 @@ async function liveRow(id: string, now: Temporal.Instant) {
 }
 
 /**
- * The version of event `id`, or `null` when the event no longer exists or has expired (Phase 2
- * rules F4 and X3).
+ * The version of event `id`, or `null` when the event no longer exists or has expired.
  */
 export async function eventVersion(
 	id: string,
@@ -203,8 +202,8 @@ export async function eventVersion(
 }
 
 /**
- * Everything anyone with the share link sees (V1), or `undefined` for an unknown (E9) or
- * expired (Phase 2 rule X3) event.
+ * Everything anyone with the share link sees, or `undefined` for an unknown or expired
+ * event.
  */
 export async function readEvent(
 	id: string,

@@ -29,7 +29,7 @@ export type BoardEvent = {
 	referenceZone: string;
 	firstDayOfWeek: Weekday;
 	slotLength: number;
-	/** The instant of the last change, for the version check (Phase 2 rule F1). */
+	/** The instant of the last change, for the version check. */
 	version: string;
 	/** Rows of one day, to reserve the grid's height before the browser lays it out. */
 	rowCount: number;
@@ -80,10 +80,10 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const [person, setPerson] = useState<string | null>(null);
 	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | null>(null);
 	const [saving, startSaving] = useTransition();
-	// Rule Z1: not stored, so every visit starts in the viewer's zone.
+	// Not stored, so every visit starts in the viewer's zone.
 	const [inReferenceZone, setInReferenceZone] = useState(false);
 	const [chosenWindow, setChosenWindow] = useState<Window | null>(null);
-	// Rule F4: the organizer deleted this browser's participant, or it left in another tab.
+	// The organizer deleted this browser's participant, or it left in another tab.
 	const [dropped, setDropped] = useState(false);
 
 	useVersionCheck(event.id, event.version);
@@ -96,8 +96,8 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const listed = event.participants.some((participant) => participant.name === joined?.name);
 	const confirmedToken = useRef<string | null>(null);
 
-	// Rule B2: a stored token opens the event already joined, once the server confirms it. When
-	// the name later leaves the list, the server is asked again (Phase 2 rule F4); right after
+	// A stored token opens the event already joined, once the server confirms it. When
+	// the name later leaves the list, the server is asked again; right after
 	// joining the name is missing too, until the page reloads, so the list alone cannot decide.
 	useEffect(() => {
 		if (token === undefined || (listed && confirmedToken.current === token)) {
@@ -175,8 +175,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		[event.participants, joined?.name],
 	);
 
-	// Edits of slots the organizer removed meanwhile drop out, and the page says so (Phase 2
-	// rules M9 and F3).
+	// Edits of slots the organizer removed meanwhile drop out, and the page says so.
 	const lostEdits = draft !== null && [...draft].some((key) => !event.slots.includes(key));
 
 	const edits = useMemo(() => {
@@ -192,7 +191,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const selection = edits ?? mine;
 	const dirty = edits !== null && !sameSet(edits, mine);
 
-	// Rule I6 for leaving the page; leaving edit mode asks inside the page.
+	// Warn before the browser leaves the page with unsaved edits; leaving edit mode asks inside the page.
 	useEffect(() => {
 		if (!dirty) {
 			return;

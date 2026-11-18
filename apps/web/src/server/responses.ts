@@ -1,4 +1,4 @@
-// Saving a response: spec rules R1 to R4.
+// Saving a response: the set of slots a participant is available for.
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
@@ -10,10 +10,10 @@ import { participantByToken, scheduleOf, touchEvent } from "./event-rows";
 export type SaveResult = { ok: true } | { ok: false; problem: "not_joined" | "unknown_slot" };
 
 /**
- * Replaces the response of the token's participant with `keys` in one step (R2). The later
- * of two saves wins as a whole (R3). A key the event does not have refuses the save (R4). The
+ * Replaces the response of the token's participant with `keys` in one step. The later
+ * of two saves wins as a whole. A key the event does not have refuses the save. The
  * event row stays locked from the check to the write, so an organizer's change that removes
- * slots happens wholly before or after the save (Phase 2 rule M9).
+ * slots happens wholly before or after the save.
  */
 export async function saveResponse(
 	eventId: string,

@@ -21,12 +21,12 @@ type AvailabilityGridProps = {
 	fill: (keys: readonly string[]) => string;
 	/** What a screen reader hears after the cell's day and time. */
 	describe: (keys: readonly string[]) => string;
-	/** Present in edit mode (spec rules I1 to I4). */
+	/** Present in edit mode. */
 	edit?: Edit | undefined;
 	/** View mode: a cell was pointed at, tapped or focused, or `null` when the pointer left. */
 	onInspect?: ((cell: CellRef | null, box: DOMRect | null) => void) | undefined;
 	inspected?: CellRef | null | undefined;
-	/** Rows `first` to `last` of one column, outlined as one shape (Phase 2 rule W4). */
+	/** Rows `first` to `last` of one column, outlined as one shape. */
 	highlight?: { column: number; first: number; last: number } | null | undefined;
 };
 

@@ -143,7 +143,7 @@ function transliterate(character: string): string | undefined {
 }
 
 /**
- * The readable slug of an event name by spec rule E10, or an empty string when the
+ * The readable slug of an event name, or an empty string when the
  * name has no complete ASCII form. The slug never selects or authorizes anything.
  */
 export function slugify(name: string): string {

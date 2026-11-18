@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SLUG_MAX_LENGTH, slugify } from "./slug";
 
-describe("E10 slug", () => {
+describe("slug", () => {
 	it.each([
 		["Schůzka výboru 2027", "schuzka-vyboru-2027"],
 		["Straße & Ørsted", "strasse-orsted"],

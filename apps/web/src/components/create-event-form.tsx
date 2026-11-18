@@ -8,7 +8,7 @@ import { updateLocalEvent } from "@/lib/local-events";
 import { createEventAction } from "@/server/event-actions";
 import type { NewEvent } from "@/server/events";
 
-/** The create form of spec rule E1: stores the admin secret (B1) and shows the links (E6). */
+/** The create form: stores the admin secret in this browser and shows the links. */
 export function CreateEventForm({ options }: { options: EventFormOptions }) {
 	const t = useTranslations("Create");
 	const router = useRouter();

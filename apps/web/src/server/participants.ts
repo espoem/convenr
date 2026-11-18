@@ -1,4 +1,4 @@
-// Joining, passwords and leaving: spec rules P1 to P9.
+// Joining, passwords and leaving.
 import { and, count, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
@@ -41,7 +41,7 @@ async function issueToken(queries: Queries, participantId: string): Promise<stri
 }
 
 /**
- * Checks `password` against the participant's stored hash by rule P7: a locked participant
+ * Checks `password` against the participant's stored hash: a locked participant
  * is refused without a check, and the fifth wrong password in a row locks for 15 minutes.
  */
 async function checkPassword(
@@ -106,7 +106,7 @@ async function participantByName(eventId: string, key: string) {
 	return found;
 }
 
-/** Joins an event under a display name by rule P4. */
+/** Joins an event under a display name. */
 export async function join(
 	eventId: string,
 	rawName: string,
@@ -137,7 +137,7 @@ export async function join(
 	const passwordHash = password === undefined ? null : await hashPassword(password);
 
 	const created = await db().transaction(async (tx) => {
-		// The lock orders joins of one event, so the limit and the name check hold (P2, P3).
+		// The lock orders joins of one event, so the participant limit and the name check hold.
 		const [event] = await tx.select().from(events).where(eq(events.id, eventId)).for("update");
 
 		if (event === undefined || !isLive(event, now)) {
@@ -191,7 +191,7 @@ export async function join(
 	return created;
 }
 
-/** The name the holder of `token` joined `eventId` under, for rule B2. */
+/** The name the holder of `token` joined `eventId` under, so a stored token reopens the event already joined. */
 export async function identify(eventId: string, token: string, now = Temporal.Now.instant()) {
 	const found = await participantByToken(db(), eventId, token, now);
 
@@ -206,8 +206,8 @@ export type PasswordChangeResult =
 	| { ok: false; problem: "not_joined" | "invalid_password" | "no_password" };
 
 /**
- * Sets, changes or removes (`next` is `null`) the password of the token's participant by
- * rule P6. Changing or removing a stored password needs the current one.
+ * Sets, changes or removes (`next` is `null`) the password of the token's participant.
+ * Changing or removing a stored password needs the current one.
  */
 export async function changePassword(
 	eventId: string,
@@ -249,7 +249,7 @@ export async function changePassword(
 	return { ok: true };
 }
 
-/** Deletes the token's participant with its response, password and tokens by rule P9. */
+/** Deletes the token's participant with its response, password and tokens. */
 export async function leave(eventId: string, token: string, now = Temporal.Now.instant()) {
 	const found = await participantByToken(db(), eventId, token, now);
 

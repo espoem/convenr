@@ -10,13 +10,13 @@ type SlotDetailProps = {
 	time: string;
 	available: string[];
 	unavailable: string[];
-	/** Position beside the cell on wide screens; on narrow screens it is a bottom panel (V3). */
+	/** Position beside the cell on wide screens; on narrow screens it is a bottom panel. */
 	x: number;
 	y: number;
 	onClose: () => void;
 };
 
-/** Spec rule V3: the slot's day and time, the count, and who can and cannot come. */
+/** The slot's day and time, the count, and who can and cannot come. */
 export function SlotDetail({ day, time, available, unavailable, x, y, onClose }: SlotDetailProps) {
 	const t = useTranslations("Event");
 	const wide = useMediaQuery("(min-width: 40rem)");

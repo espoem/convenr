@@ -33,16 +33,16 @@ export type EventFormOptions = {
 export type FormOutcome =
 	| { status: "done" }
 	| { status: "failed" }
-	/** Field paths and rule codes such as `E2.date-in-past`. */
+	/** Field paths and problem codes such as `date_in_past`. */
 	| { status: "invalid"; problems: string[] }
-	/** How many participants lose part of their availability (Phase 2 rule M5). */
+	/** How many participants lose part of their availability. */
 	| { status: "confirm"; losing: number };
 
 type EventFormProps = {
 	options: EventFormOptions;
 	/** The stored event on the manage page; the create form starts empty. */
 	initial?: NewEvent | undefined;
-	/** Slot length, day mode and reference zone cannot change (Phase 2 rule M3). */
+	/** Slot length, day mode and reference zone cannot change because people joined. */
 	locked?: boolean;
 	submitLabel: string;
 	pendingLabel: string;
@@ -86,7 +86,7 @@ function problemField(problem: string) {
 	return DAY_PROBLEMS.has(problem) || problem.split(".")[0] === "days" ? "days" : problem;
 }
 
-/** The fields of spec rule E1, with the checks of E2, E3 and M3 to M5 done by the server. */
+/** The event fields. The server does the checks and reports problems by code. */
 export function EventForm({
 	options,
 	initial,
