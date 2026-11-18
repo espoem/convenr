@@ -58,6 +58,56 @@
 		text-wrap: pretty;
 	}
 
+	/* Selects keep the native control, which also keeps the phone's own picker. With a precise
+	   pointer and support for the customizable select, the arrow and the list follow the
+	   tokens (AGENTS.md rule 12: feature detection, plain native select as the fallback). */
+	@supports (appearance: base-select) {
+		@media (pointer: fine) {
+			select,
+			::picker(select) {
+				appearance: base-select;
+			}
+
+			select {
+				display: flex;
+				align-items: center;
+			}
+
+			select::picker-icon {
+				margin-inline-start: auto;
+				padding-inline-start: 0.75rem;
+				color: var(--cv-ink-muted);
+			}
+
+			::picker(select) {
+				margin-block: 0.25rem;
+				padding: 0.25rem;
+				border: 1px solid var(--cv-earth);
+				border-radius: var(--radius-md);
+				background: var(--cv-surface);
+				color: var(--cv-ink);
+			}
+
+			option {
+				padding: 0.5rem 0.75rem;
+				border-radius: var(--radius-sm);
+			}
+
+			option:hover,
+			option:focus-visible {
+				background: var(--cv-background);
+			}
+
+			option:checked {
+				font-weight: 600;
+			}
+
+			option::checkmark {
+				color: var(--cv-ink);
+			}
+		}
+	}
+
 	:focus-visible {
 		outline: 2px solid var(--ring);
 		outline-offset: 2px;
