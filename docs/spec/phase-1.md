@@ -51,7 +51,7 @@ The terms are defined in the [glossary](../../GLOSSARY.md). This spec uses them 
 
 **E6. Creation result.** Creating an event produces an event id, an admin secret and a planned deletion date. The service shows the organizer two links once: the share link and the admin link. The page says that the admin link cannot be recovered and offers a copy button for each.
 
-**E7. Planned deletion date.** A dated event's planned deletion date is 90 days after its last date. A weekday event's is 90 days after the last change to the event or to any response, so it moves forward with each change. The number of days is an instance setting with the default 90. The event page shows the date.
+**E7. Planned deletion date.** A dated event's planned deletion date is 90 days after its last date. A weekday event's is 90 days after the last change that moves the event's version (Phase 2 rule F1): a change to the event, a response, a participant or a password. It moves forward with each such change. The number of days is an instance setting with the default 90. The event page shows the date.
 
 **E8. Immutability in Phase 1.** Nothing about an event can be changed in Phase 1. Editing arrives with the manage page in F2.
 

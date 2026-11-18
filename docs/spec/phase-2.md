@@ -93,7 +93,7 @@ These rules replace the last sentence of Phase 1 rule E7: the number of days is 
 
 **U3. Activation.** When an event is 7 days old, or when it is deleted before that, the day's count of evaluated events grows by one, and the count of activated events grows by one if the event has at least 2 participants.
 
-**U4. Group size.** When an event is 30 days old, or when it is deleted before that, its number of participants (0 to 100) is added to the day's histogram.
+**U4. Group size.** When an event is 30 days old, or when it is deleted before that, its number of participants (0 to 100) is added to the day's histogram. The count goes to the day the event reached the age; the number of participants is the one at the hourly pass that counts it, so a participant who joins less than an hour after the age may be included.
 
 **U5. Time to first response.** When the first participant of an event joins (M3), the time since creation is added to the day's histogram in one of these buckets: under 1 hour, under 6 hours, under 1 day, under 3 days, under 7 days, 7 days or more.
 
@@ -123,4 +123,4 @@ Phase 2 is done when this end-to-end test passes on a clean clone in CI:
 
 ## 11. Rule coverage outside the acceptance test
 
-Unit tests cover M4, M5, W1 to W3, X2, X3 and U3 to U6. Database tests cover M3, M8, X4 and F5. An end-to-end test covers F1 to F3: a second browser's save appears within one check interval without a reload, and the first browser's unsaved edits stay.
+Unit tests cover M4, M5, W1 to W3, X2, X3, U5 and U7. Database tests cover M3, M8, X3, X4, F5 and U2 to U6. An end-to-end test covers F1 to F3: a second browser's save appears within one check interval without a reload, and the first browser's unsaved edits stay.

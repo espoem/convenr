@@ -80,7 +80,7 @@ Each phase ships on its own and is usable by real people.
 - The organizer picks a final slot. Participants get an `.ics` download and an "add to calendar" link.
 - An "if need be" level in addition to "available".
 - Poll mode: yes, if need be, or no on a few hand-picked options, on the same event model.
-- Dark theme.
+- Light and dark theme: follows the system setting, with a manual switch.
 - Live updates that replace the 15-second reload, using the technique that fits the hosting chosen by then.
 
 *Exit criterion:* an end-to-end test finalizes an event and a participant downloads an `.ics` file whose start and end match the chosen slot.
