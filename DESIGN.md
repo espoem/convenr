@@ -22,6 +22,7 @@ convenr is a small, warm tool for getting a group to agree on a time. It should 
     "line": "#D9CBB6",
     "available": "#ABA446",
     "available-strong": "#6A662B",
+    "locked": "#EEE6DB",
     "heat-0": "#EEE6DB",
     "heat-1": "#E6E2C4",
     "heat-2": "#BCB66B",
@@ -58,6 +59,7 @@ convenr is a small, warm tool for getting a group to agree on a time. It should 
 | `earth`              | Input borders, cell outlines, focus ring, secondary controls  | 5.75:1 on `background`                                      |
 | `line`               | Dividers that carry no meaning                                | Below 3:1 by design                                         |
 | `available`          | Legend swatch and illustrations                               | 2.40:1 on `background`. Never the only edge of a control    |
+| `locked`             | Fill of a control that cannot change (rule 12)                | `ink` on it: 9.38:1                                         |
 | `heat-0` to `heat-4` | The five steps of the heat map, from nobody to more than 75 % | `heat-3`: 3.63:1 and `heat-4`: 5.49:1 on `background`       |
 
 ## Rules
@@ -73,6 +75,7 @@ convenr is a small, warm tool for getting a group to agree on a time. It should 
 9. **Sizes.** A grid cell is at least `cell-min-width` by `cell-min-height`. Any other control is at least `touch-target` high on a touch screen. Running text is at most `measure` wide.
 10. **Motion.** Transitions are 150 ms or shorter and are disabled when the viewer asks for reduced motion.
 11. **Dark theme.** Not defined yet. It arrives in phase F4 as a second token block.
+12. **Locked controls.** A control that cannot change keeps its value in `ink` on a `locked` fill with a `line` border, so the value stays readable. Directly below it, a lock icon in `ink-muted` and one sentence say why. A locked control is inactive, so its `line` border may stay below 3:1.
 
 ## Components
 

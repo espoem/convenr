@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useId, useState, useTransition, type SubmitEvent } from "react";
 
 import { DatePicker } from "@/components/date-picker";
-import { controlClass, Field, FieldMessage } from "@/components/field";
+import { controlClass, Field, FieldMessage, LockedNote } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import type { DayName } from "@/domain/calendar-labels";
 import {
@@ -218,11 +218,16 @@ export function EventForm({
 
 			<fieldset className="flex flex-col gap-4" aria-describedby={`${id}-days-message`}>
 				<legend className="mb-2 font-heading text-xl font-semibold">{t("days")}</legend>
-				<div role="radiogroup" aria-label={t("dayMode")} className="flex flex-wrap gap-2">
+				<div
+					role="radiogroup"
+					aria-label={t("dayMode")}
+					aria-describedby={locked ? `${id}-mode-locked` : undefined}
+					className="flex flex-wrap gap-2"
+				>
 					{DAY_MODES.map((option) => (
 						<label
 							key={option}
-							className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-disabled:cursor-not-allowed has-disabled:not-has-checked:border-line has-disabled:not-has-checked:text-ink-muted"
+							className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-disabled:cursor-not-allowed has-disabled:not-has-checked:border-line has-disabled:not-has-checked:bg-locked"
 						>
 							<input
 								type="radio"
@@ -237,6 +242,7 @@ export function EventForm({
 						</label>
 					))}
 				</div>
+				{locked ? <LockedNote id={`${id}-mode-locked`} text={t("lockedReason")} /> : null}
 
 				{mode === "dates" ? (
 					<>
@@ -333,12 +339,18 @@ export function EventForm({
 							{hourOptions(1, 24)}
 						</select>
 					</Field>
-					<Field id={`${id}-slot`} label={t("slotLength")} className="flex-[1_1_8rem]">
+					<Field
+						id={`${id}-slot`}
+						label={t("slotLength")}
+						locked={locked ? t("lockedReason") : undefined}
+						className="flex-[1_1_8rem]"
+					>
 						<select
 							id={`${id}-slot`}
 							name="slotLength"
 							defaultValue={initial?.slotLength ?? 30}
 							disabled={locked}
+							aria-describedby={locked ? `${id}-slot-locked` : undefined}
 							className={controlClass}
 						>
 							{SLOT_LENGTHS.map((length) => (
@@ -356,6 +368,7 @@ export function EventForm({
 						label={t("zone")}
 						hint={t("zoneHint")}
 						error={error("referenceZone")}
+						locked={locked ? t("lockedReason") : undefined}
 						className="flex-[2_1_16rem]"
 					>
 						<select
@@ -363,7 +376,9 @@ export function EventForm({
 							value={shownZone}
 							disabled={locked}
 							onChange={(event) => setZone(event.target.value)}
-							aria-describedby={`${id}-zone-message`}
+							aria-describedby={
+								locked ? `${id}-zone-locked ${id}-zone-message` : `${id}-zone-message`
+							}
 							className={controlClass}
 						>
 							{zones.map((name) => (
@@ -390,9 +405,6 @@ export function EventForm({
 						</select>
 					</Field>
 				</div>
-				{locked ? (
-					<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("lockedHint")}</p>
-				) : null}
 			</fieldset>
 
 			{pendingLoss === null ? (

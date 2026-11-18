@@ -12,6 +12,7 @@
   --cv-line: #D9CBB6;
   --cv-available: #ABA446;
   --cv-available-strong: #6A662B;
+  --cv-locked: #EEE6DB;
   --cv-heat-0: #EEE6DB;
   --cv-heat-1: #E6E2C4;
   --cv-heat-2: #BCB66B;
@@ -55,6 +56,7 @@
   --color-line: var(--cv-line);
   --color-available: var(--cv-available);
   --color-available-strong: var(--cv-available-strong);
+  --color-locked: var(--cv-locked);
   --color-heat-0: var(--cv-heat-0);
   --color-heat-1: var(--cv-heat-1);
   --color-heat-2: var(--cv-heat-2);

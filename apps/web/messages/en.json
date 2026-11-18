@@ -38,7 +38,7 @@
 		"creating": "Creating…",
 		"fixProblems": "The event cannot be saved. Fix the marked fields.",
 		"failed": "The event could not be saved. Please try again.",
-		"lockedHint": "Slot length, how days are chosen and the time zone can no longer change, because someone has joined.",
+		"lockedReason": "Can't be changed, because someone has joined.",
 		"confirmLoss": "{count, plural, one {# participant loses} other {# participants lose}} part of their availability, because you remove days or times they marked.",
 		"confirmLossYes": "Save and remove",
 		"confirmLossNo": "Back to editing",

@@ -38,7 +38,7 @@
 		"creating": "Vytvářím…",
 		"fixProblems": "Událost nejde uložit. Opravte označená pole.",
 		"failed": "Událost se nepodařilo uložit. Zkuste to prosím znovu.",
-		"lockedHint": "Délku políčka, způsob výběru dnů a časové pásmo už nejde změnit, protože se někdo připojil.",
+		"lockedReason": "Nejde změnit, protože se už někdo připojil.",
 		"confirmLoss": "{count, plural, one {# účastník přijde} few {# účastníci přijdou} other {# účastníků přijde}} o část své dostupnosti, protože odebíráte dny nebo časy, které si označili.",
 		"confirmLossYes": "Uložit a odebrat",
 		"confirmLossNo": "Zpět k úpravám",
