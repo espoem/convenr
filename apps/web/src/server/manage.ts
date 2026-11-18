@@ -43,6 +43,12 @@ export type UpdateEventResult =
 	/** How many participants would lose part of their availability. */
 	| { status: "confirm"; losing: number };
 
+/** `not_found` when the secret fits but the event has no such participant. */
+export type RemoveParticipantResult =
+	| { status: "removed" }
+	| { status: "denied" }
+	| { status: "not_found" };
+
 /** The live event `id` when `secret` is its admin secret, locked for a change. */
 async function adminRow(
 	queries: Queries,
@@ -57,6 +63,15 @@ async function adminRow(
 	return row !== undefined && isLive(row, now) && matchesSecret(row.adminSecretHash, secret)
 		? row
 		: undefined;
+}
+
+/** Whether `row` already holds every column of `values`; lists are compared element by element. */
+function keepsEveryValue(row: EventRow, values: Partial<EventRow>): boolean {
+	const stored = new Map(Object.entries(row));
+
+	return Object.entries(values).every(
+		([column, value]) => JSON.stringify(stored.get(column)) === JSON.stringify(value),
+	);
 }
 
 function inputOf(row: EventRow): NewEvent {
@@ -189,32 +204,53 @@ async function deleteAvailability(queries: Queries, eventId: string, removed: Sl
 }
 
 /**
- * Changes the event's fields. A change that takes availability away from
- * participants needs `confirmedLosing` to match how many lose it; the count is asked for
- * again when it changed in the meantime.
+ * Changes the fields in `change`; the others keep their stored values, read under the lock
+ * so that two changes of different fields do not undo each other. A change that takes
+ * availability away from participants needs `confirmedLosing` to match how many lose it; the
+ * count is asked for again when it changed in the meantime.
  */
 export async function updateEvent(
 	id: string,
 	secret: string,
-	input: NewEvent,
+	change: Partial<NewEvent>,
 	confirmedLosing: number | null,
 	now = Temporal.Now.instant(),
 ): Promise<UpdateEventResult> {
-	const parsed = newEventSchema.safeParse(input);
-
-	if (!parsed.success) {
-		return { status: "invalid", problems: inputProblems(parsed.error) };
-	}
-
-	const { name, description, days, dailyStart, dailyEnd, slotLength, referenceZone } = parsed.data;
-	const after: Schedule = { days, dailyStart, dailyEnd, slotLength, referenceZone };
-
 	return db().transaction(async (tx): Promise<UpdateEventResult> => {
 		const row = await adminRow(tx, id, secret, true, now);
 
 		if (row === undefined) {
 			return { status: "denied" };
 		}
+
+		const parsed = newEventSchema.safeParse({ ...inputOf(row), ...change });
+
+		if (!parsed.success) {
+			return { status: "invalid", problems: inputProblems(parsed.error) };
+		}
+
+		const { name, description, days, dailyStart, dailyEnd, slotLength, referenceZone } =
+			parsed.data;
+
+		const stored = {
+			name,
+			description,
+			dayMode: days.mode,
+			...storedDays(days),
+			dailyStart,
+			dailyEnd,
+			slotLength,
+			referenceZone,
+			firstDayOfWeek: parsed.data.firstDayOfWeek,
+		};
+
+		// A change that keeps every value writes nothing, so the version and a weekday event's
+		// deletion date stay where they are.
+		if (keepsEveryValue(row, stored)) {
+			return { status: "saved", segment: eventSegment(id, name) };
+		}
+
+		const after: Schedule = { days, dailyStart, dailyEnd, slotLength, referenceZone };
 
 		const [people] = await tx
 			.select({ total: count() })
@@ -238,18 +274,7 @@ export async function updateEvent(
 		await deleteAvailability(tx, id, removed);
 		await tx
 			.update(events)
-			.set({
-				name,
-				description,
-				dayMode: days.mode,
-				...storedDays(days),
-				dailyStart,
-				dailyEnd,
-				slotLength,
-				referenceZone,
-				firstDayOfWeek: parsed.data.firstDayOfWeek,
-				changedAt: now.toString(),
-			})
+			.set({ ...stored, changedAt: now.toString() })
 			.where(eq(events.id, id));
 
 		return { status: "saved", segment: eventSegment(id, name) };
@@ -265,12 +290,12 @@ export async function removeParticipant(
 	secret: string,
 	participantId: string,
 	now = Temporal.Now.instant(),
-): Promise<boolean> {
-	return db().transaction(async (tx) => {
+): Promise<RemoveParticipantResult> {
+	return db().transaction(async (tx): Promise<RemoveParticipantResult> => {
 		const row = await adminRow(tx, id, secret, true, now);
 
 		if (row === undefined) {
-			return false;
+			return { status: "denied" };
 		}
 
 		const deleted = await tx
@@ -279,12 +304,12 @@ export async function removeParticipant(
 			.returning({ id: participants.id });
 
 		if (deleted.length === 0) {
-			return false;
+			return { status: "not_found" };
 		}
 
 		await touchEvent(tx, row, now);
 
-		return true;
+		return { status: "removed" };
 	});
 }
 

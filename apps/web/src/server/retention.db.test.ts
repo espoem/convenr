@@ -78,7 +78,7 @@ describe("the purge", () => {
 		const dated = await created(pragueEvenings);
 		const weekly = await created(mondayEvenings);
 
-		await join(dated.id, "Jana", "heslo-1234", creationTime);
+		await join(dated.id, "Jana", { kind: "new", password: "heslo-1234" }, creationTime);
 
 		expect(await purge(justBefore(weekdayExpiry))).toBe(0);
 		expect(await purge(weekdayExpiry)).toBe(1);

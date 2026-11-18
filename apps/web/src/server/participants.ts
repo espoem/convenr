@@ -5,8 +5,17 @@ import { db } from "@/db/client";
 import { events, participants, participantTokens } from "@/db/schema";
 import { parseDisplayName } from "@/domain/display-name";
 import { newPublicId } from "@/domain/public-id";
+import type { Schedule } from "@/domain/schedule";
 
-import { isLive, participantByToken, type Queries, touchEvent } from "./event-rows";
+import {
+	availableKeys,
+	isLive,
+	participantByToken,
+	type ParticipantView,
+	type Queries,
+	scheduleOf,
+	touchEvent,
+} from "./event-rows";
 import { hashPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, verifyPassword } from "./password";
 import { hashSecret, newSecret } from "./secrets";
 import { countFirstResponse } from "./usage";
@@ -21,12 +30,32 @@ export type PasswordRefusal =
 	| { ok: false; problem: "password_required" | "wrong_password" }
 	| { ok: false; problem: "too_many_attempts"; retryAt: Temporal.Instant };
 
+/** What a person who joins says about a password. */
+export type JoinPassword =
+	/** No password: enough for a new name and for a name that has none. */
+	| { kind: "none" }
+	/** The password of a name that has one; a new name is refused. */
+	| { kind: "current"; password: string }
+	/** The password a new name gets; a name that is already used is refused. */
+	| { kind: "new"; password: string }
+	/** The web form's one field: checks a used name's password, or sets a new name's. */
+	| { kind: "current_or_new"; password: string };
+
+const NO_PASSWORD: JoinPassword = { kind: "none" };
+
 export type JoinResult =
 	| { ok: true; name: string; token: string }
 	| PasswordRefusal
 	| {
 			ok: false;
-			problem: "not_found" | "invalid_name" | "invalid_password" | "event_full";
+			problem:
+				| "not_found"
+				| "invalid_name"
+				| "invalid_password"
+				| "event_full"
+				| "name_exists"
+				| "name_unknown"
+				| "no_password";
 	  };
 
 function isPasswordLength(password: string): boolean {
@@ -111,7 +140,7 @@ async function participantByName(eventId: string, key: string) {
 export async function join(
 	eventId: string,
 	rawName: string,
-	password?: string,
+	password: JoinPassword = NO_PASSWORD,
 	now = Temporal.Now.instant(),
 ): Promise<JoinResult> {
 	const name = parseDisplayName(rawName);
@@ -123,19 +152,34 @@ export async function join(
 	const existing = await participantByName(eventId, name.key);
 
 	if (existing !== undefined) {
-		const checked = await checkPassword(existing, password, now);
+		if (password.kind === "new") {
+			return { ok: false, problem: "name_exists" };
+		}
+
+		if (password.kind === "current" && existing.passwordHash === null) {
+			return { ok: false, problem: "no_password" };
+		}
+
+		const given = password.kind === "none" ? undefined : password.password;
+		const checked = await checkPassword(existing, given, now);
 
 		return checked.ok
 			? { ok: true, name: existing.displayName, token: await issueToken(db(), existing.id) }
 			: checked;
 	}
 
-	if (password !== undefined && !isPasswordLength(password)) {
+	if (password.kind === "current") {
+		return { ok: false, problem: "name_unknown" };
+	}
+
+	const chosen = password.kind === "none" ? undefined : password.password;
+
+	if (chosen !== undefined && !isPasswordLength(chosen)) {
 		return { ok: false, problem: "invalid_password" };
 	}
 
 	// Hashing takes a while, so it happens before the event row is locked.
-	const passwordHash = password === undefined ? null : await hashPassword(password);
+	const passwordHash = chosen === undefined ? null : await hashPassword(chosen);
 
 	const created = await db().transaction(async (tx) => {
 		// The lock orders joins of one event, so the participant limit and the name check hold.
@@ -203,10 +247,50 @@ export async function identify(eventId: string, token: string, now = Temporal.No
 		: { name: found.participant.displayName, hasPassword: found.participant.passwordHash !== null };
 }
 
+/**
+ * The participant that holds `token` in `eventId` as the event shows them, with the schedule
+ * their slot keys belong to, or `undefined`.
+ */
+export async function readParticipant(
+	eventId: string,
+	token: string,
+	now = Temporal.Now.instant(),
+): Promise<{ participant: ParticipantView; schedule: Schedule } | undefined> {
+	const found = await participantByToken(db(), eventId, token, now);
+
+	if (found === undefined) {
+		return undefined;
+	}
+
+	const { participant, event } = found;
+	const keys = await availableKeys(db(), event, [participant.id]);
+
+	return {
+		participant: {
+			id: participant.publicId,
+			name: participant.displayName,
+			available: keys.get(participant.id) ?? [],
+		},
+		schedule: scheduleOf(event),
+	};
+}
+
 export type PasswordChangeResult =
 	| { ok: true }
 	| PasswordRefusal
 	| { ok: false; problem: "not_joined" | "invalid_password" | "no_password" };
+
+/** What a password change says about the password the participant already has. */
+export type CurrentPassword =
+	/** None: enough while no password is set. */
+	| { kind: "none" }
+	/** The password that is set; refused with `no_password` when none is. */
+	| { kind: "given"; password: string }
+	/**
+	 * The web panel's field: checked when a password is set and ignored when none is, because
+	 * the panel asks to set the new password whatever another browser did meanwhile.
+	 */
+	| { kind: "if_set"; password: string };
 
 /**
  * Sets, changes or removes (`next` is `null`) the password of the token's participant.
@@ -215,7 +299,7 @@ export type PasswordChangeResult =
 export async function changePassword(
 	eventId: string,
 	token: string,
-	current: string | undefined,
+	current: CurrentPassword,
 	next: string | null,
 	now = Temporal.Now.instant(),
 ): Promise<PasswordChangeResult> {
@@ -225,7 +309,8 @@ export async function changePassword(
 		return { ok: false, problem: "not_joined" };
 	}
 
-	if (next === null && found.participant.passwordHash === null) {
+	// Removing a password, or naming a current one, needs a stored password.
+	if ((next === null || current.kind === "given") && found.participant.passwordHash === null) {
 		return { ok: false, problem: "no_password" };
 	}
 
@@ -233,7 +318,8 @@ export async function changePassword(
 		return { ok: false, problem: "invalid_password" };
 	}
 
-	const checked = await checkPassword(found.participant, current, now);
+	const given = current.kind === "none" ? undefined : current.password;
+	const checked = await checkPassword(found.participant, given, now);
 
 	if (!checked.ok) {
 		return checked;

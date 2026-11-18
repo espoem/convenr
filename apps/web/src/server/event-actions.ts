@@ -66,7 +66,7 @@ export async function removeParticipantAction(
 		.tuple([eventId, adminSecret, z.string().refine(isPublicId)])
 		.safeParse([id, secret, participantId]);
 
-	return args.success && (await removeParticipant(...args.data));
+	return args.success && (await removeParticipant(...args.data)).status === "removed";
 }
 
 export async function removeEventAction(id: string, secret: string): Promise<boolean> {

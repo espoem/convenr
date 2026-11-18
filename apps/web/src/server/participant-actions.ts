@@ -26,7 +26,14 @@ export async function joinAction(id: string, name: string, pass: string | null) 
 
 	const [event, displayName, given] = args.data;
 
-	return serializable(await join(event, displayName, given ?? undefined));
+	// The form has one password field, which checks a used name's password or sets a new name's.
+	return serializable(
+		await join(
+			event,
+			displayName,
+			given === null ? { kind: "none" } : { kind: "current_or_new", password: given },
+		),
+	);
 }
 
 export async function identifyAction(id: string, held: string) {
@@ -59,7 +66,14 @@ export async function changePasswordAction(
 
 	const [event, holder, given, wanted] = args.data;
 
-	return serializable(await changePassword(event, holder, given ?? undefined, wanted));
+	return serializable(
+		await changePassword(
+			event,
+			holder,
+			given === null ? { kind: "none" } : { kind: "if_set", password: given },
+			wanted,
+		),
+	);
 }
 
 export async function leaveAction(id: string, held: string) {

@@ -1,9 +1,9 @@
 // Creating and reading events.
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db/client";
-import { datedAvailability, events, participants, weekdayAvailability } from "@/db/schema";
+import { events, participants } from "@/db/schema";
 import { characterCount } from "@/domain/display-name";
 import { eventSegment } from "@/domain/event-address";
 import type { EditProblem } from "@/domain/event-edit";
@@ -21,7 +21,13 @@ import {
 } from "@/domain/schedule";
 import { env } from "@/env";
 
-import { datedSlotKey, firstDayOfWeekOf, isLive, scheduleOf, weekdaySlotKey } from "./event-rows";
+import {
+	availableKeys,
+	firstDayOfWeekOf,
+	isLive,
+	type ParticipantView,
+	scheduleOf,
+} from "./event-rows";
 import { hashSecret, newSecret } from "./secrets";
 import { countCreated } from "./usage";
 
@@ -174,38 +180,9 @@ export type EventView = {
 	deletionDate: Temporal.PlainDate | null;
 	/** Slot keys of the event, in time order. */
 	slots: string[];
-	/** In joining order, each with the keys of the slots they marked. */
-	participants: { name: string; available: string[] }[];
+	/** In joining order, each with their public id and the keys of the slots they marked. */
+	participants: ParticipantView[];
 };
-
-async function availableKeys(dayMode: string, participantIds: string[]) {
-	const byParticipant = new Map<string, string[]>(participantIds.map((id) => [id, []]));
-
-	if (participantIds.length === 0) {
-		return byParticipant;
-	}
-
-	const rows =
-		dayMode === "weekdays"
-			? (
-					await db()
-						.select()
-						.from(weekdayAvailability)
-						.where(inArray(weekdayAvailability.participantId, participantIds))
-				).map((row) => ({ participantId: row.participantId, key: weekdaySlotKey(row) }))
-			: (
-					await db()
-						.select()
-						.from(datedAvailability)
-						.where(inArray(datedAvailability.participantId, participantIds))
-				).map((row) => ({ participantId: row.participantId, key: datedSlotKey(row) }));
-
-	for (const { participantId, key } of rows) {
-		byParticipant.get(participantId)?.push(key);
-	}
-
-	return byParticipant;
-}
 
 /** The live event `id`, or `undefined` once it has expired or never existed. */
 async function liveRow(id: string, now: Temporal.Instant) {
@@ -241,13 +218,18 @@ export async function readEvent(
 	}
 
 	const people = await db()
-		.select({ id: participants.id, name: participants.displayName })
+		.select({
+			id: participants.id,
+			publicId: participants.publicId,
+			name: participants.displayName,
+		})
 		.from(participants)
 		.where(eq(participants.eventId, id))
 		.orderBy(asc(participants.createdAt), asc(participants.id));
 
 	const keys = await availableKeys(
-		row.dayMode,
+		db(),
+		row,
 		people.map((person) => person.id),
 	);
 
@@ -268,6 +250,7 @@ export async function readEvent(
 		),
 		slots: scheduleSlots(schedule).map((slot) => slotKey(slot)),
 		participants: people.map((person) => ({
+			id: person.publicId,
 			name: person.name,
 			available: keys.get(person.id) ?? [],
 		})),

@@ -1,8 +1,14 @@
 // Conversions between stored event rows and domain values, shared by the data access layer.
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "@/db/client";
-import { events, participants, participantTokens } from "@/db/schema";
+import {
+	datedAvailability,
+	events,
+	participants,
+	participantTokens,
+	weekdayAvailability,
+} from "@/db/schema";
 import { expiresAt } from "@/domain/retention";
 import {
 	type EventDays,
@@ -83,6 +89,49 @@ export function weekdaySlotKey(row: { weekday: number; minute: number }): string
 
 export function datedSlotKey(row: { slotStart: string }): string {
 	return slotKey({ kind: "dated", start: Temporal.Instant.from(row.slotStart) });
+}
+
+/** A participant as anyone with the share link sees them. */
+export type ParticipantView = {
+	/** The public id; the database key stays inside the server. */
+	id: string;
+	name: string;
+	/** Keys of the slots they marked. */
+	available: string[];
+};
+
+/** The slot keys each of `participantIds` marked, by participant, from the table of the event's day mode. */
+export async function availableKeys(
+	queries: Queries,
+	event: EventRow,
+	participantIds: string[],
+): Promise<Map<string, string[]>> {
+	const byParticipant = new Map<string, string[]>(participantIds.map((id) => [id, []]));
+
+	if (participantIds.length === 0) {
+		return byParticipant;
+	}
+
+	const rows =
+		event.dayMode === "weekdays"
+			? (
+					await queries
+						.select()
+						.from(weekdayAvailability)
+						.where(inArray(weekdayAvailability.participantId, participantIds))
+				).map((row) => ({ participantId: row.participantId, key: weekdaySlotKey(row) }))
+			: (
+					await queries
+						.select()
+						.from(datedAvailability)
+						.where(inArray(datedAvailability.participantId, participantIds))
+				).map((row) => ({ participantId: row.participantId, key: datedSlotKey(row) }));
+
+	for (const { participantId, key } of rows) {
+		byParticipant.get(participantId)?.push(key);
+	}
+
+	return byParticipant;
 }
 
 /**

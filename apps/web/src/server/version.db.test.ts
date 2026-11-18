@@ -42,7 +42,7 @@ describe("eventVersion", () => {
 		await saveResponse(id, jana.token, ["2027-04-05T15:00:00Z"], minute(3));
 		expect(await eventVersion(id)).toBe(minute(3).toString());
 
-		await changePassword(id, jana.token, undefined, "heslo-1234", minute(4));
+		await changePassword(id, jana.token, { kind: "none" }, "heslo-1234", minute(4));
 		expect(await eventVersion(id)).toBe(minute(4).toString());
 
 		await leave(id, jana.token, minute(5));

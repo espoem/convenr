@@ -81,6 +81,41 @@ describe("updateEvent", () => {
 		});
 	});
 
+	it("keeps the stored value of every field the change leaves out", async () => {
+		const { id, secret } = await managedEvent();
+
+		expect((await updateEvent(id, secret, { name: "Zkouška" }, null, later)).status).toBe("saved");
+		expect((await updateEvent(id, secret, { dailyEnd: 20 * 60 }, null, later)).status).toBe(
+			"saved",
+		);
+		expect(await readManagedEvent(id, secret)).toMatchObject({
+			...pragueEvenings,
+			name: "Zkouška",
+			dailyEnd: 20 * 60,
+		});
+	});
+
+	it("writes nothing for a change that keeps every value, so the version stays", async () => {
+		const { id, secret } = await managedEvent();
+		const version = (await readEvent(id))?.version;
+
+		expect(await updateEvent(id, secret, {}, null, later)).toEqual({
+			status: "saved",
+			segment: `schuzka-vyboru-2027-${id}`,
+		});
+		expect(
+			await updateEvent(
+				id,
+				secret,
+				{ ...pragueEvenings, name: ` ${pragueEvenings.name} ` },
+				null,
+				later,
+			),
+		).toMatchObject({ status: "saved" });
+		expect((await readEvent(id))?.version).toBe(version);
+		expect(version).toBe(creationTime.toString());
+	});
+
 	it("locks slot length, day mode and zone once a participant joined", async () => {
 		const { id, secret } = await managedEvent();
 
@@ -122,7 +157,7 @@ describe("updateEvent", () => {
 
 		const view = await readEvent(id);
 
-		expect(view?.participants).toEqual([
+		expect(view?.participants).toMatchObject([
 			{ name: "Jana", available: [FIVE] },
 			{ name: "Petr", available: [] },
 			{ name: "Eva", available: [FIVE] },
@@ -161,10 +196,25 @@ describe("removeParticipant", () => {
 
 		// The page names a participant by the public id; the database key stays on the server.
 		expect(isPublicId(jana?.id ?? "")).toBe(true);
-		expect(await removeParticipant(id, "wrong", jana?.id ?? "", later)).toBe(false);
-		expect(await removeParticipant(id, secret, jana?.id ?? "", later)).toBe(true);
+		expect(await removeParticipant(id, "wrong", jana?.id ?? "", later)).toEqual({
+			status: "denied",
+		});
+		expect(await removeParticipant(id, secret, jana?.id ?? "", later)).toEqual({
+			status: "removed",
+		});
 		expect((await readEvent(id))?.participants).toEqual([]);
 		expect((await join(id, "Jana", undefined, later)).ok).toBe(true);
+	});
+
+	it("tells a participant the event does not have from a wrong secret", async () => {
+		const { id, secret } = await managedEvent();
+
+		expect(await removeParticipant(id, secret, "Ab3dEf7hJk9m", later)).toEqual({
+			status: "not_found",
+		});
+		expect(await removeParticipant("abcdefghijkm", secret, "Ab3dEf7hJk9m", later)).toEqual({
+			status: "denied",
+		});
 	});
 });
 
