@@ -37,3 +37,34 @@ Returned as `problem` in a failed result.
 | `unknown_slot` | A saved response holds a slot the event does not have. | R4 |
 
 The display name parser also reports `empty`, `too_long` and `control_character` for its own result; the join maps all three to `invalid_name`.
+
+## API
+
+Codes that only the API returns, from [phase 3](phase-3.md).
+
+| Code | Meaning | Rules |
+|---|---|---|
+| `invalid_request` | The body is not JSON or does not match the schema. `errors` points at the fields. | A4, A8 |
+| `unsupported_media_type` | The body is not `application/json`. | A4 |
+| `payload_too_large` | The body is larger than 64 KB. | A4 |
+| `unauthorized` | The secret is missing or wrong, or the event does not exist. | K3, A12 |
+| `wrong_secret_kind` | An admin secret was sent where a participant token is needed, or the other way round. | K2 |
+| `secret_in_query` | The query string holds a secret. | K4 |
+
+## HTTP status
+
+The API sends every code with one status.
+
+| Status | Codes |
+|---|---|
+| `400 Bad Request` | `invalid_request`, `secret_in_query` |
+| `401 Unauthorized` | `unauthorized`, `not_joined` |
+| `403 Forbidden` | `wrong_secret_kind`, `password_required`, `wrong_password` |
+| `404 Not Found` | `not_found` |
+| `409 Conflict` | `event_full`, `field_locked`, `no_password` |
+| `413 Content Too Large` | `payload_too_large` |
+| `415 Unsupported Media Type` | `unsupported_media_type` |
+| `422 Unprocessable Content` | the event schedule codes except `field_locked`, `invalid_name`, `invalid_password`, `unknown_slot` |
+| `429 Too Many Requests` | `too_many_attempts`, with `Retry-After` and `retryAt` |
+
+`name_taken` never leaves the server.
