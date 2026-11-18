@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 /**
  * Text inputs and selects: earth border (DESIGN.md token table), touch-target height. A
- * disabled control is a locked one (DESIGN.md rule 12): its value stays in `ink`.
+ * disabled control is a locked one (see "Locked controls" in DESIGN.md): its value stays in `ink`.
  */
 export const controlClass =
 	"min-h-11 w-full min-w-0 rounded-md border border-earth bg-surface px-3 text-base disabled:cursor-not-allowed disabled:border-line disabled:bg-locked disabled:text-ink aria-invalid:border-2 aria-invalid:border-action-active";
@@ -13,7 +13,7 @@ type FieldProps = {
 	label: string;
 	hint?: string | undefined;
 	error?: string | undefined;
-	/** Why the control cannot change; shown with a lock below it (DESIGN.md rule 12). */
+	/** Why the control cannot change; shown with a lock below it (see "Locked controls" in DESIGN.md). */
 	locked?: string | undefined;
 	children: ReactNode;
 	className?: string;

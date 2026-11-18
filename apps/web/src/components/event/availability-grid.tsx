@@ -93,7 +93,7 @@ function cellAt(x: number, y: number): CellRef | undefined {
 	return { column: Number(element.dataset["column"]), row: Number(element.dataset["row"]) };
 }
 
-/** The availability grid of DESIGN.md rule 3: week blocks, days across, times down. */
+/** The availability grid: week blocks, days across, times down. */
 export function AvailabilityGrid({
 	view,
 	slotLength,

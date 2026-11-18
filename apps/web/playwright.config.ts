@@ -15,7 +15,7 @@ export default defineConfig({
 	reporter: ci ? [["github"], ["html", { open: "never" }]] : "list",
 	use: { baseURL, trace: "retain-on-failure" },
 	projects: [
-		// The phone-sized viewport the Phase 1 acceptance test is defined for.
+		// Phones are the main target, so every end-to-end test runs at phone size.
 		{
 			name: "phone",
 			use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, hasTouch: true },

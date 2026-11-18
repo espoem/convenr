@@ -1,4 +1,4 @@
-// Rule 7 of AGENTS.md and ADR 0003 item 8: no secret or visitor value reaches a log. Drizzle
+// ADR 0003 item 8: no secret or visitor value reaches a log. Drizzle
 // puts a failed query's parameters into its error message, and PostgreSQL puts row values into
 // the `detail` of its error, so an uncaught query error that Next.js logs would print them.
 import { DrizzleQueryError } from "drizzle-orm";

@@ -53,9 +53,13 @@
 		"anti-slop/no-unsafe-dictionary-type": "error",
 		"anti-slop/no-widen-then-assert": "error",
 		"anti-slop/require-readable-spacing": "error",
-		"anti-slop/require-safety-comment-for-type-assertion": "error"
+		"anti-slop/require-safety-comment-for-type-assertion": "error",
+		"convenr/no-spec-references": "error"
 	},
-	"jsPlugins": [{ "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" }],
+	"jsPlugins": [
+		{ "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" },
+		{ "name": "convenr", "specifier": "./tools/oxlint/convenr/index.ts" }
+	],
 	"ignorePatterns": [
 		"tools/oxlint/anti-slop/**",
 		"**/.next/**",

@@ -26,7 +26,7 @@ function failedInsert(): DrizzleQueryError {
 	);
 }
 
-describe("withoutValues (rule 7, ADR 0003 item 8)", () => {
+describe("withoutValues (ADR 0003 item 8)", () => {
 	it("keeps the query, the SQLSTATE and the constraint of a failed query", () => {
 		const logged = inspect(withoutValues(failedInsert()));
 

@@ -82,7 +82,7 @@ export function datedLayout(
 
 /**
  * Whether a solid line, not a dotted one, closes a row: after the last row, and where the
- * next row starts a new hour or does not follow directly (DESIGN.md rule 3).
+ * next row starts a new hour or does not follow directly, so hours and gaps read at a glance.
  */
 export function closesHour(rows: number[], index: number, slotLength: number): boolean {
 	const next = rows[index + 1];

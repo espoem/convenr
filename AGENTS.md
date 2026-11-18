@@ -44,6 +44,8 @@ A change is done when `mise run check` and `mise run e2e` exit with code 0.
 11. **Editing files.** Change source files with an editor tool, not with scripts that rewrite them by string replacement.
 12. **Browser support.** Use Baseline Widely available features without a fallback. Use a Newly available feature only behind feature detection, with a fallback of at most 20 lines and no added dependency.
 13. **Icons.** Use Phosphor icons (`@phosphor-icons/react`) where an icon is needed. Do not add another icon set.
+14. **No doc numbers in code.** Code, comments, identifiers, problem codes and test titles do not name spec rules, phases or sections, or numbered rules of `DESIGN.md` and `AGENTS.md`. An ADR may be cited, because an accepted ADR does not change. A comment says why the code exists. The spec maps its rules to code and tests, and `docs/spec/problem-codes.md` maps rules to problem codes. `mise run lint` enforces this with `convenr/no-spec-references`.
+15. **Design stance.** Design for forward compatibility. Keep backward compatibility only where a change would break a released public API. Model data so that impossible states cannot be written, and keep state explicit in a named field or a tagged union, not implied by nulls or by a combination of fields. A problem code is a snake_case name a reader understands without the docs.
 
 ## Agent skills
 

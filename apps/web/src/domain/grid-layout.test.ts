@@ -57,7 +57,7 @@ describe("weekday events", () => {
 	});
 });
 
-describe("DESIGN.md rule 3 lines", () => {
+describe("grid lines between rows", () => {
 	it("closes a row with a solid line before a new hour, at a gap and after the last row", () => {
 		const rows = [17 * 60, 17 * 60 + 30, 18 * 60, 20 * 60];
 
