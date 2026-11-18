@@ -17,7 +17,7 @@ export const LOCKOUT = Temporal.Duration.from({ minutes: 15 });
 type ParticipantRow = typeof participants.$inferSelect;
 
 export type PasswordRefusal =
-	| { ok: false; problem: "password-required" | "wrong-password" }
+	| { ok: false; problem: "password_required" | "wrong_password" }
 	| { ok: false; problem: "locked"; retryAt: Temporal.Instant };
 
 export type JoinResult =
@@ -25,7 +25,7 @@ export type JoinResult =
 	| PasswordRefusal
 	| {
 			ok: false;
-			problem: "not-found" | "invalid-name" | "invalid-password" | "full";
+			problem: "not_found" | "invalid_name" | "invalid_password" | "full";
 	  };
 
 function isPasswordLength(password: string): boolean {
@@ -61,7 +61,7 @@ async function checkPassword(
 	}
 
 	if (password === undefined) {
-		return { ok: false, problem: "password-required" };
+		return { ok: false, problem: "password_required" };
 	}
 
 	if (await verifyPassword(password, participant.passwordHash)) {
@@ -94,7 +94,7 @@ async function checkPassword(
 
 	return locked
 		? { ok: false, problem: "locked", retryAt }
-		: { ok: false, problem: "wrong-password" };
+		: { ok: false, problem: "wrong_password" };
 }
 
 async function participantByName(eventId: string, key: string) {
@@ -116,7 +116,7 @@ export async function join(
 	const name = parseDisplayName(rawName);
 
 	if (!name.ok) {
-		return { ok: false, problem: "invalid-name" };
+		return { ok: false, problem: "invalid_name" };
 	}
 
 	const existing = await participantByName(eventId, name.key);
@@ -130,7 +130,7 @@ export async function join(
 	}
 
 	if (password !== undefined && !isPasswordLength(password)) {
-		return { ok: false, problem: "invalid-password" };
+		return { ok: false, problem: "invalid_password" };
 	}
 
 	// Hashing takes a while, so it happens before the event row is locked.
@@ -141,7 +141,7 @@ export async function join(
 		const [event] = await tx.select().from(events).where(eq(events.id, eventId)).for("update");
 
 		if (event === undefined || !isLive(event, now)) {
-			return { ok: false, problem: "not-found" } as const;
+			return { ok: false, problem: "not_found" } as const;
 		}
 
 		const [taken] = await tx
@@ -150,7 +150,7 @@ export async function join(
 			.where(and(eq(participants.eventId, eventId), eq(participants.nameKey, name.key)));
 
 		if (taken !== undefined) {
-			return { ok: false, problem: "name-taken-meanwhile" } as const;
+			return { ok: false, problem: "name_taken_meanwhile" } as const;
 		}
 
 		const [total] = await tx
@@ -184,7 +184,7 @@ export async function join(
 	});
 
 	// Someone else joined under this name between the first lookup and the lock.
-	if (!created.ok && created.problem === "name-taken-meanwhile") {
+	if (!created.ok && created.problem === "name_taken_meanwhile") {
 		return join(eventId, rawName, password, now);
 	}
 
@@ -203,7 +203,7 @@ export async function identify(eventId: string, token: string, now = Temporal.No
 export type PasswordChangeResult =
 	| { ok: true }
 	| PasswordRefusal
-	| { ok: false; problem: "not-joined" | "invalid-password" | "no-password" };
+	| { ok: false; problem: "not_joined" | "invalid_password" | "no_password" };
 
 /**
  * Sets, changes or removes (`next` is `null`) the password of the token's participant by
@@ -219,15 +219,15 @@ export async function changePassword(
 	const found = await participantByToken(db(), eventId, token, now);
 
 	if (found === undefined) {
-		return { ok: false, problem: "not-joined" };
+		return { ok: false, problem: "not_joined" };
 	}
 
 	if (next === null && found.participant.passwordHash === null) {
-		return { ok: false, problem: "no-password" };
+		return { ok: false, problem: "no_password" };
 	}
 
 	if (next !== null && !isPasswordLength(next)) {
-		return { ok: false, problem: "invalid-password" };
+		return { ok: false, problem: "invalid_password" };
 	}
 
 	const checked = await checkPassword(found.participant, current, now);
@@ -254,7 +254,7 @@ export async function leave(eventId: string, token: string, now = Temporal.Now.i
 	const found = await participantByToken(db(), eventId, token, now);
 
 	if (found === undefined) {
-		return { ok: false, problem: "not-joined" } as const;
+		return { ok: false, problem: "not_joined" } as const;
 	}
 
 	await db().transaction(async (tx) => {

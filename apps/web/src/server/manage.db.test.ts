@@ -98,7 +98,7 @@ describe("updateEvent", () => {
 		expect((await readManagedEvent(id, secret))?.locked).toBe(true);
 		expect(await updateEvent(id, secret, pragueEvenings, null, later)).toEqual({
 			status: "invalid",
-			problems: ["M3.locked"],
+			problems: ["field_locked"],
 		});
 	});
 
@@ -145,7 +145,7 @@ describe("updateEvent", () => {
 
 		expect(await saveResponse(id, token, [FIVE, SIX], later)).toEqual({
 			ok: false,
-			problem: "unknown-slot",
+			problem: "unknown_slot",
 		});
 	});
 });

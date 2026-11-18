@@ -179,7 +179,7 @@ The terms are defined in the [glossary](../../GLOSSARY.md). This spec uses them 
 
 ## 12. Errors
 
-Every refusal names the field and the limit in the page language. Examples: "The name is already used in this event and has a password", "This event already has 100 participants", "The time range must end after it starts". A failed save keeps the person's edits on screen.
+Every refusal names the field and the limit in the page language. Examples: "The name is already used in this event and has a password", "This event already has 100 participants", "The time range must end after it starts". A failed save keeps the person's edits on screen. Each refusal has a stable code; [problem-codes.md](problem-codes.md) links the codes to the rules.
 
 ## 13. Acceptance test
 

@@ -54,7 +54,7 @@ describe("createEvent", () => {
 			),
 		).toEqual({
 			ok: false,
-			problems: ["E2.date-in-past"],
+			problems: ["date_in_past"],
 		});
 		expect(await db().select().from(events)).toEqual([]);
 	});

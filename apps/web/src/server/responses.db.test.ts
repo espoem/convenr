@@ -38,7 +38,7 @@ describe("saveResponse", () => {
 
 		expect(
 			await saveResponse(eventId, token, ["2027-04-05T16:00:00Z", "2027-04-05T15:30:00Z"]),
-		).toEqual({ ok: false, problem: "unknown-slot" });
+		).toEqual({ ok: false, problem: "unknown_slot" });
 		expect(await availability(eventId)).toEqual(["2027-04-05T15:00:00Z"]);
 	});
 
@@ -57,7 +57,7 @@ describe("saveResponse", () => {
 
 		expect(await saveResponse(eventId, "not-a-token", [])).toEqual({
 			ok: false,
-			problem: "not-joined",
+			problem: "not_joined",
 		});
 	});
 });

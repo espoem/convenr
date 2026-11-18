@@ -34,7 +34,7 @@ describe("editProblems", () => {
 		};
 
 		expect(editProblems(before, extended, true, now)).toEqual([]);
-		expect(editProblems(before, backdated, true, now)).toEqual(["E2.date-in-past"]);
+		expect(editProblems(before, backdated, true, now)).toEqual(["date_in_past"]);
 	});
 
 	it("locks slot length, day mode and zone once someone joined (M3)", () => {
@@ -45,14 +45,14 @@ describe("editProblems", () => {
 		];
 
 		for (const after of changes) {
-			expect(editProblems(before, after, true, now)).toContain("M3.locked");
-			expect(editProblems(before, after, false, now)).not.toContain("M3.locked");
+			expect(editProblems(before, after, true, now)).toContain("field_locked");
+			expect(editProblems(before, after, false, now)).not.toContain("field_locked");
 		}
 	});
 
 	it("still applies the limits of E3 to the new times (M2)", () => {
 		expect(editProblems(before, { ...before, dailyEnd: 16 * 60 }, true, now)).toEqual([
-			"E3.end-not-after-start",
+			"end_not_after_start",
 		]);
 	});
 });

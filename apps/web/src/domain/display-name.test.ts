@@ -27,12 +27,12 @@ describe("P1 display name", () => {
 		const family = "👨‍👩‍👧";
 
 		expect(parseDisplayName(`${"a".repeat(39)}${family}`).ok).toBe(true);
-		expect(parseDisplayName("a".repeat(41))).toEqual({ ok: false, reason: "too-long" });
+		expect(parseDisplayName("a".repeat(41))).toEqual({ ok: false, reason: "too_long" });
 	});
 
 	it("refuses an empty name and a name with a control character", () => {
 		expect(parseDisplayName("   ")).toEqual({ ok: false, reason: "empty" });
-		expect(parseDisplayName("Ja\u0000na")).toEqual({ ok: false, reason: "control-character" });
+		expect(parseDisplayName("Ja\u0000na")).toEqual({ ok: false, reason: "control_character" });
 	});
 });
 

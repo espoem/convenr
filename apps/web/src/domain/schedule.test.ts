@@ -31,7 +31,7 @@ function onDateIn(iso: string, referenceZone: string): Schedule {
 describe("E2 days", () => {
 	it("accepts a range of 31 dates and refuses 32", () => {
 		expect(validateSchedule(mayFrom("2027-05-31"), now)).toEqual([]);
-		expect(validateSchedule(mayFrom("2027-06-01"), now)).toEqual(["E2.too-many-dates"]);
+		expect(validateSchedule(mayFrom("2027-06-01"), now)).toEqual(["too_many_dates"]);
 	});
 
 	it("refuses a range whose last date is before its first", () => {
@@ -40,24 +40,22 @@ describe("E2 days", () => {
 			days: { mode: "range", first: date("2027-04-09"), last: date("2027-04-05") },
 		};
 
-		expect(validateSchedule(reversed, now)).toEqual(["E2.range-reversed"]);
+		expect(validateSchedule(reversed, now)).toEqual(["range_reversed"]);
 	});
 
 	it("refuses no dates and duplicate dates", () => {
-		expect(validateSchedule(onDates(), now)).toEqual(["E2.no-days"]);
-		expect(validateSchedule(onDates("2027-04-05", "2027-04-05"), now)).toEqual([
-			"E2.duplicate-day",
-		]);
+		expect(validateSchedule(onDates(), now)).toEqual(["no_days"]);
+		expect(validateSchedule(onDates("2027-04-05", "2027-04-05"), now)).toEqual(["duplicate_day"]);
 		expect(validateSchedule(onDates("2027-04-05", "2027-05-20"), now)).toEqual([]);
 	});
 
 	it("refuses no weekdays and duplicate weekdays", () => {
 		expect(validateSchedule({ ...evening, days: { mode: "weekdays", weekdays: [] } }, now)).toEqual(
-			["E2.no-days"],
+			["no_days"],
 		);
 		expect(
 			validateSchedule({ ...evening, days: { mode: "weekdays", weekdays: [2, 2] } }, now),
-		).toEqual(["E2.duplicate-day"]);
+		).toEqual(["duplicate_day"]);
 	});
 
 	it("refuses a date before today in the reference zone, and accepts today", () => {
@@ -65,11 +63,11 @@ describe("E2 days", () => {
 
 		expect(validateSchedule(onDateIn("2027-03-01", "Europe/Prague"), now)).toEqual([]);
 		expect(validateSchedule(onDateIn("2027-02-28", "Europe/Prague"), now)).toEqual([
-			"E2.date-in-past",
+			"date_in_past",
 		]);
 		// At 23:30 UTC it is already 2 March in Auckland.
 		expect(validateSchedule(onDateIn("2027-03-01", "Pacific/Auckland"), lateEvening)).toEqual([
-			"E2.date-in-past",
+			"date_in_past",
 		]);
 	});
 });
@@ -80,14 +78,12 @@ describe("E3 daily time range", () => {
 	});
 
 	it("refuses a range outside one day, a range that does not end after it starts, and odd times", () => {
-		expect(validateSchedule({ ...evening, dailyEnd: 24 * 60 + 30 }, now)).toEqual([
-			"E3.out-of-day",
-		]);
+		expect(validateSchedule({ ...evening, dailyEnd: 24 * 60 + 30 }, now)).toEqual(["out_of_day"]);
 		expect(validateSchedule({ ...evening, dailyEnd: evening.dailyStart }, now)).toEqual([
-			"E3.end-not-after-start",
+			"end_not_after_start",
 		]);
 		expect(validateSchedule({ ...evening, dailyStart: 17 * 60 + 10 }, now)).toEqual([
-			"E3.not-on-slot-boundary",
+			"not_on_slot_boundary",
 		]);
 	});
 });

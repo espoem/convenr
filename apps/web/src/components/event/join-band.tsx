@@ -69,7 +69,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 					return;
 				}
 
-				if (joined.problem === "password-required" || joined.problem === "wrong-password") {
+				if (joined.problem === "password_required" || joined.problem === "wrong_password") {
 					password.current?.focus();
 				}
 
@@ -84,7 +84,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 		});
 	}
 
-	const nameProblem = problem?.key === "invalid-name" || problem?.key === "full";
+	const nameProblem = problem?.key === "invalid_name" || problem?.key === "full";
 	const passwordProblem = problem !== null && !nameProblem && problem.key !== "failed";
 
 	return (

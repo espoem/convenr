@@ -68,7 +68,7 @@ describe("expiry (X3)", () => {
 		expect(await identify(id, jana.token, datedExpiry)).toBeUndefined();
 		expect(await join(id, "Petr", undefined, datedExpiry)).toEqual({
 			ok: false,
-			problem: "not-found",
+			problem: "not_found",
 		});
 	});
 });

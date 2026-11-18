@@ -275,7 +275,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					return;
 				}
 
-				if (saved.problem === "unknown-slot") {
+				if (saved.problem === "unknown_slot") {
 					// The organizer changed the days or times; the reload drops the lost edits and
 					// `lostEdits` says so.
 					setSaveMessage(null);
@@ -388,7 +388,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		<div className="flex flex-col gap-6">
 			{dropped && joined === null ? (
 				<output className="block max-w-(--cv-measure) font-semibold text-action-active">
-					{tJoin("problem.not-joined")}
+					{tJoin("problem.not_joined")}
 				</output>
 			) : null}
 			<JoinBand

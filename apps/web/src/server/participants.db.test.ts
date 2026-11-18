@@ -50,20 +50,20 @@ describe("P4 joining", () => {
 
 		expect(await join(eventId, "jana", undefined, creationTime)).toEqual({
 			ok: false,
-			problem: "password-required",
+			problem: "password_required",
 		});
 		expect(await join(eventId, "jana", "tajne", creationTime)).toMatchObject({ ok: true });
 	});
 
 	it("refuses an invalid name, a password of the wrong length and an unknown event", async () => {
 		expect(await join(eventId, " \t ", undefined, creationTime)).toMatchObject({
-			problem: "invalid-name",
+			problem: "invalid_name",
 		});
 		expect(await join(eventId, "Jana", "abc", creationTime)).toMatchObject({
-			problem: "invalid-password",
+			problem: "invalid_password",
 		});
 		expect(await join("abcdefghijkm", "Jana", undefined, creationTime)).toMatchObject({
-			problem: "not-found",
+			problem: "not_found",
 		});
 	});
 
@@ -102,7 +102,7 @@ describe("P7 failed attempts", () => {
 		);
 
 		expect(wrong.map((result) => !result.ok && result.problem)).toEqual(
-			Array.from({ length: 4 }, () => "wrong-password"),
+			Array.from({ length: 4 }, () => "wrong_password"),
 		);
 
 		const retryAt = creationTime.add({ minutes: 15 });
@@ -139,7 +139,7 @@ describe("P6 passwords", () => {
 		});
 		expect(await changePassword(eventId, token, undefined, "druhe", creationTime)).toEqual({
 			ok: false,
-			problem: "password-required",
+			problem: "password_required",
 		});
 		expect(await changePassword(eventId, token, "prvni", null, creationTime)).toEqual({ ok: true });
 		expect(await identify(eventId, token)).toEqual({ name: "Jana", hasPassword: false });
@@ -150,11 +150,11 @@ describe("P6 passwords", () => {
 
 		expect(await changePassword("abcdefghijkm", token, undefined, "heslo", creationTime)).toEqual({
 			ok: false,
-			problem: "not-joined",
+			problem: "not_joined",
 		});
 		expect(await changePassword(eventId, token, undefined, null, creationTime)).toEqual({
 			ok: false,
-			problem: "no-password",
+			problem: "no_password",
 		});
 	});
 });

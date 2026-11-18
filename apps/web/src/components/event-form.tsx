@@ -53,22 +53,37 @@ type DayMode = NewEvent["days"]["mode"];
 
 const DAY_MODES: DayMode[] = ["dates", "range", "weekdays"];
 
-/** The message key for a problem the server reported: a field path or a rule code. */
+const TIME_PROBLEMS = new Set<string>([
+	"out_of_day",
+	"end_not_after_start",
+	"not_on_slot_boundary",
+]);
+
+const DAY_PROBLEMS = new Set<string>([
+	"no_days",
+	"range_reversed",
+	"too_many_dates",
+	"duplicate_day",
+	"date_in_past",
+	"field_locked",
+]);
+
+/** The message key for a problem the server reported: a problem code or a field path. */
 function problemKey(problem: string) {
-	if (/^(?:E2|E3|M3)\./u.test(problem)) {
-		return problem.replace(".", "_");
+	if (TIME_PROBLEMS.has(problem) || DAY_PROBLEMS.has(problem)) {
+		return problem;
 	}
 
-	return problem.split(".")[0] === "days" ? "E2_no-days" : problem.split(".")[0];
+	return problem.split(".")[0] === "days" ? "no_days" : problem.split(".")[0];
 }
 
-/** Rule codes of the time range belong to the times; everything else about days to the days. */
+/** Problems of the time range belong to the times; everything else about days to the days. */
 function problemField(problem: string) {
-	if (problem.startsWith("E3.") || problem === "dailyStart" || problem === "dailyEnd") {
+	if (TIME_PROBLEMS.has(problem) || problem === "dailyStart" || problem === "dailyEnd") {
 		return "times";
 	}
 
-	return /^(?:E2\.|M3\.|days)/u.test(problem) ? "days" : problem;
+	return DAY_PROBLEMS.has(problem) || problem.split(".")[0] === "days" ? "days" : problem;
 }
 
 /** The fields of spec rule E1, with the checks of E2, E3 and M3 to M5 done by the server. */

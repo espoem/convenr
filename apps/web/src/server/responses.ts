@@ -7,7 +7,7 @@ import { scheduleSlots, slotKey } from "@/domain/schedule";
 
 import { participantByToken, scheduleOf, touchEvent } from "./event-rows";
 
-export type SaveResult = { ok: true } | { ok: false; problem: "not-joined" | "unknown-slot" };
+export type SaveResult = { ok: true } | { ok: false; problem: "not_joined" | "unknown_slot" };
 
 /**
  * Replaces the response of the token's participant with `keys` in one step (R2). The later
@@ -27,7 +27,7 @@ export async function saveResponse(
 		const found = await participantByToken(tx, eventId, token, now);
 
 		if (found === undefined) {
-			return { ok: false, problem: "not-joined" };
+			return { ok: false, problem: "not_joined" };
 		}
 
 		const slots = new Map(
@@ -37,7 +37,7 @@ export async function saveResponse(
 		const chosen = [...new Set(keys)].map((key) => slots.get(key));
 
 		if (chosen.includes(undefined)) {
-			return { ok: false, problem: "unknown-slot" };
+			return { ok: false, problem: "unknown_slot" };
 		}
 
 		const participantId = found.participant.id;

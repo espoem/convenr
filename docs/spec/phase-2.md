@@ -110,7 +110,7 @@ These rules replace the last sentence of Phase 1 rule E7: the number of days is 
 
 ## 9. Errors
 
-Phase 1 section 12 applies. A refused manage action names the field and the limit. A narrowing confirmation (M5) and every deletion (M7, M8) happen inside the page.
+Phase 1 section 12 applies. A refused manage action names the field and the limit. Each refusal has a stable code; [problem-codes.md](problem-codes.md) links the codes to the rules. A narrowing confirmation (M5) and every deletion (M7, M8) happen inside the page.
 
 ## 10. Acceptance test
 

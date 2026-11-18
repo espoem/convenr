@@ -44,14 +44,14 @@ export type Schedule = {
 };
 
 export type ScheduleProblem =
-	| "E2.no-days"
-	| "E2.range-reversed"
-	| "E2.too-many-dates"
-	| "E2.duplicate-day"
-	| "E2.date-in-past"
-	| "E3.out-of-day"
-	| "E3.end-not-after-start"
-	| "E3.not-on-slot-boundary";
+	| "no_days"
+	| "range_reversed"
+	| "too_many_dates"
+	| "duplicate_day"
+	| "date_in_past"
+	| "out_of_day"
+	| "end_not_after_start"
+	| "not_on_slot_boundary";
 
 export type DatedSlot = { kind: "dated"; start: Temporal.Instant };
 
@@ -93,38 +93,38 @@ function dayProblems(
 ): ScheduleProblem[] {
 	if (days.mode === "weekdays") {
 		if (days.weekdays.length === 0) {
-			return ["E2.no-days"];
+			return ["no_days"];
 		}
 
-		return new Set(days.weekdays).size === days.weekdays.length ? [] : ["E2.duplicate-day"];
+		return new Set(days.weekdays).size === days.weekdays.length ? [] : ["duplicate_day"];
 	}
 
 	const problems: ScheduleProblem[] = [];
 
 	if (days.mode === "range" && Temporal.PlainDate.compare(days.first, days.last) > 0) {
-		return ["E2.range-reversed"];
+		return ["range_reversed"];
 	}
 
 	if (days.mode === "dates") {
 		if (days.dates.length === 0) {
-			return ["E2.no-days"];
+			return ["no_days"];
 		}
 
 		if (new Set(days.dates.map(String)).size !== days.dates.length) {
-			problems.push("E2.duplicate-day");
+			problems.push("duplicate_day");
 		}
 	}
 
 	const dates = eventDates(days);
 
 	if (dates.length > MAX_DATES) {
-		problems.push("E2.too-many-dates");
+		problems.push("too_many_dates");
 	}
 
 	const past = (date: Temporal.PlainDate) => Temporal.PlainDate.compare(date, today) < 0;
 
 	if (dates.some((date) => past(date) && !keptDates.has(date.toString()))) {
-		problems.push("E2.date-in-past");
+		problems.push("date_in_past");
 	}
 
 	return problems;
@@ -134,16 +134,16 @@ function timeProblems(schedule: Schedule): ScheduleProblem[] {
 	const { dailyStart, dailyEnd, slotLength } = schedule;
 
 	if (dailyStart < 0 || dailyEnd > MINUTES_PER_DAY) {
-		return ["E3.out-of-day"];
+		return ["out_of_day"];
 	}
 
 	if (dailyEnd <= dailyStart) {
-		return ["E3.end-not-after-start"];
+		return ["end_not_after_start"];
 	}
 
 	return dailyStart % slotLength === 0 && dailyEnd % slotLength === 0
 		? []
-		: ["E3.not-on-slot-boundary"];
+		: ["not_on_slot_boundary"];
 }
 
 /**

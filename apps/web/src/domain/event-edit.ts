@@ -9,7 +9,7 @@ import {
 	validateSchedule,
 } from "./schedule";
 
-export type EditProblem = ScheduleProblem | "M3.locked";
+export type EditProblem = ScheduleProblem | "field_locked";
 
 /**
  * Problems of changing `before` into `after`. Once the event has participants, slot length,
@@ -30,7 +30,7 @@ export function editProblems(
 
 	const problems: EditProblem[] = validateSchedule(after, now, scheduleDates(before));
 
-	return locked ? ["M3.locked", ...problems] : problems;
+	return locked ? ["field_locked", ...problems] : problems;
 }
 
 /** The slots of `before` that `after` no longer has (M5). */

@@ -21,7 +21,7 @@ export async function joinAction(id: string, name: string, pass: string | null) 
 	const args = z.tuple([eventId, z.string().max(400), password]).safeParse([id, name, pass]);
 
 	if (!args.success) {
-		return { ok: false, problem: "invalid-name" } as const;
+		return { ok: false, problem: "invalid_name" } as const;
 	}
 
 	const [event, displayName, given] = args.data;
@@ -42,7 +42,7 @@ export async function saveAction(id: string, held: string, keys: string[]) {
 
 	return args.success
 		? saveResponse(...args.data)
-		: ({ ok: false, problem: "unknown-slot" } as const);
+		: ({ ok: false, problem: "unknown_slot" } as const);
 }
 
 export async function changePasswordAction(
@@ -54,7 +54,7 @@ export async function changePasswordAction(
 	const args = z.tuple([eventId, token, password, password]).safeParse([id, held, current, next]);
 
 	if (!args.success) {
-		return { ok: false, problem: "invalid-password" } as const;
+		return { ok: false, problem: "invalid_password" } as const;
 	}
 
 	const [event, holder, given, wanted] = args.data;
@@ -65,5 +65,5 @@ export async function changePasswordAction(
 export async function leaveAction(id: string, held: string) {
 	const args = z.tuple([eventId, token]).safeParse([id, held]);
 
-	return args.success ? leave(...args.data) : ({ ok: false, problem: "not-joined" } as const);
+	return args.success ? leave(...args.data) : ({ ok: false, problem: "not_joined" } as const);
 }
