@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -57,7 +57,7 @@ export function DatePicker({
 					disabled={Temporal.PlainYearMonth.compare(month, earliest ?? month) <= 0}
 					onClick={() => setMonth(month.subtract({ months: 1 }))}
 				>
-					<ChevronLeft aria-hidden />
+					<CaretLeftIcon aria-hidden />
 				</Button>
 				<p aria-live="polite" className="font-heading text-lg font-semibold">
 					{month.toPlainDate({ day: 1 }).toLocaleString(locale, { month: "long", year: "numeric" })}
@@ -68,7 +68,7 @@ export function DatePicker({
 					aria-label={t("nextMonth")}
 					onClick={() => setMonth(month.add({ months: 1 }))}
 				>
-					<ChevronRight aria-hidden />
+					<CaretRightIcon aria-hidden />
 				</Button>
 			</div>
 			<table className="border-separate border-spacing-1">

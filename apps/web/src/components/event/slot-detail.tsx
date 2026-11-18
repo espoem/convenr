@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -36,7 +36,7 @@ export function SlotDetail({ heading, available, unavailable, x, y, onClose }: S
 					aria-label={t("closeDetail")}
 					className="-mt-2 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-md sm:hidden"
 				>
-					<X aria-hidden className="size-5" />
+					<XIcon aria-hidden className="size-5" />
 				</button>
 			</div>
 			<p className="tabular-nums">{t("count", { available: available.length, total })}</p>
