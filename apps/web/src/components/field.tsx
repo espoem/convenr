@@ -41,7 +41,7 @@ export function FieldMessage({ id, hint, error }: FieldMessageProps) {
 	}
 
 	return hint === undefined ? null : (
-		<p id={id} className="text-sm text-ink-muted">
+		<p id={id} className="max-w-(--cv-measure) text-sm text-ink-muted">
 			{hint}
 		</p>
 	);

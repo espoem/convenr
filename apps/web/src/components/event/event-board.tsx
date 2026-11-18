@@ -387,7 +387,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	return (
 		<div className="flex flex-col gap-6">
 			{dropped && joined === null ? (
-				<output className="block max-w-[65ch] font-semibold text-action-active">
+				<output className="block max-w-(--cv-measure) font-semibold text-action-active">
 					{tJoin("problem.not-joined")}
 				</output>
 			) : null}
@@ -448,7 +448,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 
 					{zoneNotice === null ? null : (
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-							<p className="max-w-[65ch] font-semibold">{zoneNotice}</p>
+							<p className="max-w-(--cv-measure) font-semibold">{zoneNotice}</p>
 							{zoneDiffers ? (
 								<Button
 									type="button"
@@ -482,17 +482,17 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 								</span>
 								<span>{t("count", { available: total, total })}</span>
 							</div>
-							<p className="max-w-[65ch] text-ink-muted">{t("groupHint")}</p>
+							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("groupHint")}</p>
 						</>
 					) : null}
 
 					{tab === "me" && joined === null ? (
-						<p className="max-w-[65ch]">{t("joinFirst")}</p>
+						<p className="max-w-(--cv-measure)">{t("joinFirst")}</p>
 					) : null}
 
 					{tab === "me" && joined !== null ? (
 						<>
-							<p className="max-w-[65ch] text-ink-muted">{t("meHint")}</p>
+							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("meHint")}</p>
 							<div className="flex flex-wrap gap-2">
 								<Button
 									type="button"
@@ -524,7 +524,8 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 							</div>
 							{tab === "group" && inspected !== null && detailTime !== undefined ? (
 								<SlotDetail
-									heading={`${view?.columns[inspected.cell.column]?.long ?? ""} · ${detailTime.start}–${detailTime.end}`}
+									day={view?.columns[inspected.cell.column]?.long ?? ""}
+									time={`${detailTime.start}–${detailTime.end}`}
 									available={event.participants
 										.filter((participant) => detailNames.has(participant.name))
 										.map((participant) => participant.name)}
@@ -597,7 +598,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					<p className="text-ink-muted">{t("noParticipants")}</p>
 				) : (
 					<>
-						<p className="max-w-[65ch] text-sm text-ink-muted">{t("filterHint")}</p>
+						<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("filterHint")}</p>
 						<ul className="flex flex-wrap gap-2">
 							{event.participants.map((participant) => (
 								<li key={participant.name}>

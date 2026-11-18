@@ -6,7 +6,8 @@ import { useTranslations } from "next-intl";
 import { useMediaQuery } from "@/lib/use-media-query";
 
 type SlotDetailProps = {
-	heading: string;
+	day: string;
+	time: string;
 	available: string[];
 	unavailable: string[];
 	/** Position beside the cell on wide screens; on narrow screens it is a bottom panel (V3). */
@@ -16,20 +17,24 @@ type SlotDetailProps = {
 };
 
 /** Spec rule V3: the slot's day and time, the count, and who can and cannot come. */
-export function SlotDetail({ heading, available, unavailable, x, y, onClose }: SlotDetailProps) {
+export function SlotDetail({ day, time, available, unavailable, x, y, onClose }: SlotDetailProps) {
 	const t = useTranslations("Event");
 	const wide = useMediaQuery("(min-width: 40rem)");
 	const total = available.length + unavailable.length;
 
 	return (
 		<aside
-			aria-label={heading}
+			aria-label={`${day}, ${time}`}
 			aria-live="polite"
 			style={wide ? { left: x, top: y } : undefined}
 			className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 border-t border-line bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_16px_color-mix(in_oklch,var(--cv-ink),transparent_88%)] sm:absolute sm:right-auto sm:bottom-auto sm:w-72 sm:rounded-lg sm:border sm:pb-3 sm:shadow-[0_4px_16px_color-mix(in_oklch,var(--cv-ink),transparent_88%)]"
 		>
 			<div className="flex items-start justify-between gap-2">
-				<p className="font-semibold tabular-nums">{heading}</p>
+				{/* The day and the time each keep to one line, so a narrow panel breaks between them. */}
+				<p className="font-semibold">
+					<span className="whitespace-nowrap">{day}</span>{" "}
+					<span className="whitespace-nowrap tabular-nums">{time}</span>
+				</p>
 				<button
 					type="button"
 					onClick={onClose}

@@ -93,7 +93,7 @@ export function BestWindows({
 			</div>
 
 			{shown.length === 0 ? (
-				<p aria-live="polite" className="max-w-[65ch] text-ink-muted">
+				<p aria-live="polite" className="max-w-(--cv-measure) text-sm text-ink-muted">
 					{emptyMessage()}
 				</p>
 			) : (

@@ -222,7 +222,7 @@ export function EventForm({
 					{DAY_MODES.map((option) => (
 						<label
 							key={option}
-							className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-earth px-3 has-checked:bg-ink has-checked:font-semibold has-checked:text-surface has-disabled:cursor-not-allowed has-disabled:not-has-checked:border-line has-disabled:not-has-checked:text-ink-muted"
+							className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-disabled:cursor-not-allowed has-disabled:not-has-checked:border-line has-disabled:not-has-checked:text-ink-muted"
 						>
 							<input
 								type="radio"
@@ -288,7 +288,7 @@ export function EventForm({
 								return (
 									<label
 										key={weekday}
-										className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-earth px-3 has-checked:bg-ink has-checked:font-semibold has-checked:text-surface"
+										className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface"
 									>
 										<input
 											type="checkbox"
@@ -303,7 +303,7 @@ export function EventForm({
 								);
 							})}
 						</div>
-						<p className="text-sm text-ink-muted">{t("weekdaysHint")}</p>
+						<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("weekdaysHint")}</p>
 					</div>
 				) : null}
 
@@ -390,7 +390,9 @@ export function EventForm({
 						</select>
 					</Field>
 				</div>
-				{locked ? <p className="max-w-[65ch] text-sm text-ink-muted">{t("lockedHint")}</p> : null}
+				{locked ? (
+					<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("lockedHint")}</p>
+				) : null}
 			</fieldset>
 
 			{pendingLoss === null ? (
@@ -403,7 +405,7 @@ export function EventForm({
 					</p>
 				</div>
 			) : (
-				<div role="alert" className="flex max-w-[65ch] flex-col gap-3">
+				<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
 					<p>{t("confirmLoss", { count: pendingLoss.losing })}</p>
 					<div className="flex flex-wrap gap-2">
 						<Button

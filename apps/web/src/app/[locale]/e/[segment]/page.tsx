@@ -65,7 +65,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl break-words sm:text-4xl">{event.name}</h1>
 					{event.description === "" ? null : (
-						<p className="max-w-[65ch] text-lg break-words whitespace-pre-line">
+						<p className="max-w-(--cv-measure) text-lg break-words whitespace-pre-line">
 							{event.description}
 						</p>
 					)}

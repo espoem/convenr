@@ -127,7 +127,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 			>
 				{problem === null ? "" : t(`problem.${problem.key}`, { time: problem.time ?? "" })}
 			</p>
-			<p className="max-w-[65ch] text-sm text-ink-muted">{t("note")}</p>
+			<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("note")}</p>
 		</form>
 	);
 }
@@ -288,7 +288,7 @@ function JoinedLine({
 				) : null}
 
 				{panel === "leave" ? (
-					<div role="alert" className="mt-3 flex max-w-[65ch] flex-col gap-3">
+					<div role="alert" className="mt-3 flex max-w-(--cv-measure) flex-col gap-3">
 						<p>{t("leaveConfirm", { name: joined.name })}</p>
 						<div className="flex flex-wrap gap-2">
 							<Button type="button" variant="destructive" disabled={pending} onClick={leave}>

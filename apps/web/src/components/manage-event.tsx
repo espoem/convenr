@@ -76,7 +76,7 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 
 	if (event === null) {
 		return (
-			<p role="alert" className="max-w-[65ch] text-lg">
+			<p role="alert" className="max-w-(--cv-measure) text-lg">
 				{t("invalid")}
 			</p>
 		);
@@ -192,7 +192,7 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 					</ul>
 				)}
 				{removing === null ? null : (
-					<div role="alert" className="flex max-w-[65ch] flex-col gap-3">
+					<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
 						<p>{t("removeParticipantConfirm", { name: removing.name })}</p>
 						<div className="flex flex-wrap gap-2">
 							<Button
@@ -216,7 +216,7 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 					{t("deleteHeading")}
 				</h2>
 				{deleting ? (
-					<div role="alert" className="flex max-w-[65ch] flex-col gap-3">
+					<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
 						<p>{t("deleteConfirm", { name: event.name })}</p>
 						<div className="flex flex-wrap gap-2">
 							<Button type="button" variant="destructive" disabled={pending} onClick={deleteEvent}>
@@ -229,7 +229,7 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 					</div>
 				) : (
 					<>
-						<p className="max-w-[65ch]">{t("deleteLead")}</p>
+						<p className="max-w-(--cv-measure)">{t("deleteLead")}</p>
 						<Button
 							type="button"
 							variant="destructive"

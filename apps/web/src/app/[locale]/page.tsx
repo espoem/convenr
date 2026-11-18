@@ -14,7 +14,7 @@ export default async function StartPage() {
 			<main className="flex flex-col gap-10">
 				<div className="flex flex-col gap-3">
 					<h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
-					<p className="max-w-[65ch] text-lg">{t("lead")}</p>
+					<p className="max-w-(--cv-measure) text-lg">{t("lead")}</p>
 				</div>
 				<MyEvents />
 				<section aria-labelledby="create" className="flex flex-col gap-6">

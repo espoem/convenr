@@ -23,7 +23,7 @@ export function CreatedLinks({ id, segment, locale }: CreatedLinksProps) {
 
 	if (stored?.adminSecret === undefined) {
 		return (
-			<div className="flex max-w-[65ch] flex-col gap-4">
+			<div className="flex max-w-(--cv-measure) flex-col gap-4">
 				<p>{t("missing")}</p>
 				<CopyField label={t("shareLink")} value={`${origin}${eventPath}`} />
 			</div>
@@ -38,7 +38,7 @@ export function CreatedLinks({ id, segment, locale }: CreatedLinksProps) {
 					label={t("adminLink")}
 					value={`${origin}${eventPath}/manage#${stored.adminSecret}`}
 				/>
-				<p className="max-w-[65ch] font-semibold">{t("adminWarning")}</p>
+				<p className="max-w-(--cv-measure) font-semibold">{t("adminWarning")}</p>
 			</div>
 			<Link
 				href={`/e/${segment}`}
