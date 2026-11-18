@@ -72,10 +72,10 @@ The event's address plus the admin secret, which gives organizer rights.
 _Avoid_: Edit link, owner link
 
 **Admin secret**:
-The random secret in the admin link's fragment.
+The random secret in the admin link's fragment. It starts with `cva_`.
 
 **Participant token**:
-A random secret that lets one browser edit one participant's response.
+A random secret that lets one browser edit one participant's response. It starts with `cvp_`.
 _Avoid_: Session, cookie, edit token
 
 **Participant password**:

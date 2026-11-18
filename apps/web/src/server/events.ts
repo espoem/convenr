@@ -109,7 +109,7 @@ export async function createEvent(
 		return { ok: false, problems };
 	}
 
-	const adminSecret = newSecret();
+	const adminSecret = newSecret("admin");
 
 	// About 70 random bits make a collision negligible; the primary key would refuse one.
 	const id = newEventId();

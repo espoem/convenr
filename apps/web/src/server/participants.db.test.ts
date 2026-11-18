@@ -30,6 +30,7 @@ describe("joining", () => {
 		const joined = await join(eventId, "  Jana   Nováková ", undefined, creationTime);
 
 		expect(joined).toMatchObject({ ok: true, name: "Jana Nováková" });
+		expect(joined.ok && joined.token).toMatch(/^cvp_[\w-]{43}$/u);
 		expect((await readEvent(eventId))?.participants).toEqual([
 			{ name: "Jana Nováková", available: [] },
 		]);

@@ -25,7 +25,8 @@ describe("createEvent", () => {
 		}
 
 		expect(created.segment).toBe(`schuzka-vyboru-2027-${created.id}`);
-		expect(created.adminSecret).toMatch(/^[\w-]{43}$/u);
+		// The prefix names the kind, followed by 32 bytes in base64url (ADR 0004).
+		expect(created.adminSecret).toMatch(/^cva_[\w-]{43}$/u);
 		expect((await readEvent(created.id))?.deletionDate?.toString()).toBe("2027-07-05");
 
 		const [row] = await db().select().from(events).where(eq(events.id, created.id));

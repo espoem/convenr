@@ -33,7 +33,7 @@ function isPasswordLength(password: string): boolean {
 }
 
 async function issueToken(queries: Queries, participantId: string): Promise<string> {
-	const token = newSecret();
+	const token = newSecret("participant");
 
 	await queries.insert(participantTokens).values({ tokenHash: hashSecret(token), participantId });
 
