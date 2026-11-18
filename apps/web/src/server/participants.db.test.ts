@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
 import { participants, participantTokens } from "@/db/schema";
+import { isPublicId, newPublicId } from "@/domain/public-id";
 
 import { readEvent } from "./events";
 import { changePassword, identify, join, leave, MAX_PARTICIPANTS } from "./participants";
@@ -31,6 +32,10 @@ describe("joining", () => {
 
 		expect(joined).toMatchObject({ ok: true, name: "Jana Nováková" });
 		expect(joined.ok && joined.token).toMatch(/^cvp_[\w-]{43}$/u);
+
+		const [row] = await db().select().from(participants);
+
+		expect(isPublicId(row?.publicId ?? "")).toBe(true);
 		expect((await readEvent(eventId))?.participants).toEqual([
 			{ name: "Jana Nováková", available: [] },
 		]);
@@ -73,6 +78,7 @@ describe("joining", () => {
 			.insert(participants)
 			.values(
 				Array.from({ length: MAX_PARTICIPANTS }, (_, index) => ({
+					publicId: newPublicId(),
 					eventId,
 					displayName: `P${index}`,
 					nameKey: `p${index}`,

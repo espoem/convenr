@@ -25,6 +25,7 @@ export type ManagedEvent = NewEvent & {
 	segment: string;
 	/** Slot length, day mode and reference zone are locked because people joined. */
 	locked: boolean;
+	/** Each with their public id. */
 	participants: { id: string; name: string }[];
 };
 
@@ -91,7 +92,7 @@ export async function readManagedEvent(
 	}
 
 	const people = await db()
-		.select({ id: participants.id, name: participants.displayName })
+		.select({ id: participants.publicId, name: participants.displayName })
 		.from(participants)
 		.where(eq(participants.eventId, id))
 		.orderBy(asc(participants.createdAt), asc(participants.id));
@@ -252,7 +253,10 @@ export async function updateEvent(
 	});
 }
 
-/** Deletes a participant on the organizer's request, like a participant leaving does. */
+/**
+ * Deletes the participant with public id `participantId` on the organizer's request, like a
+ * participant leaving does.
+ */
 export async function removeParticipant(
 	id: string,
 	secret: string,
@@ -268,7 +272,7 @@ export async function removeParticipant(
 
 		const deleted = await tx
 			.delete(participants)
-			.where(and(eq(participants.id, participantId), eq(participants.eventId, id)))
+			.where(and(eq(participants.publicId, participantId), eq(participants.eventId, id)))
 			.returning({ id: participants.id });
 
 		if (deleted.length === 0) {

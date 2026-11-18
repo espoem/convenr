@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
+import { isPublicId } from "@/domain/public-id";
 
 import { createEvent, type NewEvent, readEvent } from "./events";
 import { readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
@@ -158,6 +159,8 @@ describe("removeParticipant", () => {
 
 		const jana = (await readManagedEvent(id, secret))?.participants[0];
 
+		// The page names a participant by the public id; the database key stays on the server.
+		expect(isPublicId(jana?.id ?? "")).toBe(true);
 		expect(await removeParticipant(id, "wrong", jana?.id ?? "", later)).toBe(false);
 		expect(await removeParticipant(id, secret, jana?.id ?? "", later)).toBe(true);
 		expect((await readEvent(id))?.participants).toEqual([]);

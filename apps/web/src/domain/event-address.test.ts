@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { eventIdFromSegment, eventSegment } from "./event-address";
-import { EVENT_ID_ALPHABET, EVENT_ID_LENGTH, isEventId, newEventId } from "./event-id";
+import { isPublicId, newPublicId, PUBLIC_ID_ALPHABET, PUBLIC_ID_LENGTH } from "./public-id";
 
 const id = "Ab3dEf7hJk9m";
 
@@ -26,16 +26,16 @@ describe("event address", () => {
 	});
 });
 
-describe("event id (ADR 0003)", () => {
+describe("public id (ADR 0003)", () => {
 	it("has 12 characters from an alphabet of 57 without look-alikes or hyphens", () => {
-		expect(EVENT_ID_ALPHABET).toHaveLength(57);
-		expect(EVENT_ID_ALPHABET).not.toMatch(/[0O1lI-]/u);
+		expect(PUBLIC_ID_ALPHABET).toHaveLength(57);
+		expect(PUBLIC_ID_ALPHABET).not.toMatch(/[0O1lI-]/u);
 
 		for (let attempt = 0; attempt < 200; attempt += 1) {
-			const generated = newEventId();
+			const generated = newPublicId();
 
-			expect(generated).toHaveLength(EVENT_ID_LENGTH);
-			expect(isEventId(generated)).toBe(true);
+			expect(generated).toHaveLength(PUBLIC_ID_LENGTH);
+			expect(isPublicId(generated)).toBe(true);
 		}
 	});
 });

@@ -4,6 +4,7 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { events, participants, participantTokens } from "@/db/schema";
 import { parseDisplayName } from "@/domain/display-name";
+import { newPublicId } from "@/domain/public-id";
 
 import { isLive, participantByToken, type Queries, touchEvent } from "./event-rows";
 import { hashPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, verifyPassword } from "./password";
@@ -165,6 +166,8 @@ export async function join(
 		const [row] = await tx
 			.insert(participants)
 			.values({
+				// About 70 random bits make a collision negligible; the unique constraint would refuse one.
+				publicId: newPublicId(),
 				eventId,
 				displayName: name.name,
 				nameKey: name.key,

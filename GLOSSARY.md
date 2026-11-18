@@ -71,6 +71,9 @@ _Avoid_: Public link, invite link
 The event's address plus the admin secret, which gives organizer rights.
 _Avoid_: Edit link, owner link
 
+**Participant id**:
+The random, non-secret identifier of a participant that clients see. It has the form of an event id; the database key never leaves the server.
+
 **Admin secret**:
 The random secret in the admin link's fragment. It starts with `cva_`.
 

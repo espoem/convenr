@@ -5,6 +5,8 @@
 
 import { z } from "zod";
 
+import { isPublicId } from "@/domain/public-id";
+
 import { createEvent, type CreateEventResult, eventVersion, type NewEvent } from "./events";
 import {
 	type ManagedEvent,
@@ -60,7 +62,9 @@ export async function removeParticipantAction(
 	secret: string,
 	participantId: string,
 ): Promise<boolean> {
-	const args = z.tuple([eventId, adminSecret, z.uuid()]).safeParse([id, secret, participantId]);
+	const args = z
+		.tuple([eventId, adminSecret, z.string().refine(isPublicId)])
+		.safeParse([id, secret, participantId]);
 
 	return args.success && (await removeParticipant(...args.data));
 }

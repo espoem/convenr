@@ -1,4 +1,4 @@
-import { isEventId } from "./event-id";
+import { isPublicId } from "./public-id";
 import { slugify } from "./slug";
 
 /** The `{slug}-{id}` path segment of an event address. */
@@ -15,5 +15,5 @@ export function eventSegment(id: string, name: string): string {
 export function eventIdFromSegment(segment: string): string | undefined {
 	const candidate = segment.slice(segment.lastIndexOf("-") + 1);
 
-	return isEventId(candidate) ? candidate : undefined;
+	return isPublicId(candidate) ? candidate : undefined;
 }

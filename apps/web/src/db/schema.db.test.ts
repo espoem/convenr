@@ -1,6 +1,8 @@
 import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { newPublicId } from "@/domain/public-id";
+
 import { db } from "./client";
 import {
 	datedAvailability,
@@ -34,10 +36,10 @@ async function rowCount(table: string): Promise<number> {
 	return result.rows[0]?.count ?? 0;
 }
 
-async function addParticipant(nameKey: string): Promise<string> {
+async function addParticipant(nameKey: string, publicId = newPublicId()): Promise<string> {
 	const [row] = await database
 		.insert(participants)
-		.values({ eventId: rangeEvent.id, displayName: nameKey, nameKey })
+		.values({ publicId, eventId: rangeEvent.id, displayName: nameKey, nameKey })
 		.returning({ id: participants.id });
 
 	if (row === undefined) {
@@ -59,6 +61,14 @@ describe("database schema", () => {
 
 		await expect(addParticipant("jana")).rejects.toMatchObject({
 			cause: { constraint: "participants_event_name" },
+		});
+	});
+
+	it("refuses a participant whose public id another participant has", async () => {
+		await addParticipant("jana", "Ab3dEf7hJk9m");
+
+		await expect(addParticipant("petr", "Ab3dEf7hJk9m")).rejects.toMatchObject({
+			cause: { constraint: "participants_public_id" },
 		});
 	});
 

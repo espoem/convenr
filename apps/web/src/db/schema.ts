@@ -71,6 +71,8 @@ export const participants = pgTable(
 		id: uuid()
 			.primaryKey()
 			.default(sql`uuidv7()`),
+		/** The id a client sees, from the alphabet of event ids. The uuid stays inside the server. */
+		publicId: text().notNull(),
 		eventId: text()
 			.notNull()
 			.references(() => events.id, { onDelete: "cascade" }),
@@ -83,7 +85,10 @@ export const participants = pgTable(
 		lockedUntil: instant(),
 		createdAt: instant().notNull().defaultNow(),
 	},
-	(table) => [unique("participants_event_name").on(table.eventId, table.nameKey)],
+	(table) => [
+		unique("participants_event_name").on(table.eventId, table.nameKey),
+		unique("participants_public_id").on(table.publicId),
+	],
 );
 
 export const participantTokens = pgTable("participant_tokens", {

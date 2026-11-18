@@ -6,7 +6,7 @@ import { db } from "@/db/client";
 import { datedAvailability, events, participants, weekdayAvailability } from "@/db/schema";
 import { characterCount } from "@/domain/display-name";
 import { eventSegment } from "@/domain/event-address";
-import { newEventId } from "@/domain/event-id";
+import { newPublicId } from "@/domain/public-id";
 import { deletionDate } from "@/domain/retention";
 import {
 	MAX_DATES,
@@ -112,7 +112,7 @@ export async function createEvent(
 	const adminSecret = newSecret("admin");
 
 	// About 70 random bits make a collision negligible; the primary key would refuse one.
-	const id = newEventId();
+	const id = newPublicId();
 
 	await db().transaction(async (tx) => {
 		await tx.insert(events).values({
