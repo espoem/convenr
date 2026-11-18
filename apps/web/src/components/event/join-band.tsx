@@ -74,8 +74,8 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 				}
 
 				setProblem(
-					joined.problem === "locked"
-						? { key: "locked", time: formatTime(joined.retryAt) }
+					joined.problem === "too_many_attempts"
+						? { key: "too_many_attempts", time: formatTime(joined.retryAt) }
 						: { key: joined.problem },
 				);
 			} catch {
@@ -84,7 +84,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 		});
 	}
 
-	const nameProblem = problem?.key === "invalid_name" || problem?.key === "full";
+	const nameProblem = problem?.key === "invalid_name" || problem?.key === "event_full";
 	const passwordProblem = problem !== null && !nameProblem && problem.key !== "failed";
 
 	return (
@@ -167,10 +167,8 @@ function JoinedLine({
 					return;
 				}
 
-				const key = changed.problem === "locked" ? "locked" : changed.problem;
-
 				setMessage({
-					text: t(`problem.${key}`, {
+					text: t(`problem.${changed.problem}`, {
 						time: "retryAt" in changed ? formatTime(changed.retryAt) : "",
 					}),
 					problem: true,

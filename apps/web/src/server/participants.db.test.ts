@@ -80,7 +80,7 @@ describe("joining", () => {
 
 		expect(await join(eventId, "Jana", undefined, creationTime)).toEqual({
 			ok: false,
-			problem: "full",
+			problem: "event_full",
 		});
 	});
 
@@ -109,12 +109,12 @@ describe("failed attempts", () => {
 
 		expect(await join(eventId, "Jana", "spatne5", creationTime)).toEqual({
 			ok: false,
-			problem: "locked",
+			problem: "too_many_attempts",
 			retryAt,
 		});
 		// Even the right password is refused while locked.
 		expect(await join(eventId, "Jana", "tajne", creationTime.add({ minutes: 14 }))).toMatchObject({
-			problem: "locked",
+			problem: "too_many_attempts",
 		});
 		expect(await join(eventId, "Jana", "tajne", retryAt)).toMatchObject({ ok: true });
 	});

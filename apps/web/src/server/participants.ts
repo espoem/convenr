@@ -18,14 +18,14 @@ type ParticipantRow = typeof participants.$inferSelect;
 
 export type PasswordRefusal =
 	| { ok: false; problem: "password_required" | "wrong_password" }
-	| { ok: false; problem: "locked"; retryAt: Temporal.Instant };
+	| { ok: false; problem: "too_many_attempts"; retryAt: Temporal.Instant };
 
 export type JoinResult =
 	| { ok: true; name: string; token: string }
 	| PasswordRefusal
 	| {
 			ok: false;
-			problem: "not_found" | "invalid_name" | "invalid_password" | "full";
+			problem: "not_found" | "invalid_name" | "invalid_password" | "event_full";
 	  };
 
 function isPasswordLength(password: string): boolean {
@@ -53,7 +53,7 @@ async function checkPassword(
 		participant.lockedUntil === null ? undefined : Temporal.Instant.from(participant.lockedUntil);
 
 	if (lockedUntil !== undefined && Temporal.Instant.compare(now, lockedUntil) < 0) {
-		return { ok: false, problem: "locked", retryAt: lockedUntil };
+		return { ok: false, problem: "too_many_attempts", retryAt: lockedUntil };
 	}
 
 	if (participant.passwordHash === null) {
@@ -93,7 +93,7 @@ async function checkPassword(
 		Temporal.Instant.compare(Temporal.Instant.from(counted.lockedUntil), now) > 0;
 
 	return locked
-		? { ok: false, problem: "locked", retryAt }
+		? { ok: false, problem: "too_many_attempts", retryAt }
 		: { ok: false, problem: "wrong_password" };
 }
 
@@ -150,7 +150,7 @@ export async function join(
 			.where(and(eq(participants.eventId, eventId), eq(participants.nameKey, name.key)));
 
 		if (taken !== undefined) {
-			return { ok: false, problem: "name_taken_meanwhile" } as const;
+			return { ok: false, problem: "name_taken" } as const;
 		}
 
 		const [total] = await tx
@@ -159,7 +159,7 @@ export async function join(
 			.where(eq(participants.eventId, eventId));
 
 		if ((total?.value ?? 0) >= MAX_PARTICIPANTS) {
-			return { ok: false, problem: "full" } as const;
+			return { ok: false, problem: "event_full" } as const;
 		}
 
 		const [row] = await tx
@@ -184,7 +184,7 @@ export async function join(
 	});
 
 	// Someone else joined under this name between the first lookup and the lock.
-	if (!created.ok && created.problem === "name_taken_meanwhile") {
+	if (!created.ok && created.problem === "name_taken") {
 		return join(eventId, rawName, password, now);
 	}
 

@@ -172,10 +172,10 @@
 		"leaveNo": "Zůstat",
 		"problem": {
 			"invalid_name": "Zadejte jméno, nejvýš 40 znaků.",
-			"full": "Tato událost už má 100 účastníků.",
+			"event_full": "Tato událost už má 100 účastníků.",
 			"password_required": "Toto jméno už je v události obsazené a má heslo. Zadejte heslo.",
 			"wrong_password": "Heslo nesouhlasí.",
-			"locked": "Příliš mnoho špatných hesel. Zkuste to znovu v {time}.",
+			"too_many_attempts": "Příliš mnoho špatných hesel. Zkuste to znovu v {time}.",
 			"invalid_password": "Heslo musí mít 4 až 128 znaků.",
 			"not_found": "Událost už neexistuje.",
 			"not_joined": "Tento prohlížeč už v události není zapsaný. Zapište se znovu.",

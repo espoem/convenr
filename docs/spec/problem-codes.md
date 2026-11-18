@@ -25,11 +25,11 @@ Returned as `problem` in a failed result.
 | Code | Meaning | Rules |
 |---|---|---|
 | `invalid_name` | The display name is empty after trimming, longer than 40 characters or has a control character. | P1 |
-| `name_taken_meanwhile` | Another browser created the same name between the check and the write. The join is retried as a join of the existing participant. | P2, P4 |
-| `full` | The event already has 100 participants. | P3 |
+| `name_taken` | Another browser created the same name between the check and the write. Used only inside the service: the join is retried as a join of the existing participant. | P2, P4 |
+| `event_full` | The event already has 100 participants. | P3 |
 | `password_required` | The name belongs to a participant with a password and none was given. | P4 |
 | `wrong_password` | The password does not match. | P4, P7 |
-| `locked` | Too many wrong passwords in a row; the result also says when to try again. | P7 |
+| `too_many_attempts` | Too many wrong passwords in a row; the result also says when to try again. | P7 |
 | `invalid_password` | A password is shorter than 4 or longer than 128 characters. | P5 |
 | `no_password` | A password change or removal was asked for a participant who has none. | P6 |
 | `not_joined` | The browser's participant token is unknown, so the participant left or was deleted. | P8, P9 |

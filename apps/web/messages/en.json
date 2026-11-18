@@ -172,10 +172,10 @@
 		"leaveNo": "Stay",
 		"problem": {
 			"invalid_name": "Enter a name of at most 40 characters.",
-			"full": "This event already has 100 participants.",
+			"event_full": "This event already has 100 participants.",
 			"password_required": "This name is already used in this event and has a password. Enter the password.",
 			"wrong_password": "The password does not match.",
-			"locked": "Too many wrong passwords. Try again at {time}.",
+			"too_many_attempts": "Too many wrong passwords. Try again at {time}.",
 			"invalid_password": "A password has 4 to 128 characters.",
 			"not_found": "The event no longer exists.",
 			"not_joined": "This browser is no longer joined to the event. Please join again.",
