@@ -21,6 +21,7 @@ import {
 } from "@/domain/schedule";
 import { env } from "@/env";
 
+import { FIELD_CODES, fieldErrors } from "./api/field-codes";
 import {
 	availableKeys,
 	firstDayOfWeekOf,
@@ -47,8 +48,26 @@ function isTimeZone(zone: string): boolean {
 	}
 }
 
-// `params.code` names a custom check in a problem, as zod names its own checks.
-const tooLong = { params: { code: "too_long" } };
+/**
+ * The codes of a value of the wrong form: the API's field codes, and `unknown_time_zone`, the
+ * server's own check of the reference zone.
+ */
+export const INPUT_CODES = [...FIELD_CODES, "unknown_time_zone"] as const;
+
+export type InputCode = (typeof INPUT_CODES)[number];
+
+const inputCodes: ReadonlySet<unknown> = new Set(INPUT_CODES);
+
+function isInputCode(code: unknown): code is InputCode {
+	return inputCodes.has(code);
+}
+
+/** The options of a custom check, whose `params.code` names it in a problem as zod names its own. */
+function failsAs(code: InputCode) {
+	return { params: { code } };
+}
+
+const tooLong = failsAs("too_long");
 
 export const newEventSchema = z.object({
 	name: z
@@ -69,7 +88,7 @@ export const newEventSchema = z.object({
 	dailyStart: z.int(),
 	dailyEnd: z.int(),
 	slotLength: z.literal(SLOT_LENGTHS),
-	referenceZone: z.string().refine(isTimeZone, { params: { code: "unknown_time_zone" } }),
+	referenceZone: z.string().refine(isTimeZone, failsAs("unknown_time_zone")),
 	firstDayOfWeek: weekday,
 });
 
@@ -77,19 +96,24 @@ export type NewEvent = z.input<typeof newEventSchema>;
 
 /**
  * Why a new or edited event was refused, at a path into `NewEvent` such as
- * `["days", "dates", 2]`. An `input` problem is a value of the wrong form, named by the check
- * it failed; a `rule` problem is a valid value that breaks a rule of the event.
+ * `["days", "dates", 2]`. An `input` problem is a value of the wrong form, named by the API's
+ * field code or by the custom check it failed; a `rule` problem is a valid value that breaks a
+ * rule of the event.
  */
 export type EventProblem =
-	| { kind: "input"; code: string; path: PropertyKey[] }
+	| { kind: "input"; code: InputCode; path: PropertyKey[] }
 	| { kind: "rule"; code: EditProblem; path: PropertyKey[] };
 
 export function inputProblems(error: z.ZodError): EventProblem[] {
-	return error.issues.map((issue) => ({
-		kind: "input",
-		code: issue.code === "custom" ? String(issue.params?.["code"] ?? "invalid_value") : issue.code,
-		path: issue.path,
-	}));
+	return error.issues.flatMap((issue): EventProblem[] => {
+		if (issue.code !== "custom") {
+			return fieldErrors([issue]).map(({ code, path }) => ({ kind: "input", code, path }));
+		}
+
+		const code: unknown = issue.params?.["code"];
+
+		return [{ kind: "input", code: isInputCode(code) ? code : "invalid_value", path: issue.path }];
+	});
 }
 
 export function ruleProblems(issues: ScheduleIssue<EditProblem>[]): EventProblem[] {
@@ -126,7 +150,7 @@ export async function createEvent(
 	input: NewEvent,
 	now = Temporal.Now.instant(),
 ): Promise<CreateEventResult> {
-	const parsed = newEventSchema.safeParse(input);
+	const parsed = newEventSchema.safeParse(input, { reportInput: true });
 
 	if (!parsed.success) {
 		return { ok: false, problems: inputProblems(parsed.error) };

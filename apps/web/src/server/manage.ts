@@ -230,7 +230,7 @@ export async function updateEvent(
 			return { status: "denied" };
 		}
 
-		const parsed = newEventSchema.safeParse({ ...inputOf(row), ...change });
+		const parsed = newEventSchema.safeParse({ ...inputOf(row), ...change }, { reportInput: true });
 
 		if (!parsed.success) {
 			return { status: "invalid", problems: inputProblems(parsed.error) };

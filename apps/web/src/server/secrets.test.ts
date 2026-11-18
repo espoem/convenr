@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { hashSecret, matchesSecret, newSecret } from "./secrets";
+import { hashSecret, matchesSecret, newSecret, secretKind } from "./secrets";
 
 describe("secrets (ADR 0004)", () => {
 	it("names the kind in a prefix before 32 random bytes in base64url", () => {
 		expect(newSecret("admin")).toMatch(/^cva_[\w-]{43}$/u);
 		expect(newSecret("participant")).toMatch(/^cvp_[\w-]{43}$/u);
 		expect(newSecret("admin")).not.toBe(newSecret("admin"));
+	});
+
+	it("tells the kind from the prefix alone", () => {
+		expect(secretKind(newSecret("admin"))).toBe("admin");
+		expect(secretKind(newSecret("participant"))).toBe("participant");
+		expect(secretKind("abc_123")).toBeUndefined();
 	});
 
 	it("hashes the whole secret, so the random part alone or under the other prefix does not match", () => {

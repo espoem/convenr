@@ -17,6 +17,13 @@ export function newSecret(kind: SecretKind): string {
 	return `${SECRET_PREFIXES[kind]}${randomBytes(SECRET_BYTES).toString("base64url")}`;
 }
 
+/** The kind `secret` names by its prefix, or `undefined` when it has neither prefix. */
+export function secretKind(secret: string): SecretKind | undefined {
+	const kinds: SecretKind[] = ["admin", "participant"];
+
+	return kinds.find((kind) => secret.startsWith(SECRET_PREFIXES[kind]));
+}
+
 /**
  * SHA-256 of a whole secret, prefix included, base64url. A secret is long and random, so a
  * fast hash suffices, and a stored hash is looked up by equality.

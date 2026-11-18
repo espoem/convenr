@@ -50,7 +50,7 @@ describe("createEvent", () => {
 		expect(created).toEqual({
 			ok: false,
 			problems: [
-				{ kind: "input", code: "too_small", path: ["name"] },
+				{ kind: "input", code: "too_short", path: ["name"] },
 				{ kind: "input", code: "unknown_time_zone", path: ["referenceZone"] },
 			],
 		});
