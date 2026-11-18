@@ -7,6 +7,7 @@ import { isPublicId, newPublicId } from "@/domain/public-id";
 
 import { readEvent } from "./events";
 import {
+	ATTEMPTS_KEPT,
 	changePassword,
 	identify,
 	join,
@@ -213,6 +214,41 @@ describe("failed attempts", () => {
 		await tokenOf("Jana", "tajne");
 		await join(eventId, "Jana", current("spatne"), creationTime);
 		await join(eventId, "Jana", current("tajne"), creationTime);
+
+		const [row] = await db().select().from(participants);
+
+		expect(row?.failedAttempts).toBe(1);
+	});
+
+	it("keeps the count for 15 minutes after the last wrong password", async () => {
+		await tokenOf("Jana", "tajne");
+
+		await Promise.all(
+			[1, 2, 3].map((attempt) => join(eventId, "Jana", current(`spatne${attempt}`), creationTime)),
+		);
+
+		await join(eventId, "Jana", current("spatne4"), creationTime.add({ minutes: 10 }));
+
+		// Kept 15 minutes after the last attempt, not the first.
+		const kept = creationTime.add({ minutes: 10 }).add(ATTEMPTS_KEPT).subtract({ seconds: 1 });
+
+		expect(await join(eventId, "Jana", current("spatne5"), kept)).toMatchObject({
+			problem: "too_many_attempts",
+		});
+	});
+
+	it("starts a new count when the last wrong password is 15 minutes old", async () => {
+		await tokenOf("Jana", "tajne");
+
+		await Promise.all(
+			[1, 2, 3, 4].map((attempt) =>
+				join(eventId, "Jana", current(`spatne${attempt}`), creationTime),
+			),
+		);
+
+		expect(
+			await join(eventId, "Jana", current("spatne5"), creationTime.add(ATTEMPTS_KEPT)),
+		).toEqual({ ok: false, problem: "wrong_password" });
 
 		const [row] = await db().select().from(participants);
 

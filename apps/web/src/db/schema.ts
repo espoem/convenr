@@ -82,6 +82,8 @@ export const participants = pgTable(
 		/** Argon2id hash in PHC string format. */
 		passwordHash: text(),
 		failedAttempts: smallint().notNull().default(0),
+		/** When the last attempt was counted. The count is forgotten 15 minutes after it. */
+		lastAttemptAt: instant(),
 		lockedUntil: instant(),
 		createdAt: instant().notNull().defaultNow(),
 	},

@@ -24,6 +24,9 @@ export const MAX_PARTICIPANTS = 100;
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCKOUT = Temporal.Duration.from({ minutes: 15 });
 
+/** How long after its last attempt a count of wrong passwords is kept. */
+export const ATTEMPTS_KEPT = Temporal.Duration.from({ minutes: 15 });
+
 type ParticipantRow = typeof participants.$inferSelect;
 
 export type PasswordRefusal =
@@ -102,15 +105,19 @@ type Attempt =
 /**
  * Takes one of the participant's attempts in a single statement, before the slow verification,
  * so that parallel guesses cannot verify more than the limit allows. The attempt that makes the
- * fifth locks the participant for 15 minutes at once and starts the count again.
+ * fifth locks the participant for 15 minutes at once and starts the count again. A count whose
+ * last attempt is 15 minutes old is forgotten, so old typos do not add up to a lockout.
  */
 async function takeAttempt(participantId: string, now: Temporal.Instant): Promise<Attempt> {
-	const last = sql`${participants.failedAttempts} + 1 >= ${MAX_FAILED_ATTEMPTS}`;
+	const forgetBefore = now.subtract(ATTEMPTS_KEPT).toString();
+	const kept = sql`case when ${participants.lastAttemptAt} > ${forgetBefore}::timestamptz then ${participants.failedAttempts} else 0 end`;
+	const last = sql`${kept} + 1 >= ${MAX_FAILED_ATTEMPTS}`;
 
 	const [taken] = await db()
 		.update(participants)
 		.set({
-			failedAttempts: sql`case when ${last} then 0 else ${participants.failedAttempts} + 1 end`,
+			failedAttempts: sql`case when ${last} then 0 else ${kept} + 1 end`,
+			lastAttemptAt: now.toString(),
 			lockedUntil: sql`case when ${last} then ${now.add(LOCKOUT).toString()}::timestamptz else ${participants.lockedUntil} end`,
 		})
 		.where(
