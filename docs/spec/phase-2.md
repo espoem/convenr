@@ -69,7 +69,7 @@ These rules replace Phase 1 rule V5.
 
 **F4. Gone.** When the event has been deleted, the page shows the not-found content (E9). When the viewer's own participant has been deleted, the browser drops the token, the page shows the join form again and says why.
 
-**F5. Version value.** Creating or changing the event, joining, saving, setting a password, leaving and deleting a participant each move the version forward.
+**F5. Version value.** Creating or changing the event, joining under a new name, saving a set of slots that differs from the stored one, setting, changing or removing a password, leaving and deleting a participant each move the version forward. A password change moves it whenever it succeeds, even to the same password, because it replaces the participant's stored password. The version is the instant of the last change, but always at least one microsecond after the version before it, so two changes in the same instant, or a change that waited for another, still get different versions. A request that changes nothing writes nothing and keeps the version and the deletion date: an event change after which every value is the same, a save of the same set of slots in any order, joining under a name already used, which only issues a token, and every refused request, including a counted wrong password.
 
 **F6. Later.** Pushing changes from the server, for example Server-Sent Events over PostgreSQL `LISTEN/NOTIFY`, is the live-update item of roadmap phase F4. It waits until real traffic shows that version checks cost too much.
 

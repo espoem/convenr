@@ -12,6 +12,7 @@ import {
 	type EventRow,
 	firstDayOfWeekOf,
 	liveEvent,
+	nextVersion,
 	type Queries,
 	scheduleOf,
 	touchEvent,
@@ -280,7 +281,7 @@ export async function updateEvent(
 		await deleteAvailability(tx, id, removed);
 		await tx
 			.update(events)
-			.set({ ...stored, changedAt: now.toString() })
+			.set({ ...stored, changedAt: nextVersion(now) })
 			.where(eq(events.id, id));
 
 		return { status: "saved", segment: eventSegment(id, name) };

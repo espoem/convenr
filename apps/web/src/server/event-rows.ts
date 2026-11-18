@@ -1,5 +1,5 @@
 // Conversions between stored event rows and domain values, shared by the data access layer.
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type { Database } from "@/db/client";
 import {
@@ -135,11 +135,24 @@ export async function availableKeys(
 }
 
 /**
+ * The version a change gives the event: `now`, or one microsecond after the stored version when
+ * that is not earlier. Two changes in the same microsecond, or a change whose `now` was taken
+ * before it waited for the lock, still move the version strictly forward. Computed in the
+ * UPDATE, so it reads the version the previous change committed.
+ */
+export function nextVersion(now: Temporal.Instant) {
+	return sql<string>`greatest(${now.toString()}::timestamptz, ${events.changedAt} + interval '1 microsecond')`;
+}
+
+/**
  * Records a change to the event or a response. It moves the version and with
  * it a weekday event's deletion date.
  */
 export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.Instant) {
-	await queries.update(events).set({ changedAt: now.toString() }).where(eq(events.id, row.id));
+	await queries
+		.update(events)
+		.set({ changedAt: nextVersion(now) })
+		.where(eq(events.id, row.id));
 }
 
 /**

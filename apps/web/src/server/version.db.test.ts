@@ -59,4 +59,68 @@ describe("eventVersion", () => {
 		await removeEvent(id, adminSecret);
 		expect(await eventVersion(id)).toBeNull();
 	});
+
+	it("stays when a save holds the same slots, in any order, and moves when it holds others", async () => {
+		const created = await createEvent(pragueEvenings, creationTime);
+
+		if (!created.ok) {
+			throw new Error("The test event is invalid.");
+		}
+
+		const { id } = created;
+		const jana = await join(id, "Jana", undefined, minute(1));
+
+		if (!jana.ok) {
+			throw new Error("Jana could not join.");
+		}
+
+		const slots = ["2027-04-05T15:00:00Z", "2027-04-05T16:00:00Z"];
+
+		expect(await saveResponse(id, jana.token, slots, minute(2))).toEqual({ ok: true });
+		expect(
+			await saveResponse(id, jana.token, [...slots.toReversed(), ...slots], minute(3)),
+		).toEqual({ ok: true });
+		expect(await eventVersion(id)).toBe(minute(2).toString());
+
+		await saveResponse(id, jana.token, slots.slice(1), minute(4));
+		expect(await eventVersion(id)).toBe(minute(4).toString());
+	});
+
+	it("moves strictly forward for changes at the same instant and for a late writer", async () => {
+		const created = await createEvent(pragueEvenings, creationTime);
+
+		if (!created.ok) {
+			throw new Error("The test event is invalid.");
+		}
+
+		const { id, adminSecret } = created;
+		const versions: Temporal.Instant[] = [];
+
+		async function record() {
+			versions.push(Temporal.Instant.from((await eventVersion(id)) ?? ""));
+		}
+
+		await record();
+
+		const jana = await join(id, "Jana", undefined, creationTime);
+
+		if (!jana.ok) {
+			throw new Error("Jana could not join.");
+		}
+
+		await record();
+		await saveResponse(id, jana.token, ["2027-04-05T15:00:00Z"], creationTime);
+		await record();
+		await saveResponse(id, jana.token, [], creationTime);
+		await record();
+		// A writer whose clock was read before the changes above.
+		await updateEvent(id, adminSecret, { name: "Jiná" }, null, creationTime.subtract({ hours: 1 }));
+		await record();
+
+		const steps = versions
+			.slice(1)
+			.map((version, index) => Temporal.Instant.compare(version, versions[index] ?? version));
+
+		expect(steps).toEqual([1, 1, 1, 1]);
+	});
 });

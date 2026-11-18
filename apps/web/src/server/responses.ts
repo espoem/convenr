@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { datedAvailability, weekdayAvailability } from "@/db/schema";
 import { scheduleSlots, slotKey } from "@/domain/schedule";
 
-import { participantForChange, scheduleOf, touchEvent } from "./event-rows";
+import { availableKeys, participantForChange, scheduleOf, touchEvent } from "./event-rows";
 
 export type SaveResult = { ok: true } | { ok: false; problem: "not_joined" | "unknown_slot" };
 
@@ -32,13 +32,20 @@ export async function saveResponse(
 			scheduleSlots(scheduleOf(found.event)).map((slot) => [slotKey(slot), slot]),
 		);
 
-		const chosen = [...new Set(keys)].map((key) => slots.get(key));
+		const wanted = new Set(keys);
+		const chosen = [...wanted].map((key) => slots.get(key));
 
 		if (chosen.includes(undefined)) {
 			return { ok: false, problem: "unknown_slot" };
 		}
 
 		const participantId = found.participant.id;
+		const stored = (await availableKeys(tx, found.event, [participantId])).get(participantId) ?? [];
+
+		// The same set again changes nothing, so it keeps the version and the deletion date.
+		if (stored.length === wanted.size && stored.every((key) => wanted.has(key))) {
+			return { ok: true };
+		}
 
 		await tx.delete(datedAvailability).where(eq(datedAvailability.participantId, participantId));
 		await tx
