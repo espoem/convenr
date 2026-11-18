@@ -70,6 +70,7 @@ test("the organizer manages an event and expired events disappear", async ({ bro
 	await expect(organizer.getByText("Zkouška kapely")).toHaveCount(0);
 	await expectGone(organizer, a.share);
 	await expectGone(organizer, a.admin);
+	await expectGone(organizer, `${a.share}/created`);
 	expect(
 		await rows("select count(*)::int as total from events where id = $1", [idOf(a.share)]),
 	).toBe(0);
@@ -86,6 +87,7 @@ test("the organizer manages an event and expired events disappear", async ({ bro
 		[idOf(b.share)],
 	);
 	await expectGone(organizer, b.share);
+	await expectGone(organizer, `${b.share}/created`);
 	expect(
 		await rows("select count(*)::int as total from events where id = $1", [idOf(b.share)]),
 	).toBe(1);

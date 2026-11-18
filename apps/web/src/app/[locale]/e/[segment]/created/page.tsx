@@ -5,12 +5,14 @@ import { CreatedLinks } from "@/components/created-links";
 import { PageShell } from "@/components/page-shell";
 import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
+import { eventVersion } from "@/server/events";
 
 export default async function CreatedPage({ params }: PageProps<"/[locale]/e/[segment]/created">) {
 	const { segment } = await params;
 	const id = eventIdFromSegment(segment);
 
-	if (id === undefined) {
+	// An unknown, deleted or expired event has no links to show (E9, X3).
+	if (id === undefined || (await eventVersion(id)) === null) {
 		notFound();
 	}
 
