@@ -1,5 +1,5 @@
 // Joining, passwords and leaving.
-import { and, count, eq, sql } from "drizzle-orm";
+import { and, count, eq, isNull, lte, or, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { participants, participantTokens } from "@/db/schema";
@@ -43,6 +43,8 @@ export type JoinPassword =
 
 const NO_PASSWORD: JoinPassword = { kind: "none" };
 
+export type PasswordVerifier = typeof verifyPassword;
+
 export type JoinResult =
 	| { ok: true; name: string; token: string }
 	| PasswordRefusal
@@ -70,60 +72,163 @@ async function issueToken(queries: Queries, participantId: string): Promise<stri
 	return token;
 }
 
+/** The end of the participant's lockout, or `undefined` when they are not locked at `now`. */
+function lockedUntil(
+	row: { lockedUntil: string | null },
+	now: Temporal.Instant,
+): Temporal.Instant | undefined {
+	const until = row.lockedUntil === null ? undefined : Temporal.Instant.from(row.lockedUntil);
+
+	return until !== undefined && Temporal.Instant.compare(now, until) < 0 ? until : undefined;
+}
+
 /**
- * Checks `password` against the participant's stored hash: a locked participant
- * is refused without a check, and the fifth wrong password in a row locks for 15 minutes.
+ * A password attempt, counted as wrong until its password proves right.
+ *
+ * - `counted`: it raised the count. `lockEnd` is the end of the participant's last lockout as
+ *   stored, which every new lockout replaces, so it tells whether the count was reset since.
+ * - `locking`: it was the fifth and locked the participant until `lockEnd`, replacing
+ *   `previousLockEnd`.
+ * - `locked`: refused unchecked, because the participant is locked until `until`.
+ * - `participant_gone`: the participant left or was deleted.
+ */
+type Attempt =
+	| { kind: "counted"; lockEnd: string | null }
+	| { kind: "locking"; lockEnd: string; previousLockEnd: string | null }
+	| { kind: "locked"; until: Temporal.Instant }
+	| { kind: "participant_gone" };
+
+/**
+ * Takes one of the participant's attempts in a single statement, before the slow verification,
+ * so that parallel guesses cannot verify more than the limit allows. The attempt that makes the
+ * fifth locks the participant for 15 minutes at once and starts the count again.
+ */
+async function takeAttempt(participantId: string, now: Temporal.Instant): Promise<Attempt> {
+	const last = sql`${participants.failedAttempts} + 1 >= ${MAX_FAILED_ATTEMPTS}`;
+
+	const [taken] = await db()
+		.update(participants)
+		.set({
+			failedAttempts: sql`case when ${last} then 0 else ${participants.failedAttempts} + 1 end`,
+			lockedUntil: sql`case when ${last} then ${now.add(LOCKOUT).toString()}::timestamptz else ${participants.lockedUntil} end`,
+		})
+		.where(
+			and(
+				eq(participants.id, participantId),
+				or(isNull(participants.lockedUntil), lte(participants.lockedUntil, now.toString())),
+			),
+		)
+		.returning({
+			failedAttempts: participants.failedAttempts,
+			// As text, so that the value compares equal when an undo names it again.
+			lockEnd: sql<string | null>`${participants.lockedUntil}::text`,
+			previousLockEnd: sql<string | null>`old.locked_until::text`,
+		});
+
+	if (taken !== undefined) {
+		return taken.failedAttempts === 0 && taken.lockEnd !== null
+			? { kind: "locking", lockEnd: taken.lockEnd, previousLockEnd: taken.previousLockEnd }
+			: { kind: "counted", lockEnd: taken.lockEnd };
+	}
+
+	const [current] = await db()
+		.select({ lockedUntil: participants.lockedUntil })
+		.from(participants)
+		.where(eq(participants.id, participantId));
+
+	if (current === undefined) {
+		return { kind: "participant_gone" };
+	}
+
+	const until = lockedUntil(current, now);
+
+	// The lockout ended, or a right password undid the lockout its own attempt set, meanwhile.
+	return until === undefined ? takeAttempt(participantId, now) : { kind: "locked", until };
+}
+
+/**
+ * Takes back an attempt whose password proved right, and nothing else: wrong passwords counted
+ * alongside it, and a lockout that other attempts set, stay. Each statement changes the row only
+ * while no other lockout replaced the one the attempt saw.
+ */
+async function undoAttempt(
+	participantId: string,
+	attempt: Extract<Attempt, { kind: "counted" | "locking" }>,
+) {
+	if (attempt.kind === "counted") {
+		await db()
+			.update(participants)
+			.set({ failedAttempts: sql`${participants.failedAttempts} - 1` })
+			.where(
+				and(
+					eq(participants.id, participantId),
+					sql`${participants.lockedUntil} is not distinct from ${attempt.lockEnd}::timestamptz`,
+				),
+			);
+
+		return;
+	}
+
+	// Nobody can take an attempt while the lockout lasts, so the count before it is the limit less one.
+	await db()
+		.update(participants)
+		.set({
+			failedAttempts: MAX_FAILED_ATTEMPTS - 1,
+			lockedUntil: sql`${attempt.previousLockEnd}::timestamptz`,
+		})
+		.where(
+			and(
+				eq(participants.id, participantId),
+				sql`${participants.lockedUntil} = ${attempt.lockEnd}::timestamptz`,
+			),
+		);
+}
+
+/** A password check: passed, refused, or impossible because the participant left or was deleted. */
+type PasswordCheck = { ok: true } | PasswordRefusal | { ok: false; problem: "participant_gone" };
+
+/**
+ * Checks `password` against the participant's stored hash: a locked participant is refused
+ * without a check, and the fifth wrong password locks for 15 minutes.
  */
 async function checkPassword(
 	participant: ParticipantRow,
 	password: string | undefined,
 	now: Temporal.Instant,
-): Promise<PasswordRefusal | { ok: true }> {
-	const lockedUntil =
-		participant.lockedUntil === null ? undefined : Temporal.Instant.from(participant.lockedUntil);
-
-	if (lockedUntil !== undefined && Temporal.Instant.compare(now, lockedUntil) < 0) {
-		return { ok: false, problem: "too_many_attempts", retryAt: lockedUntil };
-	}
-
+	verify: PasswordVerifier = verifyPassword,
+): Promise<PasswordCheck> {
 	if (participant.passwordHash === null) {
 		return { ok: true };
 	}
 
 	if (password === undefined) {
-		return { ok: false, problem: "password_required" };
+		const locked = lockedUntil(participant, now);
+
+		return locked === undefined
+			? { ok: false, problem: "password_required" }
+			: { ok: false, problem: "too_many_attempts", retryAt: locked };
 	}
 
-	if (await verifyPassword(password, participant.passwordHash)) {
-		await db()
-			.update(participants)
-			.set({ failedAttempts: 0 })
-			.where(eq(participants.id, participant.id));
+	const attempt = await takeAttempt(participant.id, now);
+
+	switch (attempt.kind) {
+		case "participant_gone":
+			return { ok: false, problem: "participant_gone" };
+		case "locked":
+			return { ok: false, problem: "too_many_attempts", retryAt: attempt.until };
+		case "counted":
+		case "locking":
+			break;
+	}
+
+	if (await verify(password, participant.passwordHash)) {
+		await undoAttempt(participant.id, attempt);
 
 		return { ok: true };
 	}
 
-	const retryAt = now.add(LOCKOUT);
-
-	// One statement, so that wrong passwords sent at the same time are all counted.
-	const [counted] = await db()
-		.update(participants)
-		.set({
-			failedAttempts: sql`case when ${participants.failedAttempts} + 1 >= ${MAX_FAILED_ATTEMPTS}
-        then 0 else ${participants.failedAttempts} + 1 end`,
-			lockedUntil: sql`case when ${participants.failedAttempts} + 1 >= ${MAX_FAILED_ATTEMPTS}
-        then ${retryAt.toString()}::timestamptz else ${participants.lockedUntil} end`,
-		})
-		.where(eq(participants.id, participant.id))
-		.returning({ lockedUntil: participants.lockedUntil });
-
-	const locked =
-		counted?.lockedUntil !== null &&
-		counted?.lockedUntil !== undefined &&
-		Temporal.Instant.compare(Temporal.Instant.from(counted.lockedUntil), now) > 0;
-
-	return locked
-		? { ok: false, problem: "too_many_attempts", retryAt }
+	return attempt.kind === "locking"
+		? { ok: false, problem: "too_many_attempts", retryAt: now.add(LOCKOUT) }
 		: { ok: false, problem: "wrong_password" };
 }
 
@@ -136,12 +241,16 @@ async function participantByName(eventId: string, key: string) {
 	return found;
 }
 
-/** Joins an event under a display name. */
+/**
+ * Joins an event under a display name. `verify` checks a password against its stored hash; a
+ * test passes one that counts the checks.
+ */
 export async function join(
 	eventId: string,
 	rawName: string,
 	password: JoinPassword = NO_PASSWORD,
 	now = Temporal.Now.instant(),
+	verify: PasswordVerifier = verifyPassword,
 ): Promise<JoinResult> {
 	const name = parseDisplayName(rawName);
 
@@ -159,11 +268,11 @@ export async function join(
 	const joined =
 		existing === undefined
 			? await joinNew(eventId, name, password, now)
-			: await joinExisting(eventId, existing, password, now);
+			: await joinExisting(eventId, existing, password, now, verify);
 
 	// Another browser took or freed the name between the lookup and the lock.
 	if (!joined.ok && joined.problem === "name_taken") {
-		return join(eventId, rawName, password, now);
+		return join(eventId, rawName, password, now, verify);
 	}
 
 	return joined;
@@ -177,6 +286,7 @@ async function joinExisting(
 	existing: ParticipantRow,
 	password: JoinPassword,
 	now: Temporal.Instant,
+	verify: PasswordVerifier,
 ): Promise<JoinResult | NameTaken> {
 	if (password.kind === "new") {
 		return { ok: false, problem: "name_exists" };
@@ -187,10 +297,11 @@ async function joinExisting(
 	}
 
 	const given = password.kind === "none" ? undefined : password.password;
-	const checked = await checkPassword(existing, given, now);
+	const checked = await checkPassword(existing, given, now, verify);
 
 	if (!checked.ok) {
-		return checked;
+		// The participant left, so the name is free again and the join starts over.
+		return checked.problem === "participant_gone" ? { ok: false, problem: "name_taken" } : checked;
 	}
 
 	return db().transaction(async (tx): Promise<JoinResult | NameTaken> => {
@@ -365,7 +476,8 @@ export async function changePassword(
 	const checked = await checkPassword(found.participant, given, now);
 
 	if (!checked.ok) {
-		return checked;
+		// A participant who left or was deleted meanwhile is as unknown as their token.
+		return checked.problem === "participant_gone" ? { ok: false, problem: "not_joined" } : checked;
 	}
 
 	const passwordHash = next === null ? null : await hashPassword(next);

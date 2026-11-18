@@ -29,7 +29,7 @@ Returned as `problem` in a failed result.
 | `event_full` | The event already has 100 participants. | P3 |
 | `password_required` | The name belongs to a participant with a password and none was given. | P4 |
 | `wrong_password` | The password does not match. | P4, P7 |
-| `too_many_attempts` | Too many wrong passwords in a row; the result also says when to try again. | P7 |
+| `too_many_attempts` | Too many wrong passwords; the result also says when to try again. | P7 |
 | `invalid_password` | A password is shorter than 4 or longer than 128 characters. | P5 |
 | `no_password` | A password change or removal was asked for a participant who has none. | P6 |
 | `not_joined` | The browser's participant token is unknown, so the participant left or was deleted. | P8, P9 |

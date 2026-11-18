@@ -163,7 +163,7 @@ describe("joining", () => {
 });
 
 describe("failed attempts", () => {
-	it("locks for 15 minutes after the fifth wrong password in a row", async () => {
+	it("locks for 15 minutes after the fifth wrong password", async () => {
 		await tokenOf("Jana", "tajne");
 
 		// Sent at the same time, so every one of them must be counted.
@@ -193,14 +193,14 @@ describe("failed attempts", () => {
 		expect(await join(eventId, "Jana", current("tajne"), retryAt)).toMatchObject({ ok: true });
 	});
 
-	it("resets the count after a right password", async () => {
+	it("keeps counting the wrong passwords before a right one", async () => {
 		await tokenOf("Jana", "tajne");
 		await join(eventId, "Jana", current("spatne"), creationTime);
 		await join(eventId, "Jana", current("tajne"), creationTime);
 
 		const [row] = await db().select().from(participants);
 
-		expect(row?.failedAttempts).toBe(0);
+		expect(row?.failedAttempts).toBe(1);
 	});
 });
 
