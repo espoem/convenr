@@ -40,8 +40,10 @@ A change is done when `mise run check` and `mise run e2e` exit with code 0.
 7. **Secrets and privacy.** Follow ADR 0003. Never log headers, URL fragments, tokens, passwords or visitor addresses. Add no third-party analytics, fonts or scripts loaded from another host.
 8. **Database.** Drizzle is a typed SQL query builder here. Write queries explicitly. Migrations are SQL files made by `mise run db:generate`. The server applies pending migrations when it starts. Database tests are named `*.db.test.ts`.
 9. **Private folders.** Folders listed in `.git/info/exclude` are local only. Never stage them, name them or link to them in a committed file.
-10. **Git.** Until the operator says otherwise, work happens in local stacked branches: no pushes, pull requests or issues. Each branch is one reviewable step on top of the previous one, and each commit passes `mise run check`. Rewrite a branch's history before handing it over so that it holds no fix-up or work-in-progress commits. Commits carry the operator's identity and no co-author trailers.
+10. **Git.** Until the operator says otherwise, work happens in local stacked branches: no pull requests or issues, and the only branch pushed is `main`, fast-forwarded to finished branches. Each branch is one reviewable step on top of the previous one, and each commit passes `mise run check`. Rewrite a branch's history before handing it over so that it holds no fix-up or work-in-progress commits. Commits carry the operator's identity and no co-author trailers.
 11. **Editing files.** Change source files with an editor tool, not with scripts that rewrite them by string replacement.
+12. **Browser support.** Use Baseline Widely available features without a fallback. Use a Newly available feature only behind feature detection, with a fallback of at most 20 lines and no added dependency.
+13. **Icons.** Use Phosphor icons (`@phosphor-icons/react`) where an icon is needed. Do not add another icon set.
 
 ## Agent skills
 
@@ -52,6 +54,7 @@ When two sources disagree, the earlier one in this list wins: the operator's req
 - `impeccable` leads interface design work: direction, layout, type, color and copy.
 - `antislop`, `antislop-ui`, `antislop-human`, `antislop-layoutmobile` and `antislop-copywriting` are a checklist. Apply them while building and run their Delivery Gate before reporting interface work done. Their mode for this project is `during`; do not ask for it.
 - `antislop-code` governs code comments.
+- `modern-web-guidance` gives current HTML, CSS and browser API patterns. Search it before writing interface code; its `npx modern-web-guidance` command may be run as the skill describes. Rule 12 is the browser support policy it asks for.
 - `install-anti-slop` installs and updates the anti-slop Oxlint rules in `tools/oxlint/anti-slop/`. `mise run lint` enforces them. Fix a finding; do not disable a rule.
 
 ### Issue tracker

@@ -7,6 +7,7 @@ Skills in this folder are loaded by coding agents that work on convenr. They are
 | `impeccable` | <https://impeccable.style/>, repository `pbakaus/impeccable` | Apache-2.0 |
 | `antislop`, `antislop-ui`, `antislop-human`, `antislop-layoutmobile`, `antislop-copywriting`, `antislop-code` | repository `miqdadbadjuber/anti-slop` | MIT |
 | `install-anti-slop` | repository `dmmulroy/anti-slop` | MIT |
+| `modern-web-guidance` | repository `GoogleChrome/modern-web-guidance` | Apache-2.0 |
 
 Both anti-slop repositories have the same name but no skill name in common. The first gives agents rules for interfaces, copy and code comments. The second installs Oxlint rules, which are vendored in `tools/oxlint/anti-slop/`.
 
@@ -15,6 +16,7 @@ Both anti-slop repositories have the same name but no skill name in common. The 
 nubx skills add pbakaus/impeccable -s impeccable -a claude-code -a codex -y
 nubx skills add miqdadbadjuber/anti-slop -s antislop -s antislop-ui -s antislop-human -s antislop-layoutmobile -s antislop-copywriting -s antislop-code -a claude-code -a codex -y
 nubx skills add dmmulroy/anti-slop -s install-anti-slop -a claude-code -a codex -y
+nubx skills add GoogleChrome/modern-web-guidance -s modern-web-guidance -a claude-code -a codex -y
 
 # update every project skill
 nubx skills update -p -y
