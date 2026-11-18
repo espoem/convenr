@@ -1,7 +1,9 @@
+import { readFile } from "node:fs/promises";
+
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { inputProblems } from "@/server/events";
+import { INPUT_CODES, inputProblems } from "@/server/events";
 
 import { FIELD_CODES, fieldCode, fieldErrors } from "./field-codes";
 
@@ -74,6 +76,15 @@ describe("field codes", () => {
 		expect(fieldCode({ code: "added_later", path: [], message: "" })).toBe("invalid_value");
 		expect(fieldCode({ path: [], message: "" })).toBe("invalid_value");
 		expect(FIELD_CODES).toContain(fieldCode({ code: "custom", path: [], message: "" }));
+	});
+
+	it("are each listed in the problem codes document", async () => {
+		const document = await readFile(
+			new URL("../../../../../docs/spec/problem-codes.md", import.meta.url),
+			"utf8",
+		);
+
+		expect(INPUT_CODES.filter((code) => !document.includes(`\`${code}\``))).toEqual([]);
 	});
 
 	it("names a custom check by its own code only when the code is a known one", () => {

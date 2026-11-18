@@ -19,7 +19,7 @@ async function created(input: NewEvent = pragueEvenings) {
 		throw new Error("The test event is invalid.");
 	}
 
-	return result;
+	return { id: result.event.id, adminSecret: result.adminSecret };
 }
 
 async function joinAll(id: string, names: string[], at: Temporal.Instant) {

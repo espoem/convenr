@@ -5,14 +5,13 @@ import { db } from "@/db/client";
 import { participants, participantTokens } from "@/db/schema";
 import { parseDisplayName } from "@/domain/display-name";
 import { newPublicId } from "@/domain/public-id";
-import type { Schedule } from "@/domain/schedule";
 
 import {
-	availableKeys,
 	liveEvent,
 	participantByToken,
 	participantForChange,
-	type ParticipantView,
+	type ParticipantRead,
+	participantRead,
 	type Queries,
 	scheduleOf,
 	touchEvent,
@@ -47,7 +46,8 @@ const NO_PASSWORD: JoinPassword = { kind: "none" };
 export type PasswordVerifier = typeof verifyPassword;
 
 export type JoinResult =
-	| { ok: true; name: string; token: string }
+	/** The participant as the write left them, so an answer needs no second read. */
+	| ({ ok: true; token: string } & ParticipantRead)
 	| PasswordRefusal
 	| {
 			ok: false;
@@ -308,7 +308,9 @@ async function joinExisting(
 	return db().transaction(async (tx): Promise<JoinResult | NameTaken> => {
 		// The event may have expired or been deleted, or the participant left, while the
 		// password was checked.
-		if ((await liveEvent(tx, eventId, now, "lock")) === undefined) {
+		const event = await liveEvent(tx, eventId, now, "lock");
+
+		if (event === undefined) {
 			return { ok: false, problem: "not_found" };
 		}
 
@@ -317,9 +319,15 @@ async function joinExisting(
 			.from(participants)
 			.where(eq(participants.id, existing.id));
 
-		return still === undefined
-			? { ok: false, problem: "name_taken" }
-			: { ok: true, name: existing.displayName, token: await issueToken(tx, existing.id) };
+		if (still === undefined) {
+			return { ok: false, problem: "name_taken" };
+		}
+
+		return {
+			ok: true,
+			token: await issueToken(tx, existing.id),
+			...(await participantRead(tx, event, existing)),
+		};
 	});
 }
 
@@ -380,7 +388,7 @@ async function joinNew(
 				passwordHash,
 				createdAt: now.toString(),
 			})
-			.returning({ id: participants.id });
+			.returning({ id: participants.id, publicId: participants.publicId });
 
 		if (row === undefined) {
 			throw new Error("The participant insert returned no row.");
@@ -389,7 +397,12 @@ async function joinNew(
 		await touchEvent(tx, event, now);
 		await countFirstResponse(tx, event, now);
 
-		return { ok: true, name: name.name, token: await issueToken(tx, row.id) } as const;
+		return {
+			ok: true,
+			token: await issueToken(tx, row.id),
+			participant: { id: row.publicId, name: name.name, available: [] },
+			schedule: scheduleOf(event),
+		} as const;
 	});
 }
 
@@ -402,32 +415,15 @@ export async function identify(eventId: string, token: string, now = Temporal.No
 		: { name: found.participant.displayName, hasPassword: found.participant.passwordHash !== null };
 }
 
-/**
- * The participant that holds `token` in `eventId` as the event shows them, with the schedule
- * their slot keys belong to, or `undefined`.
- */
+/** The participant that holds `token` in `eventId` as the event shows them, or `undefined`. */
 export async function readParticipant(
 	eventId: string,
 	token: string,
 	now = Temporal.Now.instant(),
-): Promise<{ participant: ParticipantView; schedule: Schedule } | undefined> {
+): Promise<ParticipantRead | undefined> {
 	const found = await participantByToken(db(), eventId, token, now);
 
-	if (found === undefined) {
-		return undefined;
-	}
-
-	const { participant, event } = found;
-	const keys = await availableKeys(db(), event, [participant.id]);
-
-	return {
-		participant: {
-			id: participant.publicId,
-			name: participant.displayName,
-			available: keys.get(participant.id) ?? [],
-		},
-		schedule: scheduleOf(event),
-	};
+	return found === undefined ? undefined : participantRead(db(), found.event, found.participant);
 }
 
 export type PasswordChangeResult =

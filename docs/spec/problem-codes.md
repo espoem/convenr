@@ -31,7 +31,9 @@ Returned as `problem` in a failed result.
 | `wrong_password` | The password does not match. | P4, P7 |
 | `too_many_attempts` | Too many wrong passwords; the result also says when to try again. | P7 |
 | `invalid_password` | A password is shorter than 4 or longer than 128 characters. | P5 |
-| `no_password` | A password change or removal was asked for a participant who has none. | P6 |
+| `no_password` | A password change or removal was asked for a participant who has none, or a current password was given for one. | P6 |
+| `name_exists` | A new password was given for a name another participant already uses. Only the API sends a new password apart from a current one. | P2, P4 |
+| `name_unknown` | A current password was given for a name nobody in the event uses. Only the API sends a current password apart from a new one. | P4 |
 | `not_joined` | The browser's participant token is unknown, so the participant left or was deleted. | P8, P9 |
 | `not_found` | The event no longer exists. | E9, X3 |
 | `unknown_slot` | A saved response holds a slot the event does not have. | R4 |
@@ -50,6 +52,33 @@ Codes that only the API returns, from [phase 3](phase-3.md).
 | `unauthorized` | The secret is missing or wrong, or the event does not exist. | K3, A12 |
 | `wrong_secret_kind` | An admin secret was sent where a participant token is needed, or the other way round. | K2 |
 | `secret_in_query` | The query string holds a secret. | K4 |
+| `confirmation_required` | A change would remove availability from participants; `losing` says from how many. The client repeats the change with `confirmedLosing` set to that number. | M5, A14 |
+| `method_not_allowed` | The path exists but does not support the method. `Allow` lists the methods it does support. | A3 |
+| `internal_error` | The server failed while answering. The request may or may not have taken effect. | A8 |
+
+`name_exists` and `name_unknown` are 409, not 422: the same body succeeds or fails depending on who has joined, so the request conflicts with the event's current state rather than being malformed. The client resolves it by sending the other password field.
+
+A field at fault in the body is named by its JSON Pointer, as in `{ "pointer": "/schedule/dates/2", "code": "date_in_past" }`, and a query parameter by its name, as in `{ "parameter": "minPeople", "code": "too_small" }`. The API answers a participant token it does not know, `not_joined` on the web, with `unauthorized`, because a token that never existed and one whose participant left look the same (A15).
+
+### Field codes
+
+A field error carries either a rule code from the tables above, such as `date_in_past`, `unknown_slot` or `invalid_name`, or, when the value has the wrong form, one of these field codes. The set is closed: the API maps every check of its schemas to it in one place, so a change of the validation library does not change a code.
+
+| Code | Meaning |
+|---|---|
+| `required` | A required field or parameter is missing. |
+| `wrong_type` | The value has the wrong JSON type, such as a string where a number belongs. |
+| `too_short` | A string or list has fewer characters or items than allowed. |
+| `too_long` | A string or list has more characters or items than allowed. |
+| `too_small` | A number is below the minimum. |
+| `too_large` | A number is above the maximum. |
+| `invalid_format` | A string does not have the required format, such as `YYYY-MM-DD` or `HH:MM`. |
+| `not_allowed` | The field is not part of the request (A4), or may not be sent together with another field. |
+| `invalid_value` | Any other value of the wrong form, such as a slot length that is not 15, 30 or 60. |
+
+`unknown_time_zone` names a reference zone that is not an IANA zone. It is a rule code of the server's own check of the zone, not a field code.
+
+A value of the wrong form in an event therefore carries one of the nine field codes above or `unknown_time_zone`, and nothing else. The server types these ten codes as one closed list, so a check named by any other code does not compile, and a test fails when this page leaves one of them out.
 
 ## HTTP status
 
@@ -58,13 +87,15 @@ The API sends every code with one status.
 | Status | Codes |
 |---|---|
 | `400 Bad Request` | `invalid_request`, `secret_in_query` |
-| `401 Unauthorized` | `unauthorized`, `not_joined` |
+| `401 Unauthorized` | `unauthorized` |
 | `403 Forbidden` | `wrong_secret_kind`, `password_required`, `wrong_password` |
 | `404 Not Found` | `not_found` |
-| `409 Conflict` | `event_full`, `field_locked`, `no_password` |
+| `405 Method Not Allowed` | `method_not_allowed`, with `Allow` |
+| `409 Conflict` | `event_full`, `field_locked`, `no_password`, `name_exists`, `name_unknown`, `confirmation_required` |
 | `413 Content Too Large` | `payload_too_large` |
 | `415 Unsupported Media Type` | `unsupported_media_type` |
 | `422 Unprocessable Content` | the event schedule codes except `field_locked`, `invalid_name`, `invalid_password`, `unknown_slot` |
 | `429 Too Many Requests` | `too_many_attempts`, with `Retry-After` and `retryAt` |
+| `500 Internal Server Error` | `internal_error` |
 
 `name_taken` never leaves the server.

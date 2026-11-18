@@ -38,7 +38,7 @@ describe("saveResponse", () => {
 
 		expect(
 			await saveResponse(eventId, token, ["2027-04-05T16:00:00Z", "2027-04-05T15:30:00Z"]),
-		).toEqual({ ok: false, problem: "unknown_slot" });
+		).toEqual({ ok: false, problem: "unknown_slot", unknown: [1] });
 		expect(await availability(eventId)).toEqual(["2027-04-05T15:00:00Z"]);
 	});
 
@@ -46,8 +46,9 @@ describe("saveResponse", () => {
 		const eventId = await freshEvent(mondayEvenings);
 		const token = await joined(eventId);
 
-		expect(await saveResponse(eventId, token, ["w3-1080", "w1-1020", "w3-1080"])).toEqual({
+		expect(await saveResponse(eventId, token, ["w3-1080", "w1-1020", "w3-1080"])).toMatchObject({
 			ok: true,
+			participant: { name: "Jana", available: ["w3-1080", "w1-1020"] },
 		});
 		expect(await availability(eventId)).toEqual(["w1-1020", "w3-1080"]);
 	});

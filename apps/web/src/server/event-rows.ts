@@ -100,6 +100,23 @@ export type ParticipantView = {
 	available: string[];
 };
 
+/** A participant as the event shows them, with the schedule their slot keys belong to. */
+export type ParticipantRead = { participant: ParticipantView; schedule: Schedule };
+
+/** The participant `row` as the event shows them, with the slot keys they marked. */
+export async function participantRead(
+	queries: Queries,
+	event: EventRow,
+	row: { id: string; publicId: string; displayName: string },
+): Promise<ParticipantRead> {
+	const keys = await availableKeys(queries, event, [row.id]);
+
+	return {
+		participant: { id: row.publicId, name: row.displayName, available: keys.get(row.id) ?? [] },
+		schedule: scheduleOf(event),
+	};
+}
+
 /** The slot keys each of `participantIds` marked, by participant, from the table of the event's day mode. */
 export async function availableKeys(
 	queries: Queries,

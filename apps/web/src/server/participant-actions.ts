@@ -27,13 +27,16 @@ export async function joinAction(id: string, name: string, pass: string | null) 
 	const [event, displayName, given] = args.data;
 
 	// The form has one password field, which checks a used name's password or sets a new name's.
-	return serializable(
-		await join(
-			event,
-			displayName,
-			given === null ? { kind: "none" } : { kind: "current_or_new", password: given },
-		),
+	const joined = await join(
+		event,
+		displayName,
+		given === null ? { kind: "none" } : { kind: "current_or_new", password: given },
 	);
+
+	// The page needs the name and the token; the schedule holds Temporal values, which do not serialize.
+	return joined.ok
+		? ({ ok: true, name: joined.participant.name, token: joined.token } as const)
+		: serializable(joined);
 }
 
 export async function identifyAction(id: string, held: string) {
@@ -47,9 +50,14 @@ export async function saveAction(id: string, held: string, keys: string[]) {
 		.tuple([eventId, token, z.array(z.string().max(40)).max(10_000)])
 		.safeParse([id, held, keys]);
 
-	return args.success
-		? saveResponse(...args.data)
-		: ({ ok: false, problem: "unknown_slot" } as const);
+	if (!args.success) {
+		return { ok: false, problem: "unknown_slot" } as const;
+	}
+
+	const saved = await saveResponse(...args.data);
+
+	// The page already shows what it saved; the schedule holds Temporal values, which do not serialize.
+	return saved.ok ? ({ ok: true } as const) : saved;
 }
 
 export async function changePasswordAction(

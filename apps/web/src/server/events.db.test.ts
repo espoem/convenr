@@ -24,12 +24,16 @@ describe("createEvent", () => {
 			return;
 		}
 
-		expect(created.segment).toBe(`schuzka-vyboru-2027-${created.id}`);
+		const { id } = created.event;
+
+		expect(created.event.segment).toBe(`schuzka-vyboru-2027-${id}`);
 		// The prefix names the kind, followed by 32 bytes in base64url (ADR 0004).
 		expect(created.adminSecret).toMatch(/^cva_[\w-]{43}$/u);
-		expect((await readEvent(created.id))?.deletionDate?.toString()).toBe("2027-07-05");
+		expect(created.event.deletionDate?.toString()).toBe("2027-07-05");
+		// The event comes from the insert itself, the same as a later read sees it.
+		expect(created.event).toEqual(await readEvent(id, creationTime));
 
-		const [row] = await db().select().from(events).where(eq(events.id, created.id));
+		const [row] = await db().select().from(events).where(eq(events.id, id));
 
 		// Only the hash of the admin secret is stored (ADR 0003).
 		expect(row?.adminSecretHash).toBe(hashSecret(created.adminSecret));

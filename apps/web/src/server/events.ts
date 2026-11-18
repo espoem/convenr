@@ -24,6 +24,7 @@ import { env } from "@/env";
 import { FIELD_CODES, fieldErrors } from "./api/field-codes";
 import {
 	availableKeys,
+	type EventRow,
 	firstDayOfWeekOf,
 	liveEvent,
 	type ParticipantView,
@@ -123,11 +124,9 @@ export function ruleProblems(issues: ScheduleIssue<EditProblem>[]): EventProblem
 export type CreateEventResult =
 	| {
 			ok: true;
-			id: string;
-			/** `{slug}-{id}` or `{id}`, the path segment of the share link. */
-			segment: string;
 			/** Shown once in the admin link and never stored. */
 			adminSecret: string;
+			event: EventView;
 	  }
 	| { ok: false; problems: EventProblem[] };
 
@@ -169,26 +168,37 @@ export async function createEvent(
 	// About 70 random bits make a collision negligible; the primary key would refuse one.
 	const id = newPublicId();
 
-	await db().transaction(async (tx) => {
-		await tx.insert(events).values({
-			id,
-			name,
-			description,
-			dayMode: days.mode,
-			...storedDays(days),
-			dailyStart,
-			dailyEnd,
-			slotLength,
-			referenceZone,
-			firstDayOfWeek: parsed.data.firstDayOfWeek,
-			adminSecretHash: hashSecret(adminSecret),
-			createdAt: now.toString(),
-			changedAt: now.toString(),
-		});
+	const row = await db().transaction(async (tx) => {
+		const [inserted] = await tx
+			.insert(events)
+			.values({
+				id,
+				name,
+				description,
+				dayMode: days.mode,
+				...storedDays(days),
+				dailyStart,
+				dailyEnd,
+				slotLength,
+				referenceZone,
+				firstDayOfWeek: parsed.data.firstDayOfWeek,
+				adminSecretHash: hashSecret(adminSecret),
+				createdAt: now.toString(),
+				changedAt: now.toString(),
+			})
+			.returning();
+
+		if (inserted === undefined) {
+			throw new Error("The event insert returned no row.");
+		}
+
 		await countCreated(tx, now);
+
+		return inserted;
 	});
 
-	return { ok: true, id, segment: eventSegment(id, name), adminSecret };
+	// Built from the inserted row, so the answer does not depend on a later read finding the event.
+	return { ok: true, adminSecret, event: viewOf(row, []) };
 }
 
 export type EventView = {
@@ -250,6 +260,17 @@ export async function readEvent(
 		people.map((person) => person.id),
 	);
 
+	return viewOf(
+		row,
+		people.map((person) => ({
+			id: person.publicId,
+			name: person.name,
+			available: keys.get(person.id) ?? [],
+		})),
+	);
+}
+
+function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 	const schedule = scheduleOf(row);
 
 	return {
@@ -266,10 +287,6 @@ export async function readEvent(
 			env().RETENTION_DAYS,
 		),
 		slots: scheduleSlots(schedule).map((slot) => slotKey(slot)),
-		participants: people.map((person) => ({
-			id: person.publicId,
-			name: person.name,
-			available: keys.get(person.id) ?? [],
-		})),
+		participants: people,
 	};
 }

@@ -26,7 +26,7 @@ async function created(input: NewEvent) {
 		throw new Error("The test event is invalid.");
 	}
 
-	return result;
+	return { id: result.event.id, adminSecret: result.adminSecret };
 }
 
 async function purge(now: Temporal.Instant) {

@@ -26,7 +26,8 @@ describe("eventVersion", () => {
 			throw new Error("The test event is invalid.");
 		}
 
-		const { id, adminSecret } = created;
+		const { adminSecret } = created;
+		const { id } = created.event;
 
 		expect(await eventVersion(id)).toBe(creationTime.toString());
 
@@ -67,7 +68,7 @@ describe("eventVersion", () => {
 			throw new Error("The test event is invalid.");
 		}
 
-		const { id } = created;
+		const { id } = created.event;
 		const jana = await join(id, "Jana", undefined, minute(1));
 
 		if (!jana.ok) {
@@ -76,10 +77,10 @@ describe("eventVersion", () => {
 
 		const slots = ["2027-04-05T15:00:00Z", "2027-04-05T16:00:00Z"];
 
-		expect(await saveResponse(id, jana.token, slots, minute(2))).toEqual({ ok: true });
+		expect(await saveResponse(id, jana.token, slots, minute(2))).toMatchObject({ ok: true });
 		expect(
 			await saveResponse(id, jana.token, [...slots.toReversed(), ...slots], minute(3)),
-		).toEqual({ ok: true });
+		).toMatchObject({ ok: true });
 		expect(await eventVersion(id)).toBe(minute(2).toString());
 
 		await saveResponse(id, jana.token, slots.slice(1), minute(4));
@@ -93,7 +94,8 @@ describe("eventVersion", () => {
 			throw new Error("The test event is invalid.");
 		}
 
-		const { id, adminSecret } = created;
+		const { adminSecret } = created;
+		const { id } = created.event;
 		const versions: Temporal.Instant[] = [];
 
 		async function record() {

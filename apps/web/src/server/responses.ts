@@ -5,9 +5,20 @@ import { db } from "@/db/client";
 import { datedAvailability, weekdayAvailability } from "@/db/schema";
 import { scheduleSlots, slotKey } from "@/domain/schedule";
 
-import { availableKeys, participantForChange, scheduleOf, touchEvent } from "./event-rows";
+import {
+	availableKeys,
+	participantForChange,
+	type ParticipantRead,
+	scheduleOf,
+	touchEvent,
+} from "./event-rows";
 
-export type SaveResult = { ok: true } | { ok: false; problem: "not_joined" | "unknown_slot" };
+export type SaveResult =
+	/** The participant as the save left them, so an answer needs no second read. */
+	| ({ ok: true } & ParticipantRead)
+	| { ok: false; problem: "not_joined" }
+	/** `unknown` holds the index in `keys` of each key the event does not have. */
+	| { ok: false; problem: "unknown_slot"; unknown: number[] };
 
 /**
  * Replaces the response of the token's participant with `keys` in one step. The later
@@ -28,23 +39,34 @@ export async function saveResponse(
 			return { ok: false, problem: "not_joined" };
 		}
 
-		const slots = new Map(
-			scheduleSlots(scheduleOf(found.event)).map((slot) => [slotKey(slot), slot]),
-		);
+		const schedule = scheduleOf(found.event);
+		const slots = new Map(scheduleSlots(schedule).map((slot) => [slotKey(slot), slot]));
+		const unknown = keys.flatMap((key, index) => (slots.has(key) ? [] : [index]));
+
+		if (unknown.length > 0) {
+			return { ok: false, problem: "unknown_slot", unknown };
+		}
 
 		const wanted = new Set(keys);
 		const chosen = [...wanted].map((key) => slots.get(key));
+		const { participant } = found;
+		const participantId = participant.id;
 
-		if (chosen.includes(undefined)) {
-			return { ok: false, problem: "unknown_slot" };
-		}
+		const saved: SaveResult = {
+			ok: true,
+			participant: {
+				id: participant.publicId,
+				name: participant.displayName,
+				available: [...wanted],
+			},
+			schedule,
+		};
 
-		const participantId = found.participant.id;
 		const stored = (await availableKeys(tx, found.event, [participantId])).get(participantId) ?? [];
 
 		// The same set again changes nothing, so it keeps the version and the deletion date.
 		if (stored.length === wanted.size && stored.every((key) => wanted.has(key))) {
-			return { ok: true };
+			return saved;
 		}
 
 		await tx.delete(datedAvailability).where(eq(datedAvailability.participantId, participantId));
@@ -73,6 +95,6 @@ export async function saveResponse(
 
 		await touchEvent(tx, found.event, now);
 
-		return { ok: true };
+		return saved;
 	});
 }

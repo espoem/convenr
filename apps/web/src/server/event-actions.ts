@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { isPublicId } from "@/domain/public-id";
 
-import { createEvent, type CreateEventResult, eventVersion, type NewEvent } from "./events";
+import { createEvent, type EventProblem, eventVersion, type NewEvent } from "./events";
 import {
 	type ManagedEvent,
 	readManagedEvent,
@@ -20,8 +20,22 @@ import {
 const eventId = z.string().max(64);
 const adminSecret = z.string().max(128);
 
-export async function createEventAction(input: NewEvent): Promise<CreateEventResult> {
-	return createEvent(input);
+/** A created event as the page needs it: the view holds Temporal values, which do not serialize. */
+export type CreatedEvent =
+	| { ok: true; id: string; segment: string; adminSecret: string }
+	| { ok: false; problems: EventProblem[] };
+
+export async function createEventAction(input: NewEvent): Promise<CreatedEvent> {
+	const created = await createEvent(input);
+
+	return created.ok
+		? {
+				ok: true,
+				id: created.event.id,
+				segment: created.event.segment,
+				adminSecret: created.adminSecret,
+			}
+		: created;
 }
 
 /** The event's version for the page's check, `null` once it is gone. */

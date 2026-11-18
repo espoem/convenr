@@ -33,5 +33,5 @@ export async function freshEvent(input: NewEvent = pragueEvenings): Promise<stri
 		throw new Error(`The test event is invalid: ${JSON.stringify(created.problems)}`);
 	}
 
-	return created.id;
+	return created.event.id;
 }

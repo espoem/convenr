@@ -24,7 +24,7 @@ async function managedEvent() {
 		throw new Error("The test event is invalid.");
 	}
 
-	return { id: created.id, secret: created.adminSecret };
+	return { id: created.event.id, secret: created.adminSecret };
 }
 
 async function respond(id: string, name: string, keys: string[]) {
@@ -179,7 +179,7 @@ describe("updateEvent", () => {
 
 		await updateEvent(id, secret, narrowed, null, later);
 
-		expect(await saveResponse(id, token, [FIVE, SIX], later)).toEqual({
+		expect(await saveResponse(id, token, [FIVE, SIX], later)).toMatchObject({
 			ok: false,
 			problem: "unknown_slot",
 		});

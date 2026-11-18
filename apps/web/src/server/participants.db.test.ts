@@ -47,15 +47,31 @@ describe("joining", () => {
 	it("creates a participant under the normalized name and gives a token", async () => {
 		const joined = await join(eventId, "  Jana   Nováková ", undefined, creationTime);
 
-		expect(joined).toMatchObject({ ok: true, name: "Jana Nováková" });
 		expect(joined.ok && joined.token).toMatch(/^cvp_[\w-]{43}$/u);
 
 		const [row] = await db().select().from(participants);
+		const shown = { id: row?.publicId, name: "Jana Nováková", available: [] };
 
 		expect(isPublicId(row?.publicId ?? "")).toBe(true);
-		expect((await readEvent(eventId))?.participants).toEqual([
-			{ id: row?.publicId, name: "Jana Nováková", available: [] },
-		]);
+		expect((await readEvent(eventId))?.participants).toEqual([shown]);
+		// The join answers with the participant it wrote, without reading them again.
+		expect(joined).toMatchObject({ ok: true, participant: shown });
+	});
+
+	it("answers a join under a used name with that participant's saved availability", async () => {
+		const token = await tokenOf("Jana");
+
+		await saveResponse(eventId, token, ["2027-04-05T15:00:00Z"], creationTime);
+
+		const again = await join(eventId, "jana", undefined, creationTime);
+
+		expect(again).toMatchObject({
+			ok: true,
+			participant: { name: "Jana", available: ["2027-04-05T15:00:00Z"] },
+		});
+		expect(again.ok && again.participant).toEqual(
+			(await readParticipant(eventId, token, creationTime))?.participant,
+		);
 	});
 
 	it("reads the token's participant by public id with their response", async () => {
