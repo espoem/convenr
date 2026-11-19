@@ -8,6 +8,16 @@ import { maximalWindows, sameWindow, type Window } from "@/domain/best-windows";
 import { gridView, type GridView } from "@/domain/grid-labels";
 import { datedLayout } from "@/domain/grid-layout";
 import { heatStep } from "@/domain/heat";
+import {
+	type Brush,
+	cellLevel,
+	type Level,
+	type Levels,
+	sameLevels,
+	slotsAt,
+	type Tally,
+	withLevel,
+} from "@/domain/levels";
 import type { Weekday } from "@/domain/schedule";
 import { useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
@@ -17,9 +27,11 @@ import { cn } from "@/lib/utils";
 import { useVersionCheck } from "@/lib/version-check";
 import { identifyAction, saveAction } from "@/server/participant-actions";
 
-import { AvailabilityGrid, type CellRef } from "./availability-grid";
+import { AvailabilityGrid, type CellFill, type CellRef } from "./availability-grid";
 import { BestWindows } from "./best-windows";
+import { useCount } from "./count";
 import { type Joined, JoinBand } from "./join-band";
+import { BrushPicker, PersonLegend } from "./level-marks";
 import { SlotDetail } from "./slot-detail";
 
 export type BoardEvent = {
@@ -35,7 +47,7 @@ export type BoardEvent = {
 	/** Rows of one day, to reserve the grid's height before the browser lays it out. */
 	rowCount: number;
 	slots: string[];
-	participants: { name: string; available: string[] }[];
+	participants: { name: string; levels: Levels }[];
 };
 
 type EventBoardProps = {
@@ -47,7 +59,7 @@ type EventBoardProps = {
 
 const HEAT = ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"] as const;
 const DETAIL_WIDTH = 288;
-const nobody: ReadonlySet<string> = new Set();
+const nobody: Levels = {};
 
 function withoutParticipant(stored: LocalEvent | undefined): LocalEvent | undefined {
 	if (stored?.adminSecret === undefined) {
@@ -59,6 +71,15 @@ function withoutParticipant(stored: LocalEvent | undefined): LocalEvent | undefi
 	return rest;
 }
 
+/** A participant's own marks: the darkest step when available, hatched at if need be. */
+function ownFill(level: Level | null): CellFill {
+	if (level === null) {
+		return 0;
+	}
+
+	return level === "available" ? 4 : "if_need_be";
+}
+
 function withPassword(hasPassword: boolean) {
 	return (stored: LocalEvent | undefined): LocalEvent | undefined =>
 		stored?.participant === undefined || stored.participant.hasPassword === hasPassword
@@ -66,14 +87,11 @@ function withPassword(hasPassword: boolean) {
 			: { ...stored, participant: { ...stored.participant, hasPassword } };
 }
 
-function sameSet(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
-	return left.size === right.size && [...left].every((key) => right.has(key));
-}
-
 /** The event page below its header: join band, tabs, grid and participants (spec 6 and 8). */
 export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps) {
 	const t = useTranslations("Event");
 	const tJoin = useTranslations("Join");
+	const count = useCount();
 	const id = useId();
 	const router = useRouter();
 	const temporalReady = useTemporalReady();
@@ -81,7 +99,8 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const stored = useLocalEvents().get(event.id);
 	const wrapper = useRef<HTMLDivElement>(null);
 	const [tab, setTab] = useState<"group" | "me">("group");
-	const [draft, setDraft] = useState<Set<string> | null>(null);
+	const [draft, setDraft] = useState<Levels | null>(null);
+	const [brush, setBrush] = useState<Brush>("available");
 	const [confirmDiscard, setConfirmDiscard] = useState(false);
 	const [inspected, setInspected] = useState<{ cell: CellRef; x: number; y: number } | null>(null);
 	const [person, setPerson] = useState<string | null>(null);
@@ -166,30 +185,13 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	// A window from before a reload or a zone switch may no longer exist.
 	const highlight = windows.find((window) => sameWindow(chosenWindow, window)) ?? null;
 
-	const availableIn = useMemo(() => {
-		const names = new Map<string, Set<string>>();
-
-		for (const participant of event.participants) {
-			for (const key of participant.available) {
-				names.set(key, (names.get(key) ?? new Set()).add(participant.name));
-			}
-		}
-
-		return names;
-	}, [event.participants]);
-
 	const total = event.participants.length;
 
-	const mine = useMemo(
-		() =>
-			new Set(
-				event.participants.find((participant) => participant.name === joined?.name)?.available,
-			),
-		[event.participants, joined?.name],
-	);
+	const mine =
+		event.participants.find((participant) => participant.name === joined?.name)?.levels ?? nobody;
 
 	// Edits of slots the organizer removed meanwhile drop out, and the page says so.
-	const lostEdits = draft !== null && [...draft].some((key) => !event.slots.includes(key));
+	const lostEdits = draft !== null && Object.keys(draft).some((key) => !event.slots.includes(key));
 
 	const edits = useMemo(() => {
 		if (draft === null) {
@@ -198,11 +200,11 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 
 		const slots = new Set(event.slots);
 
-		return new Set([...draft].filter((key) => slots.has(key)));
+		return Object.fromEntries(Object.entries(draft).filter(([key]) => slots.has(key)));
 	}, [draft, event.slots]);
 
 	const selection = edits ?? mine;
-	const dirty = edits !== null && !sameSet(edits, mine);
+	const dirty = edits !== null && !sameLevels(edits, mine);
 
 	// Warn before the browser leaves the page with unsaved edits; leaving edit mode asks inside the page.
 	useEffect(() => {
@@ -217,7 +219,23 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 		return () => window.removeEventListener("beforeunload", warn);
 	}, [dirty]);
 
-	const namesIn = (keys: readonly string[]) => availableIn.get(keys[0] ?? "") ?? nobody;
+	/** The names at each level in a cell, in list order. */
+	function namesIn(keys: readonly string[]) {
+		const at = (level: Level | null) =>
+			event.participants
+				.filter((participant) => cellLevel(participant.levels, keys) === level)
+				.map((participant) => participant.name);
+
+		return { available: at("available"), ifNeedBe: at("if_need_be"), unavailable: at(null) };
+	}
+
+	function tallyIn(keys: readonly string[]): Tally {
+		const names = namesIn(keys);
+
+		return { available: names.available.length, ifNeedBe: names.ifNeedBe.length };
+	}
+
+	const filtered = event.participants.find((participant) => participant.name === person);
 
 	function showTab(next: "group" | "me") {
 		if (next === "group" && dirty) {
@@ -271,13 +289,16 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 			return;
 		}
 
-		const keys = [...edits];
-
 		// The draft keeps only what is saved, which ends the notice about lost edits.
-		setDraft(new Set(keys));
+		setDraft(edits);
 		startSaving(async () => {
 			try {
-				const saved = await saveAction(event.id, joined.token, keys);
+				const saved = await saveAction(
+					event.id,
+					joined.token,
+					Object.keys(edits),
+					slotsAt(edits, "if_need_be"),
+				);
 
 				if (saved.ok) {
 					setSaveMessage("saved");
@@ -342,6 +363,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 			: (view.layout.blocks.flat()[inspected.cell.column]?.cells[inspected.cell.row] ?? []);
 
 	const detailNames = namesIn(detailKeys);
+	const myLevel = (keys: readonly string[]) => cellLevel(selection, keys);
 	const detailTime = inspected === null ? undefined : view?.rows[inspected.cell.row];
 
 	function renderGrid() {
@@ -356,16 +378,12 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					view={view}
 					slotLength={event.slotLength}
 					label={t("groupGrid")}
-					fill={(keys) => {
-						const names = namesIn(keys);
-
-						if (person !== null) {
-							return names.has(person) ? 4 : 0;
-						}
-
-						return heatStep(names.size, total);
-					}}
-					describe={(keys) => t("count", { available: namesIn(keys).size, total })}
+					fill={(keys) =>
+						filtered === undefined
+							? heatStep(tallyIn(keys), total)
+							: ownFill(cellLevel(filtered.levels, keys))
+					}
+					describe={(keys) => count(tallyIn(keys), total)}
 					onInspect={inspect}
 					inspected={inspected?.cell}
 					highlight={highlight}
@@ -378,12 +396,19 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 				view={view}
 				slotLength={event.slotLength}
 				label={t("myGrid")}
-				fill={(keys) => (keys.every((key) => selection.has(key)) ? 4 : 0)}
-				describe={(keys) =>
-					keys.every((key) => selection.has(key)) ? t("youCan") : t("youCannot")
-				}
+				fill={(keys) => ownFill(myLevel(keys))}
+				describe={(keys) => {
+					const level = myLevel(keys);
+
+					if (level === null) {
+						return t("youCannot");
+					}
+
+					return level === "available" ? t("youCan") : t("youIfNeedBe");
+				}}
 				edit={{
-					selection,
+					levels: selection,
+					brush,
 					onChange: (next) => {
 						setSaveMessage(null);
 						setDraft(next);
@@ -492,7 +517,11 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 									))}
 								</span>
 								<span>{t("count", { available: total, total })}</span>
+								<span aria-hidden className="text-ink-muted">
+									{t("legendHalf")}
+								</span>
 							</div>
+							{filtered === undefined ? null : <PersonLegend />}
 							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("groupHint")}</p>
 						</>
 					) : null}
@@ -504,22 +533,29 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					{tab === "me" && joined !== null ? (
 						<>
 							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("meHint")}</p>
+							<BrushPicker brush={brush} onChange={setBrush} />
 							<div className="flex flex-wrap gap-2">
 								<Button
 									type="button"
 									variant="outline"
-									onClick={() => setDraft(new Set(event.slots))}
+									onClick={() => setDraft(withLevel({}, event.slots, "available"))}
 								>
 									{t("selectAll")}
 								</Button>
-								<Button type="button" variant="outline" onClick={() => setDraft(new Set())}>
+								<Button type="button" variant="outline" onClick={() => setDraft({})}>
 									{t("selectNone")}
 								</Button>
 								<Button
 									type="button"
 									variant="outline"
 									onClick={() =>
-										setDraft(new Set(event.slots.filter((key) => !selection.has(key))))
+										setDraft(
+											withLevel(
+												{},
+												event.slots.filter((key) => selection[key] === undefined),
+												"available",
+											),
+										)
 									}
 								>
 									{t("invert")}
@@ -537,12 +573,9 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 								<SlotDetail
 									day={view?.columns[inspected.cell.column]?.long ?? ""}
 									time={`${detailTime.start}–${detailTime.end}`}
-									available={event.participants
-										.filter((participant) => detailNames.has(participant.name))
-										.map((participant) => participant.name)}
-									unavailable={event.participants
-										.filter((participant) => !detailNames.has(participant.name))
-										.map((participant) => participant.name)}
+									available={detailNames.available}
+									ifNeedBe={detailNames.ifNeedBe}
+									unavailable={detailNames.unavailable}
 									x={inspected.x}
 									y={inspected.y}
 									onClose={() => setInspected(null)}

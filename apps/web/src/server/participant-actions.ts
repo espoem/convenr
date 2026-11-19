@@ -45,16 +45,25 @@ export async function identifyAction(id: string, held: string) {
 	return args.success ? ((await identify(...args.data)) ?? null) : null;
 }
 
-export async function saveAction(id: string, held: string, keys: string[]) {
+const slotKeys = z.array(z.string().max(40)).max(10_000);
+
+/** Saves every slot in `available`, those also in `ifNeedBe` at if need be. */
+export async function saveAction(
+	id: string,
+	held: string,
+	available: string[],
+	ifNeedBe: string[],
+) {
 	const args = z
-		.tuple([eventId, token, z.array(z.string().max(40)).max(10_000)])
-		.safeParse([id, held, keys]);
+		.tuple([eventId, token, slotKeys, slotKeys])
+		.safeParse([id, held, available, ifNeedBe]);
 
 	if (!args.success) {
 		return { ok: false, problem: "unknown_slot" } as const;
 	}
 
-	const saved = await saveResponse(...args.data);
+	const [event, holder, marked, maybe] = args.data;
+	const saved = await saveResponse(event, holder, { available: marked, ifNeedBe: maybe });
 
 	// The page already shows what it saved; the schedule holds Temporal values, which do not serialize.
 	return saved.ok ? ({ ok: true } as const) : saved;

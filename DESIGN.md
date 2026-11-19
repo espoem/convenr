@@ -119,6 +119,7 @@ The contrasts in this table are for the light theme. Measured contrast below sta
   { "fg": "heat-2-line", "bg": "heat-2", "min": 3, "light": 3.13, "dark": 3.09 },
   { "fg": "heat-3-line", "bg": "heat-3", "min": 3, "light": 3.06, "dark": 5.72 },
   { "fg": "heat-4-line", "bg": "heat-4", "min": 3, "light": 5.34, "dark": 9.79 },
+  { "fg": "heat-4", "bg": "heat-1", "min": 3, "light": 3.75, "dark": 5.54 },
   { "fg": ["ink", "surface"], "bg": "heat-0", "min": 3, "light": 9.55, "dark": 11.86 },
   { "fg": ["ink", "surface"], "bg": "heat-1", "min": 3, "light": 8.01, "dark": 7.47 },
   { "fg": ["ink", "surface"], "bg": "heat-2", "min": 3, "light": 5.87, "dark": 4.27 },
@@ -148,7 +149,7 @@ The contrasts in this table are for the light theme. Measured contrast below sta
 13. **Marks in the grid.** The fill carries the count and nothing else. Every other mark has a shape of its own and stays inside the cells it marks, so it never changes the layout or covers another cell's grid line. Each mark is `ink` with a `surface` strip beside it, so one of the two reaches 3:1 on every heat step.
     - A selected best window is stitched: a 2-pixel dashed `ink` line 1 pixel inside the window's edge, on a `surface` strip. Dashed means suggested.
     - The final time is sewn: a 4-pixel solid `ink` frame between 1-pixel `surface` rings, inside the window's edge. Solid means decided. A flag stands beside the frame's first row: a Phosphor flag icon in `surface` on an `ink` tab with a 1-pixel `surface` rim. It sits on the right when a day column follows and on the left otherwise, never over the time labels and never outside the grid. Its accessible name says "final time"; the legend and the banner above the grid carry the word.
-    - A slot marked "if need be" in the participant's own grid is hatched at 135 degrees: 3-pixel stripes of `heat-4` on `heat-1`, 8 pixels apart. The legend names it.
+    - A slot marked "if need be" in the participant's own grid, and in the group grid filtered to one participant, is hatched at 135 degrees: 3-pixel stripes of `heat-4` on `heat-1`, 8 pixels apart, measured across the stripes. The stripes keep at least 3:1 on `heat-1` (Measured contrast). The brush above the grid shows each level's mark beside its name, and so does the legend of a filtered grid. The heat map shows no hatching: there if need be only counts half.
 
 14. **Flags.** The language menu shows each language's national flag in a 3:2 box with a 1-pixel `line` ring. A flag is an image of a national symbol, not an interface color, so its colors are the only literal colors in a component.
 15. **Header menus.** The theme and language menus are menu buttons in the header, a `surface` panel with an `earth` border below each. They show the current choice as an icon or a flag with the language code, so switching does not change their width.

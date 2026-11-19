@@ -1,8 +1,9 @@
 // The one place that maps between the API's shapes and the server's types. Slot keys stay
 // inside the server: a response names a dated slot by its start and a weekday slot by weekday
 // and minute.
-import { bestWindows, maximalWindows, mostPeople } from "@/domain/best-windows";
+import { bestWindows, maximalWindows, mostPeople, windowTally } from "@/domain/best-windows";
 import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
+import { scoreOf, slotsAt } from "@/domain/levels";
 import { type Schedule, scheduleSlots, type Slot, slotKey } from "@/domain/schedule";
 import { parseVersion } from "@/lib/event-version";
 import type { ParticipantView } from "@/server/event-rows";
@@ -237,10 +238,13 @@ function slotsOf(slots: readonly Slot[], keys: readonly string[]): SlotBody[] {
 }
 
 export function participantBody(participant: ParticipantView, schedule: Schedule): ParticipantBody {
+	const slots = scheduleSlots(schedule);
+
 	return {
 		id: participant.id,
 		name: participant.name,
-		availability: slotsOf(scheduleSlots(schedule), participant.available),
+		availability: slotsOf(slots, Object.keys(participant.levels)),
+		ifNeedBe: slotsOf(slots, slotsAt(participant.levels, "if_need_be")),
 	};
 }
 
@@ -330,11 +334,13 @@ export function windowsBody(
 			columns[window.column]?.cells.slice(window.first, window.last + 1).flat() ?? [],
 		),
 		minutes: (window.last - window.first + 1) * schedule.slotLength,
-		participantIds: window.people.flatMap((person) => {
+		participantIds: window.people.flatMap(({ person }) => {
 			const found = participants[person];
 
 			return found === undefined ? [] : [found.id];
 		}),
+		ifNeedBe: windowTally(window).ifNeedBe,
+		score: scoreOf(windowTally(window)),
 	}));
 
 	return { minMinutes, minPeople, windows };

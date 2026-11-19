@@ -13,7 +13,13 @@ import { db } from "@/db/client";
 import { events, participants } from "@/db/schema";
 import { isPublicId } from "@/domain/public-id";
 
-import { eventSchema, joinedSchema, participantSchema, windowsSchema } from "./schemas";
+import {
+	type AvailabilityRequest,
+	eventSchema,
+	joinedSchema,
+	participantSchema,
+	windowsSchema,
+} from "./schemas";
 import {
 	bodyOf,
 	call,
@@ -210,11 +216,52 @@ describe("availability", () => {
 			id: participantId,
 			name: "Jana",
 			availability: [FIVE, SIX],
+			ifNeedBe: [],
 		});
 		expect(await bodyOf(await call(readMe, { id }, { secret: token }), participantSchema)).toEqual({
 			id: participantId,
 			name: "Jana",
 			availability: [FIVE, SIX],
+			ifNeedBe: [],
+		});
+	});
+
+	it("keeps if-need-be slots in the availability and lists them apart", async () => {
+		const { id } = await createdEvent();
+		const { token } = await joined(id, "Jana");
+
+		const save = (body: AvailabilityRequest) =>
+			call(saveAvailability, { id }, { method: "PUT", secret: token, body });
+
+		expect(
+			await bodyOf(await save({ availability: [FIVE, SIX], ifNeedBe: [SIX] }), participantSchema),
+		).toMatchObject({ availability: [FIVE, SIX], ifNeedBe: [SIX] });
+
+		// A client that knows no levels saves what it read, and the level stays.
+		expect(await bodyOf(await save({ availability: [SIX] }), participantSchema)).toMatchObject({
+			availability: [SIX],
+			ifNeedBe: [SIX],
+		});
+
+		expect(
+			await bodyOf(await save({ availability: [SIX], ifNeedBe: [] }), participantSchema),
+		).toMatchObject({ availability: [SIX], ifNeedBe: [] });
+	});
+
+	it("refuses a slot at if need be that the availability leaves out, pointing at it", async () => {
+		const { id } = await createdEvent();
+		const { token } = await joined(id, "Jana");
+
+		const response = await call(
+			saveAvailability,
+			{ id },
+			{ method: "PUT", secret: token, body: { availability: [FIVE], ifNeedBe: [FIVE, SIX] } },
+		);
+
+		expect(response.status).toBe(400);
+		expect(await refusalOf(response)).toMatchObject({
+			code: "invalid_request",
+			errors: [{ pointer: "/ifNeedBe/1", code: "if_need_be_not_available" }],
 		});
 	});
 

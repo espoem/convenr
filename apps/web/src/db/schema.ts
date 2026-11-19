@@ -14,6 +14,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
+import { LEVELS } from "@/domain/levels";
 import type { EventVersion } from "@/lib/event-version";
 
 // Column names come from the property names in snake_case; see `casing` in the client.
@@ -110,6 +111,12 @@ export const participantTokens = pgTable("participant_tokens", {
 	createdAt: instant().notNull().defaultNow(),
 });
 
+/**
+ * A slot's level. The default lets a release that knows no levels keep writing rows, which
+ * read as available.
+ */
+const level = () => text({ enum: LEVELS }).notNull().default("available");
+
 export const datedAvailability = pgTable(
 	"dated_availability",
 	{
@@ -117,8 +124,12 @@ export const datedAvailability = pgTable(
 			.notNull()
 			.references(() => participants.id, { onDelete: "cascade" }),
 		slotStart: instant().notNull(),
+		level: level(),
 	},
-	(table) => [primaryKey({ columns: [table.participantId, table.slotStart] })],
+	(table) => [
+		primaryKey({ columns: [table.participantId, table.slotStart] }),
+		check("dated_availability_level", sql`${table.level} in ('available', 'if_need_be')`),
+	],
 );
 
 export const weekdayAvailability = pgTable(
@@ -129,9 +140,11 @@ export const weekdayAvailability = pgTable(
 			.references(() => participants.id, { onDelete: "cascade" }),
 		weekday: smallint().notNull(),
 		minute: smallint().notNull(),
+		level: level(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.participantId, table.weekday, table.minute] }),
+		check("weekday_availability_level", sql`${table.level} in ('available', 'if_need_be')`),
 		check("weekday_availability_weekday", sql`${table.weekday} between 1 and 7`),
 		check("weekday_availability_minute", sql`${table.minute} between 0 and 1439`),
 	],

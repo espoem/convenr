@@ -1,14 +1,15 @@
-// Saving a response: the set of slots a participant is available for.
+// Saving a response: the level of each slot a participant marked.
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { datedAvailability, weekdayAvailability } from "@/db/schema";
+import { type LevelsInput, sameLevels, savedLevels } from "@/domain/levels";
 import { scheduleSlots, slotKey } from "@/domain/schedule";
 
 import {
-	availableKeys,
 	participantForChange,
 	type ParticipantRead,
+	responseLevels,
 	scheduleOf,
 	touchEvent,
 } from "./event-rows";
@@ -17,19 +18,21 @@ export type SaveResult =
 	/** The participant as the save left them, so an answer needs no second read. */
 	| ({ ok: true } & ParticipantRead)
 	| { ok: false; problem: "not_joined" }
-	/** `unknown` holds the index in `keys` of each key the event does not have. */
-	| { ok: false; problem: "unknown_slot"; unknown: number[] };
+	/** `unknown` holds the index in `available` of each slot the event does not have. */
+	| { ok: false; problem: "unknown_slot"; unknown: number[] }
+	/** `notAvailable` holds the index in `ifNeedBe` of each slot missing from `available`. */
+	| { ok: false; problem: "if_need_be_not_available"; notAvailable: number[] };
 
 /**
- * Replaces the response of the token's participant with `keys` in one step. The later
- * of two saves wins as a whole. A key the event does not have refuses the save. The
- * event row stays locked from the check to the write, so an organizer's change that removes
- * slots happens wholly before or after the save.
+ * Replaces the response of the token's participant in one step. The later of two saves wins as
+ * a whole. A slot the event does not have refuses the save. The event row stays locked from the
+ * check to the write, so an organizer's change that removes slots happens wholly before or after
+ * the save.
  */
 export async function saveResponse(
 	eventId: string,
 	token: string,
-	keys: string[],
+	input: LevelsInput,
 	now = Temporal.Now.instant(),
 ): Promise<SaveResult> {
 	return db().transaction(async (tx): Promise<SaveResult> => {
@@ -41,31 +44,34 @@ export async function saveResponse(
 
 		const schedule = scheduleOf(found.event);
 		const slots = new Map(scheduleSlots(schedule).map((slot) => [slotKey(slot), slot]));
-		const unknown = keys.flatMap((key, index) => (slots.has(key) ? [] : [index]));
+		const unknown = input.available.flatMap((key, index) => (slots.has(key) ? [] : [index]));
 
 		if (unknown.length > 0) {
 			return { ok: false, problem: "unknown_slot", unknown };
 		}
 
-		const wanted = new Set(keys);
-		const chosen = [...wanted].map((key) => slots.get(key));
 		const { participant } = found;
 		const participantId = participant.id;
 
+		const stored =
+			(await responseLevels(tx, found.event, [participantId])).get(participantId) ?? {};
+
+		const wanted = savedLevels(input, stored);
+
+		if (!wanted.ok) {
+			return { ok: false, problem: "if_need_be_not_available", notAvailable: wanted.notAvailable };
+		}
+
+		const { levels } = wanted;
+
 		const saved: SaveResult = {
 			ok: true,
-			participant: {
-				id: participant.publicId,
-				name: participant.displayName,
-				available: [...wanted],
-			},
+			participant: { id: participant.publicId, name: participant.displayName, levels },
 			schedule,
 		};
 
-		const stored = (await availableKeys(tx, found.event, [participantId])).get(participantId) ?? [];
-
-		// The same set again changes nothing, so it keeps the version and the deletion date.
-		if (stored.length === wanted.size && stored.every((key) => wanted.has(key))) {
+		// The same response again changes nothing, so it keeps the version and the deletion date.
+		if (sameLevels(stored, levels)) {
 			return saved;
 		}
 
@@ -77,11 +83,13 @@ export async function saveResponse(
 		const dated = [];
 		const weekly = [];
 
-		for (const slot of chosen) {
+		for (const [key, level] of Object.entries(levels)) {
+			const slot = slots.get(key);
+
 			if (slot?.kind === "dated") {
-				dated.push({ participantId, slotStart: slot.start.toString() });
+				dated.push({ participantId, slotStart: slot.start.toString(), level });
 			} else if (slot?.kind === "weekday") {
-				weekly.push({ participantId, weekday: slot.weekday, minute: slot.minute });
+				weekly.push({ participantId, weekday: slot.weekday, minute: slot.minute, level });
 			}
 		}
 

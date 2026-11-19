@@ -86,7 +86,7 @@ describe("readEvent", () => {
 			throw new Error("Jana could not join.");
 		}
 
-		await saveResponse(id, jana.token, ["2027-04-05T15:00:00Z"], creationTime);
+		await saveResponse(id, jana.token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
 
 		const view = await readEvent(id);
 
@@ -100,8 +100,8 @@ describe("readEvent", () => {
 				"2027-04-06T16:00:00Z",
 			],
 			participants: [
-				{ name: "Jana", available: ["2027-04-05T15:00:00Z"] },
-				{ name: "Petr", available: [] },
+				{ name: "Jana", levels: { "2027-04-05T15:00:00Z": "available" } },
+				{ name: "Petr", levels: {} },
 			],
 		});
 	});

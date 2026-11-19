@@ -4,8 +4,16 @@ import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
 import { controlClass, Field } from "@/components/field";
-import { bestWindows, mostPeople, sameWindow, type Window } from "@/domain/best-windows";
+import {
+	bestWindows,
+	mostPeople,
+	sameWindow,
+	type Window,
+	windowTally,
+} from "@/domain/best-windows";
 import type { GridView } from "@/domain/grid-labels";
+
+import { useCount } from "./count";
 
 type BestWindowsProps = {
 	view: GridView;
@@ -29,6 +37,7 @@ export function BestWindows({
 	onSelect,
 }: BestWindowsProps) {
 	const t = useTranslations("Event");
+	const count = useCount();
 	const id = useId();
 	const [minSlots, setMinSlots] = useState(1);
 	// `null` follows the highest count as responses change until the viewer picks a number.
@@ -116,12 +125,16 @@ export function BestWindows({
 												{view.rows[window.first]?.start}–{view.rows[window.last]?.end}
 											</span>
 										</span>
-										<span className="tabular-nums">
-											{t("count", { available: window.people.length, total: names.length })}
-										</span>
+										<span className="tabular-nums">{count(windowTally(window), names.length)}</span>
 									</span>
 									<span className="text-sm break-words">
-										{list.format(window.people.map((person) => names[person] ?? ""))}
+										{list.format(
+											window.people.map(({ person, level }) => {
+												const name = names[person] ?? "";
+
+												return level === "if_need_be" ? t("nameIfNeedBe", { name }) : name;
+											}),
+										)}
 									</span>
 								</button>
 							</li>

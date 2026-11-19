@@ -108,7 +108,7 @@ describe("expiry", () => {
 			await join(id, "Jana", { kind: "current", password: "heslo-1234" }, datedExpiry),
 		).toEqual(notFound);
 		expect(await readParticipant(id, jana.token, datedExpiry)).toBeUndefined();
-		expect(await saveResponse(id, jana.token, [], datedExpiry)).toEqual(notJoined);
+		expect(await saveResponse(id, jana.token, { available: [] }, datedExpiry)).toEqual(notJoined);
 		expect(
 			await changePassword(
 				id,

@@ -1,5 +1,9 @@
 // The best windows below the grid: the longest runs of slots that suit the most people.
 import type { GridLayout } from "./grid-layout";
+import { cellLevel, type Level, type Levels, scoreOf, type Tally } from "./levels";
+
+/** A participant of a window: available when every slot is, and if need be otherwise. */
+type WindowPerson = { person: number; level: Level };
 
 export type Window = {
 	/** Index in `layout.blocks.flat()`. */
@@ -7,20 +11,22 @@ export type Window = {
 	/** First and last row, both included. */
 	first: number;
 	last: number;
-	/** Indexes of the participants available in every slot of the window, in list order. */
-	people: number[];
+	/** Each participant with a level in every slot of the window, by index in list order. */
+	people: WindowPerson[];
 };
 
 export type WindowFilters = { minSlots: number; minPeople: number };
 
 const LIMIT = 5;
 
-/** The participants available in a cell: in each of its slots, of which there can be two. */
-function availableIn(keys: readonly string[], available: ReadonlySet<string>[]): Set<number> {
-	return new Set(
-		available.flatMap((slots, person) =>
-			keys.length > 0 && keys.every((key) => slots.has(key)) ? [person] : [],
-		),
+/** The level of each participant with a level in a cell, by participant index. */
+function levelsIn(keys: readonly string[], responses: readonly Levels[]): Map<number, Level> {
+	return new Map(
+		responses.flatMap((levels, person) => {
+			const level = cellLevel(levels, keys);
+
+			return level === null ? [] : [[person, level] as const];
+		}),
 	);
 }
 
@@ -46,34 +52,50 @@ function runs(cells: string[][], rows: number[], slotLength: number): [number, n
 	return found;
 }
 
-function isSubset(people: ReadonlySet<number>, of: ReadonlySet<number> | undefined): boolean {
-	return of !== undefined && [...people].every((person) => of.has(person));
+function isSubset(people: ReadonlyMap<number, Level>, of: ReadonlyMap<number, Level> | undefined) {
+	return of !== undefined && [...people.keys()].every((person) => of.has(person));
+}
+
+/** The people of a window in the rows `first` onwards, given those of `common` and the next row. */
+function narrowed(
+	common: ReadonlyMap<number, Level>,
+	here: ReadonlyMap<number, Level> | undefined,
+): Map<number, Level> {
+	return new Map(
+		[...common].flatMap(([person, level]) => {
+			const next = here?.get(person);
+
+			if (next === undefined) {
+				return [];
+			}
+
+			return [[person, level === "if_need_be" ? level : next] as const];
+		}),
+	);
 }
 
 /**
  * Every maximal window with at least one person: extending it by a slot at either end
- * would lose one of its people.
+ * would lose one of its people. Levels do not change maximality; heads do.
  */
 export function maximalWindows(
 	layout: GridLayout,
 	slotLength: number,
-	participants: readonly { available: readonly string[] }[],
+	participants: readonly { levels: Levels }[],
 ): Window[] {
-	const available = participants.map((participant) => new Set(participant.available));
+	const responses = participants.map((participant) => participant.levels);
 
 	return layout.blocks.flat().flatMap((column, columnIndex) => {
-		const people = column.cells.map((keys) => availableIn(keys, available));
+		const people = column.cells.map((keys) => levelsIn(keys, responses));
 
 		return runs(column.cells, layout.rows, slotLength).flatMap(([start, end]) => {
 			const found: Window[] = [];
 
 			for (let first = start; first <= end; first += 1) {
-				let common = people[first] ?? new Set<number>();
+				let common = people[first] ?? new Map<number, Level>();
 
 				for (let last = first; last <= end && common.size > 0; last += 1) {
-					const here = people[last];
-
-					common = new Set([...common].filter((person) => here?.has(person) === true));
+					common = narrowed(common, people[last]);
 
 					const growsLeft = first > start && isSubset(common, people[first - 1]);
 					const growsRight = last < end && isSubset(common, people[last + 1]);
@@ -83,7 +105,9 @@ export function maximalWindows(
 							column: columnIndex,
 							first,
 							last,
-							people: [...common].toSorted((a, b) => a - b),
+							people: [...common]
+								.map(([person, level]) => ({ person, level }))
+								.toSorted((a, b) => a.person - b.person),
 						});
 					}
 				}
@@ -92,6 +116,13 @@ export function maximalWindows(
 			return found;
 		});
 	});
+}
+
+/** How many of the window's people are at each level. */
+export function windowTally(window: Window): Tally {
+	const ifNeedBe = window.people.filter((entry) => entry.level === "if_need_be").length;
+
+	return { available: window.people.length - ifNeedBe, ifNeedBe };
 }
 
 /** Whether `a` covers the same rows of the same column as `b`. */
@@ -104,7 +135,10 @@ export function mostPeople(windows: readonly Window[]): number {
 	return Math.max(0, ...windows.map((window) => window.people.length));
 }
 
-/** The windows that pass the filters, at most five, the most people and the longest first. */
+/**
+ * The windows that pass the filters, at most five: the highest score first, then the most
+ * people, then the longest, then the earliest.
+ */
 export function bestWindows(windows: readonly Window[], filters: WindowFilters): Window[] {
 	return windows
 		.filter(
@@ -114,6 +148,7 @@ export function bestWindows(windows: readonly Window[], filters: WindowFilters):
 		)
 		.toSorted(
 			(a, b) =>
+				scoreOf(windowTally(b)) - scoreOf(windowTally(a)) ||
 				b.people.length - a.people.length ||
 				b.last - b.first - (a.last - a.first) ||
 				a.column - b.column ||

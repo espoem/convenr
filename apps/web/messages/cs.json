@@ -109,18 +109,32 @@
 			"me": "Já",
 			"group": "Skupina"
 		},
-		"legendLabel": "Barva ukazuje, kolik z {total} může",
+		"legendLabel": "Barva ukazuje, kolik z {total} může. Když bude nutné se počítá napůl.",
+		"legendHalf": "Když bude nutné se počítá napůl.",
 		"count": "{available} z {total}",
+		"countIfNeedBe": "{available} z {total}, z toho {ifNeedBe} když bude nutné",
 		"groupHint": "Najeďte myší na políčko, klepněte na ně, nebo se na ně přesuňte klávesnicí a uvidíte, kdo může.",
 		"groupGrid": "Dostupnost skupiny",
 		"myGrid": "Vaše dostupnost",
-		"meHint": "Klepněte na políčko nebo přes políčka táhněte prstem či myší. Klávesnicí: šipky, mezerník, Shift se šipkou vybere obdélník. Tmavé znamená, že můžete.",
+		"meHint": "Vyberte, co kreslíte, a klepněte na políčko nebo přes políčka táhněte prstem či myší. Klávesnicí: šipky, mezerník, Shift se šipkou vybere obdélník.",
+		"brush": "Kreslit",
+		"brushLevel": {
+			"available": "Můžu",
+			"if_need_be": "Když bude nutné",
+			"clear": "Vymazat"
+		},
+		"personLegend": "Značky v mřížce",
+		"personLevel": {
+			"available": "Může",
+			"if_need_be": "Když bude nutné"
+		},
 		"joinFirst": "Svou dostupnost vyplníte, až se nahoře zapíšete.",
 		"selectAll": "Vybrat vše",
 		"selectNone": "Zrušit výběr",
 		"invert": "Obrátit výběr",
 		"youCan": "můžete",
 		"youCannot": "nemůžete",
+		"youIfNeedBe": "když bude nutné",
 		"save": "Uložit",
 		"saving": "Ukládám…",
 		"discard": "Zahodit změny",
@@ -131,7 +145,9 @@
 		"discardAndLeave": "Zahodit a odejít",
 		"keepEditing": "Pokračovat v úpravách",
 		"canCome": "Můžou",
+		"ifNeedBeCome": "Když bude nutné",
 		"cannotCome": "Nemůžou",
+		"nameIfNeedBe": "{name} (když bude nutné)",
 		"nobody": "nikdo",
 		"closeDetail": "Zavřít detail",
 		"participants": "Účastníci ({count})",
@@ -345,7 +361,9 @@
 			"schedule": "Kdy se událost může konat.",
 			"retention": "Kdy se událost smaže.",
 			"participants": "Účastníci v pořadí, v jakém se připojili.",
-			"availability": "Sloty, ve kterých účastník může, v časovém pořadí.",
+			"availability": "Sloty, ve kterých účastník může, včetně těch, kdy může jen když bude nutné, v časovém pořadí. Klient, který úrovně nezná, čte takový slot jako dostupný.",
+			"ifNeedBe": "Sloty z `availability`, ve kterých účastník může jen když bude nutné, v časovém pořadí.",
+			"score": "1 za každého, kdo může ve všech slotech, a ½ za každého, kdo v některém z nich může jen když bude nutné.",
 			"mode": "Druh rozvrhu.",
 			"dates": "Vybrané dny, `YYYY-MM-DD`.",
 			"first": "První den, `YYYY-MM-DD`.",
@@ -366,9 +384,9 @@
 			"participantToken": "Token účastníka.",
 			"minMinutes": "Nejkratší vypsané okno v minutách.",
 			"minPeople": "Nejmenší počet lidí ve vypsaném okně.",
-			"windows": "Nejvýš pět oken: nejdřív nejvíc lidí, pak nejdelší, pak nejdřívější.",
+			"windows": "Nejvýš pět oken: nejdřív nejvyšší skóre, pak nejvíc lidí, pak nejdelší, pak nejdřívější.",
 			"minutes": "Délka okna v minutách.",
-			"participantIds": "Veřejná id účastníků, kteří mohou v každém slotu okna.",
+			"participantIds": "Veřejná id účastníků, kteří mohou v každém slotu okna, včetně těch, kdy jen když bude nutné.",
 			"type": "`https://convenr.party/problems/` a za ním kód. Porovnávejte ho jako řetězec.",
 			"status": "Stav HTTP.",
 			"title": "Krátký anglický text, stejný pro každý problém s tímto kódem.",
@@ -389,7 +407,8 @@
 				"name": "Zobrazované jméno účastníka."
 			},
 			"Window": {
-				"slots": "Sloty okna v časovém pořadí."
+				"slots": "Sloty okna v časovém pořadí.",
+				"ifNeedBe": "Kolik z `participantIds` může aspoň v jednom slotu jen když bude nutné."
 			},
 			"PointerError": {
 				"code": "Kód pole, například `required`, nebo kód pravidla, například `date_in_past`."
@@ -410,7 +429,8 @@
 				"newPassword": "Heslo pro jméno, které zatím nikdo nepoužívá. Už použité jméno se s ním odmítne."
 			},
 			"AvailabilityRequest": {
-				"availability": "Všechny sloty, ve kterých účastník může."
+				"availability": "Všechny sloty, ve kterých účastník může, včetně těch, kdy jen když bude nutné.",
+				"ifNeedBe": "Sloty z `availability`, ve kterých účastník může jen když bude nutné; slot, který v `availability` chybí, se odmítne s `invalid_request` a kódem pole `if_need_be_not_available`. Bez tohoto pole si každý slot nechá uloženou úroveň a nový slot je dostupný. Prázdné pole udělá dostupnými všechny sloty."
 			},
 			"SetPasswordRequest": {
 				"currentPassword": "Heslo, které je nastavené teď. Potřeba právě tehdy, když heslo nastavené je."

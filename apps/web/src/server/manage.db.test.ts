@@ -42,7 +42,7 @@ async function respond(id: string, name: string, keys: string[]) {
 		throw new Error(`${name} could not join.`);
 	}
 
-	await saveResponse(id, joined.token, keys, creationTime);
+	await saveResponse(id, joined.token, { available: keys }, creationTime);
 
 	return joined.token;
 }
@@ -206,10 +206,10 @@ describe("updateEvent", () => {
 		const view = await readEvent(id);
 
 		expect(saved).toEqual({ status: "saved", event: view });
-		expect(view?.participants).toMatchObject([
-			{ name: "Jana", available: [FIVE] },
-			{ name: "Petr", available: [] },
-			{ name: "Eva", available: [FIVE] },
+		expect(view?.participants.map(({ name, levels }) => ({ name, levels }))).toEqual([
+			{ name: "Jana", levels: { [FIVE]: "available" } },
+			{ name: "Petr", levels: {} },
+			{ name: "Eva", levels: { [FIVE]: "available" } },
 		]);
 		expect(view?.slots).not.toContain(SIX);
 	});
@@ -225,8 +225,8 @@ describe("updateEvent", () => {
 
 		// Jana moves to a slot that stays and Petr takes her place in the removed one: one person
 		// still loses availability, but not the one the organizer was shown.
-		await saveResponse(id, jana, [FIVE], later);
-		await saveResponse(id, petr, [SIX], later);
+		await saveResponse(id, jana, { available: [FIVE] }, later);
+		await saveResponse(id, petr, { available: [SIX] }, later);
 
 		if (asked.status !== "confirm") {
 			throw new Error("The change was not asked to confirm.");
@@ -277,7 +277,7 @@ describe("updateEvent", () => {
 
 		await updateEvent(id, secret, narrowed, anyVersion, later);
 
-		expect(await saveResponse(id, token, [FIVE, SIX], later)).toMatchObject({
+		expect(await saveResponse(id, token, { available: [FIVE, SIX] }, later)).toMatchObject({
 			ok: false,
 			problem: "unknown_slot",
 		});

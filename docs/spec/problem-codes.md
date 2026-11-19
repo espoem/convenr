@@ -1,6 +1,6 @@
 # Problem codes
 
-The service names every refusal with a stable snake_case code. The code says what went wrong and does not change when the specification is renumbered. The code is also the key of the visitor message in `apps/web/messages/*.json`. This table is the only place that links a code to the rules of [phase 1](phase-1.md) and [phase 2](phase-2.md).
+The service names every refusal with a stable snake_case code. The code says what went wrong and does not change when the specification is renumbered. The code is also the key of the visitor message in `apps/web/messages/*.json`. This table is the only place that links a code to the rules of [phase 1](phase-1.md), [phase 2](phase-2.md) and [phase 4](phase-4.md).
 
 ## Event schedule
 
@@ -37,6 +37,7 @@ Returned as `problem` in a failed result.
 | `not_joined` | The browser's participant token is unknown, so the participant left or was deleted. | P8, P9 |
 | `not_found` | The event no longer exists. | E9, X3 |
 | `unknown_slot` | A saved response holds a slot the event does not have. | R4 |
+| `if_need_be_not_available` | A saved response marks a slot as if need be that its availability leaves out. The API sends it as the code of a field error of `invalid_request`, at the slot's pointer in `ifNeedBe`. | L7, A19 |
 
 The display name parser also reports `empty`, `too_long` and `control_character` for its own result; the join maps all three to `invalid_name`.
 

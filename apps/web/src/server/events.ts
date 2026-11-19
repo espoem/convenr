@@ -24,12 +24,12 @@ import type { EventVersion } from "@/lib/event-version";
 
 import { FIELD_CODES, fieldErrors } from "./api/field-codes";
 import {
-	availableKeys,
 	type EventRow,
 	firstDayOfWeekOf,
 	liveEvent,
 	type ParticipantView,
 	type Queries,
+	responseLevels,
 	scheduleOf,
 } from "./event-rows";
 import { hashSecret, newSecret } from "./secrets";
@@ -257,7 +257,7 @@ export async function eventViewOf(queries: Queries, row: EventRow): Promise<Even
 		.where(eq(participants.eventId, row.id))
 		.orderBy(asc(participants.createdAt), asc(participants.id));
 
-	const keys = await availableKeys(
+	const levels = await responseLevels(
 		queries,
 		row,
 		people.map((person) => person.id),
@@ -268,7 +268,7 @@ export async function eventViewOf(queries: Queries, row: EventRow): Promise<Even
 		people.map((person) => ({
 			id: person.publicId,
 			name: person.name,
-			available: keys.get(person.id) ?? [],
+			levels: levels.get(person.id) ?? {},
 		})),
 	);
 }

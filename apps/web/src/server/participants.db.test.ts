@@ -51,7 +51,7 @@ describe("joining", () => {
 		expect(joined.ok && joined.token).toMatch(/^cvp_[\w-]{43}$/u);
 
 		const [row] = await db().select().from(participants);
-		const shown = { id: row?.publicId, name: "Jana Nováková", available: [] };
+		const shown = { id: row?.publicId, name: "Jana Nováková", levels: {} };
 
 		expect(isPublicId(row?.publicId ?? "")).toBe(true);
 		expect((await readEvent(eventId))?.participants).toEqual([shown]);
@@ -62,13 +62,13 @@ describe("joining", () => {
 	it("answers a join under a used name with that participant's saved availability", async () => {
 		const token = await tokenOf("Jana");
 
-		await saveResponse(eventId, token, ["2027-04-05T15:00:00Z"], creationTime);
+		await saveResponse(eventId, token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
 
 		const again = await join(eventId, "jana", undefined, creationTime);
 
 		expect(again).toMatchObject({
 			ok: true,
-			participant: { name: "Jana", available: ["2027-04-05T15:00:00Z"] },
+			participant: { name: "Jana", levels: { "2027-04-05T15:00:00Z": "available" } },
 		});
 		expect(again.ok && again.participant).toEqual(
 			(await readParticipant(eventId, token, creationTime))?.participant,
@@ -78,12 +78,16 @@ describe("joining", () => {
 	it("reads the token's participant by public id with their response", async () => {
 		const token = await tokenOf("Jana");
 
-		await saveResponse(eventId, token, ["2027-04-05T15:00:00Z"], creationTime);
+		await saveResponse(eventId, token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
 
 		const [row] = await db().select().from(participants);
 
 		expect(await readParticipant(eventId, token)).toMatchObject({
-			participant: { id: row?.publicId, name: "Jana", available: ["2027-04-05T15:00:00Z"] },
+			participant: {
+				id: row?.publicId,
+				name: "Jana",
+				levels: { "2027-04-05T15:00:00Z": "available" },
+			},
 			schedule: { referenceZone: "Europe/Prague", slotLength: 60 },
 		});
 		expect(await readParticipant(eventId, `${token}x`)).toBeUndefined();
@@ -341,7 +345,7 @@ describe("leaving", () => {
 		const token = await tokenOf("Jana", "tajne");
 		const other = await join(eventId, "Jana", current("tajne"), creationTime);
 
-		await saveResponse(eventId, token, ["2027-04-05T15:00:00Z"], creationTime);
+		await saveResponse(eventId, token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
 
 		expect(await leave(eventId, token, creationTime)).toEqual({ ok: true });
 		expect(await db().select().from(participantTokens)).toEqual([]);

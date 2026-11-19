@@ -74,7 +74,9 @@ describe("the event lock", () => {
 		const notJoined = { ok: false, problem: "not_joined" };
 
 		expect(
-			await answerWhileLocked(() => saveResponse(eventId, "cvp_wrong", [], creationTime)),
+			await answerWhileLocked(() =>
+				saveResponse(eventId, "cvp_wrong", { available: [] }, creationTime),
+			),
 		).toEqual(notJoined);
 		expect(
 			await answerWhileLocked(() =>

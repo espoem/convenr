@@ -72,7 +72,10 @@ export const retentionSchema = z.discriminatedUnion("kind", [
 export const participantSchema = z.object({
 	id: z.string(),
 	name: z.string(),
+	/** Every slot with a level, so a client that knows no levels reads if need be as available. */
 	availability: z.array(slotSchema),
+	/** The slots of `availability` at if need be. */
+	ifNeedBe: z.array(slotSchema),
 });
 
 export const eventSchema = z.object({
@@ -128,6 +131,8 @@ export const joinedSchema = z.object({
 /** Replaces the availability as a whole. */
 export const availabilityRequestSchema = z.strictObject({
 	availability: z.array(slotInputSchema),
+	/** Left out, every slot that stays keeps its level and a new slot is available. */
+	ifNeedBe: z.array(slotInputSchema).optional(),
 });
 
 export const setPasswordRequestSchema = z.strictObject({
@@ -153,13 +158,17 @@ export const windowsSchema = z.object({
 	/** The filters applied, with the defaults filled in. */
 	minMinutes: z.int().min(1).max(MINUTES_PER_DAY),
 	minPeople: z.int().min(1),
-	/** At most five, the most people first, then the longest, then the earliest. */
+	/** At most five: the highest score first, then the most people, the longest, the earliest. */
 	windows: z.array(
 		z.object({
 			slots: z.array(slotSchema).min(1),
 			minutes: z.int().min(1),
-			/** Public ids of the participants available in every slot. */
+			/** Public ids of the participants with a level in every slot. */
 			participantIds: z.array(z.string()),
+			/** How many of them are at if need be in at least one slot. */
+			ifNeedBe: z.int().min(0),
+			/** 1 for each available person and ½ for each at if need be. */
+			score: z.number().multipleOf(0.5).min(0),
 		}),
 	),
 });
@@ -192,6 +201,8 @@ export type CreateEventRequest = z.output<typeof createEventRequestSchema>;
 export type UpdateEventRequest = z.output<typeof updateEventRequestSchema>;
 
 export type JoinRequest = z.output<typeof joinRequestSchema>;
+
+export type AvailabilityRequest = z.output<typeof availabilityRequestSchema>;
 
 export type ScheduleInput = z.output<typeof scheduleInputSchema>;
 

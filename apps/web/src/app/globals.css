@@ -134,29 +134,37 @@
 		background: var(--cell-fill);
 	}
 
-	.cv-cell[data-heat="0"] {
+	.cv-cell[data-fill="0"] {
 		--cell-fill: var(--cv-heat-0);
 		--cell-line: var(--cv-heat-0-line);
 	}
 
-	.cv-cell[data-heat="1"] {
+	.cv-cell[data-fill="1"],
+	.cv-cell[data-fill="if_need_be"] {
 		--cell-fill: var(--cv-heat-1);
 		--cell-line: var(--cv-heat-1-line);
 	}
 
-	.cv-cell[data-heat="2"] {
+	.cv-cell[data-fill="2"] {
 		--cell-fill: var(--cv-heat-2);
 		--cell-line: var(--cv-heat-2-line);
 	}
 
-	.cv-cell[data-heat="3"] {
+	.cv-cell[data-fill="3"] {
 		--cell-fill: var(--cv-heat-3);
 		--cell-line: var(--cv-heat-3-line);
 	}
 
-	.cv-cell[data-heat="4"] {
+	.cv-cell[data-fill="4"] {
 		--cell-fill: var(--cv-heat-4);
 		--cell-line: var(--cv-heat-4-line);
+	}
+
+	/* If need be is hatched, so the level does not depend on color alone. The stripes are
+	   measured across, along the gradient line. */
+	.cv-cell[data-fill="if_need_be"],
+	.cv-hatch {
+		background: repeating-linear-gradient(135deg, var(--cv-heat-4) 0 3px, var(--cv-heat-1) 3px 8px);
 	}
 
 	.cv-cell[data-half] {

@@ -5,10 +5,13 @@ import { useTranslations } from "next-intl";
 
 import { useMediaQuery } from "@/lib/use-media-query";
 
+import { useCount } from "./count";
+
 type SlotDetailProps = {
 	day: string;
 	time: string;
 	available: string[];
+	ifNeedBe: string[];
 	unavailable: string[];
 	/** Position beside the cell on wide screens; on narrow screens it is a bottom panel. */
 	x: number;
@@ -16,11 +19,27 @@ type SlotDetailProps = {
 	onClose: () => void;
 };
 
-/** The slot's day and time, the count, and who can and cannot come. */
-export function SlotDetail({ day, time, available, unavailable, x, y, onClose }: SlotDetailProps) {
+/** The slot's day and time, the count, and who can come, who can if need be and who cannot. */
+export function SlotDetail({
+	day,
+	time,
+	available,
+	ifNeedBe,
+	unavailable,
+	x,
+	y,
+	onClose,
+}: SlotDetailProps) {
 	const t = useTranslations("Event");
+	const count = useCount();
 	const wide = useMediaQuery("(min-width: 40rem)");
-	const total = available.length + unavailable.length;
+	const total = available.length + ifNeedBe.length + unavailable.length;
+
+	const lists = [
+		["canCome", available],
+		["ifNeedBeCome", ifNeedBe],
+		["cannotCome", unavailable],
+	] as const;
 
 	return (
 		<aside
@@ -44,16 +63,16 @@ export function SlotDetail({ day, time, available, unavailable, x, y, onClose }:
 					<XIcon aria-hidden className="size-5" />
 				</button>
 			</div>
-			<p className="tabular-nums">{t("count", { available: available.length, total })}</p>
+			<p className="tabular-nums">
+				{count({ available: available.length, ifNeedBe: ifNeedBe.length }, total)}
+			</p>
 			<dl className="flex flex-col gap-1.5 text-sm">
-				<div>
-					<dt className="text-ink-muted">{t("canCome")}</dt>
-					<dd>{available.length > 0 ? available.join(", ") : t("nobody")}</dd>
-				</div>
-				<div>
-					<dt className="text-ink-muted">{t("cannotCome")}</dt>
-					<dd>{unavailable.length > 0 ? unavailable.join(", ") : t("nobody")}</dd>
-				</div>
+				{lists.map(([label, names]) => (
+					<div key={label}>
+						<dt className="text-ink-muted">{t(label)}</dt>
+						<dd>{names.length > 0 ? names.join(", ") : t("nobody")}</dd>
+					</div>
+				))}
 			</dl>
 		</aside>
 	);

@@ -55,9 +55,13 @@ export type Participant = {
      */
     name: string;
     /**
-     * The slots in which the participant is available, in time order.
+     * The slots in which the participant is available, if need be included, in time order. A client that knows no levels reads an if-need-be slot as available.
      */
     availability: Array<Slot>;
+    /**
+     * The slots of `availability` in which the participant is available only if need be, in time order.
+     */
+    ifNeedBe: Array<Slot>;
 };
 
 /**
@@ -268,7 +272,7 @@ export type Windows = {
      */
     minPeople: number;
     /**
-     * At most five windows: the most people first, then the longest, then the earliest.
+     * At most five windows: the highest score first, then the most people, then the longest, then the earliest.
      */
     windows: Array<Window>;
 };
@@ -286,9 +290,17 @@ export type Window = {
      */
     minutes: number;
     /**
-     * Public ids of the participants available in every slot of the window.
+     * Public ids of the participants available in every slot of the window, if need be included.
      */
     participantIds: Array<string>;
+    /**
+     * How many of `participantIds` are available only if need be in at least one slot.
+     */
+    ifNeedBe: number;
+    /**
+     * 1 for each person available in every slot and ½ for each at if need be in any of them.
+     */
+    score: number;
 };
 
 /**
@@ -530,9 +542,13 @@ export type JoinRequest = {
  */
 export type AvailabilityRequest = {
     /**
-     * Every slot in which the participant is available.
+     * Every slot in which the participant is available, if need be included.
      */
     availability: Array<SlotInput>;
+    /**
+     * The slots of `availability` that are only if need be; a slot missing from `availability` is refused with `invalid_request` and the field code `if_need_be_not_available`. Left out, each slot keeps its stored level and a new slot is available. Empty, every slot is available.
+     */
+    ifNeedBe?: Array<SlotInput>;
 };
 
 /**

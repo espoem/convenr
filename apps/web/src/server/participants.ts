@@ -407,7 +407,7 @@ async function joinNew(
 		return {
 			ok: true,
 			token: await issueToken(tx, row.id),
-			participant: { id: row.publicId, name: name.name, available: [] },
+			participant: { id: row.publicId, name: name.name, levels: {} },
 			schedule: scheduleOf(event),
 		} as const;
 	});

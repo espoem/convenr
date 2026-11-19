@@ -17,6 +17,16 @@ function unknownSlots(indexes: number[]): Response {
 	});
 }
 
+/** The refusal of a save with a slot at if need be that `availability` leaves out. */
+function notAvailable(indexes: number[]): Response {
+	return problem("invalid_request", {
+		errors: indexes.map((index) => ({
+			pointer: `/ifNeedBe/${index}`,
+			code: "if_need_be_not_available",
+		})),
+	});
+}
+
 export const PUT = securedEndpoint<{ id: string }>(
 	"participant",
 	async (request, { id }, token) => {
@@ -26,11 +36,22 @@ export const PUT = securedEndpoint<{ id: string }>(
 			return body.response;
 		}
 
-		const keys = body.value.availability.map((slot) => slotKeyOf(slot));
-		const saved = await saveResponse(id, token, keys);
+		const { availability, ifNeedBe } = body.value;
+
+		const saved = await saveResponse(id, token, {
+			available: availability.map((slot) => slotKeyOf(slot)),
+			ifNeedBe: ifNeedBe?.map((slot) => slotKeyOf(slot)),
+		});
 
 		if (!saved.ok) {
-			return saved.problem === "not_joined" ? unauthorized() : unknownSlots(saved.unknown);
+			switch (saved.problem) {
+				case "not_joined":
+					return unauthorized();
+				case "unknown_slot":
+					return unknownSlots(saved.unknown);
+				case "if_need_be_not_available":
+					return notAvailable(saved.notAvailable);
+			}
 		}
 
 		return json(participantSchema, participantBody(saved.participant, saved.schedule));

@@ -52,7 +52,7 @@ describe("eventVersion", () => {
 
 		expect(await eventVersion(id)).toBe(3n);
 
-		await saveResponse(id, jana.token, ["2027-04-05T15:00:00Z"], minute(3));
+		await saveResponse(id, jana.token, { available: ["2027-04-05T15:00:00Z"] }, minute(3));
 		expect(await eventVersion(id)).toBe(4n);
 
 		await changePassword(id, jana.token, { kind: "none" }, "heslo-1234", minute(4));
@@ -95,17 +95,24 @@ describe("eventVersion", () => {
 
 		const slots = ["2027-04-05T15:00:00Z", "2027-04-05T16:00:00Z"];
 
-		expect(await saveResponse(id, jana.token, slots, minute(2))).toMatchObject({ ok: true });
+		expect(await saveResponse(id, jana.token, { available: slots }, minute(2))).toMatchObject({
+			ok: true,
+		});
 
 		const saved = await stored(id);
 
 		expect(saved.version).toBe(3n);
 		expect(
-			await saveResponse(id, jana.token, [...slots.toReversed(), ...slots], minute(3)),
+			await saveResponse(
+				id,
+				jana.token,
+				{ available: [...slots.toReversed(), ...slots] },
+				minute(3),
+			),
 		).toMatchObject({ ok: true });
 		expect(await stored(id)).toEqual(saved);
 
-		await saveResponse(id, jana.token, slots.slice(1), minute(4));
+		await saveResponse(id, jana.token, { available: slots.slice(1) }, minute(4));
 		expect(await stored(id)).toEqual({ version: 4n, changedAt: minute(4) });
 	});
 
@@ -125,7 +132,7 @@ describe("eventVersion", () => {
 
 		const first = await stored(id);
 
-		await saveResponse(id, jana.token, ["2027-04-05T15:00:00Z"], creationTime);
+		await saveResponse(id, jana.token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
 
 		const second = await stored(id);
 
@@ -173,8 +180,8 @@ describe("changed_at", () => {
 		});
 		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-06-09");
 
-		await saveResponse(id, jana.token, [], creationTime.add({ hours: 24 * 20 }));
-		await saveResponse(id, jana.token, [], creationTime.add({ hours: 24 * 30 }));
+		await saveResponse(id, jana.token, { available: [] }, creationTime.add({ hours: 24 * 20 }));
+		await saveResponse(id, jana.token, { available: [] }, creationTime.add({ hours: 24 * 30 }));
 		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-06-09");
 	});
 });

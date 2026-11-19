@@ -5,21 +5,33 @@ import { Fragment, useRef, useState, type KeyboardEvent, type PointerEvent } fro
 import type { GridView } from "@/domain/grid-labels";
 import { closesHour } from "@/domain/grid-layout";
 import type { HeatStep } from "@/domain/heat";
+import {
+	type Brush,
+	cellLevel,
+	type Level,
+	type Levels,
+	pressedLevel,
+	withLevel,
+} from "@/domain/levels";
 import { cn } from "@/lib/utils";
 
 export type CellRef = { column: number; row: number };
 
 type Edit = {
-	selection: ReadonlySet<string>;
-	onChange: (next: Set<string>) => void;
+	levels: Levels;
+	brush: Brush;
+	onChange: (next: Levels) => void;
 };
+
+/** How a cell is filled: a heat step, or the hatching of a slot at if need be. */
+export type CellFill = HeatStep | "if_need_be";
 
 type AvailabilityGridProps = {
 	view: GridView;
 	slotLength: number;
 	label: string;
-	/** The heat step that fills a cell holding these slot keys. */
-	fill: (keys: readonly string[]) => HeatStep;
+	/** How a cell holding these slot keys is filled. */
+	fill: (keys: readonly string[]) => CellFill;
 	/** What a screen reader hears after the cell's day and time. */
 	describe: (keys: readonly string[]) => string;
 	/** Present in edit mode. */
@@ -60,20 +72,6 @@ function within(cell: CellRef, from: CellRef, to: CellRef): boolean {
 	);
 }
 
-function withKeys(base: ReadonlySet<string>, keys: readonly string[], on: boolean): Set<string> {
-	const next = new Set(base);
-
-	for (const key of keys) {
-		if (on) {
-			next.add(key);
-		} else {
-			next.delete(key);
-		}
-	}
-
-	return next;
-}
-
 /** The cell under a pointer, which may have moved away from the cell where it went down. */
 function cellAt(x: number, y: number): CellRef | undefined {
 	const element = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-column]");
@@ -99,7 +97,7 @@ export function AvailabilityGrid({
 }: AvailabilityGridProps) {
 	const table = useRef<HTMLTableElement>(null);
 	const cells = useRef(new Map<string, HTMLButtonElement>());
-	const gesture = useRef<{ start: CellRef; on: boolean; base: ReadonlySet<string> } | null>(null);
+	const gesture = useRef<{ start: CellRef; level: Level | null; base: Levels } | null>(null);
 	const [focus, setFocus] = useState<CellRef>({ column: 0, row: 0 });
 	const [anchor, setAnchor] = useState<CellRef | null>(null);
 
@@ -121,8 +119,8 @@ export function AvailabilityGrid({
 
 	const keysOf = (cell: CellRef) => columns[cell.column]?.cells[cell.row] ?? [];
 
-	const isOn = (keys: readonly string[]) =>
-		keys.length > 0 && keys.every((key) => edit?.selection.has(key) === true);
+	const levelOf = (keys: readonly string[]) =>
+		edit === undefined ? null : cellLevel(edit.levels, keys);
 
 	function keysWithin(from: CellRef, to: CellRef): string[] {
 		return columns.flatMap((column, columnIndex) =>
@@ -142,11 +140,11 @@ export function AvailabilityGrid({
 		event.preventDefault();
 		table.current?.setPointerCapture(event.pointerId);
 
-		const on = !isOn(keys);
+		const level = pressedLevel(levelOf(keys), edit.brush);
 
-		gesture.current = { start: cell, on, base: edit.selection };
+		gesture.current = { start: cell, level, base: edit.levels };
 		setFocus(cell);
-		edit.onChange(withKeys(edit.selection, keys, on));
+		edit.onChange(withLevel(edit.levels, keys, level));
 	}
 
 	function continuePaint(event: PointerEvent<HTMLTableElement>) {
@@ -157,7 +155,7 @@ export function AvailabilityGrid({
 			return;
 		}
 
-		edit.onChange(withKeys(current.base, keysWithin(current.start, cell), current.on));
+		edit.onChange(withLevel(current.base, keysWithin(current.start, cell), current.level));
 	}
 
 	function inspect(cell: CellRef, element: HTMLElement) {
@@ -194,7 +192,13 @@ export function AvailabilityGrid({
 
 			const start = anchor ?? focus;
 
-			edit.onChange(withKeys(edit.selection, keysWithin(start, focus), !isOn(keysOf(start))));
+			edit.onChange(
+				withLevel(
+					edit.levels,
+					keysWithin(start, focus),
+					pressedLevel(levelOf(keysOf(start)), edit.brush),
+				),
+			);
 			setAnchor(null);
 		}
 	}
@@ -307,7 +311,7 @@ export function AvailabilityGrid({
 									<Fragment key={cellId(cell)}>
 										{index > 0 && blockStarts.has(index) ? <td aria-hidden /> : null}
 										<td
-											data-heat={empty ? undefined : fill(keys)}
+											data-fill={empty ? undefined : fill(keys)}
 											data-half={solid ? undefined : ""}
 											data-block-end={
 												index === columns.length - 1 || blockStarts.has(index + 1) ? "" : undefined
@@ -334,7 +338,7 @@ export function AvailabilityGrid({
 													data-column={index}
 													data-row={row}
 													tabIndex={focus.column === index && focus.row === row ? 0 : -1}
-													aria-pressed={edit === undefined ? undefined : isOn(keys)}
+													aria-pressed={edit === undefined ? undefined : levelOf(keys) !== null}
 													aria-label={`${view.columns[index]?.long ?? ""}, ${time?.start ?? ""}–${time?.end ?? ""}, ${describe(keys)}`}
 													onKeyDown={keyDown}
 													onFocus={(event) => {

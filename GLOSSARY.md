@@ -52,8 +52,18 @@ The name a participant chose, unique within its event after normalization.
 _Avoid_: Username, nickname
 
 **Response**:
-The set of slots one participant marked as available.
+The level of each slot one participant marked.
 _Avoid_: Vote, answer, availability
+
+**Level**:
+How a participant answers a slot: available or if need be. A slot with no level is not available.
+_Avoid_: Preference, weight, maybe
+
+**Score**:
+What a slot or a window is worth to the group: 1 for each available participant and ½ for each at if need be. The heat map and the order of the best windows follow it.
+
+**Heads**:
+The participants with a level in a slot or a window, at either level. Maximality of a window and its people filter count heads.
 
 ## Access
 

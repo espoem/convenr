@@ -15,7 +15,13 @@ import { POST as createEvent } from "@/app/api/v1/events/route";
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
-import { createdEventSchema, eventSchema, type UpdateEventRequest, windowsSchema } from "./schemas";
+import {
+	type AvailabilityRequest,
+	createdEventSchema,
+	eventSchema,
+	type UpdateEventRequest,
+	windowsSchema,
+} from "./schemas";
 import {
 	bodyOf,
 	call,
@@ -641,14 +647,50 @@ describe("best windows", () => {
 			minMinutes: 60,
 			minPeople: 2,
 			windows: [
-				{ slots: [SIX], minutes: 60, participantIds: [jana.participantId, petr.participantId] },
+				{
+					slots: [SIX],
+					minutes: 60,
+					participantIds: [jana.participantId, petr.participantId],
+					ifNeedBe: 0,
+					score: 2,
+				},
 			],
 		});
 
 		const longer = await call(readWindows, { id }, { path: "?minPeople=1&minMinutes=120" });
 
 		expect((await bodyOf(longer, windowsSchema)).windows).toEqual([
-			{ slots: [FIVE, SIX], minutes: 120, participantIds: [jana.participantId] },
+			{
+				slots: [FIVE, SIX],
+				minutes: 120,
+				participantIds: [jana.participantId],
+				ifNeedBe: 0,
+				score: 1,
+			},
+		]);
+	});
+
+	it("counts people at if need be in a window, which grows over their slots", async () => {
+		const { id } = await createdEvent();
+		const jana = await joined(id, "Jana");
+		const petr = await joined(id, "Petr");
+
+		const save = (token: string, body: AvailabilityRequest) =>
+			call(saveAvailability, { id }, { method: "PUT", secret: token, body });
+
+		await save(jana.token, { availability: [FIVE, SIX], ifNeedBe: [FIVE] });
+		await save(petr.token, { availability: [FIVE, SIX] });
+
+		const best = await bodyOf(await call(readWindows, { id }), windowsSchema);
+
+		expect(best.windows).toEqual([
+			{
+				slots: [FIVE, SIX],
+				minutes: 120,
+				participantIds: [jana.participantId, petr.participantId],
+				ifNeedBe: 1,
+				score: 1.5,
+			},
 		]);
 	});
 

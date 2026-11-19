@@ -21,12 +21,17 @@ class Window:
     Attributes:
         slots (list[DatedSlot | WeekdaySlot]): The slots of the window, in time order.
         minutes (int): The length of the window in minutes.
-        participant_ids (list[str]): Public ids of the participants available in every slot of the window.
+        participant_ids (list[str]): Public ids of the participants available in every slot of the window, if need be
+            included.
+        if_need_be (int): How many of `participantIds` are available only if need be in at least one slot.
+        score (float): 1 for each person available in every slot and ½ for each at if need be in any of them.
     """
 
     slots: list[DatedSlot | WeekdaySlot]
     minutes: int
     participant_ids: list[str]
+    if_need_be: int
+    score: float
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -46,6 +51,10 @@ class Window:
 
         participant_ids = self.participant_ids
 
+        if_need_be = self.if_need_be
+
+        score = self.score
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -53,6 +62,8 @@ class Window:
                 "slots": slots,
                 "minutes": minutes,
                 "participantIds": participant_ids,
+                "ifNeedBe": if_need_be,
+                "score": score,
             }
         )
 
@@ -91,10 +102,16 @@ class Window:
 
         participant_ids = cast(list[str], d.pop("participantIds"))
 
+        if_need_be = d.pop("ifNeedBe")
+
+        score = d.pop("score")
+
         window = cls(
             slots=slots,
             minutes=minutes,
             participant_ids=participant_ids,
+            if_need_be=if_need_be,
+            score=score,
         )
 
         window.additional_properties = d

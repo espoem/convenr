@@ -9,6 +9,7 @@ import {
 	participantTokens,
 	weekdayAvailability,
 } from "@/db/schema";
+import type { Level, Levels } from "@/domain/levels";
 import { expiresAt } from "@/domain/retention";
 import {
 	type EventDays,
@@ -97,34 +98,36 @@ export type ParticipantView = {
 	/** The public id; the database key stays inside the server. */
 	id: string;
 	name: string;
-	/** Keys of the slots they marked. */
-	available: string[];
+	/** The level of each slot they marked, by slot key. */
+	levels: Levels;
 };
 
 /** A participant as the event shows them, with the schedule their slot keys belong to. */
 export type ParticipantRead = { participant: ParticipantView; schedule: Schedule };
 
-/** The participant `row` as the event shows them, with the slot keys they marked. */
+/** The participant `row` as the event shows them, with the levels they marked. */
 export async function participantRead(
 	queries: Queries,
 	event: EventRow,
 	row: { id: string; publicId: string; displayName: string },
 ): Promise<ParticipantRead> {
-	const keys = await availableKeys(queries, event, [row.id]);
+	const levels = await responseLevels(queries, event, [row.id]);
 
 	return {
-		participant: { id: row.publicId, name: row.displayName, available: keys.get(row.id) ?? [] },
+		participant: { id: row.publicId, name: row.displayName, levels: levels.get(row.id) ?? {} },
 		schedule: scheduleOf(event),
 	};
 }
 
-/** The slot keys each of `participantIds` marked, by participant, from the table of the event's day mode. */
-export async function availableKeys(
+/** The response of each of `participantIds`, by participant, from the table of the event's day mode. */
+export async function responseLevels(
 	queries: Queries,
 	event: EventRow,
 	participantIds: string[],
-): Promise<Map<string, string[]>> {
-	const byParticipant = new Map<string, string[]>(participantIds.map((id) => [id, []]));
+): Promise<Map<string, Record<string, Level>>> {
+	const byParticipant = new Map<string, Record<string, Level>>(
+		participantIds.map((id) => [id, {}]),
+	);
 
 	if (participantIds.length === 0) {
 		return byParticipant;
@@ -137,16 +140,28 @@ export async function availableKeys(
 						.select()
 						.from(weekdayAvailability)
 						.where(inArray(weekdayAvailability.participantId, participantIds))
-				).map((row) => ({ participantId: row.participantId, key: weekdaySlotKey(row) }))
+				).map((row) => ({
+					participantId: row.participantId,
+					key: weekdaySlotKey(row),
+					level: row.level,
+				}))
 			: (
 					await queries
 						.select()
 						.from(datedAvailability)
 						.where(inArray(datedAvailability.participantId, participantIds))
-				).map((row) => ({ participantId: row.participantId, key: datedSlotKey(row) }));
+				).map((row) => ({
+					participantId: row.participantId,
+					key: datedSlotKey(row),
+					level: row.level,
+				}));
 
-	for (const { participantId, key } of rows) {
-		byParticipant.get(participantId)?.push(key);
+	for (const { participantId, key, level } of rows) {
+		const levels = byParticipant.get(participantId);
+
+		if (levels !== undefined) {
+			levels[key] = level;
+		}
 	}
 
 	return byParticipant;

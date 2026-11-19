@@ -20,7 +20,8 @@ class Windows:
     Attributes:
         min_minutes (int): The shortest window listed, in minutes.
         min_people (int): The fewest people a listed window has.
-        windows (list[Window]): At most five windows: the most people first, then the longest, then the earliest.
+        windows (list[Window]): At most five windows: the highest score first, then the most people, then the longest,
+            then the earliest.
     """
 
     min_minutes: int
