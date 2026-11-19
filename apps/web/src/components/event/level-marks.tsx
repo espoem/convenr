@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { SteadyLabel } from "@/components/steady-label";
 import type { Brush, Level } from "@/domain/levels";
 import { cn } from "@/lib/utils";
 
@@ -40,20 +41,27 @@ export function BrushPicker({ brush, onChange }: BrushPickerProps) {
 					className="inline-flex min-h-11 items-center gap-2 rounded-md border border-earth px-3 aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
 				>
 					<Swatch mark={mark} />
-					{t(`brushLevel.${mark}`)}
+					<SteadyLabel text={t(`brushLevel.${mark}`)} />
 				</button>
 			))}
 		</fieldset>
 	);
 }
 
-/** The marks of one participant's levels, shown while the grid shows only that participant. */
-export function PersonLegend() {
+/**
+ * The marks of one participant's levels, shown while the grid shows only that participant.
+ * Hidden, it keeps its space, so choosing a participant does not push the grid down.
+ */
+export function PersonLegend({ shown }: { shown: boolean }) {
 	const t = useTranslations("Event");
 	const levels: Level[] = ["available", "if_need_be"];
 
 	return (
-		<ul aria-label={t("personLegend")} className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+		<ul
+			aria-label={t("personLegend")}
+			aria-hidden={!shown}
+			className={cn("flex flex-wrap gap-x-4 gap-y-2 text-sm", !shown && "invisible")}
+		>
 			{levels.map((level) => (
 				<li key={level} className="flex items-center gap-2">
 					<Swatch mark={level} />

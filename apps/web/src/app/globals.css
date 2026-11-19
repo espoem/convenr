@@ -167,6 +167,33 @@
 		background: repeating-linear-gradient(135deg, var(--cv-heat-4) 0 3px, var(--cv-heat-1) 3px 8px);
 	}
 
+	/* In the grid every hatched cell shows its part of one pattern the size of the table, so
+	   the stripes run on from cell to cell. The grid measures the sizes; until it has, each
+	   cell is hatched on its own. */
+	.cv-cell[data-fill="if_need_be"] {
+		background-origin: border-box;
+		background-size: var(--hatch-width, 100%) var(--hatch-height, 100%);
+		background-position: calc(-1 * var(--hatch-x, 0px)) calc(-1 * var(--hatch-y, 0px));
+	}
+
+	/* A label whose weight changes with its state keeps the width of its bold form, so a
+	   press moves nothing around it. The copy is invisible and has no height. */
+	.cv-steady-label {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.cv-steady-label::after {
+		content: attr(data-label);
+		height: 0;
+		overflow: hidden;
+		visibility: hidden;
+		font-weight: 600;
+		user-select: none;
+		pointer-events: none;
+	}
+
 	.cv-cell[data-half] {
 		border-bottom-color: color-mix(in srgb, var(--cell-line) 45%, var(--cell-fill));
 	}

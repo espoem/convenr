@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
+import { SteadyLabel } from "@/components/steady-label";
 import { Button } from "@/components/ui/button";
 import { sameWindow, type Window } from "@/domain/best-windows";
 import type { GridView } from "@/domain/grid-labels";
@@ -446,7 +447,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 							onClick={() => showTab(name)}
 							className="-mb-px min-h-11 rounded-t-md border border-transparent px-5 text-ink-muted aria-selected:border-earth aria-selected:border-b-background aria-selected:bg-background aria-selected:font-semibold aria-selected:text-ink"
 						>
-							{t(`tab.${name}`)}
+							<SteadyLabel text={t(`tab.${name}`)} />
 						</button>
 					))}
 				</div>
@@ -519,7 +520,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 								</span>
 							</div>
 							{final === undefined ? null : <FinalLegend />}
-							{filtered === undefined ? null : <PersonLegend />}
+							<PersonLegend shown={filtered !== undefined} />
 							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("groupHint")}</p>
 						</>
 					) : null}
@@ -657,7 +658,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 										}}
 										className="min-h-11 rounded-md border border-earth px-3 aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
 									>
-										{participant.name}
+										<SteadyLabel text={participant.name} />
 									</button>
 								</li>
 							))}

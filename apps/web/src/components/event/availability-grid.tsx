@@ -1,7 +1,14 @@
 "use client";
 
 import { FlagIcon } from "@phosphor-icons/react";
-import { Fragment, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import {
+	Fragment,
+	useLayoutEffect,
+	useRef,
+	useState,
+	type KeyboardEvent,
+	type PointerEvent,
+} from "react";
 
 import type { GridView } from "@/domain/grid-labels";
 import { closesHour } from "@/domain/grid-layout";
@@ -99,6 +106,21 @@ function cellAt(x: number, y: number): CellRef | undefined {
 	return { column: Number(element.dataset["column"]), row: Number(element.dataset["row"]) };
 }
 
+/** Gives the table the size of the hatching pattern and each cell its place in it. */
+function placeHatching(grid: HTMLTableElement): void {
+	const box = grid.getBoundingClientRect();
+
+	grid.style.setProperty("--hatch-width", `${box.width}px`);
+	grid.style.setProperty("--hatch-height", `${box.height}px`);
+
+	for (const cell of grid.querySelectorAll<HTMLElement>(".cv-cell")) {
+		const own = cell.getBoundingClientRect();
+
+		cell.style.setProperty("--hatch-x", `${own.left - box.left}px`);
+		cell.style.setProperty("--hatch-y", `${own.top - box.top}px`);
+	}
+}
+
 /** The availability grid: week blocks, days across, times down. */
 export function AvailabilityGrid({
 	view,
@@ -120,6 +142,32 @@ export function AvailabilityGrid({
 	const [anchor, setAnchor] = useState<CellRef | null>(null);
 
 	const columns = view.layout.blocks.flat();
+
+	// The hatching of if need be runs on from cell to cell: the table says how big the one
+	// pattern is and each cell where it sits in it. Column widths follow the screen and the
+	// cells follow the view, so the grid measures again when either changes.
+	useLayoutEffect(() => {
+		const grid = table.current;
+
+		if (grid === null) {
+			return;
+		}
+
+		const place = () => placeHatching(grid);
+
+		place();
+
+		const resized = new ResizeObserver(place);
+		const rebuilt = new MutationObserver(place);
+
+		resized.observe(grid);
+		rebuilt.observe(grid, { childList: true, subtree: true });
+
+		return () => {
+			resized.disconnect();
+			rebuilt.disconnect();
+		};
+	}, []);
 
 	const blockStarts = new Set(
 		view.layout.blocks.map((_block, index) =>

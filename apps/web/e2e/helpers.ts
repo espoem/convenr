@@ -2,6 +2,7 @@ import {
 	type APIRequestContext,
 	type Browser,
 	expect as baseExpect,
+	type Locator,
 	type Page,
 } from "@playwright/test";
 
@@ -52,6 +53,27 @@ export async function createEvent(page: Page, name: string, first: Temporal.Plai
 		share: await page.getByLabel("Odkaz pro účastníky").inputValue(),
 		admin: await page.getByLabel("Odkaz pro správu").inputValue(),
 	};
+}
+
+/**
+ * Runs `act` and checks that no element of `group` moved or changed size: a control that
+ * changes state, such as a pressed brush or a selected tab, must not shift the layout.
+ */
+export async function expectSteady(group: Locator, act: () => Promise<void>): Promise<void> {
+	const boxes = () =>
+		group.evaluateAll((elements) =>
+			elements.map((element) => {
+				// Page coordinates: a click may scroll its target into view first.
+				const { x, y, width, height } = element.getBoundingClientRect();
+
+				return { x: x + window.scrollX, y: y + window.scrollY, width, height };
+			}),
+		);
+
+	const before = await boxes();
+
+	await act();
+	expect(await boxes()).toEqual(before);
 }
 
 /** Marks cells one at a time: each click must land before the next one counts. */

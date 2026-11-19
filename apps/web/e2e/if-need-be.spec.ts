@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 
-import { cell, createEvent, expect, freshPage, joinAs, respond } from "./helpers";
+import { cell, createEvent, expect, expectSteady, freshPage, joinAs, respond } from "./helpers";
 
 // Painting at if need be by touch and keyboard, its hatching, and how the group sees it.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
@@ -23,12 +23,30 @@ test("a slot painted at if need be is hatched and counts apart in the results", 
 
 	await expect(brush("Můžu")).toHaveAttribute("aria-pressed", "true");
 
+	// Choosing a brush moves neither the other brushes nor the grid.
+	await expectSteady(jana.locator("fieldset button, table"), async () => {
+		await brush("Když bude nutné").tap();
+		await expect(brush("Když bude nutné")).toHaveAttribute("aria-pressed", "true");
+	});
+
 	// By touch: a press gives the brush's level, and a second press of the same level clears it.
-	await brush("Když bude nutné").tap();
-	await expect(brush("Když bude nutné")).toHaveAttribute("aria-pressed", "true");
 	await eight.tap();
 	await expect(eight).toHaveAccessibleName(/když bude nutné$/u);
 	await expect(eight.locator("..")).toHaveAttribute("data-fill", "if_need_be");
+
+	// The cell shows its part of one pattern the size of the table, so stripes run on.
+	const hatch = await eight.locator("..").evaluate((element) => {
+		const style = getComputedStyle(element);
+
+		return {
+			size: style.backgroundSize,
+			table: element.closest("table")?.getBoundingClientRect().width ?? 0,
+			y: style.getPropertyValue("--hatch-y"),
+		};
+	});
+
+	expect(hatch.size.startsWith(`${hatch.table}px`)).toBe(true);
+	expect(Number(hatch.y.replace("px", ""))).toBeGreaterThan(0);
 	await eight.tap();
 	await expect(eight).toHaveAttribute("aria-pressed", "false");
 	await eight.tap();
@@ -71,8 +89,10 @@ test("a slot painted at if need be is hatched and counts apart in the results", 
 	await detail.getByRole("button", { name: "Zavřít detail" }).click();
 
 	// Filtered to Jana, the grid shows her marks and names them.
-	await viewer.getByRole("button", { name: "Jana", exact: true }).click();
-	await expect(viewer.getByRole("list", { name: "Značky v mřížce" })).toBeVisible();
+	await expectSteady(viewer.locator("table, li > button[aria-pressed]"), async () => {
+		await viewer.getByRole("button", { name: "Jana", exact: true }).click();
+		await expect(viewer.getByRole("list", { name: "Značky v mřížce" })).toBeVisible();
+	});
 	await expect(cell(viewer, first, "20:00").locator("..")).toHaveAttribute(
 		"data-fill",
 		"if_need_be",
