@@ -195,5 +195,216 @@
 	"NotFound": {
 		"heading": "Stránka nenalezena",
 		"back": "Přejít na úvodní stránku"
+	},
+	"ApiReference": {
+		"title": "API convenr",
+		"description": "Všechno, co člověk může udělat na stránkách convenr, jako JSON přes HTTP. Vytvoření události vrátí tajný klíč organizátora a připojení k ní vrátí token účastníka; oba se posílají jako `Authorization: Bearer <secret>`. Odmítnutý požadavek dostane problém podle RFC 9457 se stálým kódem `code`. V rámci verze 1 může odpověď získat nová pole, kódy problémů a hodnoty výčtů, takže klient ignoruje, co nezná. Požadavek obsahuje jen pole, která jmenuje jeho schéma.",
+		"tags": {
+			"events": "Vytvoření, čtení, změna a smazání událostí a jejich nejlepší okna.",
+			"participants": "Připojení k události, odpověď na ni a odchod z ní.",
+			"description": "Tento popis API."
+		},
+		"security": {
+			"adminSecret": "Tajný klíč organizátora, začíná `cva_`. Vrátí se jednou, při vytvoření události.",
+			"participantToken": "Token účastníka, začíná `cvp_`. Vrátí ho každé připojení."
+		},
+		"operations": {
+			"createEvent": {
+				"summary": "Vytvořit událost",
+				"description": "Vytvoří událost a vrátí ji s tajným klíčem organizátora, který později nejde obnovit."
+			},
+			"getEvent": {
+				"summary": "Přečíst událost",
+				"description": "Událost, její sloty a všichni účastníci s dostupností. `ETag` se mění s každou změnou události; pošlete ho v `If-None-Match` a dokud se nic nezmění, dostanete `304`."
+			},
+			"updateEvent": {
+				"summary": "Změnit událost",
+				"description": "Změní pole, která požadavek jmenuje, a ostatní ponechá. Rozvrh se nahrazuje celý. Když by změna odebrala sloty, které si účastníci vybrali, odmítne se s `confirmation_required`; zopakujte ji s `confirmedLosing` nastaveným na `losing` z toho problému."
+			},
+			"deleteEvent": {
+				"summary": "Smazat událost",
+				"description": "Smaže událost i všechny účastníky najednou."
+			},
+			"getWindows": {
+				"summary": "Nejlepší okna",
+				"description": "Nejvýš pět úseků po sobě jdoucích slotů, kdy může nejvíc lidí, tak jak je ukazuje stránka události. Okna datované události se berou po dnech v její referenční zóně."
+			},
+			"join": {
+				"summary": "Připojit se k události",
+				"description": "Připojí se pod zobrazovaným jménem a vrátí token účastníka. Už použité jméno dá token pro tohoto účastníka; když má jméno heslo, pošlete ho jako `password`. Nové jméno ochráníte polem `newPassword`."
+			},
+			"removeParticipant": {
+				"summary": "Smazat účastníka",
+				"description": "Organizátor smaže účastníka i jeho dostupnost."
+			},
+			"getMe": {
+				"summary": "Přečíst sebe",
+				"description": "Účastník, kterému patří token."
+			},
+			"leave": {
+				"summary": "Odejít z události",
+				"description": "Smaže účastníka, kterému patří token, i s jeho dostupností."
+			},
+			"saveAvailability": {
+				"summary": "Uložit dostupnost",
+				"description": "Nahradí celou dostupnost účastníka sloty z požadavku."
+			},
+			"setPassword": {
+				"summary": "Nastavit heslo",
+				"description": "Nastaví nebo změní heslo, které chrání jméno účastníka. `currentPassword` je potřeba právě tehdy, když už heslo nastavené je."
+			},
+			"removePassword": {
+				"summary": "Odebrat heslo",
+				"description": "Odebere heslo po kontrole současného."
+			},
+			"getOpenApi": {
+				"summary": "Tento popis",
+				"description": "Dokument OpenAPI 3.1 tohoto API."
+			}
+		},
+		"parameters": {
+			"id": "Veřejné id události z odkazu ke sdílení.",
+			"participantId": "Veřejné id účastníka.",
+			"minMinutes": "Nejkratší okno, které se vypíše, v minutách. Bez parametru jeden slot.",
+			"minPeople": "Nejmenší počet lidí, který okno potřebuje. Bez parametru nejvíc lidí v jakémkoli okně.",
+			"If-None-Match": "`ETag` z dřívějšího čtení."
+		},
+		"headers": {
+			"ETag": "Verze události.",
+			"Location": "Adresa nové události v API.",
+			"Retry-After": "Za kolik sekund jde heslo zkusit znovu.",
+			"WWW-Authenticate": "Vždy `Bearer`."
+		},
+		"responses": {
+			"createEvent": "Nová událost a její tajný klíč organizátora.",
+			"getEvent": "Událost.",
+			"updateEvent": "Událost po změně, nebo jak byla, když se nic nezměnilo.",
+			"deleteEvent": "Událost je smazaná.",
+			"getWindows": "Nejlepší okna a použité filtry.",
+			"join": "Účastník a jeho token.",
+			"removeParticipant": "Účastník je smazaný.",
+			"getMe": "Účastník.",
+			"leave": "Účastník je smazaný.",
+			"saveAvailability": "Účastník s uloženou dostupností.",
+			"setPassword": "Heslo je nastavené.",
+			"removePassword": "Heslo je odebrané.",
+			"getOpenApi": "Dokument OpenAPI.",
+			"notModified": "Událost se od čtení, které vrátilo tento `ETag`, nezměnila."
+		},
+		"schemas": {
+			"Event": "Událost s rozvrhem a účastníky.",
+			"Participant": "Účastník. Nic neříká, zda má heslo.",
+			"Schedule": "Kdy se událost může konat, rozlišené podle `mode`.",
+			"DatesSchedule": "Událost ve vybraných dnech.",
+			"RangeSchedule": "Událost v každém dni od jednoho data do druhého.",
+			"WeekdaysSchedule": "Událost ve dnech týdne, bez dat.",
+			"Slot": "Slot datované nebo týdenní události.",
+			"DatedSlot": "Slot datované události.",
+			"WeekdaySlot": "Slot týdenní události: čas na hodinách v referenční zóně.",
+			"Retention": "Kdy se událost smaže, rozlišené podle `kind`.",
+			"RetentionUntil": "Událost se smaže v daný den.",
+			"RetentionKept": "Událost se uchová, dokud ji někdo nesmaže.",
+			"CreatedEvent": "Nová událost a její tajný klíč organizátora.",
+			"Joined": "Účastník a jeho token.",
+			"Windows": "Nejlepší okna a použité filtry.",
+			"Window": "Úsek po sobě jdoucích slotů, kdy mohou stejní lidé.",
+			"Problem": "Problém podle RFC 9457: proč byl požadavek odmítnut.",
+			"FieldError": "Chybná hodnota: v těle nebo v řetězci dotazu.",
+			"PointerError": "Chybná hodnota v těle požadavku.",
+			"ParameterError": "Chybný parametr dotazu.",
+			"CreateEventRequest": "Nová událost.",
+			"UpdateEventRequest": "Pole ke změně. Vynechané pole si ponechá hodnotu.",
+			"ScheduleInput": "Kdy se událost může konat, rozlišené podle `mode`. Sloty odvodí server.",
+			"DatesScheduleInput": "Událost ve vybraných dnech.",
+			"RangeScheduleInput": "Událost v každém dni od jednoho data do druhého.",
+			"WeekdaysScheduleInput": "Událost ve dnech týdne, bez dat.",
+			"JoinRequest": "Připojení. Nejvýš jedno z `password` a `newPassword`.",
+			"AvailabilityRequest": "Celá dostupnost účastníka.",
+			"SlotInput": "Slot datované nebo týdenní události.",
+			"DatedSlotInput": "Slot datované události.",
+			"WeekdaySlotInput": "Slot týdenní události.",
+			"SetPasswordRequest": "Nové heslo.",
+			"RemovePasswordRequest": "Heslo k odebrání."
+		},
+		"properties": {
+			"id": "Veřejné id události.",
+			"name": "Název události.",
+			"description": "Popis události; prázdný, když žádný není.",
+			"referenceZone": "Časová zóna IANA, ve které organizátor událost naplánoval.",
+			"firstDayOfWeek": "První den týdne v mřížce: 1 je pondělí, 7 neděle.",
+			"schedule": "Kdy se událost může konat.",
+			"retention": "Kdy se událost smaže.",
+			"participants": "Účastníci v pořadí, v jakém se připojili.",
+			"availability": "Sloty, ve kterých účastník může, v časovém pořadí.",
+			"mode": "Druh rozvrhu.",
+			"dates": "Vybrané dny, `YYYY-MM-DD`.",
+			"first": "První den, `YYYY-MM-DD`.",
+			"last": "Poslední den, `YYYY-MM-DD`.",
+			"weekdays": "Vybrané dny týdne: 1 je pondělí, 7 neděle.",
+			"dailyStart": "Začátek slotů každého dne, `HH:MM`.",
+			"dailyEnd": "Konec slotů každého dne, `HH:MM`; `24:00` je půlnoc.",
+			"slotMinutes": "Délka slotu v minutách.",
+			"slots": "Všechny sloty události v časovém pořadí.",
+			"start": "Začátek slotu jako okamžik podle RFC 3339 v UTC.",
+			"weekday": "Den týdne: 1 je pondělí, 7 neděle.",
+			"minute": "Začátek slotu v minutách po půlnoci.",
+			"kind": "Zda má událost datum smazání.",
+			"date": "Den smazání, `YYYY-MM-DD`.",
+			"event": "Nová událost.",
+			"adminSecret": "Tajný klíč organizátora. Ukáže se jen tady a nejde obnovit.",
+			"participant": "Účastník.",
+			"participantToken": "Token účastníka.",
+			"minMinutes": "Nejkratší vypsané okno v minutách.",
+			"minPeople": "Nejmenší počet lidí ve vypsaném okně.",
+			"windows": "Nejvýš pět oken: nejdřív nejvíc lidí, pak nejdelší, pak nejdřívější.",
+			"minutes": "Délka okna v minutách.",
+			"participantIds": "Veřejná id účastníků, kteří mohou v každém slotu okna.",
+			"type": "`https://convenr.party/problems/` a za ním kód. Porovnávejte ho jako řetězec.",
+			"status": "Stav HTTP.",
+			"title": "Krátký anglický text, stejný pro každý problém s tímto kódem.",
+			"code": "Stálý název problému ve snake_case. Kód, který klient nezná, bere jako obecné selhání.",
+			"errors": "Chybné hodnoty.",
+			"retryAt": "U `too_many_attempts`: kdy jde heslo zkusit znovu.",
+			"losing": "U `confirmation_required`: kolik účastníků by přišlo o část dostupnosti.",
+			"pointer": "Ukazatel JSON Pointer podle RFC 6901 do těla požadavku.",
+			"parameter": "Název parametru dotazu.",
+			"confirmedLosing": "Kolik účastníků smí podle klienta přijít o část dostupnosti.",
+			"password": "Heslo jména, které už heslo má.",
+			"newPassword": "Nové heslo, 4 až 128 znaků.",
+			"currentPassword": "Heslo, které je nastavené teď."
+		},
+		"propertiesOf": {
+			"Participant": {
+				"id": "Veřejné id účastníka.",
+				"name": "Zobrazované jméno účastníka."
+			},
+			"Window": {
+				"slots": "Sloty okna v časovém pořadí."
+			},
+			"PointerError": {
+				"code": "Kód pole, například `required`, nebo kód pravidla, například `date_in_past`."
+			},
+			"ParameterError": {
+				"code": "Kód pole, například `too_small`."
+			},
+			"CreateEventRequest": {
+				"description": "Popis události. Bez pole prázdný.",
+				"firstDayOfWeek": "První den týdne v mřížce: 1 je pondělí, 7 neděle. Bez pole pondělí."
+			},
+			"UpdateEventRequest": {
+				"schedule": "Celý nový rozvrh se všemi poli svého druhu."
+			},
+			"JoinRequest": {
+				"name": "Zobrazované jméno, pod kterým se připojit.",
+				"password": "Heslo jména, které už heslo má. Jméno, které nikdo nepoužívá, se s ním odmítne.",
+				"newPassword": "Heslo pro jméno, které zatím nikdo nepoužívá. Už použité jméno se s ním odmítne."
+			},
+			"AvailabilityRequest": {
+				"availability": "Všechny sloty, ve kterých účastník může."
+			},
+			"SetPasswordRequest": {
+				"currentPassword": "Heslo, které je nastavené teď. Potřeba právě tehdy, když heslo nastavené je."
+			}
+		}
 	}
 }

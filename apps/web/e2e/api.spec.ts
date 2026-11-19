@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { expect, test } from "@playwright/test";
 
 import { createdEventSchema, joinedSchema } from "../src/server/api/schemas";
@@ -100,5 +102,15 @@ test.describe("public API", () => {
 		const leaked = await request.put("/api/v1/events?token=x", { data: {} });
 
 		expect(leaked.status()).toBe(400);
+	});
+
+	test("serves the committed OpenAPI document", async ({ request }) => {
+		const served = await request.get("/api/v1/openapi.json");
+
+		expect(served.status()).toBe(200);
+		expect(served.headers()["access-control-allow-origin"]).toBe("*");
+		expect(await served.json()).toEqual(
+			JSON.parse(await readFile(new URL("../openapi.json", import.meta.url), "utf8")),
+		);
 	});
 });

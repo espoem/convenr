@@ -1,0 +1,3 @@
+# Redocly CLI lints apps/web/openapi.json: `mise run openapi:lint`.
+extends:
+  - recommended

@@ -15,7 +15,7 @@ export const BODY_LIMIT_BYTES = 64 * 1024;
 export const PROBLEM_TYPE_BASE = "https://convenr.party/problems/";
 
 /** Every problem code the API sends, with its status and a title that does not vary. */
-const PROBLEMS = {
+export const PROBLEMS = {
 	invalid_request: [400, "The request does not match the schema."],
 	secret_in_query: [400, "A secret was sent in the query string."],
 	unauthorized: [401, "The secret is missing or wrong."],

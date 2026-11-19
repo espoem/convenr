@@ -19,6 +19,22 @@ checksum_source = "mise-versions"
 url = "https://github.com/docker/compose/releases/download/v5.7.0/docker-compose-darwin-aarch64"
 url_api = "https://api.github.com/repos/docker/compose/releases/assets/702117350"
 
+[[tools."github:oasdiff/oasdiff"]]
+version = "1.39.0"
+backend = "github:oasdiff/oasdiff"
+specifiers = ["1.39.0"]
+
+[tools."github:oasdiff/oasdiff"."platforms.linux-x64"]
+checksum = "sha256:71a85930728f367a2086077b7ae1411319421549d18473a3e8258b6451520433"
+checksum_source = "mise-versions"
+url = "https://github.com/oasdiff/oasdiff/releases/download/v1.39.0/oasdiff_1.39.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/oasdiff/oasdiff/releases/assets/760679280"
+
+[tools."github:oasdiff/oasdiff"."platforms.macos-arm64"]
+checksum = "sha256:fe88d9950324d3b0ebeaf8e0d3a210b64cb099a0f55fce5ee5a22b276df0eac4"
+url = "https://github.com/oasdiff/oasdiff/releases/download/v1.39.0/oasdiff_1.39.0_darwin_all.tar.gz"
+url_api = "https://api.github.com/repos/oasdiff/oasdiff/releases/assets/760679349"
+
 [[tools.hk]]
 version = "2.13.0"
 backend = "packslip:github.com/jdx/hk"
@@ -57,3 +73,12 @@ specifiers = ["0.11.1"]
 
 [tools."npm:@nubjs/nub".provenance]
 repository = "github.com/nubjs/nub"
+
+[[tools."npm:@redocly/cli"]]
+version = "2.79.0"
+aube = { path = ".mise/locks/npm-redocly-cli/2.79.0", digest = "sha256:d852ec045604a59120d4b764df5a0537f90a5da6c7096c3e97e33ad68e649b14" }
+backend = "npm:@redocly/cli"
+specifiers = ["2.79.0"]
+
+[tools."npm:@redocly/cli".provenance]
+repository = "github.com/Redocly/redocly-cli"

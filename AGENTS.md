@@ -22,6 +22,7 @@ Run every command through mise from the repository root.
 | Type check                                      | `mise run typecheck`                  |
 | Unit and database tests (starts PostgreSQL)     | `mise run test`                       |
 | Regenerate the theme after a `DESIGN.md` change | `mise run theme`                      |
+| Rewrite the OpenAPI copy after an API change    | `mise run openapi`                    |
 | Everything CI checks except end-to-end tests    | `mise run check`                      |
 | End-to-end tests (needs a build)                | `mise run e2e`                        |
 | Development server                              | `mise run db:up`, then `mise run dev` |

@@ -151,4 +151,7 @@ The tests name no rule numbers. This list is the only link from rules to tests.
 - `apps/web/src/server/event-lock.db.test.ts` covers the lock order of K3.
 - `apps/web/src/server/retention.db.test.ts` covers A12 in every server function.
 - `apps/web/e2e/api.spec.ts` covers A3 (`405`, `HEAD` and unknown paths), A10 and A11 through the running server.
-- `GET /api/v1/openapi.json` and G1 to G4 and H1 are delivered in a later step and have no tests yet.
+- `apps/web/src/server/api/openapi.test.ts` covers G1 (the committed copy, every endpoint, response objects open and request objects closed, a check that JSON Schema cannot express) and G2.
+- `apps/web/e2e/api.spec.ts` covers that the running server serves the committed copy at `GET /api/v1/openapi.json` (G1).
+- `mise run openapi:lint` and `mise run openapi:breaking`, both part of `mise run check`, cover G3.
+- G4 and H1 are delivered in a later step and have no tests yet.

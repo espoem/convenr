@@ -21,12 +21,18 @@ jobs:
       # The runner image has Podman installed but no Podman service running; its Docker
       # daemon is the one that runs the test database.
       CONTAINER_ENGINE: docker
+      # The OpenAPI document must not break clients of the one on main: a pull request is
+      # compared with its base branch, a push to main with main before the push.
+      OPENAPI_BASE: ${{ github.event_name == 'push' && github.event.before || format('origin/{0}', github.base_ref) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The breaking-change check reads the base revision's document.
+          fetch-depth: 0
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
       - name: Install dependencies
         run: nub ci
-      - name: Format, lint, theme, type check, unit tests, build
+      - name: Format, lint, theme, type check, unit tests, OpenAPI checks, build
         run: mise run check
       - name: Install the test browser
         working-directory: apps/web

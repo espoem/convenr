@@ -7,9 +7,16 @@ node = "26.13.1"
 docker-compose = "5.7.0"
 # Git hooks; the configuration is hk.pkl.
 hk = "2.13.0"
+# Lints the OpenAPI document; the configuration is redocly.yaml.
+"npm:@redocly/cli" = "2.79.0"
+# Finds breaking changes between two OpenAPI documents.
+"github:oasdiff/oasdiff" = "1.39.0"
 
 [env]
 _.path = ["node_modules/.bin"]
+# Redocly CLI sends usage data and checks for updates unless told not to.
+REDOCLY_TELEMETRY = "off"
+REDOCLY_SUPPRESS_UPDATE_NOTICE = "true"
 
 [tasks.install]
 description = "Install dependencies from the lockfile and the Git hooks"
@@ -61,6 +68,19 @@ run = "nub apps/web/scripts/generate-theme.ts"
 description = "Fail when tokens.css does not match DESIGN.md"
 run = "nub apps/web/scripts/generate-theme.ts --check"
 
+[tasks.openapi]
+description = "Write apps/web/openapi.json from the API's schemas and operations"
+dir = "apps/web"
+run = "nubx vitest run --project unit src/server/api/openapi.test.ts --update"
+
+[tasks."openapi:lint"]
+description = "Lint the committed OpenAPI document with Redocly CLI"
+run = "redocly lint apps/web/openapi.json"
+
+[tasks."openapi:breaking"]
+description = "Fail when the OpenAPI document breaks clients of main's; OPENAPI_BASE sets another base"
+run = "scripts/openapi-breaking.sh"
+
 [tasks.up]
 description = "Build and start the application and PostgreSQL in containers"
 run = "scripts/compose.sh up --build --detach --wait"
@@ -102,5 +122,7 @@ run = [
   "mise run theme:check",
   "mise run typecheck",
   "mise run test",
+  "mise run openapi:lint",
+  "mise run openapi:breaking",
   "mise run build",
 ]

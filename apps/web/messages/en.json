@@ -195,5 +195,216 @@
 	"NotFound": {
 		"heading": "Page not found",
 		"back": "Go to the start page"
+	},
+	"ApiReference": {
+		"title": "convenr API",
+		"description": "Everything a person can do on the convenr pages, as JSON over HTTP. Creating an event returns an admin secret, and joining one returns a participant token; each is sent as `Authorization: Bearer <secret>`. A refused request gets an RFC 9457 problem with a stable `code`. Within version 1 a response may gain fields, problem codes and enum values, so a client ignores what it does not know. A request holds only the fields its schema names.",
+		"tags": {
+			"events": "Creating, reading, changing and deleting events, and their best windows.",
+			"participants": "Joining an event, answering it and leaving it.",
+			"description": "This description of the API."
+		},
+		"security": {
+			"adminSecret": "The admin secret of an event, starting with `cva_`. It is returned once, when the event is created.",
+			"participantToken": "The token of a participant, starting with `cvp_`. It is returned by each join."
+		},
+		"operations": {
+			"createEvent": {
+				"summary": "Create an event",
+				"description": "Creates an event and returns it with its admin secret, which cannot be recovered later."
+			},
+			"getEvent": {
+				"summary": "Read an event",
+				"description": "The event, its slots and every participant with their availability. The `ETag` changes with every change of the event; send it in `If-None-Match` to get `304` while nothing changed."
+			},
+			"updateEvent": {
+				"summary": "Change an event",
+				"description": "Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`; repeat it with `confirmedLosing` set to the `losing` of that problem."
+			},
+			"deleteEvent": {
+				"summary": "Delete an event",
+				"description": "Deletes the event and every participant at once."
+			},
+			"getWindows": {
+				"summary": "Best windows",
+				"description": "Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone."
+			},
+			"join": {
+				"summary": "Join an event",
+				"description": "Joins under a display name and returns a participant token. A name that is already used gives a token for that participant; when the name has a password, send it as `password`. To protect a new name, send `newPassword`."
+			},
+			"removeParticipant": {
+				"summary": "Delete a participant",
+				"description": "The organizer deletes a participant and their availability."
+			},
+			"getMe": {
+				"summary": "Read yourself",
+				"description": "The participant the token belongs to."
+			},
+			"leave": {
+				"summary": "Leave an event",
+				"description": "Deletes the participant the token belongs to, with their availability."
+			},
+			"saveAvailability": {
+				"summary": "Save availability",
+				"description": "Replaces the participant's availability as a whole with the slots in the request."
+			},
+			"setPassword": {
+				"summary": "Set a password",
+				"description": "Sets or changes the password that protects the participant's name. `currentPassword` is needed exactly when a password is already set."
+			},
+			"removePassword": {
+				"summary": "Remove the password",
+				"description": "Removes the password after checking the current one."
+			},
+			"getOpenApi": {
+				"summary": "This description",
+				"description": "The OpenAPI 3.1 document of the API."
+			}
+		},
+		"parameters": {
+			"id": "The public id of the event, from its share link.",
+			"participantId": "The public id of the participant.",
+			"minMinutes": "The shortest window to list, in minutes. One slot when left out.",
+			"minPeople": "The fewest people a window needs. The most people in any window when left out.",
+			"If-None-Match": "The `ETag` of an earlier read."
+		},
+		"headers": {
+			"ETag": "The version of the event.",
+			"Location": "The address of the new event in the API.",
+			"Retry-After": "Seconds until a password may be tried again.",
+			"WWW-Authenticate": "Always `Bearer`."
+		},
+		"responses": {
+			"createEvent": "The new event and its admin secret.",
+			"getEvent": "The event.",
+			"updateEvent": "The event after the change, or as it was when nothing changed.",
+			"deleteEvent": "The event is deleted.",
+			"getWindows": "The best windows and the filters applied.",
+			"join": "The participant and their token.",
+			"removeParticipant": "The participant is deleted.",
+			"getMe": "The participant.",
+			"leave": "The participant is deleted.",
+			"saveAvailability": "The participant with the saved availability.",
+			"setPassword": "The password is set.",
+			"removePassword": "The password is removed.",
+			"getOpenApi": "The OpenAPI document.",
+			"notModified": "The event has not changed since the read that returned this `ETag`."
+		},
+		"schemas": {
+			"Event": "An event with its schedule and participants.",
+			"Participant": "A participant. Nothing says whether they have a password.",
+			"Schedule": "When the event can take place, tagged by `mode`.",
+			"DatesSchedule": "An event on chosen dates.",
+			"RangeSchedule": "An event on every day from one date to another.",
+			"WeekdaysSchedule": "An event on days of the week, without dates.",
+			"Slot": "A slot of a dated or of a weekday event.",
+			"DatedSlot": "A slot of a dated event.",
+			"WeekdaySlot": "A slot of a weekday event: a wall-clock time in the reference zone.",
+			"Retention": "When the event will be deleted, tagged by `kind`.",
+			"RetentionUntil": "The event will be deleted on a date.",
+			"RetentionKept": "The event is kept until it is deleted.",
+			"CreatedEvent": "A new event and its admin secret.",
+			"Joined": "A participant and their token.",
+			"Windows": "The best windows and the filters applied.",
+			"Window": "A run of consecutive slots when the same people are available.",
+			"Problem": "An RFC 9457 problem: why a request was refused.",
+			"FieldError": "A value at fault: in the body or in the query string.",
+			"PointerError": "A value at fault in the request body.",
+			"ParameterError": "A query parameter at fault.",
+			"CreateEventRequest": "A new event.",
+			"UpdateEventRequest": "The fields to change. A field left out keeps its value.",
+			"ScheduleInput": "When the event can take place, tagged by `mode`. The server derives the slots.",
+			"DatesScheduleInput": "An event on chosen dates.",
+			"RangeScheduleInput": "An event on every day from one date to another.",
+			"WeekdaysScheduleInput": "An event on days of the week, without dates.",
+			"JoinRequest": "A join. At most one of `password` and `newPassword`.",
+			"AvailabilityRequest": "The participant's whole availability.",
+			"SlotInput": "A slot of a dated or of a weekday event.",
+			"DatedSlotInput": "A slot of a dated event.",
+			"WeekdaySlotInput": "A slot of a weekday event.",
+			"SetPasswordRequest": "A new password.",
+			"RemovePasswordRequest": "The password to remove."
+		},
+		"properties": {
+			"id": "The public id of the event.",
+			"name": "The name of the event.",
+			"description": "A description of the event; empty when there is none.",
+			"referenceZone": "The IANA time zone in which the organizer planned the event.",
+			"firstDayOfWeek": "The first day of the week in the grid: 1 is Monday, 7 is Sunday.",
+			"schedule": "When the event can take place.",
+			"retention": "When the event will be deleted.",
+			"participants": "The participants in joining order.",
+			"availability": "The slots in which the participant is available, in time order.",
+			"mode": "The kind of schedule.",
+			"dates": "The chosen dates, `YYYY-MM-DD`.",
+			"first": "The first day, `YYYY-MM-DD`.",
+			"last": "The last day, `YYYY-MM-DD`.",
+			"weekdays": "The chosen days of the week: 1 is Monday, 7 is Sunday.",
+			"dailyStart": "The start of each day's slots, `HH:MM`.",
+			"dailyEnd": "The end of each day's slots, `HH:MM`; `24:00` is midnight.",
+			"slotMinutes": "The length of a slot in minutes.",
+			"slots": "Every slot of the event, in time order.",
+			"start": "The start of the slot as an RFC 3339 instant in UTC.",
+			"weekday": "The day of the week: 1 is Monday, 7 is Sunday.",
+			"minute": "The start of the slot in minutes after midnight.",
+			"kind": "Whether the event has a deletion date.",
+			"date": "The day of deletion, `YYYY-MM-DD`.",
+			"event": "The new event.",
+			"adminSecret": "The admin secret. It is shown only here and cannot be recovered.",
+			"participant": "The participant.",
+			"participantToken": "The participant token.",
+			"minMinutes": "The shortest window listed, in minutes.",
+			"minPeople": "The fewest people a listed window has.",
+			"windows": "At most five windows: the most people first, then the longest, then the earliest.",
+			"minutes": "The length of the window in minutes.",
+			"participantIds": "Public ids of the participants available in every slot of the window.",
+			"type": "`https://convenr.party/problems/` followed by the code. Compare it as a string.",
+			"status": "The HTTP status.",
+			"title": "A short English text that is the same for every problem with this code.",
+			"code": "A stable snake_case name of the problem. A client handles a code it does not know as a general failure.",
+			"errors": "The values at fault.",
+			"retryAt": "With `too_many_attempts`: when a password may be tried again.",
+			"losing": "With `confirmation_required`: how many participants would lose part of their availability.",
+			"pointer": "An RFC 6901 JSON Pointer into the request body.",
+			"parameter": "The name of the query parameter.",
+			"confirmedLosing": "How many participants the client agreed may lose part of their availability.",
+			"password": "The password of a name that already has one.",
+			"newPassword": "A new password, 4 to 128 characters.",
+			"currentPassword": "The password set now."
+		},
+		"propertiesOf": {
+			"Participant": {
+				"id": "The public id of the participant.",
+				"name": "The display name of the participant."
+			},
+			"Window": {
+				"slots": "The slots of the window, in time order."
+			},
+			"PointerError": {
+				"code": "A field code such as `required`, or a rule code such as `date_in_past`."
+			},
+			"ParameterError": {
+				"code": "A field code such as `too_small`."
+			},
+			"CreateEventRequest": {
+				"description": "A description of the event. Empty when left out.",
+				"firstDayOfWeek": "The first day of the week in the grid: 1 is Monday, 7 is Sunday. Monday when left out."
+			},
+			"UpdateEventRequest": {
+				"schedule": "The whole new schedule, with every field of its mode."
+			},
+			"JoinRequest": {
+				"name": "The display name to join under.",
+				"password": "The password of a name that already has one. A name nobody uses is refused with it.",
+				"newPassword": "A password for a name nobody uses yet. A name already used is refused with it."
+			},
+			"AvailabilityRequest": {
+				"availability": "Every slot in which the participant is available."
+			},
+			"SetPasswordRequest": {
+				"currentPassword": "The password set now. Needed exactly when a password is set."
+			}
+		}
 	}
 }

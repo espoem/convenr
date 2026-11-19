@@ -1,0 +1,2363 @@
+{
+	"openapi": "3.1.1",
+	"info": {
+		"title": "convenr API",
+		"version": "1",
+		"description": "Everything a person can do on the convenr pages, as JSON over HTTP. Creating an event returns an admin secret, and joining one returns a participant token; each is sent as `Authorization: Bearer <secret>`. A refused request gets an RFC 9457 problem with a stable `code`. Within version 1 a response may gain fields, problem codes and enum values, so a client ignores what it does not know. A request holds only the fields its schema names.",
+		"license": {
+			"name": "AGPL-3.0-only",
+			"identifier": "AGPL-3.0-only"
+		}
+	},
+	"servers": [
+		{
+			"url": "/api/v1"
+		}
+	],
+	"tags": [
+		{
+			"name": "events",
+			"description": "Creating, reading, changing and deleting events, and their best windows."
+		},
+		{
+			"name": "participants",
+			"description": "Joining an event, answering it and leaving it."
+		},
+		{
+			"name": "description",
+			"description": "This description of the API."
+		}
+	],
+	"paths": {
+		"/events": {
+			"post": {
+				"operationId": "createEvent",
+				"summary": "Create an event",
+				"description": "Creates an event and returns it with its admin secret, which cannot be recovered later.",
+				"tags": [
+					"events"
+				],
+				"security": [],
+				"responses": {
+					"201": {
+						"description": "The new event and its admin secret.",
+						"headers": {
+							"Location": {
+								"description": "The address of the new event in the API.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreatedEvent"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "`payload_too_large`: The body is larger than 64 KB.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "`unsupported_media_type`: The body must be application/json in UTF-8.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "`date_in_past`: A date lies before today in the reference zone.\n\n`duplicate_day`: A day is chosen more than once.\n\n`end_not_after_start`: The daily end is not after the daily start.\n\n`no_days`: The event has no day.\n\n`not_on_slot_boundary`: A daily time is not a multiple of the slot length.\n\n`out_of_day`: A daily time lies outside 00:00 to 24:00.\n\n`range_reversed`: The last day is before the first.\n\n`too_many_dates`: The event has more than 31 dates.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateEventRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{id}": {
+			"get": {
+				"operationId": "getEvent",
+				"summary": "Read an event",
+				"description": "The event, its slots and every participant with their availability. The `ETag` changes with every change of the event; send it in `If-None-Match` to get `304` while nothing changed.",
+				"tags": [
+					"events"
+				],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "The event.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Event"
+								}
+							}
+						}
+					},
+					"304": {
+						"description": "The event has not changed since the read that returned this `ETag`.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "`not_found`: The event or participant does not exist.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					},
+					{
+						"name": "If-None-Match",
+						"in": "header",
+						"required": false,
+						"description": "The `ETag` of an earlier read.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "updateEvent",
+				"summary": "Change an event",
+				"description": "Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`; repeat it with `confirmedLosing` set to the `losing` of that problem.",
+				"tags": [
+					"events"
+				],
+				"security": [
+					{
+						"adminSecret": []
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The event after the change, or as it was when nothing changed.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Event"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "`confirmation_required`: The change would remove availability from participants.\n\n`field_locked`: Slot length, day mode and reference zone cannot change once people joined.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "`payload_too_large`: The body is larger than 64 KB.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "`unsupported_media_type`: The body must be application/json in UTF-8.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "`date_in_past`: A date lies before today in the reference zone.\n\n`duplicate_day`: A day is chosen more than once.\n\n`end_not_after_start`: The daily end is not after the daily start.\n\n`no_days`: The event has no day.\n\n`not_on_slot_boundary`: A daily time is not a multiple of the slot length.\n\n`out_of_day`: A daily time lies outside 00:00 to 24:00.\n\n`range_reversed`: The last day is before the first.\n\n`too_many_dates`: The event has more than 31 dates.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateEventRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "deleteEvent",
+				"summary": "Delete an event",
+				"description": "Deletes the event and every participant at once.",
+				"tags": [
+					"events"
+				],
+				"security": [
+					{
+						"adminSecret": []
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "The event is deleted."
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				]
+			}
+		},
+		"/events/{id}/windows": {
+			"get": {
+				"operationId": "getWindows",
+				"summary": "Best windows",
+				"description": "Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone.",
+				"tags": [
+					"events"
+				],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "The best windows and the filters applied.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Windows"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "`not_found`: The event or participant does not exist.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					},
+					{
+						"name": "minMinutes",
+						"in": "query",
+						"required": false,
+						"description": "The shortest window to list, in minutes. One slot when left out.",
+						"schema": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 1440
+						}
+					},
+					{
+						"name": "minPeople",
+						"in": "query",
+						"required": false,
+						"description": "The fewest people a window needs. The most people in any window when left out.",
+						"schema": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					}
+				]
+			}
+		},
+		"/events/{id}/participants": {
+			"post": {
+				"operationId": "join",
+				"summary": "Join an event",
+				"description": "Joins under a display name and returns a participant token. A name that is already used gives a token for that participant; when the name has a password, send it as `password`. To protect a new name, send `newPassword`.",
+				"tags": [
+					"participants"
+				],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "The participant and their token.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Joined"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`password_required`: This name has a password.\n\n`wrong_password`: The password does not match.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "`not_found`: The event or participant does not exist.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "`event_full`: The event already has 100 participants.\n\n`name_exists`: A participant already uses this name.\n\n`name_unknown`: No participant uses this name.\n\n`no_password`: The participant has no password.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "`payload_too_large`: The body is larger than 64 KB.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "`unsupported_media_type`: The body must be application/json in UTF-8.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "`invalid_name`: The display name is empty, too long or has a control character.\n\n`invalid_password`: A password has 4 to 128 characters.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`too_many_attempts`: Too many wrong passwords in a row.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds until a password may be tried again.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/JoinRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{id}/participants/{participantId}": {
+			"delete": {
+				"operationId": "removeParticipant",
+				"summary": "Delete a participant",
+				"description": "The organizer deletes a participant and their availability.",
+				"tags": [
+					"participants"
+				],
+				"security": [
+					{
+						"adminSecret": []
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "The participant is deleted."
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "`not_found`: The event or participant does not exist.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					},
+					{
+						"name": "participantId",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the participant.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				]
+			}
+		},
+		"/events/{id}/participants/me": {
+			"get": {
+				"operationId": "getMe",
+				"summary": "Read yourself",
+				"description": "The participant the token belongs to.",
+				"tags": [
+					"participants"
+				],
+				"security": [
+					{
+						"participantToken": []
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The participant.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Participant"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				]
+			},
+			"delete": {
+				"operationId": "leave",
+				"summary": "Leave an event",
+				"description": "Deletes the participant the token belongs to, with their availability.",
+				"tags": [
+					"participants"
+				],
+				"security": [
+					{
+						"participantToken": []
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "The participant is deleted."
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				]
+			}
+		},
+		"/events/{id}/participants/me/availability": {
+			"put": {
+				"operationId": "saveAvailability",
+				"summary": "Save availability",
+				"description": "Replaces the participant's availability as a whole with the slots in the request.",
+				"tags": [
+					"participants"
+				],
+				"security": [
+					{
+						"participantToken": []
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The participant with the saved availability.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Participant"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "`payload_too_large`: The body is larger than 64 KB.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "`unsupported_media_type`: The body must be application/json in UTF-8.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "`unknown_slot`: The availability holds a slot the event does not have.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AvailabilityRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{id}/participants/me/password": {
+			"put": {
+				"operationId": "setPassword",
+				"summary": "Set a password",
+				"description": "Sets or changes the password that protects the participant's name. `currentPassword` is needed exactly when a password is already set.",
+				"tags": [
+					"participants"
+				],
+				"security": [
+					{
+						"participantToken": []
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "The password is set."
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`password_required`: This name has a password.\n\n`wrong_password`: The password does not match.\n\n`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "`no_password`: The participant has no password.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "`payload_too_large`: The body is larger than 64 KB.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "`unsupported_media_type`: The body must be application/json in UTF-8.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "`invalid_password`: A password has 4 to 128 characters.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`too_many_attempts`: Too many wrong passwords in a row.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds until a password may be tried again.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SetPasswordRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "removePassword",
+				"summary": "Remove the password",
+				"description": "Removes the password after checking the current one.",
+				"tags": [
+					"participants"
+				],
+				"security": [
+					{
+						"participantToken": []
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "The password is removed."
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_password`: The password does not match.\n\n`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "`no_password`: The participant has no password.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "`payload_too_large`: The body is larger than 64 KB.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "`unsupported_media_type`: The body must be application/json in UTF-8.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "`too_many_attempts`: Too many wrong passwords in a row.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds until a password may be tried again.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RemovePasswordRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/openapi.json": {
+			"get": {
+				"operationId": "getOpenApi",
+				"summary": "This description",
+				"description": "The OpenAPI 3.1 document of the API.",
+				"tags": [
+					"description"
+				],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "The OpenAPI document.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Event": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The public id of the event."
+					},
+					"name": {
+						"type": "string",
+						"description": "The name of the event."
+					},
+					"description": {
+						"type": "string",
+						"description": "A description of the event; empty when there is none."
+					},
+					"referenceZone": {
+						"type": "string",
+						"description": "The IANA time zone in which the organizer planned the event."
+					},
+					"firstDayOfWeek": {
+						"type": "integer",
+						"enum": [
+							1,
+							2,
+							3,
+							4,
+							5,
+							6,
+							7
+						],
+						"description": "The first day of the week in the grid: 1 is Monday, 7 is Sunday."
+					},
+					"schedule": {
+						"$ref": "#/components/schemas/Schedule",
+						"description": "When the event can take place."
+					},
+					"retention": {
+						"$ref": "#/components/schemas/Retention",
+						"description": "When the event will be deleted."
+					},
+					"participants": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Participant"
+						},
+						"description": "The participants in joining order."
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"description",
+					"referenceZone",
+					"firstDayOfWeek",
+					"schedule",
+					"retention",
+					"participants"
+				],
+				"description": "An event with its schedule and participants."
+			},
+			"Participant": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The public id of the participant."
+					},
+					"name": {
+						"type": "string",
+						"description": "The display name of the participant."
+					},
+					"availability": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Slot"
+						},
+						"description": "The slots in which the participant is available, in time order."
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"availability"
+				],
+				"description": "A participant. Nothing says whether they have a password."
+			},
+			"Schedule": {
+				"oneOf": [
+					{
+						"$ref": "#/components/schemas/DatesSchedule"
+					},
+					{
+						"$ref": "#/components/schemas/RangeSchedule"
+					},
+					{
+						"$ref": "#/components/schemas/WeekdaysSchedule"
+					}
+				],
+				"discriminator": {
+					"propertyName": "mode",
+					"mapping": {
+						"dates": "#/components/schemas/DatesSchedule",
+						"range": "#/components/schemas/RangeSchedule",
+						"weekdays": "#/components/schemas/WeekdaysSchedule"
+					}
+				},
+				"description": "When the event can take place, tagged by `mode`."
+			},
+			"DatesSchedule": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "dates",
+						"description": "The kind of schedule."
+					},
+					"dates": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"format": "date",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+						},
+						"description": "The chosen dates, `YYYY-MM-DD`."
+					},
+					"dailyStart": {
+						"type": "string",
+						"pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+						"description": "The start of each day's slots, `HH:MM`."
+					},
+					"dailyEnd": {
+						"type": "string",
+						"pattern": "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+						"description": "The end of each day's slots, `HH:MM`; `24:00` is midnight."
+					},
+					"slotMinutes": {
+						"type": "integer",
+						"enum": [
+							15,
+							30,
+							60
+						],
+						"description": "The length of a slot in minutes."
+					},
+					"slots": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/DatedSlot"
+						},
+						"description": "Every slot of the event, in time order."
+					}
+				},
+				"required": [
+					"mode",
+					"dates",
+					"dailyStart",
+					"dailyEnd",
+					"slotMinutes",
+					"slots"
+				],
+				"description": "An event on chosen dates."
+			},
+			"RangeSchedule": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "range",
+						"description": "The kind of schedule."
+					},
+					"first": {
+						"type": "string",
+						"format": "date",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+						"description": "The first day, `YYYY-MM-DD`."
+					},
+					"last": {
+						"type": "string",
+						"format": "date",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+						"description": "The last day, `YYYY-MM-DD`."
+					},
+					"dailyStart": {
+						"type": "string",
+						"pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+						"description": "The start of each day's slots, `HH:MM`."
+					},
+					"dailyEnd": {
+						"type": "string",
+						"pattern": "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+						"description": "The end of each day's slots, `HH:MM`; `24:00` is midnight."
+					},
+					"slotMinutes": {
+						"type": "integer",
+						"enum": [
+							15,
+							30,
+							60
+						],
+						"description": "The length of a slot in minutes."
+					},
+					"slots": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/DatedSlot"
+						},
+						"description": "Every slot of the event, in time order."
+					}
+				},
+				"required": [
+					"mode",
+					"first",
+					"last",
+					"dailyStart",
+					"dailyEnd",
+					"slotMinutes",
+					"slots"
+				],
+				"description": "An event on every day from one date to another."
+			},
+			"WeekdaysSchedule": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "weekdays",
+						"description": "The kind of schedule."
+					},
+					"weekdays": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"enum": [
+								1,
+								2,
+								3,
+								4,
+								5,
+								6,
+								7
+							]
+						},
+						"description": "The chosen days of the week: 1 is Monday, 7 is Sunday."
+					},
+					"dailyStart": {
+						"type": "string",
+						"pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+						"description": "The start of each day's slots, `HH:MM`."
+					},
+					"dailyEnd": {
+						"type": "string",
+						"pattern": "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+						"description": "The end of each day's slots, `HH:MM`; `24:00` is midnight."
+					},
+					"slotMinutes": {
+						"type": "integer",
+						"enum": [
+							15,
+							30,
+							60
+						],
+						"description": "The length of a slot in minutes."
+					},
+					"slots": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/WeekdaySlot"
+						},
+						"description": "Every slot of the event, in time order."
+					}
+				},
+				"required": [
+					"mode",
+					"weekdays",
+					"dailyStart",
+					"dailyEnd",
+					"slotMinutes",
+					"slots"
+				],
+				"description": "An event on days of the week, without dates."
+			},
+			"Slot": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/DatedSlot"
+					},
+					{
+						"$ref": "#/components/schemas/WeekdaySlot"
+					}
+				],
+				"description": "A slot of a dated or of a weekday event."
+			},
+			"DatedSlot": {
+				"type": "object",
+				"properties": {
+					"start": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+						"description": "The start of the slot as an RFC 3339 instant in UTC."
+					}
+				},
+				"required": [
+					"start"
+				],
+				"description": "A slot of a dated event."
+			},
+			"WeekdaySlot": {
+				"type": "object",
+				"properties": {
+					"weekday": {
+						"type": "integer",
+						"enum": [
+							1,
+							2,
+							3,
+							4,
+							5,
+							6,
+							7
+						],
+						"description": "The day of the week: 1 is Monday, 7 is Sunday."
+					},
+					"minute": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 1439,
+						"description": "The start of the slot in minutes after midnight."
+					}
+				},
+				"required": [
+					"weekday",
+					"minute"
+				],
+				"description": "A slot of a weekday event: a wall-clock time in the reference zone."
+			},
+			"Retention": {
+				"oneOf": [
+					{
+						"$ref": "#/components/schemas/RetentionUntil"
+					},
+					{
+						"$ref": "#/components/schemas/RetentionKept"
+					}
+				],
+				"discriminator": {
+					"propertyName": "kind",
+					"mapping": {
+						"until": "#/components/schemas/RetentionUntil",
+						"kept": "#/components/schemas/RetentionKept"
+					}
+				},
+				"description": "When the event will be deleted, tagged by `kind`."
+			},
+			"RetentionUntil": {
+				"type": "object",
+				"properties": {
+					"kind": {
+						"type": "string",
+						"const": "until",
+						"description": "Whether the event has a deletion date."
+					},
+					"date": {
+						"type": "string",
+						"format": "date",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+						"description": "The day of deletion, `YYYY-MM-DD`."
+					}
+				},
+				"required": [
+					"kind",
+					"date"
+				],
+				"description": "The event will be deleted on a date."
+			},
+			"RetentionKept": {
+				"type": "object",
+				"properties": {
+					"kind": {
+						"type": "string",
+						"const": "kept",
+						"description": "Whether the event has a deletion date."
+					}
+				},
+				"required": [
+					"kind"
+				],
+				"description": "The event is kept until it is deleted."
+			},
+			"CreatedEvent": {
+				"type": "object",
+				"properties": {
+					"event": {
+						"$ref": "#/components/schemas/Event",
+						"description": "The new event."
+					},
+					"adminSecret": {
+						"type": "string",
+						"description": "The admin secret. It is shown only here and cannot be recovered."
+					}
+				},
+				"required": [
+					"event",
+					"adminSecret"
+				],
+				"description": "A new event and its admin secret."
+			},
+			"Joined": {
+				"type": "object",
+				"properties": {
+					"participant": {
+						"$ref": "#/components/schemas/Participant",
+						"description": "The participant."
+					},
+					"participantToken": {
+						"type": "string",
+						"description": "The participant token."
+					}
+				},
+				"required": [
+					"participant",
+					"participantToken"
+				],
+				"description": "A participant and their token."
+			},
+			"Windows": {
+				"type": "object",
+				"properties": {
+					"minMinutes": {
+						"type": "integer",
+						"minimum": -9007199254740991,
+						"maximum": 9007199254740991,
+						"description": "The shortest window listed, in minutes."
+					},
+					"minPeople": {
+						"type": "integer",
+						"minimum": -9007199254740991,
+						"maximum": 9007199254740991,
+						"description": "The fewest people a listed window has."
+					},
+					"windows": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Window"
+						},
+						"description": "At most five windows: the most people first, then the longest, then the earliest."
+					}
+				},
+				"required": [
+					"minMinutes",
+					"minPeople",
+					"windows"
+				],
+				"description": "The best windows and the filters applied."
+			},
+			"Window": {
+				"type": "object",
+				"properties": {
+					"slots": {
+						"minItems": 1,
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Slot"
+						},
+						"description": "The slots of the window, in time order."
+					},
+					"minutes": {
+						"type": "integer",
+						"minimum": -9007199254740991,
+						"maximum": 9007199254740991,
+						"description": "The length of the window in minutes."
+					},
+					"participantIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "Public ids of the participants available in every slot of the window."
+					}
+				},
+				"required": [
+					"slots",
+					"minutes",
+					"participantIds"
+				],
+				"description": "A run of consecutive slots when the same people are available."
+			},
+			"Problem": {
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string",
+						"description": "`https://convenr.party/problems/` followed by the code. Compare it as a string."
+					},
+					"status": {
+						"type": "integer",
+						"minimum": -9007199254740991,
+						"maximum": 9007199254740991,
+						"description": "The HTTP status."
+					},
+					"title": {
+						"type": "string",
+						"description": "A short English text that is the same for every problem with this code."
+					},
+					"code": {
+						"type": "string",
+						"description": "A stable snake_case name of the problem. A client handles a code it does not know as a general failure."
+					},
+					"errors": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/FieldError"
+						},
+						"description": "The values at fault."
+					},
+					"retryAt": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+						"description": "With `too_many_attempts`: when a password may be tried again."
+					},
+					"losing": {
+						"type": "integer",
+						"minimum": -9007199254740991,
+						"maximum": 9007199254740991,
+						"description": "With `confirmation_required`: how many participants would lose part of their availability."
+					}
+				},
+				"required": [
+					"type",
+					"status",
+					"title",
+					"code"
+				],
+				"description": "An RFC 9457 problem: why a request was refused."
+			},
+			"FieldError": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/PointerError"
+					},
+					{
+						"$ref": "#/components/schemas/ParameterError"
+					}
+				],
+				"description": "A value at fault: in the body or in the query string."
+			},
+			"PointerError": {
+				"type": "object",
+				"properties": {
+					"pointer": {
+						"type": "string",
+						"description": "An RFC 6901 JSON Pointer into the request body."
+					},
+					"code": {
+						"type": "string",
+						"description": "A field code such as `required`, or a rule code such as `date_in_past`."
+					}
+				},
+				"required": [
+					"pointer",
+					"code"
+				],
+				"description": "A value at fault in the request body."
+			},
+			"ParameterError": {
+				"type": "object",
+				"properties": {
+					"parameter": {
+						"type": "string",
+						"description": "The name of the query parameter."
+					},
+					"code": {
+						"type": "string",
+						"description": "A field code such as `too_small`."
+					}
+				},
+				"required": [
+					"parameter",
+					"code"
+				],
+				"description": "A query parameter at fault."
+			},
+			"CreateEventRequest": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "The name of the event."
+					},
+					"description": {
+						"type": "string",
+						"description": "A description of the event. Empty when left out."
+					},
+					"referenceZone": {
+						"type": "string",
+						"description": "The IANA time zone in which the organizer planned the event."
+					},
+					"firstDayOfWeek": {
+						"type": "integer",
+						"enum": [
+							1,
+							2,
+							3,
+							4,
+							5,
+							6,
+							7
+						],
+						"description": "The first day of the week in the grid: 1 is Monday, 7 is Sunday. Monday when left out."
+					},
+					"schedule": {
+						"$ref": "#/components/schemas/ScheduleInput",
+						"description": "When the event can take place."
+					}
+				},
+				"required": [
+					"name",
+					"referenceZone",
+					"schedule"
+				],
+				"additionalProperties": false,
+				"description": "A new event."
+			},
+			"UpdateEventRequest": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "The name of the event."
+					},
+					"description": {
+						"type": "string",
+						"description": "A description of the event; empty when there is none."
+					},
+					"referenceZone": {
+						"type": "string",
+						"description": "The IANA time zone in which the organizer planned the event."
+					},
+					"firstDayOfWeek": {
+						"type": "integer",
+						"enum": [
+							1,
+							2,
+							3,
+							4,
+							5,
+							6,
+							7
+						],
+						"description": "The first day of the week in the grid: 1 is Monday, 7 is Sunday."
+					},
+					"schedule": {
+						"$ref": "#/components/schemas/ScheduleInput",
+						"description": "The whole new schedule, with every field of its mode."
+					},
+					"confirmedLosing": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991,
+						"description": "How many participants the client agreed may lose part of their availability."
+					}
+				},
+				"additionalProperties": false,
+				"description": "The fields to change. A field left out keeps its value."
+			},
+			"ScheduleInput": {
+				"oneOf": [
+					{
+						"$ref": "#/components/schemas/DatesScheduleInput"
+					},
+					{
+						"$ref": "#/components/schemas/RangeScheduleInput"
+					},
+					{
+						"$ref": "#/components/schemas/WeekdaysScheduleInput"
+					}
+				],
+				"discriminator": {
+					"propertyName": "mode",
+					"mapping": {
+						"dates": "#/components/schemas/DatesScheduleInput",
+						"range": "#/components/schemas/RangeScheduleInput",
+						"weekdays": "#/components/schemas/WeekdaysScheduleInput"
+					}
+				},
+				"description": "When the event can take place, tagged by `mode`. The server derives the slots."
+			},
+			"DatesScheduleInput": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "dates",
+						"description": "The kind of schedule."
+					},
+					"dates": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"format": "date",
+							"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+						},
+						"description": "The chosen dates, `YYYY-MM-DD`."
+					},
+					"dailyStart": {
+						"type": "string",
+						"pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+						"description": "The start of each day's slots, `HH:MM`."
+					},
+					"dailyEnd": {
+						"type": "string",
+						"pattern": "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+						"description": "The end of each day's slots, `HH:MM`; `24:00` is midnight."
+					},
+					"slotMinutes": {
+						"type": "integer",
+						"enum": [
+							15,
+							30,
+							60
+						],
+						"description": "The length of a slot in minutes."
+					}
+				},
+				"required": [
+					"mode",
+					"dates",
+					"dailyStart",
+					"dailyEnd",
+					"slotMinutes"
+				],
+				"additionalProperties": false,
+				"description": "An event on chosen dates."
+			},
+			"RangeScheduleInput": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "range",
+						"description": "The kind of schedule."
+					},
+					"first": {
+						"type": "string",
+						"format": "date",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+						"description": "The first day, `YYYY-MM-DD`."
+					},
+					"last": {
+						"type": "string",
+						"format": "date",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+						"description": "The last day, `YYYY-MM-DD`."
+					},
+					"dailyStart": {
+						"type": "string",
+						"pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+						"description": "The start of each day's slots, `HH:MM`."
+					},
+					"dailyEnd": {
+						"type": "string",
+						"pattern": "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+						"description": "The end of each day's slots, `HH:MM`; `24:00` is midnight."
+					},
+					"slotMinutes": {
+						"type": "integer",
+						"enum": [
+							15,
+							30,
+							60
+						],
+						"description": "The length of a slot in minutes."
+					}
+				},
+				"required": [
+					"mode",
+					"first",
+					"last",
+					"dailyStart",
+					"dailyEnd",
+					"slotMinutes"
+				],
+				"additionalProperties": false,
+				"description": "An event on every day from one date to another."
+			},
+			"WeekdaysScheduleInput": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "weekdays",
+						"description": "The kind of schedule."
+					},
+					"weekdays": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"enum": [
+								1,
+								2,
+								3,
+								4,
+								5,
+								6,
+								7
+							]
+						},
+						"description": "The chosen days of the week: 1 is Monday, 7 is Sunday."
+					},
+					"dailyStart": {
+						"type": "string",
+						"pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+						"description": "The start of each day's slots, `HH:MM`."
+					},
+					"dailyEnd": {
+						"type": "string",
+						"pattern": "^(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)$",
+						"description": "The end of each day's slots, `HH:MM`; `24:00` is midnight."
+					},
+					"slotMinutes": {
+						"type": "integer",
+						"enum": [
+							15,
+							30,
+							60
+						],
+						"description": "The length of a slot in minutes."
+					}
+				},
+				"required": [
+					"mode",
+					"weekdays",
+					"dailyStart",
+					"dailyEnd",
+					"slotMinutes"
+				],
+				"additionalProperties": false,
+				"description": "An event on days of the week, without dates."
+			},
+			"JoinRequest": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "The display name to join under."
+					},
+					"password": {
+						"type": "string",
+						"description": "The password of a name that already has one. A name nobody uses is refused with it."
+					},
+					"newPassword": {
+						"type": "string",
+						"description": "A password for a name nobody uses yet. A name already used is refused with it."
+					}
+				},
+				"required": [
+					"name"
+				],
+				"additionalProperties": false,
+				"description": "A join. At most one of `password` and `newPassword`."
+			},
+			"AvailabilityRequest": {
+				"type": "object",
+				"properties": {
+					"availability": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/SlotInput"
+						},
+						"description": "Every slot in which the participant is available."
+					}
+				},
+				"required": [
+					"availability"
+				],
+				"additionalProperties": false,
+				"description": "The participant's whole availability."
+			},
+			"SlotInput": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/DatedSlotInput"
+					},
+					{
+						"$ref": "#/components/schemas/WeekdaySlotInput"
+					}
+				],
+				"description": "A slot of a dated or of a weekday event."
+			},
+			"DatedSlotInput": {
+				"type": "object",
+				"properties": {
+					"start": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+						"description": "The start of the slot as an RFC 3339 instant in UTC."
+					}
+				},
+				"required": [
+					"start"
+				],
+				"additionalProperties": false,
+				"description": "A slot of a dated event."
+			},
+			"WeekdaySlotInput": {
+				"type": "object",
+				"properties": {
+					"weekday": {
+						"type": "integer",
+						"enum": [
+							1,
+							2,
+							3,
+							4,
+							5,
+							6,
+							7
+						],
+						"description": "The day of the week: 1 is Monday, 7 is Sunday."
+					},
+					"minute": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 1439,
+						"description": "The start of the slot in minutes after midnight."
+					}
+				},
+				"required": [
+					"weekday",
+					"minute"
+				],
+				"additionalProperties": false,
+				"description": "A slot of a weekday event."
+			},
+			"SetPasswordRequest": {
+				"type": "object",
+				"properties": {
+					"newPassword": {
+						"type": "string",
+						"description": "A new password, 4 to 128 characters."
+					},
+					"currentPassword": {
+						"type": "string",
+						"description": "The password set now. Needed exactly when a password is set."
+					}
+				},
+				"required": [
+					"newPassword"
+				],
+				"additionalProperties": false,
+				"description": "A new password."
+			},
+			"RemovePasswordRequest": {
+				"type": "object",
+				"properties": {
+					"currentPassword": {
+						"type": "string",
+						"description": "The password set now."
+					}
+				},
+				"required": [
+					"currentPassword"
+				],
+				"additionalProperties": false,
+				"description": "The password to remove."
+			}
+		},
+		"securitySchemes": {
+			"adminSecret": {
+				"type": "http",
+				"scheme": "bearer",
+				"description": "The admin secret of an event, starting with `cva_`. It is returned once, when the event is created."
+			},
+			"participantToken": {
+				"type": "http",
+				"scheme": "bearer",
+				"description": "The token of a participant, starting with `cvp_`. It is returned by each join."
+			}
+		}
+	}
+}

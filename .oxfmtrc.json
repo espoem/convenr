@@ -20,6 +20,7 @@
 		".mise/**",
 		"**/drizzle/**",
 		"**/tokens.css",
+		"apps/web/openapi.json",
 		"**/components/ui/**",
 		".agents/**",
 		".claude/**",
