@@ -33,6 +33,7 @@ describe("the OpenAPI document", () => {
 				"DELETE /api/v1/events/{id}",
 				"PUT /api/v1/events/{id}/final",
 				"DELETE /api/v1/events/{id}/final",
+				"GET /api/v1/events/{id}/final.ics",
 				"GET /api/v1/events/{id}/windows",
 				"POST /api/v1/events/{id}/participants",
 				"DELETE /api/v1/events/{id}/participants/{participantId}",

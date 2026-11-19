@@ -9,6 +9,14 @@ export function eventSegment(id: string, name: string): string {
 }
 
 /**
+ * The share link outside the page, as in a calendar entry: without a language, so the event
+ * page opens in the language of whoever follows it.
+ */
+export function shareUrl(origin: string, segment: string): string {
+	return `${origin}/e/${segment}`;
+}
+
+/**
  * The event id selected by a `{slug}-{id}` or `{id}` path segment, or `undefined` when the
  * text after the last hyphen is not an event id. The slug part is ignored.
  */

@@ -26,6 +26,7 @@ Returned as `problem` when the organizer's pick of the final time is refused. A 
 |---|---|---|
 | `final_not_in_event` | The slots are not one run of the event's slots in one day, or a dated event was sent a date, or a weekday event none. | N1, A22 |
 | `final_date_wrong_weekday` | A weekday event's date does not fall on the weekday of the slots. | N3, A22 |
+| `not_finalized` | The calendar file of an event without a final time was asked for. | C4, A23 |
 
 ## Participants and responses
 
@@ -100,7 +101,7 @@ The API sends every code with one status.
 | `400 Bad Request` | `invalid_request`, `secret_in_query` |
 | `401 Unauthorized` | `unauthorized` |
 | `403 Forbidden` | `wrong_secret_kind`, `password_required`, `wrong_password` |
-| `404 Not Found` | `not_found` |
+| `404 Not Found` | `not_found`, `not_finalized` |
 | `405 Method Not Allowed` | `method_not_allowed`, with `Allow` |
 | `409 Conflict` | `event_full`, `field_locked`, `no_password`, `name_exists`, `name_unknown`, `confirmation_required`, with `ETag` |
 | `412 Precondition Failed` | `event_changed`, with `ETag` |

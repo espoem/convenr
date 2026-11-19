@@ -55,7 +55,7 @@ export type BoardEvent = {
 /** The final time as RFC 3339 instants, with the event's slots inside it. */
 export type ShownFinal =
 	| { kind: "open" }
-	| { kind: "chosen"; start: string; end: string; slots: string[] };
+	| { kind: "chosen"; start: string; end: string; sequence: number; slots: string[] };
 
 type EventBoardProps = {
 	event: BoardEvent;

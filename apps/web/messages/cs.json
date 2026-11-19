@@ -130,6 +130,9 @@
 		"finalWhen": "{date}, {start}–{end}",
 		"finalWhenAcross": "{startDate}, {start} – {endDate}, {end}",
 		"finalZone": "Ve vašem časovém pásmu, {zone}.",
+		"calendarFile": "Stáhnout do kalendáře (.ics)",
+		"calendarGoogle": "Přidat do Google Kalendáře",
+		"calendarOutlook": "Přidat do Outlook.com",
 		"count": "{available} z {total}",
 		"countIfNeedBe": "{available} z {total}, z toho {ifNeedBe} když bude nutné",
 		"groupHint": "Najeďte myší na políčko, klepněte na ně, nebo se na ně přesuňte klávesnicí a uvidíte, kdo může.",
@@ -272,6 +275,10 @@
 				"summary": "Vybrat konečný čas",
 				"description": "Vybere souvislou řadu slotů události v jednom dni jako konečný čas, nebo ho změní. Událost podle dnů v týdnu uvede i datum jediného termínu. Odpovídat jde dál. Výběr konečného času, který už událost má, nic nezmění."
 			},
+			"getFinalCalendar": {
+				"summary": "Stáhnout konečný čas jako soubor kalendáře",
+				"description": "Soubor iCalendar s jednou událostí: název, popis následovaný odkazem pro účastníky a konečný čas v UTC. Nikdy neobsahuje odkaz pro správu ani jméno účastníka. `UID` vychází z id události a `SEQUENCE` roste s každým výběrem nebo změnou, takže kalendář, který naimportuje pozdější soubor, nahradí dřívější záznam. Je to jediná odpověď API, která není JSON."
+			},
 			"clearFinal": {
 				"summary": "Zrušit konečný čas",
 				"description": "Zruší konečný čas. Odpovědi zůstanou, jak jsou; další výběr pokračuje v počítání `sequence`."
@@ -334,6 +341,7 @@
 			"deleteEvent": "Událost je smazaná.",
 			"pickFinal": "Událost s konečným časem.",
 			"clearFinal": "Událost bez konečného času.",
+			"getFinalCalendar": "Soubor kalendáře s konečným časem.",
 			"getWindows": "Nejlepší okna a použité filtry.",
 			"join": "Účastník a jeho token.",
 			"removeParticipant": "Účastník je smazaný.",
@@ -493,6 +501,7 @@
 			"password_required": "Toto jméno má heslo.",
 			"wrong_password": "Heslo nesouhlasí.",
 			"not_found": "Událost nebo účastník neexistuje.",
+			"not_finalized": "Událost nemá konečný čas.",
 			"method_not_allowed": "Tato cesta metodu nepodporuje.",
 			"event_full": "Událost už má 100 účastníků.",
 			"field_locked": "Délka slotu, režim dnů a referenční zóna se nemohou změnit, jakmile se někdo připojil.",

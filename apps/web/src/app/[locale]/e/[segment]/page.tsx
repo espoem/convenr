@@ -49,7 +49,16 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 		<PageShell>
 			<main className="flex flex-col gap-6">
 				{board.final.kind === "chosen" ? (
-					<FinalBanner final={board.final} formatLocale={format} />
+					<FinalBanner
+						event={{
+							id: event.id,
+							name: event.name,
+							description: event.description,
+							segment: event.segment,
+						}}
+						final={board.final}
+						formatLocale={format}
+					/>
 				) : null}
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl break-words sm:text-4xl">{event.name}</h1>

@@ -130,6 +130,9 @@
 		"finalWhen": "{date}, {start}–{end}",
 		"finalWhenAcross": "{startDate}, {start} – {endDate}, {end}",
 		"finalZone": "In your time zone, {zone}.",
+		"calendarFile": "Download for your calendar (.ics)",
+		"calendarGoogle": "Add to Google Calendar",
+		"calendarOutlook": "Add to Outlook.com",
 		"count": "{available} of {total}",
 		"countIfNeedBe": "{available} of {total}, {ifNeedBe} of them if need be",
 		"groupHint": "Point at a slot, tap it, or move to it with the keyboard to see who is available.",
@@ -272,6 +275,10 @@
 				"summary": "Pick the final time",
 				"description": "Picks a run of the event's slots in one day as the final time, or changes it. A weekday event also names the date of the one occurrence. Responses stay open. Picking the final time the event already has changes nothing."
 			},
+			"getFinalCalendar": {
+				"summary": "Download the final time as a calendar file",
+				"description": "An iCalendar file with one event: the name, the description followed by the share link, and the final time in UTC. It never holds the admin link or a participant's name. Its `UID` comes from the event id and its `SEQUENCE` grows with every pick or change, so a calendar that imports a later file replaces the earlier entry. This is the only answer of the API that is not JSON."
+			},
 			"clearFinal": {
 				"summary": "Clear the final time",
 				"description": "Clears the final time. Responses stay as they are; a later pick counts on in `sequence`."
@@ -334,6 +341,7 @@
 			"deleteEvent": "The event is deleted.",
 			"pickFinal": "The event with its final time.",
 			"clearFinal": "The event without a final time.",
+			"getFinalCalendar": "The calendar file of the final time.",
 			"getWindows": "The best windows and the filters applied.",
 			"join": "The participant and their token.",
 			"removeParticipant": "The participant is deleted.",
@@ -493,6 +501,7 @@
 			"password_required": "This name has a password.",
 			"wrong_password": "The password does not match.",
 			"not_found": "The event or participant does not exist.",
+			"not_finalized": "The event has no final time.",
 			"method_not_allowed": "This path does not support the method.",
 			"event_full": "The event already has 100 participants.",
 			"field_locked": "Slot length, day mode and reference zone cannot change once people joined.",

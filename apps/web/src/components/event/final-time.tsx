@@ -1,9 +1,13 @@
 "use client";
 
-import { FlagIcon } from "@phosphor-icons/react";
+import { CalendarPlusIcon, FlagIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
+import { buttonVariants } from "@/components/ui/button";
+import { type CalendarEntry, googleCalendarUrl, outlookCalendarUrl } from "@/domain/calendar";
+import { shareUrl } from "@/domain/event-address";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
+import { cn } from "@/lib/utils";
 
 import type { ShownFinal } from "./event-board";
 
@@ -42,15 +46,37 @@ export function useFinalWhen(): (final: Chosen, zone: string, locale: string) =>
 	};
 }
 
-type FinalBannerProps = { final: Chosen; formatLocale: string };
+type FinalBannerProps = {
+	event: { id: string; name: string; description: string; segment: string };
+	final: Chosen;
+	formatLocale: string;
+};
 
-/** The final time above everything else on the event page, in the viewer's zone. */
-export function FinalBanner({ final, formatLocale }: FinalBannerProps) {
+/**
+ * The final time above everything else on the event page, in the viewer's zone, with the
+ * calendar file and the links that open a new entry at Google Calendar or Outlook.com.
+ */
+export function FinalBanner({ event, final, formatLocale }: FinalBannerProps) {
 	const t = useTranslations("Event");
 	const temporalReady = useTemporalReady();
 	const viewerZone = useViewerZone();
 	const when = useFinalWhen();
 	const ready = temporalReady && viewerZone !== null;
+	// Through `cn`, as `Button` does, so the outline's border wins over the base's transparent one.
+	const linkClass = cn(buttonVariants({ variant: "outline" }));
+
+	// The share link needs the page's own origin, which only the browser knows for sure.
+	const entry: CalendarEntry | null = ready
+		? {
+				id: event.id,
+				name: event.name,
+				description: event.description,
+				shareUrl: shareUrl(window.location.origin, event.segment),
+				start: Temporal.Instant.from(final.start),
+				end: Temporal.Instant.from(final.end),
+				sequence: final.sequence,
+			}
+		: null;
 
 	return (
 		<section
@@ -68,6 +94,32 @@ export function FinalBanner({ final, formatLocale }: FinalBannerProps) {
 			<p className="min-h-[1.5em] text-ink-muted">
 				{ready ? t("finalZone", { zone: viewerZone.replaceAll("_", " ") }) : ""}
 			</p>
+			<div className="flex flex-wrap gap-2 pt-2">
+				<a href={`/api/v1/events/${event.id}/final.ics`} download className={linkClass}>
+					<CalendarPlusIcon aria-hidden />
+					{t("calendarFile")}
+				</a>
+				{entry === null ? null : (
+					<>
+						<a
+							href={googleCalendarUrl(entry)}
+							target="_blank"
+							rel="noreferrer"
+							className={linkClass}
+						>
+							{t("calendarGoogle")}
+						</a>
+						<a
+							href={outlookCalendarUrl(entry)}
+							target="_blank"
+							rel="noreferrer"
+							className={linkClass}
+						>
+							{t("calendarOutlook")}
+						</a>
+					</>
+				)}
+			</div>
 		</section>
 	);
 }

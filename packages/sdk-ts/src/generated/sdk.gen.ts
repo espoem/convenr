@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.js';
-import type { ClearFinalData, ClearFinalErrors, ClearFinalResponses, CreateEventData, CreateEventErrors, CreateEventResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, GetEventData, GetEventErrors, GetEventResponses, GetMeData, GetMeErrors, GetMeResponses, GetOpenApiData, GetOpenApiErrors, GetOpenApiResponses, GetWindowsData, GetWindowsErrors, GetWindowsResponses, JoinData, JoinErrors, JoinResponses, LeaveData, LeaveErrors, LeaveResponses, PickFinalData, PickFinalErrors, PickFinalResponses, RemoveParticipantData, RemoveParticipantErrors, RemoveParticipantResponses, RemovePasswordData, RemovePasswordErrors, RemovePasswordResponses, SaveAvailabilityData, SaveAvailabilityErrors, SaveAvailabilityResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses } from './types.gen.js';
+import type { ClearFinalData, ClearFinalErrors, ClearFinalResponses, CreateEventData, CreateEventErrors, CreateEventResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, GetEventData, GetEventErrors, GetEventResponses, GetFinalCalendarData, GetFinalCalendarErrors, GetFinalCalendarResponses, GetMeData, GetMeErrors, GetMeResponses, GetOpenApiData, GetOpenApiErrors, GetOpenApiResponses, GetWindowsData, GetWindowsErrors, GetWindowsResponses, JoinData, JoinErrors, JoinResponses, LeaveData, LeaveErrors, LeaveResponses, PickFinalData, PickFinalErrors, PickFinalResponses, RemoveParticipantData, RemoveParticipantErrors, RemoveParticipantResponses, RemovePasswordData, RemovePasswordErrors, RemovePasswordResponses, SaveAvailabilityData, SaveAvailabilityErrors, SaveAvailabilityResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -106,6 +106,13 @@ export const pickFinal = <ThrowOnError extends boolean = false>(options: Options
         ...options.headers
     }
 });
+
+/**
+ * Download the final time as a calendar file
+ *
+ * An iCalendar file with one event: the name, the description followed by the share link, and the final time in UTC. It never holds the admin link or a participant's name. Its `UID` comes from the event id and its `SEQUENCE` grows with every pick or change, so a calendar that imports a later file replaces the earlier entry. This is the only answer of the API that is not JSON.
+ */
+export const getFinalCalendar = <ThrowOnError extends boolean = false>(options: Options<GetFinalCalendarData, ThrowOnError>): RequestResult<GetFinalCalendarResponses, GetFinalCalendarErrors, ThrowOnError> => (options.client ?? client).get<GetFinalCalendarResponses, GetFinalCalendarErrors, ThrowOnError>({ url: '/events/{id}/final.ics', ...options });
 
 /**
  * Best windows

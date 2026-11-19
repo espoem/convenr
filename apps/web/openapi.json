@@ -751,6 +751,99 @@
 				]
 			}
 		},
+		"/events/{id}/final.ics": {
+			"get": {
+				"operationId": "getFinalCalendar",
+				"summary": "Download the final time as a calendar file",
+				"description": "An iCalendar file with one event: the name, the description followed by the share link, and the final time in UTC. It never holds the admin link or a participant's name. Its `UID` comes from the event id and its `SEQUENCE` grows with every pick or change, so a calendar that imports a later file replaces the earlier entry. This is the only answer of the API that is not JSON.",
+				"tags": [
+					"events"
+				],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "The calendar file of the final time.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"text/calendar": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"304": {
+						"description": "The event has not changed since the read that returned this `ETag`.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "`not_finalized`: The event has no final time.\n\n`not_found`: The event or participant does not exist.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					},
+					{
+						"name": "If-None-Match",
+						"in": "header",
+						"required": false,
+						"description": "The `ETag` of an earlier read.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
 		"/events/{id}/windows": {
 			"get": {
 				"operationId": "getWindows",

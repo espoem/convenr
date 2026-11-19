@@ -28,6 +28,7 @@ export function boardOf(event: EventView): BoardEvent {
 						kind: "chosen",
 						start: final.start.toString(),
 						end: final.end.toString(),
+						sequence: final.sequence,
 						slots: event.finalSlots,
 					},
 	};

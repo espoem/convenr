@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { GET as readCalendar } from "@/app/api/v1/events/[id]/final.ics/route";
 import { DELETE as clearFinal, PUT as pickFinal } from "@/app/api/v1/events/[id]/final/route";
 import { PATCH as updateEvent } from "@/app/api/v1/events/[id]/route";
 import { db } from "@/db/client";
@@ -123,6 +124,53 @@ describe("the final time", () => {
 			losing: 0,
 			clearsFinal: true,
 		});
+	});
+
+	it("is downloaded as a calendar file that a later pick replaces", async () => {
+		const { id, adminSecret } = await createdEvent();
+
+		const missing = await call(readCalendar, { id });
+
+		expect(missing.status).toBe(404);
+		expect(await refusalOf(missing)).toMatchObject({ code: "not_finalized" });
+
+		await pick(id, adminSecret, { slots: [FIVE, SIX] });
+
+		const first = await call(readCalendar, { id });
+		const lines = (await first.text()).replaceAll("\r\n ", "").split("\r\n");
+
+		expect(first.status).toBe(200);
+		expect(first.headers.get("Content-Type")).toBe("text/calendar; charset=utf-8");
+		expect(first.headers.get("Content-Disposition")).toMatch(
+			/^attachment; filename="schuzka-vyboru-\w+\.ics"$/u,
+		);
+		expect(lines).toEqual(
+			expect.arrayContaining([
+				`UID:${id}@convenr`,
+				"SEQUENCE:1",
+				"DTSTART:20270405T150000Z",
+				"DTEND:20270405T170000Z",
+				"SUMMARY:Schůzka výboru",
+				expect.stringMatching(/^DESCRIPTION:V klubovně\.\\n\\nhttp:\/\/[^/]+\/e\/schuzka-vyboru-/u),
+			]),
+		);
+		expect(lines.join("\n")).not.toContain("cva_");
+
+		await pick(id, adminSecret, { slots: [SIX] });
+
+		const later = await (await call(readCalendar, { id })).text();
+
+		expect(later).toContain(`UID:${id}@convenr`);
+		expect(later).toContain("SEQUENCE:2");
+		expect(later).toContain("DTSTART:20270405T160000Z");
+
+		const unchanged = await call(
+			readCalendar,
+			{ id },
+			{ headers: { "If-None-Match": first.headers.get("ETag") ?? "" } },
+		);
+
+		expect(unchanged.status).toBe(200);
 	});
 
 	it("refuses the participant token and a wrong admin secret", async () => {

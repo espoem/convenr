@@ -7,7 +7,14 @@ from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from convenr import AuthenticatedClient, Client
-from convenr.api.events import create_event, delete_event, get_event, get_windows, pick_final
+from convenr.api.events import (
+    create_event,
+    delete_event,
+    get_event,
+    get_final_calendar,
+    get_windows,
+    pick_final,
+)
 from convenr.api.participants import join, save_availability
 from convenr.models import (
     AvailabilityRequest,
@@ -129,6 +136,12 @@ def test_weekday_event_with_two_participants() -> None:
     assert isinstance(picked, Event)
     assert isinstance(picked.final, FinalChosen)
     assert picked.final.sequence == 1
+
+    calendar = get_final_calendar.sync(event_id, client=client)
+    assert isinstance(calendar, str)
+    lines = calendar.replace("\r\n ", "").split("\r\n")
+    assert f"UID:{event_id}@convenr" in lines
+    assert "SEQUENCE:1" in lines
 
     deleted = delete_event.sync_detailed(event_id, client=authenticated(created.admin_secret))
     assert deleted.status_code == HTTPStatus.NO_CONTENT

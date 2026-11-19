@@ -6,6 +6,7 @@ import {
 	deleteEvent,
 	type Event,
 	getEvent,
+	getFinalCalendar,
 	getWindows,
 	join,
 	pickFinal,
@@ -147,6 +148,31 @@ describe("the TypeScript SDK against a running instance", () => {
 		});
 
 		expect(picked.data.final).toMatchObject({ kind: "chosen", sequence: 1, slots: computed });
+
+		const calendar = async () => {
+			const file = await getFinalCalendar({ client, throwOnError: true, path: { id: event.id } });
+
+			return file.data.replaceAll("\r\n ", "");
+		};
+
+		const first = await calendar();
+
+		expect(first).toContain(`UID:${event.id}@convenr`);
+		expect(first).toContain("SEQUENCE:1");
+
+		// Moving the final time keeps the entry and raises its sequence.
+		await pickFinal({
+			client,
+			throwOnError: true,
+			auth: adminSecret,
+			path: { id: event.id },
+			body: { slots: slots.slice(2, 4) },
+		});
+
+		const moved = await calendar();
+
+		expect(moved).toContain(`UID:${event.id}@convenr`);
+		expect(moved).toContain("SEQUENCE:2");
 
 		await deleteEvent({ client, throwOnError: true, auth: adminSecret, path: { id: event.id } });
 	});

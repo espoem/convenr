@@ -1022,6 +1022,52 @@ export type PickFinalResponses = {
 
 export type PickFinalResponse = PickFinalResponses[keyof PickFinalResponses];
 
+export type GetFinalCalendarData = {
+    body?: never;
+    headers?: {
+        /**
+         * The `ETag` of an earlier read.
+         */
+        'If-None-Match'?: string;
+    };
+    path: {
+        /**
+         * The public id of the event, from its share link.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/events/{id}/final.ics';
+};
+
+export type GetFinalCalendarErrors = {
+    /**
+     * `secret_in_query`: A secret was sent in the query string.
+     */
+    400: Problem;
+    /**
+     * `not_finalized`: The event has no final time.
+     *
+     * `not_found`: The event or participant does not exist.
+     */
+    404: Problem;
+    /**
+     * `internal_error`: The server failed to answer the request.
+     */
+    500: Problem;
+};
+
+export type GetFinalCalendarError = GetFinalCalendarErrors[keyof GetFinalCalendarErrors];
+
+export type GetFinalCalendarResponses = {
+    /**
+     * The calendar file of the final time.
+     */
+    200: string;
+};
+
+export type GetFinalCalendarResponse = GetFinalCalendarResponses[keyof GetFinalCalendarResponses];
+
 export type GetWindowsData = {
     body?: never;
     headers?: {

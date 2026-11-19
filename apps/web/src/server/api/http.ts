@@ -26,6 +26,7 @@ export const PROBLEM_STATUS = {
 	password_required: 403,
 	wrong_password: 403,
 	not_found: 404,
+	not_finalized: 404,
 	method_not_allowed: 405,
 	event_full: 409,
 	field_locked: 409,

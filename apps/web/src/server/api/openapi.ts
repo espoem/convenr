@@ -350,7 +350,8 @@ type Operation = {
 	query?: z.ZodObject;
 	/** The component of the request body. */
 	body?: string;
-	success: { status: 200 | 201 | 204; body?: string; headers?: HeaderName[] };
+	/** `body` names a JSON component; `calendar` is an iCalendar file instead. */
+	success: { status: 200 | 201 | 204; body?: string; calendar?: true; headers?: HeaderName[] };
 	/** Answers `If-None-Match` with `304`. */
 	conditional?: true;
 	/** Refuses a change with `412` when `If-Match` names no current version. */
@@ -418,6 +419,15 @@ const OPERATIONS: Operation[] = [
 		success: { status: 200, body: "Event", headers: ["ETag"] },
 		ifMatch: true,
 		problems: ["event_changed"],
+	},
+	{
+		id: "getFinalCalendar",
+		method: "get",
+		path: "/events/{id}/final.ics",
+		tag: "events",
+		success: { status: 200, calendar: true, headers: ["ETag"] },
+		conditional: true,
+		problems: ["not_finalized"],
 	},
 	{
 		id: "getWindows",
@@ -610,7 +620,7 @@ function parameters(operation: Operation, texts: Texts): Parameter[] {
 
 type Header = { description: string; schema: JsonSchema };
 
-type MediaType = "application/json" | "application/problem+json";
+type MediaType = "application/json" | "application/problem+json" | "text/calendar";
 
 type ResponseObject = {
 	description: string;
@@ -628,7 +638,7 @@ function headers(names: HeaderName[], texts: Texts): Partial<Record<HeaderName, 
 }
 
 function successResponse(operation: Operation, texts: Texts): ResponseObject {
-	const { status, body, headers: names = [] } = operation.success;
+	const { status, body, calendar, headers: names = [] } = operation.success;
 
 	const response: ResponseObject = {
 		description: lookup(texts.responses, "responses", operation.id),
@@ -638,7 +648,9 @@ function successResponse(operation: Operation, texts: Texts): ResponseObject {
 		response.headers = headers(names, texts);
 	}
 
-	if (body !== undefined) {
+	if (calendar === true) {
+		response.content = { "text/calendar": { schema: { type: "string" } } };
+	} else if (body !== undefined) {
 		response.content = { "application/json": { schema: ref(body) } };
 	} else if (status !== 204) {
 		response.content = { "application/json": { schema: { type: "object" } } };

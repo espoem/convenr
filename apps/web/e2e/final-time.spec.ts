@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { test } from "@playwright/test";
 
 import { cell, createEvent, expect, freshPage, respond } from "./helpers";
@@ -54,6 +56,47 @@ test("the organizer picks a final time that the event page shows, and narrowing 
 		cell(viewer, first, "20:30").locator("xpath=..").locator(".cv-final"),
 	).toHaveAttribute("data-edge", "bottom");
 	await expect(viewer.getByRole("table").getByText("Konečný čas")).toHaveCount(1);
+
+	// The calendar file holds the final time in UTC and a share link that opens the event.
+	const utc = (time: string) =>
+		first
+			.toZonedDateTime({ timeZone: "Europe/Prague", plainTime: time })
+			.toInstant()
+			.toString()
+			.replaceAll(/[-:]/gu, "");
+
+	const downloading = viewer.waitForEvent("download");
+
+	await banner.getByRole("link", { name: "Stáhnout do kalendáře (.ics)" }).click();
+
+	const download = await downloading;
+	const path = await download.path();
+	const file = (await readFile(path, "utf8")).replaceAll("\r\n ", "");
+
+	expect(download.suggestedFilename()).toMatch(/^vyber-terminu-\w+\.ics$/u);
+	expect(file).toContain(`DTSTART:${utc("20:00")}`);
+	expect(file).toContain(`DTEND:${utc("21:00")}`);
+	expect(file).toContain("SEQUENCE:2");
+	expect(file).not.toContain(admin.split("#")[1] ?? "no secret");
+
+	const link = /^URL:(.+)$/mu.exec(file)?.[1]?.trim() ?? "";
+
+	expect(link).toMatch(/\/e\/vyber-terminu-\w+$/u);
+	await expect(banner.getByRole("link", { name: "Přidat do Google Kalendáře" })).toHaveAttribute(
+		"href",
+		new RegExp(`dates=${utc("20:00")}%2F${utc("21:00")}`, "u"),
+	);
+	await expect(banner.getByRole("link", { name: "Přidat do Outlook.com" })).toHaveAttribute(
+		"href",
+		/^https:\/\/outlook\.live\.com\//u,
+	);
+
+	const follower = await freshPage(browser);
+
+	await follower.goto(link);
+	await expect(follower).toHaveURL(/\/cs\/e\/vyber-terminu-\w+$/u);
+	await expect(follower.getByRole("heading", { name: "Výběr termínu" })).toBeVisible();
+	await follower.context().close();
 
 	// Narrowing the hours asks about the final time although nobody loses availability.
 	await organizer.getByLabel("do", { exact: true }).selectOption({ label: "20:00" });
