@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activationRate, firstResponseBucket, medianBucket, usageReport } from "./usage";
+import { firstResponseBucket, medianBucket, shareOf, usageReport } from "./usage";
 
 const created = Temporal.Instant.from("2027-03-01T12:00:00Z");
 const after = (hours: number) => created.add({ minutes: Math.round(hours * 60) });
@@ -36,10 +36,10 @@ describe("medianBucket", () => {
 	});
 });
 
-describe("activationRate", () => {
-	it("is the activated share of the evaluated events", () => {
-		expect(activationRate(4, 1)).toBe(0.25);
-		expect(activationRate(0, 0)).toBeNull();
+describe("shareOf", () => {
+	it("is the share of a part of the events, and absent without events", () => {
+		expect(shareOf(4, 1)).toBe(0.25);
+		expect(shareOf(0, 0)).toBeNull();
 	});
 });
 
@@ -54,16 +54,18 @@ describe("usageReport", () => {
 				{ day: "2027-03-02", metric: "activated", bucket: 0, count: 1 },
 				{ day: "2027-03-02", metric: "group_size", bucket: 0, count: 1 },
 				{ day: "2027-03-02", metric: "group_size", bucket: 5, count: 2 },
+				{ day: "2027-03-02", metric: "finalized", bucket: 0, count: 1 },
+				{ day: "2027-03-02", metric: "time_to_final", bucket: 2, count: 1 },
 			],
 			Temporal.PlainDate.from("2027-03-01"),
 			Temporal.PlainDate.from("2027-03-03"),
 		);
 
 		expect(report.split("\n")).toEqual([
-			"day         created  activation  median group  median first response",
-			"2027-03-01  3        -           -             under 7 days",
-			"2027-03-02  0        25 %        5             -",
-			"2027-03-03  0        -           -             -",
+			"day         created  activation  median group  median first response  finalized  median time to final",
+			"2027-03-01  3        -           -             under 7 days           -          -",
+			"2027-03-02  0        25 %        5             -                      33 %       under 1 day",
+			"2027-03-03  0        -           -             -                      -          -",
 		]);
 	});
 });

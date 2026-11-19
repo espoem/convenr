@@ -18,6 +18,15 @@ Returned in a `problems` list when a new or edited event is refused. A problem o
 | `not_on_slot_boundary` | The daily start or end is not a multiple of the slot length. | E3 |
 | `field_locked` | Slot length, day mode or reference zone changed on an event that has participants. | M3 |
 
+## Final time
+
+Returned as `problem` when the organizer's pick of the final time is refused. A weekday date before today reuses `date_in_past`.
+
+| Code | Meaning | Rules |
+|---|---|---|
+| `final_not_in_event` | The slots are not one run of the event's slots in one day, or a dated event was sent a date, or a weekday event none. | N1, A22 |
+| `final_date_wrong_weekday` | A weekday event's date does not fall on the weekday of the slots. | N3, A22 |
+
 ## Participants and responses
 
 Returned as `problem` in a failed result.
@@ -53,7 +62,7 @@ Codes that only the API returns, from [phase 3](phase-3.md).
 | `unauthorized` | The secret is missing or wrong, or the event does not exist. | K3, A12 |
 | `wrong_secret_kind` | An admin secret was sent where a participant token is needed, or the other way round. | K2 |
 | `secret_in_query` | The query string holds a secret. | K4 |
-| `confirmation_required` | A change would remove availability from participants; `losing` says from how many, and the `ETag` header is the event's version. The client repeats the change with that `ETag` as `confirmedVersion`; a missing or stale `confirmedVersion` gets this refusal again, and `If-Match` never replaces it. | M5, A14 |
+| `confirmation_required` | A change would remove availability from participants or clear the final time; `losing` says from how many participants, `clearsFinal` whether the final time goes, and the `ETag` header is the event's version. The client repeats the change with that `ETag` as `confirmedVersion`; a missing or stale `confirmedVersion` gets this refusal again, and `If-Match` never replaces it. | M5, N5, A14, A24 |
 | `event_changed` | The `If-Match` of a change names no current version of the event, because someone changed it since the client read it. The `ETag` header is the current version. | A10 |
 | `method_not_allowed` | The path exists but does not support the method. `Allow` lists the methods it does support. | A3 |
 | `internal_error` | The server failed while answering. The request may or may not have taken effect. | A8 |
@@ -97,7 +106,7 @@ The API sends every code with one status.
 | `412 Precondition Failed` | `event_changed`, with `ETag` |
 | `413 Content Too Large` | `payload_too_large` |
 | `415 Unsupported Media Type` | `unsupported_media_type` |
-| `422 Unprocessable Content` | the event schedule codes except `field_locked`, `invalid_name`, `invalid_password`, `unknown_slot` |
+| `422 Unprocessable Content` | the event schedule codes except `field_locked`, the final time codes, `invalid_name`, `invalid_password`, `unknown_slot` |
 | `429 Too Many Requests` | `too_many_attempts`, with `Retry-After` and `retryAt` |
 | `500 Internal Server Error` | `internal_error` |
 

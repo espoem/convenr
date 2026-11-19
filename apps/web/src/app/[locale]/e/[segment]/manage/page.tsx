@@ -1,12 +1,16 @@
 import { getTranslations } from "next-intl/server";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { ManageEvent } from "@/components/manage-event";
 import { PageShell } from "@/components/page-shell";
 import { eventIdFromSegment } from "@/domain/event-address";
+import { currentLocale } from "@/i18n/current-locale";
 import { eventFormOptions } from "@/i18n/event-form-options";
+import { formatLocale } from "@/i18n/format-locale";
 import { Link } from "@/i18n/navigation";
+import { boardOf, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 
 /** The small line above the event name in the heading. */
@@ -29,6 +33,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 	}
 
 	const t = await getTranslations("Manage");
+	const format = formatLocale(await currentLocale(), (await headers()).get("accept-language"));
 
 	return (
 		<PageShell>
@@ -44,7 +49,13 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 						{t("open")}
 					</Link>
 				</div>
-				<ManageEvent id={event.id} options={await eventFormOptions()} />
+				<ManageEvent
+					id={event.id}
+					options={await eventFormOptions()}
+					board={boardOf(event)}
+					weekdayView={weekdayViewOf(event, format)}
+					formatLocale={format}
+				/>
 			</main>
 		</PageShell>
 	);

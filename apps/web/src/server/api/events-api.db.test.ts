@@ -60,6 +60,7 @@ describe("creating an event", () => {
 				slots: [FIVE, SIX, { start: "2027-04-06T15:00:00Z" }, { start: "2027-04-06T16:00:00Z" }],
 			},
 			retention: { kind: "until", date: "2027-07-05" },
+			final: { kind: "open" },
 			participants: [],
 		});
 	});

@@ -58,9 +58,9 @@ export function medianBucket(histogram: ReadonlyMap<number, number>): number | n
 	return null;
 }
 
-/** The share of evaluated events that were activated, or `null` with none evaluated. */
-export function activationRate(evaluated: number, activated: number): number | null {
-	return evaluated === 0 ? null : activated / evaluated;
+/** The share `part` of `whole` events, such as the activated or finalized ones, or `null` with none. */
+export function shareOf(whole: number, part: number): number | null {
+	return whole === 0 ? null : part / whole;
 }
 
 /** One row of the `usage_counts` table. */
@@ -77,12 +77,31 @@ function daysBetween(from: Temporal.PlainDate, to: Temporal.PlainDate): Temporal
 	return days;
 }
 
-const HEADER = ["day", "created", "activation", "median group", "median first response"];
+const HEADER = [
+	"day",
+	"created",
+	"activation",
+	"median group",
+	"median first response",
+	"finalized",
+	"median time to final",
+];
+
+/** A share as a whole percentage, or a dash without a base. */
+function percent(rate: number | null): string {
+	return rate === null ? "-" : `${Math.round(rate * 100)} %`;
+}
+
+/** The label of the bucket that holds a histogram's median, or a dash when it is empty. */
+function bucketLabel(bucket: number | null): string {
+	return bucket === null ? "-" : (FIRST_RESPONSE_BUCKETS[bucket] ?? "-");
+}
 
 /**
  * The usage table: per day from `from` to `to`, the events created, the activation rate, the
- * median group size and the bucket that holds the median time to first response. A day
- * without data shows a dash.
+ * median group size, the bucket that holds the median time to first response, the share of the
+ * events counted for group size that had a final time, and the bucket that holds the median
+ * time to a first final time. A day without data shows a dash.
  */
 export function usageReport(
 	counts: readonly UsageCount[],
@@ -106,16 +125,17 @@ export function usageReport(
 		const histogram = (metric: string) => byDay.get(day)?.get(metric) ?? new Map<number, number>();
 		const total = (metric: string) => histogram(metric).get(0) ?? 0;
 
-		const rate = activationRate(total("activation_evaluated"), total("activated"));
+		const sized = [...histogram("group_size").values()].reduce((sum, count) => sum + count, 0);
 		const group = medianBucket(histogram("group_size"));
-		const response = medianBucket(histogram("first_response"));
 
 		return [
 			day,
 			String(total("events_created")),
-			rate === null ? "-" : `${Math.round(rate * 100)} %`,
+			percent(shareOf(total("activation_evaluated"), total("activated"))),
 			group === null ? "-" : String(group),
-			response === null ? "-" : (FIRST_RESPONSE_BUCKETS[response] ?? "-"),
+			bucketLabel(medianBucket(histogram("first_response"))),
+			percent(shareOf(sized, total("finalized"))),
+			bucketLabel(medianBucket(histogram("time_to_final"))),
 		];
 	});
 

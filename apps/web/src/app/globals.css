@@ -235,4 +235,70 @@
 	.cv-cell[data-window~="bottom"]::before {
 		border-bottom-width: 2px;
 	}
+
+	/* The final time is sewn: a solid ink frame between surface rings, inside the window's
+	   edge. It covers the stitched window where both fall on the same cells. */
+	.cv-final {
+		--top: 0;
+		--bottom: 0;
+
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
+		box-shadow:
+			inset 1px 0 0 var(--cv-surface),
+			inset -1px 0 0 var(--cv-surface),
+			inset 0 calc(var(--top) * 1px) 0 var(--cv-surface),
+			inset 0 calc(var(--bottom) * -1px) 0 var(--cv-surface),
+			inset 5px 0 0 var(--cv-ink),
+			inset -5px 0 0 var(--cv-ink),
+			inset 0 calc(var(--top) * 5px) 0 var(--cv-ink),
+			inset 0 calc(var(--bottom) * -5px) 0 var(--cv-ink),
+			inset 6px 0 0 var(--cv-surface),
+			inset -6px 0 0 var(--cv-surface),
+			inset 0 calc(var(--top) * 6px) 0 var(--cv-surface),
+			inset 0 calc(var(--bottom) * -6px) 0 var(--cv-surface);
+	}
+
+	.cv-final[data-edge~="top"] {
+		--top: 1;
+	}
+
+	.cv-final[data-edge~="bottom"] {
+		--bottom: 1;
+	}
+
+	/* A focused cell inside the final time draws its whole ring over the frame. */
+	.cv-cell-button:focus-visible {
+		position: relative;
+		z-index: 3;
+	}
+
+	.cv-final-flag {
+		position: absolute;
+		top: 0.125rem;
+		z-index: 4;
+		display: flex;
+		align-items: center;
+		height: 1.5rem;
+		padding-inline: 0.25rem;
+		pointer-events: none;
+		background: var(--cv-ink);
+		color: var(--cv-surface);
+		box-shadow: 0 0 0 1px var(--cv-surface);
+	}
+
+	.cv-final-flag[data-side="right"] {
+		left: calc(100% + 1px);
+	}
+
+	.cv-final-flag[data-side="left"] {
+		right: calc(100% + 1px);
+	}
+
+	.cv-final-flag[data-side="inside"] {
+		left: 50%;
+		translate: -50% 0;
+	}
 }

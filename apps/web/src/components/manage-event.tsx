@@ -4,7 +4,10 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
 import { EventForm, type EventFormOptions, type FormOutcome } from "@/components/event-form";
+import type { BoardEvent } from "@/components/event/event-board";
+import { FinalPicker } from "@/components/final-picker";
 import { Button } from "@/components/ui/button";
+import type { GridView } from "@/domain/grid-labels";
 import { useRouter } from "@/i18n/navigation";
 import { updateLocalEvent, useLocalEvents } from "@/lib/local-events";
 import {
@@ -16,13 +19,19 @@ import {
 import type { NewEvent } from "@/server/events";
 import type { Confirmation, ManagedEvent } from "@/server/manage";
 
-type ManageEventProps = { id: string; options: EventFormOptions };
+type ManageEventProps = {
+	id: string;
+	options: EventFormOptions;
+	board: BoardEvent;
+	weekdayView: GridView | null;
+	formatLocale: string;
+};
 
 /**
  * The manage page. The admin secret comes from the address fragment,
  * which never reaches the server in an address (ADR 0003 item 2), or from local storage.
  */
-export function ManageEvent({ id, options }: ManageEventProps) {
+export function ManageEvent({ id, options, board, weekdayView, formatLocale }: ManageEventProps) {
 	const t = useTranslations("Manage");
 	const router = useRouter();
 	const storedSecret = useLocalEvents().get(id)?.adminSecret;
@@ -101,7 +110,7 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 				case "invalid":
 					return { status: "invalid", problems: result.problems };
 				case "confirm":
-					return { status: "confirm", losing: result.losing, version: result.version };
+					return result;
 			}
 		} catch {
 			return { status: "failed" };
@@ -147,6 +156,14 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 
 	return (
 		<div className="flex flex-col gap-12">
+			<FinalPicker
+				event={board}
+				weekdayView={weekdayView}
+				formatLocale={formatLocale}
+				secret={secret}
+				onDenied={() => setLoaded({ secret, event: null })}
+			/>
+
 			<section aria-labelledby="edit" className="flex flex-col gap-6">
 				<h2 id="edit" className="text-2xl">
 					{t("edit")}

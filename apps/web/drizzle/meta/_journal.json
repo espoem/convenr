@@ -36,6 +36,13 @@
       "when": 1795114601681,
       "tag": "0004_availability_level",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795116760592,
+      "tag": "0005_final_time",
+      "breakpoints": true
     }
   ]
 }

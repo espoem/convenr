@@ -1,17 +1,21 @@
 """The Python SDK against a running instance at CONVENR_URL."""
 
 import os
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from convenr import AuthenticatedClient, Client
-from convenr.api.events import create_event, delete_event, get_event, get_windows
+from convenr.api.events import create_event, delete_event, get_event, get_windows, pick_final
 from convenr.api.participants import join, save_availability
 from convenr.models import (
     AvailabilityRequest,
     CreatedEvent,
     CreateEventRequest,
     Event,
+    FinalChosen,
+    FinalRequest,
     JoinRequest,
     Joined,
     Problem,
@@ -112,6 +116,19 @@ def test_weekday_event_with_two_participants() -> None:
     etag = read.headers["ETag"]
     unchanged = get_event.sync_detailed(event_id, client=client, if_none_match=etag)
     assert unchanged.status_code == HTTPStatus.NOT_MODIFIED
+
+    # A weekday event's final time is one date on the weekday of its slots.
+    today = datetime.now(ZoneInfo("Europe/Prague")).date()
+    weekday = computed[0].weekday
+    date = today + timedelta(days=(weekday - today.isoweekday()) % 7 + 7)
+    picked = pick_final.sync(
+        event_id,
+        client=authenticated(created.admin_secret),
+        body=FinalRequest(slots=[slot_input(slot) for slot in computed], date=date),
+    )
+    assert isinstance(picked, Event)
+    assert isinstance(picked.final, FinalChosen)
+    assert picked.final.sequence == 1
 
     deleted = delete_event.sync_detailed(event_id, client=authenticated(created.admin_secret))
     assert deleted.status_code == HTTPStatus.NO_CONTENT

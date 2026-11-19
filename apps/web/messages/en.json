@@ -42,6 +42,7 @@
 		"confirmLoss": "{count, plural, one {# participant loses} other {# participants lose}} part of their availability, because you remove days or times they marked.",
 		"confirmLossYes": "Save and remove",
 		"confirmLossNo": "Back to editing",
+		"confirmClearsFinal": "The change removes part of the final time, so the final time will be cleared.",
 		"problem": {
 			"field_locked": "Slot length, how days are chosen and the time zone can no longer change.",
 			"name": "Enter a name of at most 100 characters.",
@@ -95,7 +96,21 @@
 		"deleteLead": "The event disappears with every participant's availability. Both links stop working.",
 		"deleteEvent": "Delete event",
 		"deleteConfirm": "Really delete the event {name}? This cannot be undone.",
-		"deleteYes": "Delete for good"
+		"deleteYes": "Delete for good",
+		"finalIs": "The final time is {when}.",
+		"finalNone": "No final time is picked yet. Participants can keep responding after you pick one.",
+		"finalHint": "Pick one of the best windows below, or select a run in one day of the grid: tap its first slot, then its last.",
+		"finalGrid": "Group availability for picking the final time",
+		"finalProposal": "Selected: {when}",
+		"finalDate": "Date",
+		"finalDateHint": "The event repeats every week, so the final time needs one date.",
+		"finalPick": "Pick as the final time",
+		"finalClear": "Clear the final time",
+		"finalProblem": {
+			"final_not_in_event": "This is not one run of the event's slots. Select it again.",
+			"final_date_wrong_weekday": "That date is not on the day of the selected slots.",
+			"date_in_past": "That date has passed. Choose a later one."
+		}
 	},
 	"Event": {
 		"referenceZone": "Times in {zone}",
@@ -111,6 +126,10 @@
 		},
 		"legendLabel": "The color shows how many of {total} are available. If need be counts as half.",
 		"legendHalf": "If need be counts as half.",
+		"finalTime": "Final time",
+		"finalWhen": "{date}, {start}–{end}",
+		"finalWhenAcross": "{startDate}, {start} – {endDate}, {end}",
+		"finalZone": "In your time zone, {zone}.",
 		"count": "{available} of {total}",
 		"countIfNeedBe": "{available} of {total}, {ifNeedBe} of them if need be",
 		"groupHint": "Point at a slot, tap it, or move to it with the keyboard to see who is available.",
@@ -249,6 +268,14 @@
 				"summary": "Delete an event",
 				"description": "Deletes the event and every participant at once."
 			},
+			"pickFinal": {
+				"summary": "Pick the final time",
+				"description": "Picks a run of the event's slots in one day as the final time, or changes it. A weekday event also names the date of the one occurrence. Responses stay open. Picking the final time the event already has changes nothing."
+			},
+			"clearFinal": {
+				"summary": "Clear the final time",
+				"description": "Clears the final time. Responses stay as they are; a later pick counts on in `sequence`."
+			},
 			"getWindows": {
 				"summary": "Best windows",
 				"description": "Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of the event; send it in `If-None-Match` to get `304` while nothing changed."
@@ -305,6 +332,8 @@
 			"getEvent": "The event.",
 			"updateEvent": "The event after the change, or as it was when nothing changed.",
 			"deleteEvent": "The event is deleted.",
+			"pickFinal": "The event with its final time.",
+			"clearFinal": "The event without a final time.",
 			"getWindows": "The best windows and the filters applied.",
 			"join": "The participant and their token.",
 			"removeParticipant": "The participant is deleted.",
@@ -329,6 +358,10 @@
 			"Retention": "When the event will be deleted, tagged by `kind`.",
 			"RetentionUntil": "The event will be deleted on a date.",
 			"RetentionKept": "The event is kept until it is deleted.",
+			"Final": "The final time, tagged by `kind`.",
+			"FinalOpen": "The organizer has not picked a final time.",
+			"FinalChosen": "The final time the organizer picked, as one dated occurrence.",
+			"FinalRequest": "The final time to pick.",
 			"CreatedEvent": "A new event and its admin secret.",
 			"Joined": "A participant and their token.",
 			"Windows": "The best windows and the filters applied.",
@@ -360,6 +393,9 @@
 			"firstDayOfWeek": "The first day of the week in the grid: 1 is Monday, 7 is Sunday.",
 			"schedule": "When the event can take place.",
 			"retention": "When the event will be deleted.",
+			"final": "The final time the organizer picked, if any.",
+			"sequence": "How many times a final time was picked or changed. It does not go back when the final time is cleared.",
+			"end": "The end as an RFC 3339 instant in UTC.",
 			"participants": "The participants in joining order.",
 			"availability": "The slots in which the participant is available, if need be included, in time order. A client that knows no levels reads an if-need-be slot as available.",
 			"ifNeedBe": "The slots of `availability` in which the participant is available only if need be, in time order.",
@@ -394,6 +430,7 @@
 			"errors": "The values at fault.",
 			"retryAt": "With `too_many_attempts`: when a password may be tried again.",
 			"losing": "With `confirmation_required`: how many participants would lose part of their availability.",
+			"clearsFinal": "With `confirmation_required`: whether the change would clear the final time.",
 			"confirmedVersion": "The `ETag` of a `confirmation_required` refusal. The change may remove the availability that refusal counted, while the event still has that version.",
 			"pointer": "An RFC 6901 JSON Pointer into the request body.",
 			"parameter": "The name of the query parameter.",
@@ -405,6 +442,18 @@
 			"Participant": {
 				"id": "The public id of the participant.",
 				"name": "The display name of the participant."
+			},
+			"FinalOpen": {
+				"kind": "Whether a final time is picked."
+			},
+			"FinalChosen": {
+				"kind": "Whether a final time is picked.",
+				"start": "The start as an RFC 3339 instant in UTC.",
+				"slots": "The event's slots inside the final time, in time order."
+			},
+			"FinalRequest": {
+				"slots": "The slots of the final time: a run of the event's slots in one day, in any order.",
+				"date": "Exactly for a weekday event: the date of the one occurrence, `YYYY-MM-DD`. It falls on the weekday of the slots and is not before today in the reference zone."
 			},
 			"Window": {
 				"slots": "The slots of the window, in time order.",
@@ -465,6 +514,8 @@
 			"invalid_name": "The display name is empty, too long or has a control character.",
 			"invalid_password": "A password has 4 to 128 characters.",
 			"unknown_slot": "The availability holds a slot the event does not have.",
+			"final_not_in_event": "The final time is not a run of the event's slots in one day, or names a date the event cannot have.",
+			"final_date_wrong_weekday": "The date of the final time does not fall on the weekday of its slots.",
 			"too_many_attempts": "Too many wrong passwords in a row.",
 			"internal_error": "The server failed to answer the request."
 		},

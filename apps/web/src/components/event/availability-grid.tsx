@@ -1,5 +1,6 @@
 "use client";
 
+import { FlagIcon } from "@phosphor-icons/react";
 import { Fragment, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import type { GridView } from "@/domain/grid-labels";
@@ -41,7 +42,22 @@ type AvailabilityGridProps = {
 	inspected?: CellRef | null | undefined;
 	/** Rows `first` to `last` of one column, outlined as one shape. */
 	highlight?: { column: number; first: number; last: number } | null | undefined;
+	/** The slots of the final time, sewn shut, and the flag's accessible name. */
+	final?: { keys: ReadonlySet<string>; label: string } | undefined;
+	/** View mode: a cell was clicked, or pressed with the keyboard. */
+	onPick?: ((cell: CellRef) => void) | undefined;
 };
+
+type FlagSide = "right" | "left" | "inside";
+
+/** The flag stands beside the final time's first cell, on a side that keeps it over day columns. */
+function flagSide(column: number, columns: number): FlagSide {
+	if (column < columns - 1) {
+		return "right";
+	}
+
+	return column > 0 ? "left" : "inside";
+}
 
 // A day column never grows past this, so a short event does not stretch across a wide screen.
 const MAX_COLUMN = "6rem";
@@ -94,6 +110,8 @@ export function AvailabilityGrid({
 	onInspect,
 	inspected,
 	highlight,
+	final,
+	onPick,
 }: AvailabilityGridProps) {
 	const table = useRef<HTMLTableElement>(null);
 	const cells = useRef(new Map<string, HTMLButtonElement>());
@@ -121,6 +139,21 @@ export function AvailabilityGrid({
 
 	const levelOf = (keys: readonly string[]) =>
 		edit === undefined ? null : cellLevel(edit.levels, keys);
+
+	const inFinal = (cell: CellRef) => keysOf(cell).some((key) => final?.keys.has(key) === true);
+
+	// The final time's first cell in reading order of the columns, which carries the flag.
+	const flagCell = (() => {
+		for (const [column, day] of columns.entries()) {
+			const row = day.cells.findIndex((_keys, index) => inFinal({ column, row: index }));
+
+			if (row !== -1) {
+				return { column, row };
+			}
+		}
+
+		return null;
+	})();
 
 	function keysWithin(from: CellRef, to: CellRef): string[] {
 		return columns.flatMap((column, columnIndex) =>
@@ -307,6 +340,17 @@ export function AvailabilityGrid({
 											.join(" ") || "middle"
 									: undefined;
 
+								const sewn = inFinal(cell)
+									? [
+											!inFinal({ column: index, row: row - 1 }) && "top",
+											!inFinal({ column: index, row: row + 1 }) && "bottom",
+										]
+											.filter(Boolean)
+											.join(" ")
+									: undefined;
+
+								const flagged = flagCell?.column === index && flagCell.row === row;
+
 								return (
 									<Fragment key={cellId(cell)}>
 										{index > 0 && blockStarts.has(index) ? <td aria-hidden /> : null}
@@ -357,6 +401,7 @@ export function AvailabilityGrid({
 													onClick={(event) => {
 														if (edit === undefined) {
 															inspect(cell, event.currentTarget);
+															onPick?.(cell);
 														}
 													}}
 													className={cn(
@@ -365,6 +410,13 @@ export function AvailabilityGrid({
 													)}
 												/>
 											)}
+											{sewn === undefined ? null : <span className="cv-final" data-edge={sewn} />}
+											{flagged && final !== undefined ? (
+												<span className="cv-final-flag" data-side={flagSide(index, columns.length)}>
+													<FlagIcon aria-hidden weight="fill" size={14} />
+													<span className="sr-only">{final.label}</span>
+												</span>
+											) : null}
 										</td>
 									</Fragment>
 								);

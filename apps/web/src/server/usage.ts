@@ -45,6 +45,24 @@ export async function countFirstResponse(queries: Queries, event: EventRow, now:
 }
 
 /**
+ * Counts the time since creation the first time `event` gets a final time, at `now`. A later
+ * change or clear adds nothing.
+ */
+export async function countTimeToFinal(queries: Queries, event: EventRow, now: Temporal.Instant) {
+	if (event.finalCountedAt !== null) {
+		return;
+	}
+
+	const created = Temporal.Instant.from(event.createdAt);
+
+	await queries
+		.update(events)
+		.set({ finalCountedAt: now.toString() })
+		.where(eq(events.id, event.id));
+	await add(queries, now, "time_to_final", firstResponseBucket(created, now));
+}
+
+/**
  * The activation and group size counts for an event the organizer deletes at `now`, unless the maintenance pass counted it
  * already. Call it with the event row locked, before the delete.
  */
@@ -66,5 +84,10 @@ export async function countDeleted(queries: Queries, event: EventRow, now: Tempo
 
 	if (event.sizeCountedAt === null) {
 		await add(queries, now, "group_size", Math.min(people, MAX_GROUP_BUCKET));
+
+		// The finalization rate is taken with the group size, over the same events.
+		if (event.finalState === "chosen") {
+			await add(queries, now, "finalized");
+		}
 	}
 }

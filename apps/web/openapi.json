@@ -469,6 +469,288 @@
 				]
 			}
 		},
+		"/events/{id}/final": {
+			"put": {
+				"operationId": "pickFinal",
+				"summary": "Pick the final time",
+				"description": "Picks a run of the event's slots in one day as the final time, or changes it. A weekday event also names the date of the one occurrence. Responses stay open. Picking the final time the event already has changes nothing.",
+				"tags": [
+					"events"
+				],
+				"security": [
+					{
+						"adminSecret": []
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The event with its final time.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Event"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`invalid_request`: The request does not match the schema.\n\n`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"412": {
+						"description": "`event_changed`: The event has another version than the `If-Match` header names.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "`payload_too_large`: The body is larger than 64 KB.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "`unsupported_media_type`: The body must be application/json in UTF-8.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "`date_in_past`: A date lies before today in the reference zone.\n\n`final_date_wrong_weekday`: The date of the final time does not fall on the weekday of its slots.\n\n`final_not_in_event`: The final time is not a run of the event's slots in one day, or names a date the event cannot have.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					},
+					{
+						"name": "If-Match",
+						"in": "header",
+						"required": false,
+						"description": "The `ETag` of the event version the change is meant for. The change is refused when the event has another version. It does not accept a loss of availability; `confirmedVersion` does.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/FinalRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "clearFinal",
+				"summary": "Clear the final time",
+				"description": "Clears the final time. Responses stay as they are; a later pick counts on in `sequence`.",
+				"tags": [
+					"events"
+				],
+				"security": [
+					{
+						"adminSecret": []
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The event without a final time.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Event"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "`secret_in_query`: A secret was sent in the query string.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "`unauthorized`: The secret is missing or wrong.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"WWW-Authenticate": {
+								"description": "Always `Bearer`.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "`wrong_secret_kind`: This endpoint takes the other kind of secret.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"412": {
+						"description": "`event_changed`: The event has another version than the `If-Match` header names.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "`internal_error`: The server failed to answer the request.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "The public id of the event, from its share link.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					},
+					{
+						"name": "If-Match",
+						"in": "header",
+						"required": false,
+						"description": "The `ETag` of the event version the change is meant for. The change is refused when the event has another version. It does not accept a loss of availability; `confirmedVersion` does.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
 		"/events/{id}/windows": {
 			"get": {
 				"operationId": "getWindows",
@@ -1480,6 +1762,10 @@
 						"$ref": "#/components/schemas/Retention",
 						"description": "When the event will be deleted."
 					},
+					"final": {
+						"$ref": "#/components/schemas/Final",
+						"description": "The final time the organizer picked, if any."
+					},
 					"participants": {
 						"type": "array",
 						"items": {
@@ -1496,6 +1782,7 @@
 					"firstDayOfWeek",
 					"schedule",
 					"retention",
+					"final",
 					"participants"
 				],
 				"description": "An event with its schedule and participants."
@@ -1800,6 +2087,78 @@
 				],
 				"description": "The event is kept until it is deleted."
 			},
+			"Final": {
+				"oneOf": [
+					{
+						"$ref": "#/components/schemas/FinalOpen"
+					},
+					{
+						"$ref": "#/components/schemas/FinalChosen"
+					}
+				],
+				"discriminator": {
+					"propertyName": "kind",
+					"mapping": {
+						"open": "#/components/schemas/FinalOpen",
+						"chosen": "#/components/schemas/FinalChosen"
+					}
+				},
+				"description": "The final time, tagged by `kind`."
+			},
+			"FinalOpen": {
+				"type": "object",
+				"properties": {
+					"kind": {
+						"type": "string",
+						"const": "open",
+						"description": "Whether a final time is picked."
+					}
+				},
+				"required": [
+					"kind"
+				],
+				"description": "The organizer has not picked a final time."
+			},
+			"FinalChosen": {
+				"type": "object",
+				"properties": {
+					"kind": {
+						"type": "string",
+						"const": "chosen",
+						"description": "Whether a final time is picked."
+					},
+					"start": {
+						"type": "string",
+						"format": "date-time",
+						"description": "The start as an RFC 3339 instant in UTC."
+					},
+					"end": {
+						"type": "string",
+						"format": "date-time",
+						"description": "The end as an RFC 3339 instant in UTC."
+					},
+					"sequence": {
+						"type": "integer",
+						"minimum": 1,
+						"description": "How many times a final time was picked or changed. It does not go back when the final time is cleared."
+					},
+					"slots": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Slot"
+						},
+						"description": "The event's slots inside the final time, in time order."
+					}
+				},
+				"required": [
+					"kind",
+					"start",
+					"end",
+					"sequence",
+					"slots"
+				],
+				"description": "The final time the organizer picked, as one dated occurrence."
+			},
 			"CreatedEvent": {
 				"type": "object",
 				"properties": {
@@ -1946,6 +2305,10 @@
 						"type": "integer",
 						"minimum": 0,
 						"description": "With `confirmation_required`: how many participants would lose part of their availability."
+					},
+					"clearsFinal": {
+						"type": "boolean",
+						"description": "With `confirmation_required`: whether the change would clear the final time."
 					}
 				},
 				"required": [
@@ -2300,6 +2663,29 @@
 				],
 				"additionalProperties": false,
 				"description": "The participant's whole availability."
+			},
+			"FinalRequest": {
+				"type": "object",
+				"properties": {
+					"slots": {
+						"minItems": 1,
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/SlotInput"
+						},
+						"description": "The slots of the final time: a run of the event's slots in one day, in any order."
+					},
+					"date": {
+						"type": "string",
+						"format": "date",
+						"description": "Exactly for a weekday event: the date of the one occurrence, `YYYY-MM-DD`. It falls on the weekday of the slots and is not before today in the reference zone."
+					}
+				},
+				"required": [
+					"slots"
+				],
+				"additionalProperties": false,
+				"description": "The final time to pick."
 			},
 			"SlotInput": {
 				"anyOf": [

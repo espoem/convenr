@@ -34,6 +34,7 @@ with counted as (
     old.activation_counted_at is null and new.activation_counted_at is not null as activation,
     old.size_counted_at is null and new.size_counted_at is not null as size,
     created_at,
+    final_state = 'chosen' as finalized,
     (select count(*) from participants where participants.event_id = events.id)::integer as people
 ),
 counts as (
@@ -47,22 +48,30 @@ counts as (
   select (created_at + make_interval(hours => $2 * 24)) at time zone 'UTC', 'group_size',
     least(people, $5)
   from counted where size
+  union all
+  select (created_at + make_interval(hours => $2 * 24)) at time zone 'UTC', 'finalized', 0
+  from counted where size and finalized
 )
 insert into usage_counts (day, metric, bucket, count)
 select reached::date, metric, bucket, count(*) from counts group by reached::date, metric, bucket
 on conflict (day, metric, bucket) do update set count = usage_counts.count + excluded.count`;
 
 // The expiry is the SQL form of `expiresAt` in `src/domain/retention.ts`: the end of the
-// deletion date in the reference zone. A database test keeps the two in step. Deleting an
-// event deletes its participants, tokens and responses through the foreign keys.
+// deletion date in the reference zone. A database test keeps the two in step. A weekday event
+// whose final date lies after its planned deletion date is kept until the retention after the
+// final date. Deleting an event deletes its participants, tokens and responses through the
+// foreign keys.
 const PURGE = `
 with gone as (
   delete from events
   where (
     (
-      case day_mode
-        when 'range' then range_last
-        when 'dates' then (select max(day) from unnest(dates) as day)
+      case
+        when day_mode = 'range' then range_last
+        when day_mode = 'dates' then (select max(day) from unnest(dates) as day)
+        when final_state = 'chosen' and (final_start at time zone reference_zone)::date
+          > (changed_at at time zone reference_zone)::date + $1::integer
+          then (final_start at time zone reference_zone)::date
         else (changed_at at time zone reference_zone)::date
       end + $1::integer + 1
     )::timestamp at time zone reference_zone
@@ -70,6 +79,7 @@ with gone as (
   returning
     activation_counted_at is null as activation,
     size_counted_at is null as size,
+    final_state = 'chosen' as finalized,
     (select count(*) from participants where participants.event_id = events.id)::integer as people
 ),
 counts as (
@@ -78,6 +88,8 @@ counts as (
   select 'activated', 0 from gone where activation and people >= $3
   union all
   select 'group_size', least(people, $4) from gone where size
+  union all
+  select 'finalized', 0 from gone where size and finalized
 ),
 added as (
   insert into usage_counts (day, metric, bucket, count)

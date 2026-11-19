@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { events, usageCounts } from "@/db/schema";
 
 import { createEvent, type NewEvent } from "./events";
+import { pickFinal } from "./final";
 import { runMaintenance } from "./maintenance";
 import { removeEvent } from "./manage";
 import { join } from "./participants";
@@ -127,6 +128,40 @@ describe("usage counts", () => {
 			"2027-05-30 activated 0 1",
 			"2027-05-30 activation_evaluated 0 1",
 			"2027-05-30 group_size 2 1",
+		]);
+	});
+
+	it("count an event as finalized with its group size, if it has a final time then", async () => {
+		const aged = await created();
+		const deleted = await created();
+
+		// A third event without a final time counts for group size only.
+		await created();
+
+		await pickFinal(
+			aged.id,
+			aged.adminSecret,
+			{ slots: ["2027-04-05T15:00:00Z"] },
+			undefined,
+			after(1),
+		);
+		await pickFinal(
+			deleted.id,
+			deleted.adminSecret,
+			{ slots: ["2027-04-05T15:00:00Z"] },
+			undefined,
+			after(30),
+		);
+		await db().delete(usageCounts);
+
+		await removeEvent(deleted.id, deleted.adminSecret, after(48));
+		await maintain(after(30 * 24));
+
+		expect((await counts()).filter((line) => !line.includes("activat"))).toEqual([
+			"2027-03-03 finalized 0 1",
+			"2027-03-03 group_size 0 1",
+			"2027-03-31 finalized 0 1",
+			"2027-03-31 group_size 0 2",
 		]);
 	});
 });

@@ -5,10 +5,12 @@
 
 import { z } from "zod";
 
+import type { FinalProblem, FinalRequest } from "@/domain/final-time";
 import { isPublicId } from "@/domain/public-id";
 import { type EventVersion, eventVersionSchema } from "@/lib/event-version";
 
 import { createEvent, type EventProblem, eventVersion, type NewEvent } from "./events";
+import { clearFinal, type FinalResult, pickFinal } from "./final";
 import {
 	type ManagedEvent,
 	readManagedEvent,
@@ -58,8 +60,8 @@ export type UpdatedEvent =
 	| { status: "saved"; segment: string }
 	| { status: "denied" }
 	| { status: "invalid"; problems: EventProblem[] }
-	/** How many participants would lose availability, and the version that count was taken at. */
-	| { status: "confirm"; losing: number; version: EventVersion };
+	/** What the change would cost, and the version that was counted at. */
+	| { status: "confirm"; losing: number; clearsFinal: boolean; version: EventVersion };
 
 const confirmation = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("none") }),
@@ -93,6 +95,56 @@ export async function updateEventAction(
 		case "confirm":
 			return result;
 	}
+}
+
+/** What the manage page learns from picking or clearing the final time. */
+export type FinalChange =
+	| { status: "saved" }
+	| { status: "denied" }
+	| { status: "invalid"; problem: FinalProblem };
+
+function finalChangeOf(result: FinalResult): FinalChange {
+	switch (result.status) {
+		case "saved":
+			return { status: "saved" };
+		case "changed":
+			// Unreachable: a change for any version is never refused for its version.
+			return { status: "denied" };
+		case "denied":
+		case "invalid":
+			return result;
+	}
+}
+
+/** Picks the run of `slots` as the final time; a weekday event also sends the `date`. */
+export async function pickFinalAction(
+	id: string,
+	secret: string,
+	slots: string[],
+	date: string | null,
+): Promise<FinalChange> {
+	const args = z
+		.tuple([eventId, adminSecret, z.array(z.string().max(64)).max(1000), z.iso.date().nullable()])
+		.safeParse([id, secret, slots, date]);
+
+	if (!args.success) {
+		return { status: "denied" };
+	}
+
+	const [event, held, keys, day] = args.data;
+	const request: FinalRequest = { slots: keys };
+
+	if (day !== null) {
+		request.date = Temporal.PlainDate.from(day);
+	}
+
+	return finalChangeOf(await pickFinal(event, held, request));
+}
+
+export async function clearFinalAction(id: string, secret: string): Promise<FinalChange> {
+	const args = z.tuple([eventId, adminSecret]).safeParse([id, secret]);
+
+	return args.success ? finalChangeOf(await clearFinal(...args.data)) : { status: "denied" };
 }
 
 export async function removeParticipantAction(

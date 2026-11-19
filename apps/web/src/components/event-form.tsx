@@ -36,11 +36,14 @@ export type FormOutcome =
 	| { status: "done" }
 	| { status: "failed" }
 	| { status: "invalid"; problems: EventProblem[] }
-	/** How many participants lose part of their availability, at which version of the event. */
-	| { status: "confirm"; losing: number; version: EventVersion };
+	/**
+	 * How many participants lose part of their availability and whether the final time would be
+	 * cleared, at which version of the event.
+	 */
+	| { status: "confirm"; losing: number; clearsFinal: boolean; version: EventVersion };
 
-/** A change the server asked to confirm: the loss it would cause, at the version it was counted. */
-type PendingLoss = { input: NewEvent; losing: number; version: EventVersion };
+/** A change the server asked to confirm: what it would cost, at the version that was counted. */
+type PendingLoss = { input: NewEvent; losing: number; clearsFinal: boolean; version: EventVersion };
 
 type EventFormProps = {
 	options: EventFormOptions;
@@ -155,7 +158,12 @@ export function EventForm({
 			setProblems(outcome.status === "invalid" ? outcome.problems.map(problemName) : []);
 			setPendingLoss(
 				outcome.status === "confirm"
-					? { input, losing: outcome.losing, version: outcome.version }
+					? {
+							input,
+							losing: outcome.losing,
+							clearsFinal: outcome.clearsFinal,
+							version: outcome.version,
+						}
 					: null,
 			);
 		});
@@ -446,7 +454,8 @@ export function EventForm({
 				</div>
 			) : (
 				<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
-					<p>{t("confirmLoss", { count: pendingLoss.losing })}</p>
+					{pendingLoss.losing > 0 ? <p>{t("confirmLoss", { count: pendingLoss.losing })}</p> : null}
+					{pendingLoss.clearsFinal ? <p>{t("confirmClearsFinal")}</p> : null}
 					<div className="flex flex-wrap gap-2">
 						<Button
 							type="button"

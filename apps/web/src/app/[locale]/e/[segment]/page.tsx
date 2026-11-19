@@ -4,15 +4,15 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { type BoardEvent, EventBoard } from "@/components/event/event-board";
+import { EventBoard } from "@/components/event/event-board";
+import { FinalBanner } from "@/components/event/final-time";
 import { PageShell } from "@/components/page-shell";
 import { ShareLink } from "@/components/share-link";
 import { eventIdFromSegment } from "@/domain/event-address";
-import { gridView } from "@/domain/grid-labels";
-import { weekdayLayout } from "@/domain/grid-layout";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
 import { getPathname } from "@/i18n/navigation";
+import { boardOf, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 
 // One database read per request, shared by the metadata and the page.
@@ -43,25 +43,14 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 	const format = formatLocale(locale, (await headers()).get("accept-language"));
 	const t = await getTranslations("Event");
 	const { schedule } = event;
-	const dated = schedule.days.mode !== "weekdays";
-
-	const board: BoardEvent = {
-		id: event.id,
-		name: event.name,
-		segment: event.segment,
-		dated,
-		referenceZone: schedule.referenceZone,
-		firstDayOfWeek: event.firstDayOfWeek,
-		slotLength: schedule.slotLength,
-		version: event.version,
-		rowCount: (schedule.dailyEnd - schedule.dailyStart) / schedule.slotLength,
-		slots: event.slots,
-		participants: event.participants,
-	};
+	const board = boardOf(event);
 
 	return (
 		<PageShell>
 			<main className="flex flex-col gap-6">
+				{board.final.kind === "chosen" ? (
+					<FinalBanner final={board.final} formatLocale={format} />
+				) : null}
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl break-words sm:text-4xl">{event.name}</h1>
 					{event.description === "" ? null : (
@@ -91,15 +80,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 				</header>
 				<EventBoard
 					event={board}
-					weekdayView={
-						dated
-							? null
-							: gridView(
-									weekdayLayout(event.slots, event.firstDayOfWeek),
-									schedule.slotLength,
-									format,
-								)
-					}
+					weekdayView={weekdayViewOf(event, format)}
 					formatLocale={format}
 				/>
 			</main>

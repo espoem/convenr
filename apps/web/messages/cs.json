@@ -42,6 +42,7 @@
 		"confirmLoss": "{count, plural, one {# účastník přijde} few {# účastníci přijdou} other {# účastníků přijde}} o část své dostupnosti, protože odebíráte dny nebo časy, které si označili.",
 		"confirmLossYes": "Uložit a odebrat",
 		"confirmLossNo": "Zpět k úpravám",
+		"confirmClearsFinal": "Změna odebere část konečného času, takže se konečný čas zruší.",
 		"problem": {
 			"field_locked": "Délku políčka, způsob výběru dnů a časové pásmo už nejde změnit.",
 			"name": "Zadejte název, nejvýš 100 znaků.",
@@ -95,7 +96,21 @@
 		"deleteLead": "Událost zmizí i s dostupností všech účastníků. Oba odkazy přestanou fungovat.",
 		"deleteEvent": "Smazat událost",
 		"deleteConfirm": "Opravdu smazat událost {name}? Nejde to vrátit.",
-		"deleteYes": "Smazat natrvalo"
+		"deleteYes": "Smazat natrvalo",
+		"finalIs": "Konečný čas je {when}.",
+		"finalNone": "Konečný čas zatím není vybraný. Účastníci mohou odpovídat i po jeho výběru.",
+		"finalHint": "Vyberte jedno z nejlepších oken níže, nebo v mřížce označte souvislý úsek jednoho dne: klepněte na jeho první slot a pak na poslední.",
+		"finalGrid": "Dostupnost skupiny pro výběr konečného času",
+		"finalProposal": "Vybráno: {when}",
+		"finalDate": "Datum",
+		"finalDateHint": "Událost se opakuje každý týden, takže konečný čas potřebuje jedno datum.",
+		"finalPick": "Vybrat jako konečný čas",
+		"finalClear": "Zrušit konečný čas",
+		"finalProblem": {
+			"final_not_in_event": "Tohle není souvislý úsek slotů události. Označte ho znovu.",
+			"final_date_wrong_weekday": "Datum nepřipadá na den vybraných slotů.",
+			"date_in_past": "Datum už minulo. Zvolte pozdější."
+		}
 	},
 	"Event": {
 		"referenceZone": "Časy v pásmu {zone}",
@@ -111,6 +126,10 @@
 		},
 		"legendLabel": "Barva ukazuje, kolik z {total} může. Když bude nutné se počítá napůl.",
 		"legendHalf": "Když bude nutné se počítá napůl.",
+		"finalTime": "Konečný čas",
+		"finalWhen": "{date}, {start}–{end}",
+		"finalWhenAcross": "{startDate}, {start} – {endDate}, {end}",
+		"finalZone": "Ve vašem časovém pásmu, {zone}.",
 		"count": "{available} z {total}",
 		"countIfNeedBe": "{available} z {total}, z toho {ifNeedBe} když bude nutné",
 		"groupHint": "Najeďte myší na políčko, klepněte na ně, nebo se na ně přesuňte klávesnicí a uvidíte, kdo může.",
@@ -249,6 +268,14 @@
 				"summary": "Smazat událost",
 				"description": "Smaže událost i všechny účastníky najednou."
 			},
+			"pickFinal": {
+				"summary": "Vybrat konečný čas",
+				"description": "Vybere souvislou řadu slotů události v jednom dni jako konečný čas, nebo ho změní. Událost podle dnů v týdnu uvede i datum jediného termínu. Odpovídat jde dál. Výběr konečného času, který už událost má, nic nezmění."
+			},
+			"clearFinal": {
+				"summary": "Zrušit konečný čas",
+				"description": "Zruší konečný čas. Odpovědi zůstanou, jak jsou; další výběr pokračuje v počítání `sequence`."
+			},
 			"getWindows": {
 				"summary": "Nejlepší okna",
 				"description": "Nejvýš pět úseků po sobě jdoucích slotů, kdy může nejvíc lidí, tak jak je ukazuje stránka události. Okna datované události se berou po dnech v její referenční zóně. `ETag` je verze události; pošlete ho v `If-None-Match` a dokud se nic nezměnilo, dostanete `304`."
@@ -305,6 +332,8 @@
 			"getEvent": "Událost.",
 			"updateEvent": "Událost po změně, nebo jak byla, když se nic nezměnilo.",
 			"deleteEvent": "Událost je smazaná.",
+			"pickFinal": "Událost s konečným časem.",
+			"clearFinal": "Událost bez konečného času.",
 			"getWindows": "Nejlepší okna a použité filtry.",
 			"join": "Účastník a jeho token.",
 			"removeParticipant": "Účastník je smazaný.",
@@ -329,6 +358,10 @@
 			"Retention": "Kdy se událost smaže, rozlišené podle `kind`.",
 			"RetentionUntil": "Událost se smaže v daný den.",
 			"RetentionKept": "Událost se uchová, dokud ji někdo nesmaže.",
+			"Final": "Konečný čas, rozlišený podle `kind`.",
+			"FinalOpen": "Pořadatel konečný čas nevybral.",
+			"FinalChosen": "Konečný čas, který pořadatel vybral, jako jeden termín s datem.",
+			"FinalRequest": "Konečný čas k výběru.",
 			"CreatedEvent": "Nová událost a její tajný klíč organizátora.",
 			"Joined": "Účastník a jeho token.",
 			"Windows": "Nejlepší okna a použité filtry.",
@@ -360,6 +393,9 @@
 			"firstDayOfWeek": "První den týdne v mřížce: 1 je pondělí, 7 neděle.",
 			"schedule": "Kdy se událost může konat.",
 			"retention": "Kdy se událost smaže.",
+			"final": "Konečný čas, pokud ho pořadatel vybral.",
+			"sequence": "Kolikrát byl konečný čas vybrán nebo změněn. Zrušením se nesníží.",
+			"end": "Konec jako okamžik RFC 3339 v UTC.",
 			"participants": "Účastníci v pořadí, v jakém se připojili.",
 			"availability": "Sloty, ve kterých účastník může, včetně těch, kdy může jen když bude nutné, v časovém pořadí. Klient, který úrovně nezná, čte takový slot jako dostupný.",
 			"ifNeedBe": "Sloty z `availability`, ve kterých účastník může jen když bude nutné, v časovém pořadí.",
@@ -394,6 +430,7 @@
 			"errors": "Chybné hodnoty.",
 			"retryAt": "U `too_many_attempts`: kdy jde heslo zkusit znovu.",
 			"losing": "U `confirmation_required`: kolik účastníků by přišlo o část dostupnosti.",
+			"clearsFinal": "U `confirmation_required`: zda by změna zrušila konečný čas.",
 			"confirmedVersion": "`ETag` odmítnutí `confirmation_required`. Změna smí odebrat dostupnost, kterou to odmítnutí započítalo, dokud má událost tu verzi.",
 			"pointer": "Ukazatel JSON Pointer podle RFC 6901 do těla požadavku.",
 			"parameter": "Název parametru dotazu.",
@@ -405,6 +442,18 @@
 			"Participant": {
 				"id": "Veřejné id účastníka.",
 				"name": "Zobrazované jméno účastníka."
+			},
+			"FinalOpen": {
+				"kind": "Zda je konečný čas vybraný."
+			},
+			"FinalChosen": {
+				"kind": "Zda je konečný čas vybraný.",
+				"start": "Začátek jako okamžik RFC 3339 v UTC.",
+				"slots": "Sloty události uvnitř konečného času, v časovém pořadí."
+			},
+			"FinalRequest": {
+				"slots": "Sloty konečného času: souvislá řada slotů události v jednom dni, v libovolném pořadí.",
+				"date": "Právě u události podle dnů v týdnu: datum jediného termínu, `YYYY-MM-DD`. Připadá na den v týdnu jeho slotů a není dřív než dnes v pásmu události."
 			},
 			"Window": {
 				"slots": "Sloty okna v časovém pořadí.",
@@ -465,6 +514,8 @@
 			"invalid_name": "Zobrazované jméno je prázdné, příliš dlouhé nebo obsahuje řídicí znak.",
 			"invalid_password": "Heslo má 4 až 128 znaků.",
 			"unknown_slot": "Dostupnost obsahuje slot, který událost nemá.",
+			"final_not_in_event": "Konečný čas není souvislá řada slotů události v jednom dni, nebo uvádí datum, které událost mít nemůže.",
+			"final_date_wrong_weekday": "Datum konečného času nepřipadá na den v týdnu jeho slotů.",
 			"too_many_attempts": "Příliš mnoho špatných hesel za sebou.",
 			"internal_error": "Server nedokázal na požadavek odpovědět."
 		},

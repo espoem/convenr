@@ -2,6 +2,7 @@
 // inside the server: a response names a dated slot by its start and a weekday slot by weekday
 // and minute.
 import { bestWindows, maximalWindows, mostPeople, windowTally } from "@/domain/best-windows";
+import type { FinalProblem, FinalRequest } from "@/domain/final-time";
 import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
 import { scoreOf, slotsAt } from "@/domain/levels";
 import { type Schedule, scheduleSlots, type Slot, slotKey } from "@/domain/schedule";
@@ -11,16 +12,18 @@ import type { EventProblem, EventView, NewEvent } from "@/server/events";
 import type { Confirmation } from "@/server/manage";
 import type { JoinPassword, PasswordRefusal } from "@/server/participants";
 
-import { jsonPointer, problem, type ProblemCode, unauthorized } from "./http";
-import type {
-	CreateEventRequest,
-	EventBody,
-	JoinRequest,
-	ParticipantBody,
-	ScheduleInput,
-	SlotBody,
-	UpdateEventRequest,
-	WindowsBody,
+import { entityTag, json, jsonPointer, problem, type ProblemCode, unauthorized } from "./http";
+import {
+	type CreateEventRequest,
+	type EventBody,
+	eventSchema,
+	type FinalRequestBody,
+	type JoinRequest,
+	type ParticipantBody,
+	type ScheduleInput,
+	type SlotBody,
+	type UpdateEventRequest,
+	type WindowsBody,
 } from "./schemas";
 
 /** Minutes after midnight of a checked `HH:MM` time. */
@@ -286,6 +289,46 @@ function scheduleBody(schedule: Schedule): EventBody["schedule"] {
 	}
 }
 
+/** The event with its version as the entity tag. */
+export function eventResponse(view: EventView): Response {
+	const response = json(eventSchema, eventBody(view));
+
+	response.headers.set("ETag", entityTag(view.version));
+
+	return response;
+}
+
+function finalBody(view: EventView): EventBody["final"] {
+	const { final } = view;
+
+	if (final.kind === "open") {
+		return { kind: "open" };
+	}
+
+	return {
+		kind: "chosen",
+		start: final.start.toString(),
+		end: final.end.toString(),
+		sequence: final.sequence,
+		slots: slotsOf(scheduleSlots(view.schedule), view.finalSlots),
+	};
+}
+
+/** The final time a request picks, with the server's slot keys. */
+export function finalRequestOf(body: FinalRequestBody): FinalRequest {
+	return {
+		slots: body.slots.map((slot) => slotKeyOf(slot)),
+		date: body.date === undefined ? undefined : Temporal.PlainDate.from(body.date),
+	};
+}
+
+/** A refused final time, pointing at the slots or at the date. */
+export function finalProblemResponse(code: FinalProblem): Response {
+	const pointer = code === "final_not_in_event" ? "/slots" : "/date";
+
+	return problem(code, { errors: [{ pointer, code }] });
+}
+
 export function eventBody(view: EventView): EventBody {
 	return {
 		id: view.id,
@@ -298,6 +341,7 @@ export function eventBody(view: EventView): EventBody {
 			view.deletionDate === null
 				? { kind: "kept" }
 				: { kind: "until", date: view.deletionDate.toString() },
+		final: finalBody(view),
 		participants: view.participants.map((participant) =>
 			participantBody(participant, view.schedule),
 		),

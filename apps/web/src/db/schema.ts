@@ -52,6 +52,16 @@ export const events = pgTable(
 		activationCountedAt: instant(),
 		sizeCountedAt: instant(),
 		firstResponseCountedAt: instant(),
+		/** Whether the organizer picked a final time; `chosen` is exactly when both ends are set. */
+		finalState: text({ enum: ["open", "chosen"] })
+			.notNull()
+			.default("open"),
+		finalStart: instant(),
+		finalEnd: instant(),
+		/** How many times a final time was picked or changed; clearing it keeps the count. */
+		finalSequence: integer().notNull().default(0),
+		/** When the event entered the time-to-final counts, so that it counts once. */
+		finalCountedAt: instant(),
 	},
 	(table) => [
 		check(
@@ -71,6 +81,16 @@ export const events = pgTable(
 		),
 		check("events_slot_length", sql`${table.slotLength} in (15, 30, 60)`),
 		check("events_first_day_of_week", sql`${table.firstDayOfWeek} between 1 and 7`),
+		check(
+			"events_final",
+			sql`case ${table.finalState}
+        when 'open' then ${table.finalStart} is null and ${table.finalEnd} is null
+        when 'chosen' then ${table.finalStart} is not null and ${table.finalEnd} is not null
+          and ${table.finalStart} < ${table.finalEnd}
+        else false
+      end`,
+		),
+		check("events_final_sequence", sql`${table.finalSequence} >= 0`),
 	],
 );
 
@@ -152,8 +172,8 @@ export const weekdayAvailability = pgTable(
 
 /**
  * Daily usage counts. No column names an event. `bucket` is 0 for a
- * plain count, the participant count for `group_size`, and the first-response bucket index for
- * `first_response`.
+ * plain count, the participant count for `group_size`, and the bucket index of the time since
+ * creation for `first_response` and `time_to_final`.
  */
 export const usageCounts = pgTable(
 	"usage_counts",
@@ -161,7 +181,15 @@ export const usageCounts = pgTable(
 		/** A calendar day in UTC. */
 		day: date({ mode: "string" }).notNull(),
 		metric: text({
-			enum: ["events_created", "activation_evaluated", "activated", "group_size", "first_response"],
+			enum: [
+				"events_created",
+				"activation_evaluated",
+				"activated",
+				"group_size",
+				"first_response",
+				"finalized",
+				"time_to_final",
+			],
 		}).notNull(),
 		bucket: smallint().notNull().default(0),
 		count: integer().notNull().default(0),

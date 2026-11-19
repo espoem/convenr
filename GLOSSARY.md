@@ -101,3 +101,7 @@ The grid view that fills each slot by the share of participants available in it.
 
 **Heat step**:
 One of the five fill levels of the heat map: none, up to 25 %, up to 50 %, up to 75 %, above 75 %.
+
+**Final time**:
+The window the organizer picked as when the event takes place, as one dated occurrence with a start and an end. A weekday event's final time is one date on the window's weekday.
+_Avoid_: Final slot, decision, chosen date

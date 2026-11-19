@@ -115,6 +115,14 @@ async function sampleEvent(): Promise<Sample> {
 		}),
 	);
 
+	// The final time is the second day's 19:30 to 20:30, the window where all six can come.
+	await send({
+		method: "PUT",
+		path: `/events/${id}/final`,
+		json: JSON.stringify({ slots: schedule.slots.slice(perDay + 5, perDay + 7) }),
+		token: created.adminSecret,
+	});
+
 	// The viewer is the last person, Filip.
 	const viewerToken = tokens.at(-1);
 

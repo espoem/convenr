@@ -2,7 +2,6 @@ import {
 	endpoint,
 	entityTag,
 	ifMatchPrecondition,
-	json,
 	matchesIfNoneMatch,
 	noContent,
 	problem,
@@ -13,24 +12,15 @@ import {
 } from "@/server/api/http";
 import {
 	confirmationOf,
-	eventBody,
 	eventChangeOf,
 	eventProblemResponse,
+	eventResponse,
 } from "@/server/api/mapping";
-import { eventSchema, updateEventRequestSchema } from "@/server/api/schemas";
-import { type EventView, eventVersion, readEvent } from "@/server/events";
+import { updateEventRequestSchema } from "@/server/api/schemas";
+import { eventVersion, readEvent } from "@/server/events";
 import { removeEvent, updateEvent } from "@/server/manage";
 
 type Params = { id: string };
-
-/** The event with its version as the entity tag. */
-function eventResponse(view: EventView): Response {
-	const response = json(eventSchema, eventBody(view));
-
-	response.headers.set("ETag", entityTag(view.version));
-
-	return response;
-}
 
 export const GET = endpoint<Params>(async (request, { id }) => {
 	const version = await eventVersion(id);
@@ -75,7 +65,7 @@ export const PATCH = securedEndpoint<Params>("admin", async (request, { id }, se
 			return problem("event_changed", { headers: { ETag: entityTag(result.version) } });
 		case "confirm":
 			return problem("confirmation_required", {
-				members: { losing: result.losing },
+				members: { losing: result.losing, clearsFinal: result.clearsFinal },
 				headers: { ETag: entityTag(result.version) },
 			});
 		case "saved":

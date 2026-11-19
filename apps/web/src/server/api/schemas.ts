@@ -78,6 +78,27 @@ export const participantSchema = z.object({
 	ifNeedBe: z.array(slotSchema),
 });
 
+/** The final time, as one dated occurrence in UTC also for a weekday event. */
+export const finalSchema = z.discriminatedUnion("kind", [
+	z.object({ kind: z.literal("open") }),
+	z.object({
+		kind: z.literal("chosen"),
+		start: z.iso.datetime(),
+		end: z.iso.datetime(),
+		/** How many times a final time was picked or changed, as in the calendar file. */
+		sequence: z.int().min(1),
+		/** The event's slots inside the final time, in time order. */
+		slots: z.array(slotSchema),
+	}),
+]);
+
+/** A run of the event's slots in one day; a weekday event also names the date it falls on. */
+export const finalRequestSchema = z.strictObject({
+	slots: z.array(slotInputSchema).min(1),
+	/** Exactly for a weekday event: a date on the slots' weekday, not before today. */
+	date: isoDate.optional(),
+});
+
 export const eventSchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -87,6 +108,7 @@ export const eventSchema = z.object({
 	firstDayOfWeek: weekdaySchema,
 	schedule: scheduleSchema,
 	retention: retentionSchema,
+	final: finalSchema,
 	/** In joining order. */
 	participants: z.array(participantSchema),
 });
@@ -194,6 +216,8 @@ export const problemSchema = z.object({
 	retryAt: z.iso.datetime().optional(),
 	/** With `confirmation_required`: how many participants would lose availability. */
 	losing: z.int().min(0).optional(),
+	/** With `confirmation_required`: whether the change would clear the final time. */
+	clearsFinal: z.boolean().optional(),
 });
 
 export type CreateEventRequest = z.output<typeof createEventRequestSchema>;
@@ -203,6 +227,8 @@ export type UpdateEventRequest = z.output<typeof updateEventRequestSchema>;
 export type JoinRequest = z.output<typeof joinRequestSchema>;
 
 export type AvailabilityRequest = z.output<typeof availabilityRequestSchema>;
+
+export type FinalRequestBody = z.output<typeof finalRequestSchema>;
 
 export type ScheduleInput = z.output<typeof scheduleInputSchema>;
 

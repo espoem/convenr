@@ -7,6 +7,7 @@ import { events, participants } from "@/db/schema";
 import { characterCount } from "@/domain/display-name";
 import { eventSegment } from "@/domain/event-address";
 import type { EditProblem } from "@/domain/event-edit";
+import { type FinalTime, finalSlotKeys } from "@/domain/final-time";
 import { newPublicId } from "@/domain/public-id";
 import { deletionDate } from "@/domain/retention";
 import {
@@ -25,6 +26,7 @@ import type { EventVersion } from "@/lib/event-version";
 import { FIELD_CODES, fieldErrors } from "./api/field-codes";
 import {
 	type EventRow,
+	finalOf,
 	firstDayOfWeekOf,
 	liveEvent,
 	type ParticipantView,
@@ -214,6 +216,9 @@ export type EventView = {
 	firstDayOfWeek: Weekday;
 	/** `null` when the instance keeps events permanently. */
 	deletionDate: Temporal.PlainDate | null;
+	final: FinalTime;
+	/** Keys of the event's slots inside the final time, in time order; empty while it is open. */
+	finalSlots: string[];
 	/** Slot keys of the event, in time order. */
 	slots: string[];
 	/** In joining order, each with their public id and the keys of the slots they marked. */
@@ -275,6 +280,7 @@ export async function eventViewOf(queries: Queries, row: EventRow): Promise<Even
 
 function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 	const schedule = scheduleOf(row);
+	const final = finalOf(row);
 
 	return {
 		id: row.id,
@@ -288,7 +294,10 @@ function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 			schedule,
 			Temporal.Instant.from(row.changedAt),
 			env().RETENTION_DAYS,
+			final,
 		),
+		final,
+		finalSlots: finalSlotKeys(final, schedule),
 		slots: scheduleSlots(schedule).map((slot) => slotKey(slot)),
 		participants: people,
 	};

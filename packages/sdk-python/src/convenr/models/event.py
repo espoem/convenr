@@ -8,6 +8,8 @@ from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
     from ..models.dates_schedule import DatesSchedule
+    from ..models.final_chosen import FinalChosen
+    from ..models.final_open import FinalOpen
     from ..models.participant import Participant
     from ..models.range_schedule import RangeSchedule
     from ..models.retention_kept import RetentionKept
@@ -31,6 +33,7 @@ class Event:
             3, 4, 5, 6, 7. A later version may add more.
         schedule (DatesSchedule | RangeSchedule | WeekdaysSchedule): When the event can take place, tagged by `mode`.
         retention (RetentionKept | RetentionUntil): When the event will be deleted, tagged by `kind`.
+        final (FinalChosen | FinalOpen): The final time, tagged by `kind`.
         participants (list[Participant]): The participants in joining order.
     """
 
@@ -41,11 +44,13 @@ class Event:
     first_day_of_week: int
     schedule: DatesSchedule | RangeSchedule | WeekdaysSchedule
     retention: RetentionKept | RetentionUntil
+    final: FinalChosen | FinalOpen
     participants: list[Participant]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dates_schedule import DatesSchedule
+        from ..models.final_open import FinalOpen
         from ..models.range_schedule import RangeSchedule
         from ..models.retention_until import RetentionUntil
 
@@ -73,6 +78,12 @@ class Event:
         else:
             retention = self.retention.to_dict()
 
+        final: dict[str, Any]
+        if isinstance(self.final, FinalOpen):
+            final = self.final.to_dict()
+        else:
+            final = self.final.to_dict()
+
         participants = []
         for participants_item_data in self.participants:
             participants_item = participants_item_data.to_dict()
@@ -89,6 +100,7 @@ class Event:
                 "firstDayOfWeek": first_day_of_week,
                 "schedule": schedule,
                 "retention": retention,
+                "final": final,
                 "participants": participants,
             }
         )
@@ -98,6 +110,8 @@ class Event:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dates_schedule import DatesSchedule
+        from ..models.final_chosen import FinalChosen
+        from ..models.final_open import FinalOpen
         from ..models.participant import Participant
         from ..models.range_schedule import RangeSchedule
         from ..models.retention_kept import RetentionKept
@@ -159,6 +173,23 @@ class Event:
 
         retention = _parse_retention(d.pop("retention"))
 
+        def _parse_final(data: object) -> FinalChosen | FinalOpen:
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_final_type_0 = FinalOpen.from_dict(data)
+
+                return componentsschemas_final_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            if not isinstance(data, dict):
+                raise TypeError()
+            componentsschemas_final_type_1 = FinalChosen.from_dict(data)
+
+            return componentsschemas_final_type_1
+
+        final = _parse_final(d.pop("final"))
+
         participants = []
         _participants = d.pop("participants")
         for participants_item_data in _participants:
@@ -174,6 +205,7 @@ class Event:
             first_day_of_week=first_day_of_week,
             schedule=schedule,
             retention=retention,
+            final=final,
             participants=participants,
         )
 

@@ -9,6 +9,7 @@ import {
 	participantTokens,
 	weekdayAvailability,
 } from "@/db/schema";
+import type { FinalTime } from "@/domain/final-time";
 import type { Level, Levels } from "@/domain/levels";
 import { expiresAt } from "@/domain/retention";
 import {
@@ -78,6 +79,29 @@ export function scheduleOf(row: EventRow): Schedule {
 		dailyEnd: row.dailyEnd,
 		slotLength: slotLength(row.slotLength),
 		referenceZone: row.referenceZone,
+	};
+}
+
+/** The columns that clear a final time; its sequence stays, so a later pick counts on. */
+export const OPEN_FINAL = { finalState: "open", finalStart: null, finalEnd: null } as const;
+
+export function finalOf(row: EventRow): FinalTime {
+	const sequence = row.finalSequence;
+
+	if (row.finalState === "open") {
+		return { kind: "open", sequence };
+	}
+
+	// The check constraint events_final makes a chosen final time without both ends unreachable.
+	if (row.finalStart === null || row.finalEnd === null) {
+		throw new Error(`Event ${row.id} has a chosen final time without its ends.`);
+	}
+
+	return {
+		kind: "chosen",
+		start: Temporal.Instant.from(row.finalStart),
+		end: Temporal.Instant.from(row.finalEnd),
+		sequence,
 	};
 }
 
@@ -193,6 +217,7 @@ export function isLive(row: EventRow, now: Temporal.Instant): boolean {
 		scheduleOf(row),
 		Temporal.Instant.from(row.changedAt),
 		env().RETENTION_DAYS,
+		finalOf(row),
 	);
 
 	return end === null || Temporal.Instant.compare(now, end) < 0;

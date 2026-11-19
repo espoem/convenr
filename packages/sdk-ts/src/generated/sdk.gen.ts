@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.js';
-import type { CreateEventData, CreateEventErrors, CreateEventResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, GetEventData, GetEventErrors, GetEventResponses, GetMeData, GetMeErrors, GetMeResponses, GetOpenApiData, GetOpenApiErrors, GetOpenApiResponses, GetWindowsData, GetWindowsErrors, GetWindowsResponses, JoinData, JoinErrors, JoinResponses, LeaveData, LeaveErrors, LeaveResponses, RemoveParticipantData, RemoveParticipantErrors, RemoveParticipantResponses, RemovePasswordData, RemovePasswordErrors, RemovePasswordResponses, SaveAvailabilityData, SaveAvailabilityErrors, SaveAvailabilityResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses } from './types.gen.js';
+import type { ClearFinalData, ClearFinalErrors, ClearFinalResponses, CreateEventData, CreateEventErrors, CreateEventResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, GetEventData, GetEventErrors, GetEventResponses, GetMeData, GetMeErrors, GetMeResponses, GetOpenApiData, GetOpenApiErrors, GetOpenApiResponses, GetWindowsData, GetWindowsErrors, GetWindowsResponses, JoinData, JoinErrors, JoinResponses, LeaveData, LeaveErrors, LeaveResponses, PickFinalData, PickFinalErrors, PickFinalResponses, RemoveParticipantData, RemoveParticipantErrors, RemoveParticipantResponses, RemovePasswordData, RemovePasswordErrors, RemovePasswordResponses, SaveAvailabilityData, SaveAvailabilityErrors, SaveAvailabilityResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -66,6 +66,40 @@ export const updateEvent = <ThrowOnError extends boolean = false>(options: Optio
             type: 'http'
         }],
     url: '/events/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Clear the final time
+ *
+ * Clears the final time. Responses stay as they are; a later pick counts on in `sequence`.
+ */
+export const clearFinal = <ThrowOnError extends boolean = false>(options: Options<ClearFinalData, ThrowOnError>): RequestResult<ClearFinalResponses, ClearFinalErrors, ThrowOnError> => (options.client ?? client).delete<ClearFinalResponses, ClearFinalErrors, ThrowOnError>({
+    security: [{
+            key: 'adminSecret',
+            scheme: 'bearer',
+            type: 'http'
+        }],
+    url: '/events/{id}/final',
+    ...options
+});
+
+/**
+ * Pick the final time
+ *
+ * Picks a run of the event's slots in one day as the final time, or changes it. A weekday event also names the date of the one occurrence. Responses stay open. Picking the final time the event already has changes nothing.
+ */
+export const pickFinal = <ThrowOnError extends boolean = false>(options: Options<PickFinalData, ThrowOnError>): RequestResult<PickFinalResponses, PickFinalErrors, ThrowOnError> => (options.client ?? client).put<PickFinalResponses, PickFinalErrors, ThrowOnError>({
+    security: [{
+            key: 'adminSecret',
+            scheme: 'bearer',
+            type: 'http'
+        }],
+    url: '/events/{id}/final',
     ...options,
     headers: {
         'Content-Type': 'application/json',

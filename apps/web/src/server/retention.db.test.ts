@@ -6,6 +6,7 @@ import { events, participants } from "@/db/schema";
 import { env } from "@/env";
 
 import { createEvent, eventVersion, type NewEvent, readEvent } from "./events";
+import { pickFinal } from "./final";
 import { runMaintenance } from "./maintenance";
 import { readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, identify, join, leave, readParticipant } from "./participants";
@@ -179,6 +180,27 @@ describe("the purge", () => {
 		// 20 April plus 90 days is 19 July; it ends at 22:00 UTC.
 		const expiry = Temporal.Instant.from("2027-07-19T22:00:00Z");
 
+		expect(await readEvent(id, justBefore(expiry))).toBeDefined();
+		expect(await readEvent(id, expiry)).toBeUndefined();
+		expect(await purge(justBefore(expiry))).toBe(0);
+		expect(await purge(expiry)).toBe(1);
+	});
+
+	it("keeps a weekday event until the retention after a final date beyond its deletion date", async () => {
+		const { id, adminSecret } = await created(mondayEvenings);
+
+		await pickFinal(
+			id,
+			adminSecret,
+			{ slots: ["w3-1020"], date: Temporal.PlainDate.from("2027-08-04") },
+			{ kind: "any" },
+			creationTime,
+		);
+
+		// 4 August plus 90 days is 2 November; it ends at 23:00 UTC in winter time.
+		const expiry = Temporal.Instant.from("2027-11-02T23:00:00Z");
+
+		expect(await purge(weekdayExpiry)).toBe(0);
 		expect(await readEvent(id, justBefore(expiry))).toBeDefined();
 		expect(await readEvent(id, expiry)).toBeUndefined();
 		expect(await purge(justBefore(expiry))).toBe(0);

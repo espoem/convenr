@@ -37,6 +37,10 @@ export type Event = {
      */
     retention: Retention;
     /**
+     * The final time the organizer picked, if any.
+     */
+    final: Final;
+    /**
      * The participants in joining order.
      */
     participants: Array<Participant>;
@@ -232,6 +236,51 @@ export type RetentionKept = {
 };
 
 /**
+ * The final time, tagged by `kind`.
+ */
+export type Final = ({
+    kind: 'open';
+} & FinalOpen) | ({
+    kind: 'chosen';
+} & FinalChosen);
+
+/**
+ * The organizer has not picked a final time.
+ */
+export type FinalOpen = {
+    /**
+     * Whether a final time is picked.
+     */
+    kind: 'open';
+};
+
+/**
+ * The final time the organizer picked, as one dated occurrence.
+ */
+export type FinalChosen = {
+    /**
+     * Whether a final time is picked.
+     */
+    kind: 'chosen';
+    /**
+     * The start as an RFC 3339 instant in UTC.
+     */
+    start: string;
+    /**
+     * The end as an RFC 3339 instant in UTC.
+     */
+    end: string;
+    /**
+     * How many times a final time was picked or changed. It does not go back when the final time is cleared.
+     */
+    sequence: number;
+    /**
+     * The event's slots inside the final time, in time order.
+     */
+    slots: Array<Slot>;
+};
+
+/**
  * A new event and its admin secret.
  */
 export type CreatedEvent = {
@@ -335,6 +384,10 @@ export type Problem = {
      * With `confirmation_required`: how many participants would lose part of their availability.
      */
     losing?: number;
+    /**
+     * With `confirmation_required`: whether the change would clear the final time.
+     */
+    clearsFinal?: boolean;
 };
 
 /**
@@ -549,6 +602,20 @@ export type AvailabilityRequest = {
      * The slots of `availability` that are only if need be; a slot missing from `availability` is refused with `invalid_request` and the field code `if_need_be_not_available`. Left out, each slot keeps its stored level and a new slot is available. Empty, every slot is available.
      */
     ifNeedBe?: Array<SlotInput>;
+};
+
+/**
+ * The final time to pick.
+ */
+export type FinalRequest = {
+    /**
+     * The slots of the final time: a run of the event's slots in one day, in any order.
+     */
+    slots: Array<SlotInput>;
+    /**
+     * Exactly for a weekday event: the date of the one occurrence, `YYYY-MM-DD`. It falls on the weekday of the slots and is not before today in the reference zone.
+     */
+    date?: string;
 };
 
 /**
@@ -832,6 +899,128 @@ export type UpdateEventResponses = {
 };
 
 export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
+
+export type ClearFinalData = {
+    body?: never;
+    headers?: {
+        /**
+         * The `ETag` of the event version the change is meant for. The change is refused when the event has another version. It does not accept a loss of availability; `confirmedVersion` does.
+         */
+        'If-Match'?: string;
+    };
+    path: {
+        /**
+         * The public id of the event, from its share link.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/events/{id}/final';
+};
+
+export type ClearFinalErrors = {
+    /**
+     * `secret_in_query`: A secret was sent in the query string.
+     */
+    400: Problem;
+    /**
+     * `unauthorized`: The secret is missing or wrong.
+     */
+    401: Problem;
+    /**
+     * `wrong_secret_kind`: This endpoint takes the other kind of secret.
+     */
+    403: Problem;
+    /**
+     * `event_changed`: The event has another version than the `If-Match` header names.
+     */
+    412: Problem;
+    /**
+     * `internal_error`: The server failed to answer the request.
+     */
+    500: Problem;
+};
+
+export type ClearFinalError = ClearFinalErrors[keyof ClearFinalErrors];
+
+export type ClearFinalResponses = {
+    /**
+     * The event without a final time.
+     */
+    200: Event;
+};
+
+export type ClearFinalResponse = ClearFinalResponses[keyof ClearFinalResponses];
+
+export type PickFinalData = {
+    body: FinalRequest;
+    headers?: {
+        /**
+         * The `ETag` of the event version the change is meant for. The change is refused when the event has another version. It does not accept a loss of availability; `confirmedVersion` does.
+         */
+        'If-Match'?: string;
+    };
+    path: {
+        /**
+         * The public id of the event, from its share link.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/events/{id}/final';
+};
+
+export type PickFinalErrors = {
+    /**
+     * `invalid_request`: The request does not match the schema.
+     *
+     * `secret_in_query`: A secret was sent in the query string.
+     */
+    400: Problem;
+    /**
+     * `unauthorized`: The secret is missing or wrong.
+     */
+    401: Problem;
+    /**
+     * `wrong_secret_kind`: This endpoint takes the other kind of secret.
+     */
+    403: Problem;
+    /**
+     * `event_changed`: The event has another version than the `If-Match` header names.
+     */
+    412: Problem;
+    /**
+     * `payload_too_large`: The body is larger than 64 KB.
+     */
+    413: Problem;
+    /**
+     * `unsupported_media_type`: The body must be application/json in UTF-8.
+     */
+    415: Problem;
+    /**
+     * `date_in_past`: A date lies before today in the reference zone.
+     *
+     * `final_date_wrong_weekday`: The date of the final time does not fall on the weekday of its slots.
+     *
+     * `final_not_in_event`: The final time is not a run of the event's slots in one day, or names a date the event cannot have.
+     */
+    422: Problem;
+    /**
+     * `internal_error`: The server failed to answer the request.
+     */
+    500: Problem;
+};
+
+export type PickFinalError = PickFinalErrors[keyof PickFinalErrors];
+
+export type PickFinalResponses = {
+    /**
+     * The event with its final time.
+     */
+    200: Event;
+};
+
+export type PickFinalResponse = PickFinalResponses[keyof PickFinalResponses];
 
 export type GetWindowsData = {
     body?: never;

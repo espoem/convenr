@@ -6,13 +6,16 @@ import { db } from "@/db/client";
 import { datedAvailability, events, participants, weekdayAvailability } from "@/db/schema";
 import { eventSegment } from "@/domain/event-address";
 import { editProblems, removedSlots } from "@/domain/event-edit";
+import { clearsFinal } from "@/domain/final-time";
 import type { Schedule, Slot } from "@/domain/schedule";
 import type { EventVersion } from "@/lib/event-version";
 
 import {
 	changeStamp,
 	type EventRow,
+	finalOf,
 	firstDayOfWeekOf,
+	OPEN_FINAL,
 	liveEvent,
 	type Queries,
 	scheduleOf,
@@ -62,8 +65,11 @@ export type UpdateEventResult =
 	| { status: "invalid"; problems: EventProblem[] }
 	/** The current version differs from every version the precondition names. */
 	| { status: "changed"; version: EventVersion }
-	/** How many participants would lose part of their availability, at the current version. */
-	| { status: "confirm"; losing: number; version: EventVersion };
+	/**
+	 * How many participants would lose part of their availability, and whether the final time
+	 * would be cleared, at the current version.
+	 */
+	| { status: "confirm"; losing: number; clearsFinal: boolean; version: EventVersion };
 
 /** `not_found` when the secret fits but the event has no such participant. */
 export type RemoveParticipantResult =
@@ -76,7 +82,7 @@ export type RemoveParticipantResult =
  * change, and only after the secret fits: a wrong secret never waits for or holds the lock. The
  * row is read again under the lock, since it may have changed or expired in between.
  */
-async function adminRow(
+export async function adminRow(
 	queries: Queries,
 	id: string,
 	secret: string,
@@ -303,18 +309,22 @@ export async function updateEvent(
 
 		const removed = removedSlots(before, after);
 		const losing = await losingParticipants(tx, id, removed);
+		const clears = clearsFinal(finalOf(row), before, removed);
 
 		const confirmed = confirmation.kind === "version" && confirmation.version === version;
 
-		if (losing > 0 && !confirmed) {
-			return { status: "confirm", losing, version };
+		// Clearing the final time is asked about even when nobody loses availability.
+		if ((losing > 0 || clears) && !confirmed) {
+			return { status: "confirm", losing, clearsFinal: clears, version };
 		}
 
 		await deleteAvailability(tx, id, removed);
 
+		const cleared = clears ? OPEN_FINAL : {};
+
 		const [written] = await tx
 			.update(events)
-			.set({ ...stored, ...changeStamp(now) })
+			.set({ ...stored, ...cleared, ...changeStamp(now) })
 			.where(eq(events.id, id))
 			.returning();
 

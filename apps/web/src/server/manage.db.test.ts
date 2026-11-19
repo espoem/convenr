@@ -178,12 +178,9 @@ describe("updateEvent", () => {
 		await respond(id, "Eva", [FIVE]);
 
 		const version = await versionOf(id);
+		const asked = { status: "confirm", losing: 2, clearsFinal: false, version };
 
-		expect(await updateEvent(id, secret, narrowed, anyVersion, later)).toEqual({
-			status: "confirm",
-			losing: 2,
-			version,
-		});
+		expect(await updateEvent(id, secret, narrowed, anyVersion, later)).toEqual(asked);
 
 		// A confirmation of another version, and a precondition that matches, confirm nothing.
 		expect(
@@ -195,12 +192,8 @@ describe("updateEvent", () => {
 				later,
 				confirmedAt(asEventVersion(version + 1000n)),
 			),
-		).toEqual({ status: "confirm", losing: 2, version });
-		expect(await updateEvent(id, secret, narrowed, seen(version), later)).toEqual({
-			status: "confirm",
-			losing: 2,
-			version,
-		});
+		).toEqual(asked);
+		expect(await updateEvent(id, secret, narrowed, seen(version), later)).toEqual(asked);
 
 		const saved = await updateEvent(id, secret, narrowed, anyVersion, later, confirmedAt(version));
 		const view = await readEvent(id);

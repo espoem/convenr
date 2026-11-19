@@ -4,9 +4,8 @@ import { useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { maximalWindows, sameWindow, type Window } from "@/domain/best-windows";
-import { gridView, type GridView } from "@/domain/grid-labels";
-import { datedLayout } from "@/domain/grid-layout";
+import { sameWindow, type Window } from "@/domain/best-windows";
+import type { GridView } from "@/domain/grid-labels";
 import { heatStep } from "@/domain/heat";
 import {
 	type Brush,
@@ -29,7 +28,9 @@ import { identifyAction, saveAction } from "@/server/participant-actions";
 
 import { AvailabilityGrid, type CellFill, type CellRef } from "./availability-grid";
 import { BestWindows } from "./best-windows";
+import { useBoardView } from "./board-view";
 import { useCount } from "./count";
+import { FinalLegend } from "./final-time";
 import { type Joined, JoinBand } from "./join-band";
 import { BrushPicker, PersonLegend } from "./level-marks";
 import { SlotDetail } from "./slot-detail";
@@ -48,7 +49,13 @@ export type BoardEvent = {
 	rowCount: number;
 	slots: string[];
 	participants: { name: string; levels: Levels }[];
+	final: ShownFinal;
 };
+
+/** The final time as RFC 3339 instants, with the event's slots inside it. */
+export type ShownFinal =
+	| { kind: "open" }
+	| { kind: "chosen"; start: string; end: string; slots: string[] };
 
 type EventBoardProps = {
 	event: BoardEvent;
@@ -163,29 +170,17 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const zoneDiffers = event.dated && viewerZone !== null && viewerZone !== event.referenceZone;
 	const shownZone = inReferenceZone ? event.referenceZone : viewerZone;
 
-	const view = useMemo(() => {
-		if (weekdayView !== null) {
-			return weekdayView;
-		}
-
-		return temporalReady && shownZone !== null
-			? gridView(
-					datedLayout(event.slots, shownZone, event.firstDayOfWeek),
-					event.slotLength,
-					formatLocale,
-				)
-			: null;
-	}, [weekdayView, temporalReady, shownZone, event, formatLocale]);
-
-	const windows = useMemo(
-		() => (view === null ? [] : maximalWindows(view.layout, event.slotLength, event.participants)),
-		[view, event.slotLength, event.participants],
-	);
+	const { view, windows } = useBoardView(event, weekdayView, shownZone, formatLocale);
 
 	// A window from before a reload or a zone switch may no longer exist.
 	const highlight = windows.find((window) => sameWindow(chosenWindow, window)) ?? null;
 
 	const total = event.participants.length;
+
+	const final =
+		event.final.kind === "chosen"
+			? { keys: new Set(event.final.slots), label: t("finalTime") }
+			: undefined;
 
 	const mine =
 		event.participants.find((participant) => participant.name === joined?.name)?.levels ?? nobody;
@@ -387,6 +382,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					onInspect={inspect}
 					inspected={inspected?.cell}
 					highlight={highlight}
+					final={final}
 				/>
 			);
 		}
@@ -396,6 +392,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 				view={view}
 				slotLength={event.slotLength}
 				label={t("myGrid")}
+				final={final}
 				fill={(keys) => ownFill(myLevel(keys))}
 				describe={(keys) => {
 					const level = myLevel(keys);
@@ -521,6 +518,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 									{t("legendHalf")}
 								</span>
 							</div>
+							{final === undefined ? null : <FinalLegend />}
 							{filtered === undefined ? null : <PersonLegend />}
 							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("groupHint")}</p>
 						</>

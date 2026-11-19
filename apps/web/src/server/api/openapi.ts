@@ -18,6 +18,8 @@ import {
 	datedSlotSchema,
 	eventSchema,
 	fieldErrorSchema,
+	finalRequestSchema,
+	finalSchema,
 	joinedSchema,
 	joinRequestSchema,
 	participantSchema,
@@ -61,6 +63,7 @@ const [retentionUntil, retentionKept] = retentionSchema.options;
 const [pointerError, parameterError] = fieldErrorSchema.options;
 const slotInputSchema = availabilityRequestSchema.shape.availability.element;
 const [datedSlotInput, weekdaySlotInput] = slotInputSchema.options;
+const [finalOpen, finalChosen] = finalSchema.options;
 
 const OUTPUT_COMPONENTS: Component[] = [
 	["Event", eventSchema],
@@ -75,6 +78,9 @@ const OUTPUT_COMPONENTS: Component[] = [
 	["Retention", retentionSchema],
 	["RetentionUntil", retentionUntil],
 	["RetentionKept", retentionKept],
+	["Final", finalSchema],
+	["FinalOpen", finalOpen],
+	["FinalChosen", finalChosen],
 	["CreatedEvent", createdEventSchema],
 	["Joined", joinedSchema],
 	["Windows", windowsSchema],
@@ -94,6 +100,7 @@ const INPUT_COMPONENTS: Component[] = [
 	["WeekdaysScheduleInput", weekdaysInput],
 	["JoinRequest", joinRequestSchema],
 	["AvailabilityRequest", availabilityRequestSchema],
+	["FinalRequest", finalRequestSchema],
 	["SlotInput", slotInputSchema],
 	["DatedSlotInput", datedSlotInput],
 	["WeekdaySlotInput", weekdaySlotInput],
@@ -390,6 +397,27 @@ const OPERATIONS: Operation[] = [
 		secret: "adminSecret",
 		success: { status: 204 },
 		problems: [],
+	},
+	{
+		id: "pickFinal",
+		method: "put",
+		path: "/events/{id}/final",
+		tag: "events",
+		secret: "adminSecret",
+		body: "FinalRequest",
+		success: { status: 200, body: "Event", headers: ["ETag"] },
+		ifMatch: true,
+		problems: ["final_not_in_event", "final_date_wrong_weekday", "date_in_past", "event_changed"],
+	},
+	{
+		id: "clearFinal",
+		method: "delete",
+		path: "/events/{id}/final",
+		tag: "events",
+		secret: "adminSecret",
+		success: { status: 200, body: "Event", headers: ["ETag"] },
+		ifMatch: true,
+		problems: ["event_changed"],
 	},
 	{
 		id: "getWindows",

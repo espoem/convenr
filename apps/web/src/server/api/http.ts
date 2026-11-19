@@ -47,6 +47,8 @@ export const PROBLEM_STATUS = {
 	invalid_name: 422,
 	invalid_password: 422,
 	unknown_slot: 422,
+	final_not_in_event: 422,
+	final_date_wrong_weekday: 422,
 	too_many_attempts: 429,
 	internal_error: 500,
 } as const satisfies Record<string, number>;
@@ -62,7 +64,7 @@ const PROBLEM_TITLES: Record<ProblemCode, string> = en.ApiReference.problems;
 export type ProblemOptions = {
 	errors?: FieldError[];
 	/** Members of the problem object that only some codes carry. */
-	members?: Pick<ProblemBody, "retryAt" | "losing">;
+	members?: Pick<ProblemBody, "retryAt" | "losing" | "clearsFinal">;
 	headers?: Record<string, string>;
 };
 

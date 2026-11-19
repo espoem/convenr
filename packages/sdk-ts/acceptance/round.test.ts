@@ -8,6 +8,7 @@ import {
 	getEvent,
 	getWindows,
 	join,
+	pickFinal,
 	saveAvailability,
 	type Slot,
 } from "../src/index.js";
@@ -135,6 +136,17 @@ describe("the TypeScript SDK against a running instance", () => {
 		});
 
 		expect(unchanged.response?.status).toBe(304);
+
+		const picked = await pickFinal({
+			client,
+			throwOnError: true,
+			auth: adminSecret,
+			path: { id: event.id },
+			// The overlap checked above, as the dated slots it is.
+			body: { slots: slots.slice(2, 6) },
+		});
+
+		expect(picked.data.final).toMatchObject({ kind: "chosen", sequence: 1, slots: computed });
 
 		await deleteEvent({ client, throwOnError: true, auth: adminSecret, path: { id: event.id } });
 	});

@@ -26,6 +26,7 @@ EVENT = {
         "addedLater": "schedule",
     },
     "retention": {"kind": "kept"},
+    "final": {"kind": "open"},
     "participants": [],
     "addedLater": {"nested": True},
 }
