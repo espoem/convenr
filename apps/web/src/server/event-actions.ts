@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { isPublicId } from "@/domain/public-id";
+import { type EventVersion, eventVersionSchema } from "@/lib/event-version";
 
 import { createEvent, type EventProblem, eventVersion, type NewEvent } from "./events";
 import {
@@ -39,7 +40,7 @@ export async function createEventAction(input: NewEvent): Promise<CreatedEvent> 
 }
 
 /** The event's version for the page's check, `null` once it is gone. */
-export async function eventVersionAction(id: string): Promise<string | null> {
+export async function eventVersionAction(id: string): Promise<EventVersion | null> {
 	const args = eventId.safeParse(id);
 
 	return args.success ? eventVersion(args.data) : null;
@@ -58,11 +59,11 @@ export type UpdatedEvent =
 	| { status: "denied" }
 	| { status: "invalid"; problems: EventProblem[] }
 	/** How many participants would lose availability, and the version that count was taken at. */
-	| { status: "confirm"; losing: number; version: string };
+	| { status: "confirm"; losing: number; version: EventVersion };
 
 const confirmation = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("none") }),
-	z.object({ kind: z.literal("version"), version: z.string().max(64) }),
+	z.object({ kind: z.literal("version"), version: eventVersionSchema }),
 ]);
 
 /** A confirmation for a version that is not current asks again, with the loss as it is now. */

@@ -1,6 +1,7 @@
 // Tables of events, participants, responses, tokens and usage counts, as in ADR 0002 and ADR 0003.
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	check,
 	date,
 	integer,
@@ -12,6 +13,8 @@ import {
 	unique,
 	uuid,
 } from "drizzle-orm/pg-core";
+
+import type { EventVersion } from "@/lib/event-version";
 
 // Column names come from the property names in snake_case; see `casing` in the client.
 const instant = () => timestamp({ withTimezone: true, mode: "string" });
@@ -37,7 +40,12 @@ export const events = pgTable(
 		/** SHA-256 of the admin secret, base64url. */
 		adminSecretHash: text().notNull(),
 		createdAt: instant().notNull().defaultNow(),
-		/** The event's version, and the base of a weekday event's deletion date. */
+		/** The count of the event's changes: the entity tag, and what a confirmation names. */
+		version: bigint({ mode: "bigint" })
+			.$type<EventVersion>()
+			.notNull()
+			.default(sql`1`),
+		/** When the event last changed, and the base of a weekday event's deletion date. */
 		changedAt: instant().notNull().defaultNow(),
 		/** When the event entered the activation counts, so that it counts once. */
 		activationCountedAt: instant(),

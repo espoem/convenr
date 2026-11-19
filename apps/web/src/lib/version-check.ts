@@ -4,6 +4,7 @@
 import { useEffect } from "react";
 
 import { useRouter } from "@/i18n/navigation";
+import type { EventVersion } from "@/lib/event-version";
 import { eventVersionAction } from "@/server/event-actions";
 
 const INTERVAL_MS = 15_000;
@@ -13,7 +14,7 @@ const INTERVAL_MS = 15_000;
  * when it becomes visible again. A different version, or none once the event is deleted,
  * renders the page again on the server; client state such as unsaved edits stays.
  */
-export function useVersionCheck(id: string, version: string): void {
+export function useVersionCheck(id: string, version: EventVersion): void {
 	const router = useRouter();
 
 	useEffect(() => {

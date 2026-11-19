@@ -425,7 +425,7 @@ describe("changing an event", () => {
 		// A matching If-Match alone never accepts the loss; another confirmed version asks again.
 		const unconfirmed = [
 			{ body: narrowed, headers: { "If-Match": version } },
-			{ body: { ...narrowed, confirmedVersion: '"1999-01-01T00:00:00Z"' }, headers: {} },
+			{ body: { ...narrowed, confirmedVersion: '"99999"' }, headers: {} },
 			{ body: { ...narrowed, confirmedVersion: "x" }, headers: { "If-Match": version } },
 		];
 

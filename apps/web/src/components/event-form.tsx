@@ -17,6 +17,7 @@ import {
 	weekdaysFrom,
 } from "@/domain/schedule";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
+import type { EventVersion } from "@/lib/event-version";
 import { formText } from "@/lib/form-text";
 import type { EventProblem, NewEvent } from "@/server/events";
 import type { Confirmation } from "@/server/manage";
@@ -36,10 +37,10 @@ export type FormOutcome =
 	| { status: "failed" }
 	| { status: "invalid"; problems: EventProblem[] }
 	/** How many participants lose part of their availability, at which version of the event. */
-	| { status: "confirm"; losing: number; version: string };
+	| { status: "confirm"; losing: number; version: EventVersion };
 
 /** A change the server asked to confirm: the loss it would cause, at the version it was counted. */
-type PendingLoss = { input: NewEvent; losing: number; version: string };
+type PendingLoss = { input: NewEvent; losing: number; version: EventVersion };
 
 type EventFormProps = {
 	options: EventFormOptions;

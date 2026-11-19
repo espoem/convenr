@@ -4,6 +4,7 @@
 import type { z } from "zod";
 
 import { isPublicId } from "@/domain/public-id";
+import { type EventVersion, parseVersion, versionText } from "@/lib/event-version";
 import type { Precondition } from "@/server/manage";
 import { type SecretKind, secretKind } from "@/server/secrets";
 
@@ -243,8 +244,8 @@ export function hasSecretInQuery(url: URL): boolean {
 }
 
 /** `version` as a strong entity tag. */
-export function entityTag(version: string): string {
-	return `"${version}"`;
+export function entityTag(version: EventVersion): string {
+	return `"${versionText(version)}"`;
 }
 
 /** Whether `If-None-Match` names `tag`, compared weakly as RFC 9110 asks for this header. */
@@ -274,8 +275,9 @@ export function ifMatchPrecondition(request: Request): Precondition {
 
 	const versions = header.split(",").flatMap((candidate) => {
 		const tag = /^"([^"]*)"$/u.exec(candidate.trim());
+		const version = tag?.[1] === undefined ? undefined : parseVersion(tag[1]);
 
-		return tag?.[1] === undefined ? [] : [tag[1]];
+		return version === undefined ? [] : [version];
 	});
 
 	return { kind: "match", versions };

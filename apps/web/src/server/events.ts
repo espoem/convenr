@@ -20,6 +20,7 @@ import {
 	type Weekday,
 } from "@/domain/schedule";
 import { env } from "@/env";
+import type { EventVersion } from "@/lib/event-version";
 
 import { FIELD_CODES, fieldErrors } from "./api/field-codes";
 import {
@@ -207,8 +208,8 @@ export type EventView = {
 	name: string;
 	description: string;
 	segment: string;
-	/** The instant of the last change, compared by the page's version check. */
-	version: string;
+	/** Compared by the page's version check. */
+	version: EventVersion;
 	schedule: Schedule;
 	firstDayOfWeek: Weekday;
 	/** `null` when the instance keeps events permanently. */
@@ -225,10 +226,10 @@ export type EventView = {
 export async function eventVersion(
 	id: string,
 	now = Temporal.Now.instant(),
-): Promise<string | null> {
+): Promise<EventVersion | null> {
 	const row = await liveEvent(db(), id, now, "read");
 
-	return row === undefined ? null : Temporal.Instant.from(row.changedAt).toString();
+	return row === undefined ? null : row.version;
 }
 
 /**
@@ -280,7 +281,7 @@ function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 		name: row.name,
 		description: row.description,
 		segment: eventSegment(row.id, row.name),
-		version: Temporal.Instant.from(row.changedAt).toString(),
+		version: row.version,
 		schedule,
 		firstDayOfWeek: firstDayOfWeekOf(row),
 		deletionDate: deletionDate(

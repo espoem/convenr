@@ -20,6 +20,7 @@ import {
 	type Weekday,
 } from "@/domain/schedule";
 import { env } from "@/env";
+import type { EventVersion } from "@/lib/event-version";
 
 import { hashSecret } from "./secrets";
 
@@ -152,13 +153,12 @@ export async function availableKeys(
 }
 
 /**
- * The version a change gives the event: `now`, or one microsecond after the stored version when
- * that is not earlier. Two changes in the same microsecond, or a change whose `now` was taken
- * before it waited for the lock, still move the version strictly forward. Computed in the
- * UPDATE, so it reads the version the previous change committed.
+ * What every change sets on the event: the next version and the time of the change. The version
+ * is counted in the UPDATE, so it reads the one the previous change committed, and the caller
+ * holds the event lock. The time is the writer's clock, which is how all times are taken (ADR 0002).
  */
-export function nextVersion(now: Temporal.Instant) {
-	return sql<string>`greatest(${now.toString()}::timestamptz, ${events.changedAt} + interval '1 microsecond')`;
+export function changeStamp(now: Temporal.Instant) {
+	return { version: sql<EventVersion>`${events.version} + 1`, changedAt: now.toString() };
 }
 
 /**
@@ -166,10 +166,7 @@ export function nextVersion(now: Temporal.Instant) {
  * it a weekday event's deletion date.
  */
 export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.Instant) {
-	await queries
-		.update(events)
-		.set({ changedAt: nextVersion(now) })
-		.where(eq(events.id, row.id));
+	await queries.update(events).set(changeStamp(now)).where(eq(events.id, row.id));
 }
 
 /**

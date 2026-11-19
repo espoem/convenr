@@ -7,12 +7,13 @@ import { datedAvailability, events, participants, weekdayAvailability } from "@/
 import { eventSegment } from "@/domain/event-address";
 import { editProblems, removedSlots } from "@/domain/event-edit";
 import type { Schedule, Slot } from "@/domain/schedule";
+import type { EventVersion } from "@/lib/event-version";
 
 import {
+	changeStamp,
 	type EventRow,
 	firstDayOfWeekOf,
 	liveEvent,
-	nextVersion,
 	type Queries,
 	scheduleOf,
 	touchEvent,
@@ -44,13 +45,13 @@ export type ManagedEvent = NewEvent & {
  * one of these versions: a change is refused when none is the current one. It guards against
  * overwriting a change the caller has not seen; it never accepts a loss of availability.
  */
-export type Precondition = { kind: "any" } | { kind: "match"; versions: string[] };
+export type Precondition = { kind: "any" } | { kind: "match"; versions: EventVersion[] };
 
 /**
  * Whether the caller accepts that participants lose availability. `version` is the version a
  * refusal named when it counted the loss: the acceptance holds only while the event has it.
  */
-export type Confirmation = { kind: "none" } | { kind: "version"; version: string };
+export type Confirmation = { kind: "none" } | { kind: "version"; version: EventVersion };
 
 const NO_CONFIRMATION: Confirmation = { kind: "none" };
 
@@ -60,9 +61,9 @@ export type UpdateEventResult =
 	| { status: "denied" }
 	| { status: "invalid"; problems: EventProblem[] }
 	/** The current version differs from every version the precondition names. */
-	| { status: "changed"; version: string }
+	| { status: "changed"; version: EventVersion }
 	/** How many participants would lose part of their availability, at the current version. */
-	| { status: "confirm"; losing: number; version: string };
+	| { status: "confirm"; losing: number; version: EventVersion };
 
 /** `not_found` when the secret fits but the event has no such participant. */
 export type RemoveParticipantResult =
@@ -253,7 +254,7 @@ export async function updateEvent(
 			return { status: "denied" };
 		}
 
-		const version = Temporal.Instant.from(row.changedAt).toString();
+		const { version } = row;
 
 		if (precondition.kind === "match" && !precondition.versions.includes(version)) {
 			return { status: "changed", version };
@@ -313,7 +314,7 @@ export async function updateEvent(
 
 		const [written] = await tx
 			.update(events)
-			.set({ ...stored, changedAt: nextVersion(now) })
+			.set({ ...stored, ...changeStamp(now) })
 			.where(eq(events.id, id))
 			.returning();
 

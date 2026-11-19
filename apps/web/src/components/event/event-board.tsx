@@ -11,6 +11,7 @@ import { heatStep } from "@/domain/heat";
 import type { Weekday } from "@/domain/schedule";
 import { useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
+import type { EventVersion } from "@/lib/event-version";
 import { type LocalEvent, updateLocalEvent, useLocalEvents } from "@/lib/local-events";
 import { cn } from "@/lib/utils";
 import { useVersionCheck } from "@/lib/version-check";
@@ -29,8 +30,8 @@ export type BoardEvent = {
 	referenceZone: string;
 	firstDayOfWeek: Weekday;
 	slotLength: number;
-	/** The instant of the last change, for the version check. */
-	version: string;
+	/** For the version check. */
+	version: EventVersion;
 	/** Rows of one day, to reserve the grid's height before the browser lays it out. */
 	rowCount: number;
 	slots: string[];

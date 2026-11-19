@@ -19,7 +19,7 @@ Phase 2 does not include:
 
 - **Organizer:** whoever holds the admin secret of an event.
 - **Window:** a run of consecutive slots in one column of the grid.
-- **Version:** the instant of the last change to an event, its participants or their responses.
+- **Version:** the number of changes to an event, its participants and their responses, counted from 1 (F5).
 
 ## 3. Manage rules
 
@@ -69,7 +69,7 @@ These rules replace Phase 1 rule V5.
 
 **F4. Gone.** When the event has been deleted, the page shows the not-found content (E9). When the viewer's own participant has been deleted, the browser drops the token, the page shows the join form again and says why.
 
-**F5. Version value.** Creating or changing the event, joining under a new name, saving a set of slots that differs from the stored one, setting, changing or removing a password, leaving and deleting a participant each move the version forward. A password change moves it whenever it succeeds, even to the same password, because it replaces the participant's stored password. The version is the instant of the last change, but always at least one microsecond after the version before it, so two changes in the same instant, or a change that waited for another, still get different versions. A request that changes nothing writes nothing and keeps the version and the deletion date: an event change after which every value is the same, a save of the same set of slots in any order, joining under a name already used, which only issues a token, and every refused request, including a counted wrong password.
+**F5. Version value.** Creating or changing the event, joining under a new name, saving a set of slots that differs from the stored one, setting, changing or removing a password, leaving and deleting a participant each move the version forward. A password change moves it whenever it succeeds, even to the same password, because it replaces the participant's stored password. The version is a whole number that starts at 1 for a new event and grows by exactly 1 with each such change, in the same write, so two changes in the same instant, or a change that waited for another, still get different versions. It is not a time. Each change also records its time as the event's last change, which a weekday event's deletion date counts from (E7); the version and the time are stored apart. A request that changes nothing writes nothing and keeps the version and the deletion date: an event change after which every value is the same, a save of the same set of slots in any order, joining under a name already used, which only issues a token, and every refused request, including a counted wrong password.
 
 **F6. Later.** Pushing changes from the server, for example Server-Sent Events over PostgreSQL `LISTEN/NOTIFY`, is the live-update item of roadmap phase F4. It waits until real traffic shows that version checks cost too much.
 

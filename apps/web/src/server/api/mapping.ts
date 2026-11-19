@@ -4,6 +4,7 @@
 import { bestWindows, maximalWindows, mostPeople } from "@/domain/best-windows";
 import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
 import { type Schedule, scheduleSlots, type Slot, slotKey } from "@/domain/schedule";
+import { parseVersion } from "@/lib/event-version";
 import type { ParticipantView } from "@/server/event-rows";
 import type { EventProblem, EventView, NewEvent } from "@/server/events";
 import type { Confirmation } from "@/server/manage";
@@ -63,13 +64,14 @@ export function newEventOf(request: CreateEventRequest): NewEvent {
 	};
 }
 
-/** The loss a change accepts: the `ETag` of the refusal that counted it, quoted or not. */
+/**
+ * The loss a change accepts: the `ETag` of the refusal that counted it, quoted or not. Text that
+ * names no version accepts nothing, so the change is refused again.
+ */
 export function confirmationOf(request: UpdateEventRequest): Confirmation {
-	const { confirmedVersion } = request;
+	const version = parseVersion((request.confirmedVersion ?? "").replace(/^"(.*)"$/u, "$1"));
 
-	return confirmedVersion === undefined
-		? { kind: "none" }
-		: { kind: "version", version: confirmedVersion.replace(/^"(.*)"$/u, "$1") };
+	return version === undefined ? { kind: "none" } : { kind: "version", version };
 }
 
 /** The fields a change names; the server keeps the stored value of every other one. */

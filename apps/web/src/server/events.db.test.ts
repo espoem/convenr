@@ -37,7 +37,7 @@ describe("createEvent", () => {
 
 		// Only the hash of the admin secret is stored (ADR 0003).
 		expect(row?.adminSecretHash).toBe(hashSecret(created.adminSecret));
-		expect(JSON.stringify(row)).not.toContain(created.adminSecret);
+		expect(String(Object.values(row ?? {}))).not.toContain(created.adminSecret);
 	});
 
 	it("refuses invalid fields and broken schedule rules without storing anything", async () => {
