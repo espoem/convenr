@@ -6,6 +6,7 @@ import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
 import { type Schedule, scheduleSlots, type Slot, slotKey } from "@/domain/schedule";
 import type { ParticipantView } from "@/server/event-rows";
 import type { EventProblem, EventView, NewEvent } from "@/server/events";
+import type { Confirmation } from "@/server/manage";
 import type { JoinPassword, PasswordRefusal } from "@/server/participants";
 
 import { jsonPointer, problem, type ProblemCode, unauthorized } from "./http";
@@ -60,6 +61,15 @@ export function newEventOf(request: CreateEventRequest): NewEvent {
 		firstDayOfWeek: request.firstDayOfWeek ?? 1,
 		...scheduleFields(request.schedule),
 	};
+}
+
+/** The loss a change accepts: the `ETag` of the refusal that counted it, quoted or not. */
+export function confirmationOf(request: UpdateEventRequest): Confirmation {
+	const { confirmedVersion } = request;
+
+	return confirmedVersion === undefined
+		? { kind: "none" }
+		: { kind: "version", version: confirmedVersion.replace(/^"(.*)"$/u, "$1") };
 }
 
 /** The fields a change names; the server keeps the stored value of every other one. */

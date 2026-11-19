@@ -14,7 +14,7 @@ import {
 	updateEventAction,
 } from "@/server/event-actions";
 import type { NewEvent } from "@/server/events";
-import type { ManagedEvent } from "@/server/manage";
+import type { Confirmation, ManagedEvent } from "@/server/manage";
 
 type ManageEventProps = { id: string; options: EventFormOptions };
 
@@ -82,9 +82,9 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 		);
 	}
 
-	async function save(input: NewEvent, confirmedLosing: number | null): Promise<FormOutcome> {
+	async function save(input: NewEvent, confirmation: Confirmation): Promise<FormOutcome> {
 		try {
-			const result = await updateEventAction(id, secret, input, confirmedLosing);
+			const result = await updateEventAction(id, secret, input, confirmation);
 
 			switch (result.status) {
 				case "saved":
@@ -101,7 +101,7 @@ export function ManageEvent({ id, options }: ManageEventProps) {
 				case "invalid":
 					return { status: "invalid", problems: result.problems };
 				case "confirm":
-					return { status: "confirm", losing: result.losing };
+					return { status: "confirm", losing: result.losing, version: result.version };
 			}
 		} catch {
 			return { status: "failed" };

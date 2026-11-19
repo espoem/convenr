@@ -49,7 +49,13 @@ describe("eventVersion", () => {
 		await leave(id, jana.token, minute(5));
 		expect(await eventVersion(id)).toBe(minute(5).toString());
 
-		await updateEvent(id, adminSecret, { ...pragueEvenings, name: "Jiná" }, null, minute(6));
+		await updateEvent(
+			id,
+			adminSecret,
+			{ ...pragueEvenings, name: "Jiná" },
+			{ kind: "any" },
+			minute(6),
+		);
 		expect(await eventVersion(id)).toBe(minute(6).toString());
 
 		const petrId = (await readManagedEvent(id, adminSecret))?.participants[0]?.id ?? "";
@@ -116,7 +122,13 @@ describe("eventVersion", () => {
 		await saveResponse(id, jana.token, [], creationTime);
 		await record();
 		// A writer whose clock was read before the changes above.
-		await updateEvent(id, adminSecret, { name: "Jiná" }, null, creationTime.subtract({ hours: 1 }));
+		await updateEvent(
+			id,
+			adminSecret,
+			{ name: "Jiná" },
+			{ kind: "any" },
+			creationTime.subtract({ hours: 1 }),
+		);
 		await record();
 
 		const steps = versions

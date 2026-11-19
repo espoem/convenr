@@ -409,9 +409,9 @@ export type UpdateEventRequest = {
      */
     schedule?: ScheduleInput;
     /**
-     * How many participants the client agreed may lose part of their availability.
+     * The `ETag` of a `confirmation_required` refusal. The change may remove the availability that refusal counted, while the event still has that version.
      */
-    confirmedLosing?: number;
+    confirmedVersion?: string;
 };
 
 /**
@@ -733,6 +733,12 @@ export type GetEventResponse = GetEventResponses[keyof GetEventResponses];
 
 export type UpdateEventData = {
     body: UpdateEventRequest;
+    headers?: {
+        /**
+         * The `ETag` of the event version the change is meant for. The change is refused when the event has another version. It does not accept a loss of availability; `confirmedVersion` does.
+         */
+        'If-Match'?: string;
+    };
     path: {
         /**
          * The public id of the event, from its share link.
@@ -764,6 +770,10 @@ export type UpdateEventErrors = {
      * `field_locked`: Slot length, day mode and reference zone cannot change once people joined.
      */
     409: Problem;
+    /**
+     * `event_changed`: The event has another version than the `If-Match` header names.
+     */
+    412: Problem;
     /**
      * `payload_too_large`: The body is larger than 64 KB.
      */
@@ -809,6 +819,12 @@ export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponse
 
 export type GetWindowsData = {
     body?: never;
+    headers?: {
+        /**
+         * The `ETag` of an earlier read.
+         */
+        'If-None-Match'?: string;
+    };
     path: {
         /**
          * The public id of the event, from its share link.

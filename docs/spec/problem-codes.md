@@ -52,7 +52,8 @@ Codes that only the API returns, from [phase 3](phase-3.md).
 | `unauthorized` | The secret is missing or wrong, or the event does not exist. | K3, A12 |
 | `wrong_secret_kind` | An admin secret was sent where a participant token is needed, or the other way round. | K2 |
 | `secret_in_query` | The query string holds a secret. | K4 |
-| `confirmation_required` | A change would remove availability from participants; `losing` says from how many. The client repeats the change with `confirmedLosing` set to that number. | M5, A14 |
+| `confirmation_required` | A change would remove availability from participants; `losing` says from how many, and the `ETag` header is the event's version. The client repeats the change with that `ETag` as `confirmedVersion`; a missing or stale `confirmedVersion` gets this refusal again, and `If-Match` never replaces it. | M5, A14 |
+| `event_changed` | The `If-Match` of a change names no current version of the event, because someone changed it since the client read it. The `ETag` header is the current version. | A10 |
 | `method_not_allowed` | The path exists but does not support the method. `Allow` lists the methods it does support. | A3 |
 | `internal_error` | The server failed while answering. The request may or may not have taken effect. | A8 |
 
@@ -91,7 +92,8 @@ The API sends every code with one status.
 | `403 Forbidden` | `wrong_secret_kind`, `password_required`, `wrong_password` |
 | `404 Not Found` | `not_found` |
 | `405 Method Not Allowed` | `method_not_allowed`, with `Allow` |
-| `409 Conflict` | `event_full`, `field_locked`, `no_password`, `name_exists`, `name_unknown`, `confirmation_required` |
+| `409 Conflict` | `event_full`, `field_locked`, `no_password`, `name_exists`, `name_unknown`, `confirmation_required`, with `ETag` |
+| `412 Precondition Failed` | `event_changed`, with `ETag` |
 | `413 Content Too Large` | `payload_too_large` |
 | `415 Unsupported Media Type` | `unsupported_media_type` |
 | `422 Unprocessable Content` | the event schedule codes except `field_locked`, `invalid_name`, `invalid_password`, `unknown_slot` |

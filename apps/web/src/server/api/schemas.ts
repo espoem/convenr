@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import { MINUTES_PER_DAY, SLOT_LENGTHS } from "@/domain/schedule";
+import { MAX_PARTICIPANTS } from "@/server/participants";
 
 /** ISO day of week: 1 is Monday, 7 is Sunday. */
 export const weekdaySchema = z.literal([1, 2, 3, 4, 5, 6, 7]);
@@ -106,8 +107,8 @@ export const updateEventRequestSchema = z.strictObject({
 	referenceZone: z.string().optional(),
 	firstDayOfWeek: weekdaySchema.optional(),
 	schedule: scheduleInputSchema.optional(),
-	/** How many participants the client agreed may lose part of their availability. */
-	confirmedLosing: z.int().min(0).optional(),
+	/** The `ETag` of a `confirmation_required` refusal, to accept the loss it counted. */
+	confirmedVersion: z.string().optional(),
 });
 
 /** At most one of `password` and `newPassword`. */
@@ -137,11 +138,15 @@ export const setPasswordRequestSchema = z.strictObject({
 
 export const removePasswordRequestSchema = z.strictObject({ currentPassword: z.string() });
 
+/** A whole number written with decimal digits only, so `0x10`, `1e2` and `+5` are not numbers. */
+const decimalDigits = z.string().regex(/^\d+$/u).transform(Number);
+
+/** Query values are text. Describe the parsed number: the parameter is an integer on the wire. */
 export const windowsQuerySchema = z.object({
 	/** One slot when left out. */
-	minMinutes: z.coerce.number().int().min(1).max(MINUTES_PER_DAY).optional(),
+	minMinutes: decimalDigits.pipe(z.int().min(1).max(MINUTES_PER_DAY)).optional(),
 	/** The most people in any window when left out. */
-	minPeople: z.coerce.number().int().min(1).max(100).optional(),
+	minPeople: decimalDigits.pipe(z.int().min(1).max(MAX_PARTICIPANTS)).optional(),
 });
 
 export const windowsSchema = z.object({

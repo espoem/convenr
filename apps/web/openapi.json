@@ -215,7 +215,7 @@
 			"patch": {
 				"operationId": "updateEvent",
 				"summary": "Change an event",
-				"description": "Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`; repeat it with `confirmedLosing` set to the `losing` of that problem.",
+				"description": "Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`, which carries the number of participants in `losing` and the current `ETag`; repeat the same change with that `ETag` as `confirmedVersion` to accept the loss. The loss is accepted only while the event still has that version; after any other change the refusal comes again with the new count. `If-Match` is a separate guard: a change that sends it is refused with `event_changed` when the event has another version, so it never overwrites what the client has not seen, but it never accepts a loss.",
 				"tags": [
 					"events"
 				],
@@ -227,6 +227,14 @@
 				"responses": {
 					"200": {
 						"description": "The event after the change, or as it was when nothing changed.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
 						"content": {
 							"application/json": {
 								"schema": {
@@ -281,6 +289,32 @@
 									"$ref": "#/components/schemas/Problem"
 								}
 							}
+						},
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"412": {
+						"description": "`event_changed`: The event has another version than the `If-Match` header names.",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						},
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
 						}
 					},
 					"413": {
@@ -333,6 +367,15 @@
 						"schema": {
 							"type": "string",
 							"pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{12}$"
+						}
+					},
+					{
+						"name": "If-Match",
+						"in": "header",
+						"required": false,
+						"description": "The `ETag` of the event version the change is meant for. The change is refused when the event has another version. It does not accept a loss of availability; `confirmedVersion` does.",
+						"schema": {
+							"type": "string"
 						}
 					}
 				],
@@ -430,7 +473,7 @@
 			"get": {
 				"operationId": "getWindows",
 				"summary": "Best windows",
-				"description": "Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone.",
+				"description": "Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of the event; send it in `If-None-Match` to get `304` while nothing changed.",
 				"tags": [
 					"events"
 				],
@@ -438,10 +481,29 @@
 				"responses": {
 					"200": {
 						"description": "The best windows and the filters applied.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
 						"content": {
 							"application/json": {
 								"schema": {
 									"$ref": "#/components/schemas/Windows"
+								}
+							}
+						}
+					},
+					"304": {
+						"description": "The event has not changed since the read that returned this `ETag`.",
+						"headers": {
+							"ETag": {
+								"description": "The version of the event.",
+								"schema": {
+									"type": "string"
 								}
 							}
 						}
@@ -508,6 +570,15 @@
 							"type": "integer",
 							"minimum": 1,
 							"maximum": 100
+						}
+					},
+					{
+						"name": "If-None-Match",
+						"in": "header",
+						"required": false,
+						"description": "The `ETag` of an earlier read.",
+						"schema": {
+							"type": "string"
 						}
 					}
 				]
@@ -1984,10 +2055,9 @@
 						"$ref": "#/components/schemas/ScheduleInput",
 						"description": "The whole new schedule, with every field of its mode."
 					},
-					"confirmedLosing": {
-						"type": "integer",
-						"minimum": 0,
-						"description": "How many participants the client agreed may lose part of their availability."
+					"confirmedVersion": {
+						"type": "string",
+						"description": "The `ETag` of a `confirmation_required` refusal. The change may remove the availability that refusal counted, while the event still has that version."
 					}
 				},
 				"additionalProperties": false,

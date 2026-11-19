@@ -19,6 +19,7 @@ import {
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import { formText } from "@/lib/form-text";
 import type { EventProblem, NewEvent } from "@/server/events";
+import type { Confirmation } from "@/server/manage";
 
 export type EventFormOptions = {
 	formatLocale: string;
@@ -34,8 +35,11 @@ export type FormOutcome =
 	| { status: "done" }
 	| { status: "failed" }
 	| { status: "invalid"; problems: EventProblem[] }
-	/** How many participants lose part of their availability. */
-	| { status: "confirm"; losing: number };
+	/** How many participants lose part of their availability, at which version of the event. */
+	| { status: "confirm"; losing: number; version: string };
+
+/** A change the server asked to confirm: the loss it would cause, at the version it was counted. */
+type PendingLoss = { input: NewEvent; losing: number; version: string };
 
 type EventFormProps = {
 	options: EventFormOptions;
@@ -45,7 +49,7 @@ type EventFormProps = {
 	locked?: boolean;
 	submitLabel: string;
 	pendingLabel: string;
-	onSubmit: (input: NewEvent, confirmedLosing: number | null) => Promise<FormOutcome>;
+	onSubmit: (input: NewEvent, confirmation: Confirmation) => Promise<FormOutcome>;
 };
 
 type DayMode = NewEvent["days"]["mode"];
@@ -114,7 +118,7 @@ export function EventForm({
 	const [firstDayOfWeek, setFirstDayOfWeek] = useState(startWeek);
 	const [problems, setProblems] = useState<string[]>([]);
 	const [failed, setFailed] = useState(false);
-	const [pendingLoss, setPendingLoss] = useState<{ input: NewEvent; losing: number } | null>(null);
+	const [pendingLoss, setPendingLoss] = useState<PendingLoss | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	const shownZone = zone ?? viewerZone ?? "Europe/Prague";
@@ -142,13 +146,17 @@ export function EventForm({
 		);
 	}
 
-	function send(input: NewEvent, confirmedLosing: number | null) {
+	function send(input: NewEvent, confirmation: Confirmation) {
 		startTransition(async () => {
-			const outcome = await onSubmit(input, confirmedLosing);
+			const outcome = await onSubmit(input, confirmation);
 
 			setFailed(outcome.status === "failed");
 			setProblems(outcome.status === "invalid" ? outcome.problems.map(problemName) : []);
-			setPendingLoss(outcome.status === "confirm" ? { input, losing: outcome.losing } : null);
+			setPendingLoss(
+				outcome.status === "confirm"
+					? { input, losing: outcome.losing, version: outcome.version }
+					: null,
+			);
 		});
 	}
 
@@ -183,7 +191,7 @@ export function EventForm({
 				referenceZone: shownZone,
 				firstDayOfWeek,
 			},
-			null,
+			{ kind: "none" },
 		);
 	}
 
@@ -443,7 +451,9 @@ export function EventForm({
 							type="button"
 							variant="destructive"
 							disabled={pending}
-							onClick={() => send(pendingLoss.input, pendingLoss.losing)}
+							onClick={() =>
+								send(pendingLoss.input, { kind: "version", version: pendingLoss.version })
+							}
 						>
 							{t("confirmLossYes")}
 						</Button>

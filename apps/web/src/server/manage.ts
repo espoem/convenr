@@ -19,6 +19,8 @@ import {
 } from "./event-rows";
 import {
 	type EventProblem,
+	type EventView,
+	eventViewOf,
 	inputProblems,
 	type NewEvent,
 	newEventSchema,
@@ -37,12 +39,30 @@ export type ManagedEvent = NewEvent & {
 	participants: { id: string; name: string }[];
 };
 
+/**
+ * Which versions of the event a change was made for. `match` says the caller saw the event at
+ * one of these versions: a change is refused when none is the current one. It guards against
+ * overwriting a change the caller has not seen; it never accepts a loss of availability.
+ */
+export type Precondition = { kind: "any" } | { kind: "match"; versions: string[] };
+
+/**
+ * Whether the caller accepts that participants lose availability. `version` is the version a
+ * refusal named when it counted the loss: the acceptance holds only while the event has it.
+ */
+export type Confirmation = { kind: "none" } | { kind: "version"; version: string };
+
+const NO_CONFIRMATION: Confirmation = { kind: "none" };
+
 export type UpdateEventResult =
-	| { status: "saved"; segment: string }
+	/** The event as the change wrote it. */
+	| { status: "saved"; event: EventView }
 	| { status: "denied" }
 	| { status: "invalid"; problems: EventProblem[] }
-	/** How many participants would lose part of their availability. */
-	| { status: "confirm"; losing: number };
+	/** The current version differs from every version the precondition names. */
+	| { status: "changed"; version: string }
+	/** How many participants would lose part of their availability, at the current version. */
+	| { status: "confirm"; losing: number; version: string };
 
 /** `not_found` when the secret fits but the event has no such participant. */
 export type RemoveParticipantResult =
@@ -213,21 +233,30 @@ async function deleteAvailability(queries: Queries, eventId: string, removed: Sl
 /**
  * Changes the fields in `change`; the others keep their stored values, read under the lock
  * so that two changes of different fields do not undo each other. A change that takes
- * availability away from participants needs `confirmedLosing` to match how many lose it; the
- * count is asked for again when it changed in the meantime.
+ * availability away from participants is accepted only when the confirmation names the current
+ * version, so the caller confirms what it was shown and not a count that other people's changes
+ * can make true of someone else. A matching precondition alone confirms nothing. The answer is
+ * the event as the change wrote it.
  */
 export async function updateEvent(
 	id: string,
 	secret: string,
 	change: Partial<NewEvent>,
-	confirmedLosing: number | null,
+	precondition: Precondition,
 	now = Temporal.Now.instant(),
+	confirmation: Confirmation = NO_CONFIRMATION,
 ): Promise<UpdateEventResult> {
 	return db().transaction(async (tx): Promise<UpdateEventResult> => {
 		const row = await adminRow(tx, id, secret, "lock", now);
 
 		if (row === undefined) {
 			return { status: "denied" };
+		}
+
+		const version = Temporal.Instant.from(row.changedAt).toString();
+
+		if (precondition.kind === "match" && !precondition.versions.includes(version)) {
+			return { status: "changed", version };
 		}
 
 		const parsed = newEventSchema.safeParse({ ...inputOf(row), ...change }, { reportInput: true });
@@ -254,7 +283,7 @@ export async function updateEvent(
 		// A change that keeps every value writes nothing, so the version and a weekday event's
 		// deletion date stay where they are.
 		if (keepsEveryValue(row, stored)) {
-			return { status: "saved", segment: eventSegment(id, name) };
+			return { status: "saved", event: await eventViewOf(tx, row) };
 		}
 
 		const after: Schedule = { days, dailyStart, dailyEnd, slotLength, referenceZone };
@@ -274,17 +303,25 @@ export async function updateEvent(
 		const removed = removedSlots(before, after);
 		const losing = await losingParticipants(tx, id, removed);
 
-		if (losing > 0 && confirmedLosing !== losing) {
-			return { status: "confirm", losing };
+		const confirmed = confirmation.kind === "version" && confirmation.version === version;
+
+		if (losing > 0 && !confirmed) {
+			return { status: "confirm", losing, version };
 		}
 
 		await deleteAvailability(tx, id, removed);
-		await tx
+
+		const [written] = await tx
 			.update(events)
 			.set({ ...stored, changedAt: nextVersion(now) })
-			.where(eq(events.id, id));
+			.where(eq(events.id, id))
+			.returning();
 
-		return { status: "saved", segment: eventSegment(id, name) };
+		if (written === undefined) {
+			throw new Error("The event update returned no row.");
+		}
+
+		return { status: "saved", event: await eventViewOf(tx, written) };
 	});
 }
 

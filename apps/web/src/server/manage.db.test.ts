@@ -6,7 +6,14 @@ import { events } from "@/db/schema";
 import { isPublicId } from "@/domain/public-id";
 
 import { createEvent, type NewEvent, readEvent } from "./events";
-import { readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
+import {
+	type Confirmation,
+	type Precondition,
+	readManagedEvent,
+	removeEvent,
+	removeParticipant,
+	updateEvent,
+} from "./manage";
 import { join } from "./participants";
 import { saveResponse } from "./responses";
 import { creationTime, pragueEvenings } from "./test-events";
@@ -41,6 +48,16 @@ async function respond(id: string, name: string, keys: string[]) {
 
 const narrowed: NewEvent = { ...pragueEvenings, dailyEnd: 18 * 60 };
 
+const anyVersion: Precondition = { kind: "any" };
+
+function seen(version: string): Precondition {
+	return { kind: "match", versions: [version] };
+}
+
+function confirmedAt(version: string): Confirmation {
+	return { kind: "version", version };
+}
+
 beforeEach(async () => {
 	await db().delete(events);
 });
@@ -64,28 +81,32 @@ describe("updateEvent", () => {
 		const { id } = await managedEvent();
 
 		expect(
-			await updateEvent(id, "wrong", { ...pragueEvenings, name: "Jiné" }, null, later),
+			await updateEvent(id, "wrong", { ...pragueEvenings, name: "Jiné" }, anyVersion, later),
 		).toEqual({
 			status: "denied",
 		});
 		expect((await readEvent(id))?.name).toBe(pragueEvenings.name);
 	});
 
-	it("renames the event and returns the new address segment", async () => {
+	it("renames the event and answers with the event as it was written", async () => {
 		const { id, secret } = await managedEvent();
 		const renamed = { ...pragueEvenings, name: "Zkouška" };
+		const saved = await updateEvent(id, secret, renamed, anyVersion, later);
 
-		expect(await updateEvent(id, secret, renamed, null, later)).toEqual({
+		expect(saved).toMatchObject({
 			status: "saved",
-			segment: `zkouska-${id}`,
+			event: { id, name: "Zkouška", segment: `zkouska-${id}`, version: later.toString() },
 		});
+		expect(saved).toEqual({ status: "saved", event: await readEvent(id) });
 	});
 
 	it("keeps the stored value of every field the change leaves out", async () => {
 		const { id, secret } = await managedEvent();
 
-		expect((await updateEvent(id, secret, { name: "Zkouška" }, null, later)).status).toBe("saved");
-		expect((await updateEvent(id, secret, { dailyEnd: 20 * 60 }, null, later)).status).toBe(
+		expect((await updateEvent(id, secret, { name: "Zkouška" }, anyVersion, later)).status).toBe(
+			"saved",
+		);
+		expect((await updateEvent(id, secret, { dailyEnd: 20 * 60 }, anyVersion, later)).status).toBe(
 			"saved",
 		);
 		expect(await readManagedEvent(id, secret)).toMatchObject({
@@ -99,16 +120,16 @@ describe("updateEvent", () => {
 		const { id, secret } = await managedEvent();
 		const version = (await readEvent(id))?.version;
 
-		expect(await updateEvent(id, secret, {}, null, later)).toEqual({
+		expect(await updateEvent(id, secret, {}, anyVersion, later)).toMatchObject({
 			status: "saved",
-			segment: `schuzka-vyboru-2027-${id}`,
+			event: { segment: `schuzka-vyboru-2027-${id}`, version },
 		});
 		expect(
 			await updateEvent(
 				id,
 				secret,
 				{ ...pragueEvenings, name: ` ${pragueEvenings.name} ` },
-				null,
+				anyVersion,
 				later,
 			),
 		).toMatchObject({ status: "saved" });
@@ -123,7 +144,7 @@ describe("updateEvent", () => {
 			id,
 			secret,
 			{ ...pragueEvenings, slotLength: 30 },
-			null,
+			anyVersion,
 			later,
 		);
 
@@ -132,7 +153,7 @@ describe("updateEvent", () => {
 		await respond(id, "Jana", []);
 
 		expect((await readManagedEvent(id, secret))?.locked).toBe(true);
-		expect(await updateEvent(id, secret, pragueEvenings, null, later)).toEqual({
+		expect(await updateEvent(id, secret, pragueEvenings, anyVersion, later)).toEqual({
 			status: "invalid",
 			problems: [{ kind: "rule", code: "field_locked", path: ["slotLength"] }],
 		});
@@ -145,18 +166,35 @@ describe("updateEvent", () => {
 		await respond(id, "Petr", [SIX]);
 		await respond(id, "Eva", [FIVE]);
 
-		expect(await updateEvent(id, secret, narrowed, null, later)).toEqual({
-			status: "confirm",
-			losing: 2,
-		});
-		expect(await updateEvent(id, secret, narrowed, 1, later)).toEqual({
-			status: "confirm",
-			losing: 2,
-		});
-		expect((await updateEvent(id, secret, narrowed, 2, later)).status).toBe("saved");
+		const version = (await readEvent(id))?.version ?? "";
 
+		expect(await updateEvent(id, secret, narrowed, anyVersion, later)).toEqual({
+			status: "confirm",
+			losing: 2,
+			version,
+		});
+
+		// A confirmation of another version, and a precondition that matches, confirm nothing.
+		expect(
+			await updateEvent(
+				id,
+				secret,
+				narrowed,
+				anyVersion,
+				later,
+				confirmedAt("1999-01-01T00:00:00Z"),
+			),
+		).toEqual({ status: "confirm", losing: 2, version });
+		expect(await updateEvent(id, secret, narrowed, seen(version), later)).toEqual({
+			status: "confirm",
+			losing: 2,
+			version,
+		});
+
+		const saved = await updateEvent(id, secret, narrowed, anyVersion, later, confirmedAt(version));
 		const view = await readEvent(id);
 
+		expect(saved).toEqual({ status: "saved", event: view });
 		expect(view?.participants).toMatchObject([
 			{ name: "Jana", available: [FIVE] },
 			{ name: "Petr", available: [] },
@@ -165,19 +203,62 @@ describe("updateEvent", () => {
 		expect(view?.slots).not.toContain(SIX);
 	});
 
+	it("does not take a confirmation for another group of people with the same count", async () => {
+		const { id, secret } = await managedEvent();
+		const jana = await respond(id, "Jana", [SIX]);
+
+		const petr = await respond(id, "Petr", []);
+		const asked = await updateEvent(id, secret, narrowed, anyVersion, later);
+
+		expect(asked).toMatchObject({ status: "confirm", losing: 1 });
+
+		// Jana moves to a slot that stays and Petr takes her place in the removed one: one person
+		// still loses availability, but not the one the organizer was shown.
+		await saveResponse(id, jana, [FIVE], later);
+		await saveResponse(id, petr, [SIX], later);
+
+		const stale = asked.status === "confirm" ? asked.version : "";
+
+		expect(
+			await updateEvent(id, secret, narrowed, anyVersion, later, confirmedAt(stale)),
+		).toMatchObject({ status: "confirm", losing: 1 });
+		expect((await readEvent(id))?.slots).toContain(SIX);
+	});
+
+	it("refuses a change for a version other than the current one, whatever the change does", async () => {
+		const { id, secret } = await managedEvent();
+		const version = (await readEvent(id))?.version ?? "";
+
+		await updateEvent(id, secret, { name: "Zkouška" }, anyVersion, later);
+
+		expect(await updateEvent(id, secret, { name: "Jiná" }, seen(version), later)).toMatchObject({
+			status: "changed",
+			version: later.toString(),
+		});
+		expect(
+			await updateEvent(id, secret, { name: "Jiná" }, { kind: "match", versions: [] }, later),
+		).toMatchObject({
+			status: "changed",
+		});
+		expect((await readEvent(id))?.name).toBe("Zkouška");
+		expect(
+			await updateEvent(id, secret, { name: "Jiná" }, seen(later.toString()), later),
+		).toMatchObject({ status: "saved" });
+	});
+
 	it("needs no confirmation when nobody marked a removed slot", async () => {
 		const { id, secret } = await managedEvent();
 
 		await respond(id, "Jana", [FIVE]);
 
-		expect((await updateEvent(id, secret, narrowed, null, later)).status).toBe("saved");
+		expect((await updateEvent(id, secret, narrowed, anyVersion, later)).status).toBe("saved");
 	});
 
 	it("makes a later save with a removed slot fail as a whole", async () => {
 		const { id, secret } = await managedEvent();
 		const token = await respond(id, "Jana", []);
 
-		await updateEvent(id, secret, narrowed, null, later);
+		await updateEvent(id, secret, narrowed, anyVersion, later);
 
 		expect(await saveResponse(id, token, [FIVE, SIX], later)).toMatchObject({
 			ok: false,

@@ -231,7 +231,7 @@ describe("cross-origin use", () => {
 		expect(Object.fromEntries(response.headers)).toMatchObject({
 			"access-control-allow-origin": "*",
 			"access-control-allow-methods": "GET, PATCH, DELETE, HEAD, OPTIONS",
-			"access-control-allow-headers": "Authorization, Content-Type, If-None-Match",
+			"access-control-allow-headers": "Authorization, Content-Type, If-Match, If-None-Match",
 		});
 	});
 
@@ -413,11 +413,36 @@ describe("changing an event", () => {
 			},
 		);
 
+		const version = asked.headers.get("ETag") ?? "";
+
 		expect(await refusalOf(asked)).toMatchObject({
 			status: 409,
 			code: "confirmation_required",
 			losing: 1,
 		});
+		expect(version).toBe((await call(readEvent, { id })).headers.get("ETag"));
+
+		// A matching If-Match alone never accepts the loss; another confirmed version asks again.
+		const unconfirmed = [
+			{ body: narrowed, headers: { "If-Match": version } },
+			{ body: { ...narrowed, confirmedVersion: '"1999-01-01T00:00:00Z"' }, headers: {} },
+			{ body: { ...narrowed, confirmedVersion: "x" }, headers: { "If-Match": version } },
+		];
+
+		const refusals = await Promise.all(
+			unconfirmed.map((request) =>
+				call(updateEvent, { id }, { method: "PATCH", secret: adminSecret, ...request }),
+			),
+		);
+
+		const problems = await Promise.all(refusals.map((refused) => refusalOf(refused)));
+
+		expect(problems.map(({ status, code, losing }) => ({ status, code, losing }))).toEqual(
+			unconfirmed.map(() => ({ status: 409, code: "confirmation_required", losing: 1 })),
+		);
+		expect(refusals.map((refused) => refused.headers.get("ETag"))).toEqual(
+			unconfirmed.map(() => version),
+		);
 
 		const confirmed = await call(
 			updateEvent,
@@ -425,11 +450,112 @@ describe("changing an event", () => {
 			{
 				method: "PATCH",
 				secret: adminSecret,
-				body: { ...narrowed, confirmedLosing: 1 },
+				body: { ...narrowed, confirmedVersion: version },
 			},
 		);
 
-		expect((await bodyOf(confirmed, eventSchema)).participants[0]?.availability).toEqual([]);
+		const written = await bodyOf(confirmed, eventSchema);
+
+		expect(written.participants[0]?.availability).toEqual([]);
+		expect(confirmed.headers.get("ETag")).not.toBe(version);
+		expect(confirmed.headers.get("ETag")).toBe((await call(readEvent, { id })).headers.get("ETag"));
+	});
+
+	it("does not accept the loss after the event changed since it was shown", async () => {
+		const { id, adminSecret } = await createdEvent();
+		const jana = await joined(id, "Jana");
+		const petr = await joined(id, "Petr");
+
+		const save = (token: string, slot: typeof FIVE) =>
+			call(
+				saveAvailability,
+				{ id },
+				{ method: "PUT", secret: token, body: { availability: [slot] } },
+			);
+
+		await save(jana.token, SIX);
+
+		const narrowed = { schedule: { ...pragueEvenings.schedule, dailyEnd: "18:00" } };
+
+		const patch = (confirmedVersion?: string) =>
+			call(
+				updateEvent,
+				{ id },
+				{
+					method: "PATCH",
+					secret: adminSecret,
+					body: confirmedVersion === undefined ? narrowed : { ...narrowed, confirmedVersion },
+				},
+			);
+
+		const asked = await patch();
+		const version = asked.headers.get("ETag") ?? "";
+
+		expect(await refusalOf(asked)).toMatchObject({ code: "confirmation_required", losing: 1 });
+
+		// Another participant now loses availability instead: the count is still one.
+		await save(jana.token, FIVE);
+		await save(petr.token, SIX);
+
+		const stale = await patch(version);
+
+		expect(await refusalOf(stale)).toMatchObject({
+			status: 409,
+			code: "confirmation_required",
+			losing: 1,
+		});
+		expect(stale.headers.get("ETag")).not.toBe(version);
+	});
+
+	it("refuses a change for a version the event no longer has, whatever the change is", async () => {
+		const { id, adminSecret } = await createdEvent();
+		const version = (await call(readEvent, { id })).headers.get("ETag") ?? "";
+
+		await joined(id, "Jana");
+
+		const patch = (ifMatch: string) =>
+			call(
+				updateEvent,
+				{ id },
+				{
+					method: "PATCH",
+					secret: adminSecret,
+					body: { name: "Jiné" },
+					headers: { "If-Match": ifMatch },
+				},
+			);
+
+		expect(await refusalOf(await patch(version))).toMatchObject({
+			status: 412,
+			code: "event_changed",
+		});
+		expect((await bodyOf(await call(readEvent, { id }), eventSchema)).name).toBe(
+			pragueEvenings.name,
+		);
+
+		const current = (await call(readEvent, { id })).headers.get("ETag") ?? "";
+
+		expect((await patch(current)).status).toBe(200);
+		expect((await patch("*")).status).toBe(200);
+
+		const after = (await call(readEvent, { id })).headers.get("ETag") ?? "";
+
+		expect((await patch(`"other", ${after}`)).status).toBe(200);
+	});
+
+	it("answers a change with the event as written, with the version it gave it", async () => {
+		const { id, adminSecret } = await createdEvent();
+
+		const response = await call(
+			updateEvent,
+			{ id },
+			{ method: "PATCH", secret: adminSecret, body: { name: "Zkouška" } },
+		);
+
+		const read = await call(readEvent, { id });
+
+		expect(response.headers.get("ETag")).toBe(read.headers.get("ETag"));
+		expect(await bodyOf(response, eventSchema)).toEqual(await bodyOf(read, eventSchema));
 	});
 
 	it("refuses a locked field once someone joined", async () => {
@@ -536,5 +662,65 @@ describe("best windows", () => {
 			code: "invalid_request",
 			errors: [{ parameter: "minPeople", code: "too_small" }],
 		});
+	});
+
+	it("takes whole numbers in decimal digits only, up to the limits of an event", async () => {
+		const { id } = await createdEvent();
+
+		const refusals = async (query: string) =>
+			(await refusalOf(await call(readWindows, { id }, { path: `?${query}` }))).errors;
+
+		expect(await refusals("minMinutes=0x10")).toEqual([
+			{ parameter: "minMinutes", code: "invalid_format" },
+		]);
+		expect(await refusals("minPeople=1e2")).toEqual([
+			{ parameter: "minPeople", code: "invalid_format" },
+		]);
+		expect(await refusals("minPeople=%2B5")).toEqual([
+			{ parameter: "minPeople", code: "invalid_format" },
+		]);
+		expect(await refusals("minPeople=")).toEqual([
+			{ parameter: "minPeople", code: "invalid_format" },
+		]);
+		expect(await refusals("minPeople=101")).toEqual([
+			{ parameter: "minPeople", code: "too_large" },
+		]);
+		expect(await refusals("minMinutes=1441")).toEqual([
+			{ parameter: "minMinutes", code: "too_large" },
+		]);
+		expect(
+			(await call(readWindows, { id }, { path: "?minPeople=100&minMinutes=0060" })).status,
+		).toBe(200);
+	});
+
+	it("sends the version as an entity tag and answers a matching If-None-Match with 304", async () => {
+		const { id } = await createdEvent();
+		const first = await call(readWindows, { id });
+		const tag = first.headers.get("ETag") ?? "";
+
+		expect(first.status).toBe(200);
+		expect(tag).toBe((await call(readEvent, { id })).headers.get("ETag"));
+
+		const unchanged = await call(readWindows, { id }, { headers: { "If-None-Match": tag } });
+
+		expect(unchanged.status).toBe(304);
+		expect(await unchanged.text()).toBe("");
+		expect(unchanged.headers.get("ETag")).toBe(tag);
+
+		// The query is checked before the tag, so a bad parameter is never answered with 304.
+		const invalid = await call(
+			readWindows,
+			{ id },
+			{ path: "?minPeople=0", headers: { "If-None-Match": tag } },
+		);
+
+		expect(invalid.status).toBe(400);
+
+		await joined(id, "Jana");
+
+		const changed = await call(readWindows, { id }, { headers: { "If-None-Match": tag } });
+
+		expect(changed.status).toBe(200);
+		expect(changed.headers.get("ETag")).not.toBe(tag);
 	});
 });

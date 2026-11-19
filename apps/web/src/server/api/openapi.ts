@@ -346,6 +346,8 @@ type Operation = {
 	success: { status: 200 | 201 | 204; body?: string; headers?: HeaderName[] };
 	/** Answers `If-None-Match` with `304`. */
 	conditional?: true;
+	/** Refuses a change with `412` when `If-Match` names no current version. */
+	ifMatch?: true;
 	/** Codes this operation adds to those every operation of its kind can return. */
 	problems: ProblemCode[];
 };
@@ -376,8 +378,9 @@ const OPERATIONS: Operation[] = [
 		tag: "events",
 		secret: "adminSecret",
 		body: "UpdateEventRequest",
-		success: { status: 200, body: "Event" },
-		problems: [...SCHEDULE_PROBLEMS, "field_locked", "confirmation_required"],
+		success: { status: 200, body: "Event", headers: ["ETag"] },
+		ifMatch: true,
+		problems: [...SCHEDULE_PROBLEMS, "field_locked", "confirmation_required", "event_changed"],
 	},
 	{
 		id: "deleteEvent",
@@ -394,7 +397,8 @@ const OPERATIONS: Operation[] = [
 		path: "/events/{id}/windows",
 		tag: "events",
 		query: windowsQuerySchema,
-		success: { status: 200, body: "Windows" },
+		success: { status: 200, body: "Windows", headers: ["ETag"] },
+		conditional: true,
 		problems: [],
 	},
 	{
@@ -549,7 +553,7 @@ function parameters(operation: Operation, texts: Texts): Parameter[] {
 	const queryProperties =
 		operation.query === undefined
 			? {}
-			: (z.toJSONSchema(operation.query, { io: "input", override: adjust("input") }).properties ??
+			: (z.toJSONSchema(operation.query, { io: "output", override: adjust("output") }).properties ??
 				{});
 
 	const inQuery = Object.entries(queryProperties).flatMap(([name, value]): Parameter[] => {
@@ -560,18 +564,18 @@ function parameters(operation: Operation, texts: Texts): Parameter[] {
 			: [{ name, in: "query", required: false, description: text(name), schema }];
 	});
 
-	const conditional: Parameter[] =
-		operation.conditional === true
-			? [
-					{
-						name: "If-None-Match",
-						in: "header",
-						required: false,
-						description: text("If-None-Match"),
-						schema: { type: "string" },
-					},
-				]
-			: [];
+	const header = (name: "If-None-Match" | "If-Match"): Parameter => ({
+		name,
+		in: "header",
+		required: false,
+		description: text(name),
+		schema: { type: "string" },
+	});
+
+	const conditional = [
+		...(operation.conditional === true ? [header("If-None-Match")] : []),
+		...(operation.ifMatch === true ? [header("If-Match")] : []),
+	];
 
 	return [...inPath, ...inQuery, ...conditional];
 }
@@ -615,15 +619,17 @@ function successResponse(operation: Operation, texts: Texts): ResponseObject {
 	return response;
 }
 
-/** The headers a problem of `status` carries. */
-function problemHeaders(status: number): HeaderName[] {
+/** The headers the problems of `codes`, which share `status`, carry. */
+function problemHeaders(status: number, codes: ProblemCode[]): HeaderName[] {
 	switch (status) {
 		case 401:
 			return ["WWW-Authenticate"];
+		case 412:
+			return ["ETag"];
 		case 429:
 			return ["Retry-After"];
 		default:
-			return [];
+			return codes.includes("confirmation_required") ? ["ETag"] : [];
 	}
 }
 
@@ -654,7 +660,7 @@ function responses(operation: Operation, texts: Texts): Responses {
 			content: { "application/problem+json": { schema: ref("Problem") } },
 		};
 
-		const names = problemHeaders(status);
+		const names = problemHeaders(status, codes);
 
 		if (names.length > 0) {
 			response.headers = headers(names, texts);

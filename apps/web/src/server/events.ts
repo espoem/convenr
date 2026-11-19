@@ -28,6 +28,7 @@ import {
 	firstDayOfWeekOf,
 	liveEvent,
 	type ParticipantView,
+	type Queries,
 	scheduleOf,
 } from "./event-rows";
 import { hashSecret, newSecret } from "./secrets";
@@ -240,22 +241,23 @@ export async function readEvent(
 ): Promise<EventView | undefined> {
 	const row = await liveEvent(db(), id, now, "read");
 
-	if (row === undefined) {
-		return undefined;
-	}
+	return row === undefined ? undefined : eventViewOf(db(), row);
+}
 
-	const people = await db()
+/** The event `row` with its participants and their availability, read through `queries`. */
+export async function eventViewOf(queries: Queries, row: EventRow): Promise<EventView> {
+	const people = await queries
 		.select({
 			id: participants.id,
 			publicId: participants.publicId,
 			name: participants.displayName,
 		})
 		.from(participants)
-		.where(eq(participants.eventId, id))
+		.where(eq(participants.eventId, row.id))
 		.orderBy(asc(participants.createdAt), asc(participants.id));
 
 	const keys = await availableKeys(
-		db(),
+		queries,
 		row,
 		people.map((person) => person.id),
 	);

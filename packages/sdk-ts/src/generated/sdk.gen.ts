@@ -57,7 +57,7 @@ export const getEvent = <ThrowOnError extends boolean = false>(options: Options<
 /**
  * Change an event
  *
- * Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`; repeat it with `confirmedLosing` set to the `losing` of that problem.
+ * Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`, which carries the number of participants in `losing` and the current `ETag`; repeat the same change with that `ETag` as `confirmedVersion` to accept the loss. The loss is accepted only while the event still has that version; after any other change the refusal comes again with the new count. `If-Match` is a separate guard: a change that sends it is refused with `event_changed` when the event has another version, so it never overwrites what the client has not seen, but it never accepts a loss.
  */
 export const updateEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateEventData, ThrowOnError>): RequestResult<UpdateEventResponses, UpdateEventErrors, ThrowOnError> => (options.client ?? client).patch<UpdateEventResponses, UpdateEventErrors, ThrowOnError>({
     security: [{
@@ -76,7 +76,7 @@ export const updateEvent = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Best windows
  *
- * Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone.
+ * Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of the event; send it in `If-None-Match` to get `304` while nothing changed.
  */
 export const getWindows = <ThrowOnError extends boolean = false>(options: Options<GetWindowsData, ThrowOnError>): RequestResult<GetWindowsResponses, GetWindowsErrors, ThrowOnError> => (options.client ?? client).get<GetWindowsResponses, GetWindowsErrors, ThrowOnError>({ url: '/events/{id}/windows', ...options });
 

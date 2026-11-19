@@ -31,7 +31,8 @@ class UpdateEventRequest:
             Monday, 7 is Sunday.
         schedule (DatesScheduleInput | RangeScheduleInput | Unset | WeekdaysScheduleInput): When the event can take
             place, tagged by `mode`. The server derives the slots.
-        confirmed_losing (int | Unset): How many participants the client agreed may lose part of their availability.
+        confirmed_version (str | Unset): The `ETag` of a `confirmation_required` refusal. The change may remove the
+            availability that refusal counted, while the event still has that version.
     """
 
     name: str | Unset = UNSET
@@ -41,7 +42,7 @@ class UpdateEventRequest:
     schedule: (
         DatesScheduleInput | RangeScheduleInput | Unset | WeekdaysScheduleInput
     ) = UNSET
-    confirmed_losing: int | Unset = UNSET
+    confirmed_version: str | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dates_schedule_input import DatesScheduleInput
@@ -67,7 +68,7 @@ class UpdateEventRequest:
         else:
             schedule = self.schedule.to_dict()
 
-        confirmed_losing = self.confirmed_losing
+        confirmed_version = self.confirmed_version
 
         field_dict: dict[str, Any] = {}
 
@@ -82,8 +83,8 @@ class UpdateEventRequest:
             field_dict["firstDayOfWeek"] = first_day_of_week
         if schedule is not UNSET:
             field_dict["schedule"] = schedule
-        if confirmed_losing is not UNSET:
-            field_dict["confirmedLosing"] = confirmed_losing
+        if confirmed_version is not UNSET:
+            field_dict["confirmedVersion"] = confirmed_version
 
         return field_dict
 
@@ -142,7 +143,7 @@ class UpdateEventRequest:
 
         schedule = _parse_schedule(d.pop("schedule", UNSET))
 
-        confirmed_losing = d.pop("confirmedLosing", UNSET)
+        confirmed_version = d.pop("confirmedVersion", UNSET)
 
         update_event_request = cls(
             name=name,
@@ -150,7 +151,7 @@ class UpdateEventRequest:
             reference_zone=reference_zone,
             first_day_of_week=first_day_of_week,
             schedule=schedule,
-            confirmed_losing=confirmed_losing,
+            confirmed_version=confirmed_version,
         )
 
         return update_event_request

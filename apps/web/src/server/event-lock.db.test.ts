@@ -55,7 +55,7 @@ describe("the event lock", () => {
 	it("is neither taken nor waited for by a wrong admin secret", async () => {
 		expect(
 			await answerWhileLocked(() =>
-				updateEvent(eventId, "cva_wrong", { name: "Jiná" }, null, creationTime),
+				updateEvent(eventId, "cva_wrong", { name: "Jiná" }, { kind: "any" }, creationTime),
 			),
 		).toEqual({ status: "denied" });
 		expect(

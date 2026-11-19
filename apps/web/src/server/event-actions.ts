@@ -12,8 +12,8 @@ import {
 	type ManagedEvent,
 	readManagedEvent,
 	removeEvent,
+	type Confirmation,
 	removeParticipant,
-	type UpdateEventResult,
 	updateEvent,
 } from "./manage";
 
@@ -52,23 +52,46 @@ export async function loadManageAction(id: string, secret: string): Promise<Mana
 	return args.success ? ((await readManagedEvent(...args.data)) ?? null) : null;
 }
 
+/** What the manage page learns from a change; the event itself holds values that do not serialize. */
+export type UpdatedEvent =
+	| { status: "saved"; segment: string }
+	| { status: "denied" }
+	| { status: "invalid"; problems: EventProblem[] }
+	/** How many participants would lose availability, and the version that count was taken at. */
+	| { status: "confirm"; losing: number; version: string };
+
+const confirmation = z.discriminatedUnion("kind", [
+	z.object({ kind: z.literal("none") }),
+	z.object({ kind: z.literal("version"), version: z.string().max(64) }),
+]);
+
+/** A confirmation for a version that is not current asks again, with the loss as it is now. */
 export async function updateEventAction(
 	id: string,
 	secret: string,
 	input: NewEvent,
-	confirmedLosing: number | null,
-): Promise<UpdateEventResult> {
-	const args = z
-		.tuple([eventId, adminSecret, z.int().min(0).max(100).nullable()])
-		.safeParse([id, secret, confirmedLosing]);
+	confirmed: Confirmation,
+): Promise<UpdatedEvent> {
+	const args = z.tuple([eventId, adminSecret, confirmation]).safeParse([id, secret, confirmed]);
 
 	if (!args.success) {
 		return { status: "denied" };
 	}
 
-	const [event, held, confirmed] = args.data;
+	const [event, held, confirms] = args.data;
+	const result = await updateEvent(event, held, input, { kind: "any" }, undefined, confirms);
 
-	return updateEvent(event, held, input, confirmed);
+	switch (result.status) {
+		case "saved":
+			return { status: "saved", segment: result.event.segment };
+		case "changed":
+			// Unreachable: a change for any version is never refused for its version.
+			return { status: "denied" };
+		case "denied":
+		case "invalid":
+		case "confirm":
+			return result;
+	}
 }
 
 export async function removeParticipantAction(

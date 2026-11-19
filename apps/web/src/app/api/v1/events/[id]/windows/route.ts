@@ -1,7 +1,15 @@
-import { endpoint, json, problem, readQuery, routeMethods } from "@/server/api/http";
+import {
+	endpoint,
+	entityTag,
+	json,
+	matchesIfNoneMatch,
+	problem,
+	readQuery,
+	routeMethods,
+} from "@/server/api/http";
 import { windowsBody } from "@/server/api/mapping";
 import { windowsQuerySchema, windowsSchema } from "@/server/api/schemas";
-import { readEvent } from "@/server/events";
+import { eventVersion, readEvent } from "@/server/events";
 
 export const GET = endpoint<{ id: string }>(async (request, { id }) => {
 	const filters = readQuery(request, windowsQuerySchema);
@@ -10,11 +18,29 @@ export const GET = endpoint<{ id: string }>(async (request, { id }) => {
 		return filters.response;
 	}
 
+	const version = await eventVersion(id);
+
+	if (version === null) {
+		return problem("not_found");
+	}
+
+	const tag = entityTag(version);
+
+	if (matchesIfNoneMatch(request, tag)) {
+		return new Response(null, { status: 304, headers: { ETag: tag } });
+	}
+
 	const view = await readEvent(id);
 
-	return view === undefined
-		? problem("not_found")
-		: json(windowsSchema, windowsBody(view, filters.value));
+	if (view === undefined) {
+		return problem("not_found");
+	}
+
+	const response = json(windowsSchema, windowsBody(view, filters.value));
+
+	response.headers.set("ETag", entityTag(view.version));
+
+	return response;
 });
 
 const methods = routeMethods(["GET"]);

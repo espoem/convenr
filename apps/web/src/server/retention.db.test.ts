@@ -50,6 +50,22 @@ beforeEach(async () => {
 });
 
 describe("expiry", () => {
+	it("answers a change made just before expiry with the event it wrote", async () => {
+		const { id, adminSecret } = await created(pragueEvenings);
+
+		const result = await updateEvent(
+			id,
+			adminSecret,
+			{ name: "Jiná" },
+			{ kind: "any" },
+			justBefore(datedExpiry),
+		);
+
+		// A read right after would find nothing, but the change happened and its answer says so.
+		expect(result).toMatchObject({ status: "saved", event: { id, name: "Jiná" } });
+		expect(await readEvent(id, datedExpiry)).toBeUndefined();
+	});
+
 	it("makes the event unknown to pages, actions and the version check at once", async () => {
 		const { id, adminSecret } = await created(pragueEvenings);
 		const jana = await join(id, "Jana", undefined, creationTime);
@@ -103,7 +119,9 @@ describe("expiry", () => {
 			),
 		).toEqual(notJoined);
 		expect(await leave(id, jana.token, datedExpiry)).toEqual(notJoined);
-		expect(await updateEvent(id, adminSecret, { name: "Jiná" }, null, datedExpiry)).toEqual({
+		expect(
+			await updateEvent(id, adminSecret, { name: "Jiná" }, { kind: "any" }, datedExpiry),
+		).toEqual({
 			status: "denied",
 		});
 		expect(await removeEvent(id, adminSecret, datedExpiry)).toBe(false);

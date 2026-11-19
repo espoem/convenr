@@ -4,6 +4,7 @@
 import type { z } from "zod";
 
 import { isPublicId } from "@/domain/public-id";
+import type { Precondition } from "@/server/manage";
 import { type SecretKind, secretKind } from "@/server/secrets";
 
 import en from "../../../messages/en.json" with { type: "json" };
@@ -31,6 +32,7 @@ export const PROBLEM_STATUS = {
 	name_exists: 409,
 	name_unknown: 409,
 	confirmation_required: 409,
+	event_changed: 412,
 	payload_too_large: 413,
 	unsupported_media_type: 415,
 	no_days: 422,
@@ -259,7 +261,27 @@ export function matchesIfNoneMatch(request: Request, tag: string): boolean {
 		.some((candidate) => candidate === "*" || candidate === tag);
 }
 
-const ALLOWED_HEADERS = "Authorization, Content-Type, If-None-Match";
+/**
+ * What `If-Match` says about the event's version. Only strong entity tags can match, so a weak
+ * tag names no version, and `*` is the same as no header: the event exists.
+ */
+export function ifMatchPrecondition(request: Request): Precondition {
+	const header = request.headers.get("if-match");
+
+	if (header === null || header.trim() === "*") {
+		return { kind: "any" };
+	}
+
+	const versions = header.split(",").flatMap((candidate) => {
+		const tag = /^"([^"]*)"$/u.exec(candidate.trim());
+
+		return tag?.[1] === undefined ? [] : [tag[1]];
+	});
+
+	return { kind: "match", versions };
+}
+
+const ALLOWED_HEADERS = "Authorization, Content-Type, If-Match, If-None-Match";
 const EXPOSED_HEADERS = "Allow, ETag, Location, Retry-After, WWW-Authenticate";
 
 /**

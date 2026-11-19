@@ -219,7 +219,7 @@
 			},
 			"updateEvent": {
 				"summary": "Change an event",
-				"description": "Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`; repeat it with `confirmedLosing` set to the `losing` of that problem."
+				"description": "Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When the change would remove slots that participants chose, it is refused with `confirmation_required`, which carries the number of participants in `losing` and the current `ETag`; repeat the same change with that `ETag` as `confirmedVersion` to accept the loss. The loss is accepted only while the event still has that version; after any other change the refusal comes again with the new count. `If-Match` is a separate guard: a change that sends it is refused with `event_changed` when the event has another version, so it never overwrites what the client has not seen, but it never accepts a loss."
 			},
 			"deleteEvent": {
 				"summary": "Delete an event",
@@ -227,7 +227,7 @@
 			},
 			"getWindows": {
 				"summary": "Best windows",
-				"description": "Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone."
+				"description": "Up to five runs of consecutive slots when the most people are available, as the event page lists them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of the event; send it in `If-None-Match` to get `304` while nothing changed."
 			},
 			"join": {
 				"summary": "Join an event",
@@ -267,7 +267,8 @@
 			"participantId": "The public id of the participant.",
 			"minMinutes": "The shortest window to list, in minutes. One slot when left out.",
 			"minPeople": "The fewest people a window needs. The most people in any window when left out.",
-			"If-None-Match": "The `ETag` of an earlier read."
+			"If-None-Match": "The `ETag` of an earlier read.",
+			"If-Match": "The `ETag` of the event version the change is meant for. The change is refused when the event has another version. It does not accept a loss of availability; `confirmedVersion` does."
 		},
 		"headers": {
 			"ETag": "The version of the event.",
@@ -367,9 +368,9 @@
 			"errors": "The values at fault.",
 			"retryAt": "With `too_many_attempts`: when a password may be tried again.",
 			"losing": "With `confirmation_required`: how many participants would lose part of their availability.",
+			"confirmedVersion": "The `ETag` of a `confirmation_required` refusal. The change may remove the availability that refusal counted, while the event still has that version.",
 			"pointer": "An RFC 6901 JSON Pointer into the request body.",
 			"parameter": "The name of the query parameter.",
-			"confirmedLosing": "How many participants the client agreed may lose part of their availability.",
 			"password": "The password of a name that already has one.",
 			"newPassword": "A new password, 4 to 128 characters.",
 			"currentPassword": "The password set now."
@@ -422,6 +423,7 @@
 			"name_exists": "A participant already uses this name.",
 			"name_unknown": "No participant uses this name.",
 			"confirmation_required": "The change would remove availability from participants.",
+			"event_changed": "The event has another version than the `If-Match` header names.",
 			"payload_too_large": "The body is larger than 64 KB.",
 			"unsupported_media_type": "The body must be application/json in UTF-8.",
 			"no_days": "The event has no day.",

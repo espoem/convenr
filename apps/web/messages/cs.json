@@ -219,7 +219,7 @@
 			},
 			"updateEvent": {
 				"summary": "Změnit událost",
-				"description": "Změní pole, která požadavek jmenuje, a ostatní ponechá. Rozvrh se nahrazuje celý. Když by změna odebrala sloty, které si účastníci vybrali, odmítne se s `confirmation_required`; zopakujte ji s `confirmedLosing` nastaveným na `losing` z toho problému."
+				"description": "Změní pole, která požadavek jmenuje, a ostatní ponechá. Rozvrh se nahrazuje celý. Když by změna odebrala sloty, které si účastníci vybrali, odmítne se s `confirmation_required`, který nese počet účastníků v `losing` a aktuální `ETag`; stejnou změnu zopakujte s tímto `ETag` jako `confirmedVersion` a ztrátu tím přijmete. Ztráta se přijme jen dokud má událost tu verzi; po jakékoli jiné změně přijde odmítnutí znovu s novým počtem. `If-Match` je samostatná pojistka: změna, která ho pošle, se odmítne s `event_changed`, má-li událost jinou verzi, takže nepřepíše, co klient neviděl, ale ztrátu nikdy nepřijme."
 			},
 			"deleteEvent": {
 				"summary": "Smazat událost",
@@ -227,7 +227,7 @@
 			},
 			"getWindows": {
 				"summary": "Nejlepší okna",
-				"description": "Nejvýš pět úseků po sobě jdoucích slotů, kdy může nejvíc lidí, tak jak je ukazuje stránka události. Okna datované události se berou po dnech v její referenční zóně."
+				"description": "Nejvýš pět úseků po sobě jdoucích slotů, kdy může nejvíc lidí, tak jak je ukazuje stránka události. Okna datované události se berou po dnech v její referenční zóně. `ETag` je verze události; pošlete ho v `If-None-Match` a dokud se nic nezměnilo, dostanete `304`."
 			},
 			"join": {
 				"summary": "Připojit se k události",
@@ -267,7 +267,8 @@
 			"participantId": "Veřejné id účastníka.",
 			"minMinutes": "Nejkratší okno, které se vypíše, v minutách. Bez parametru jeden slot.",
 			"minPeople": "Nejmenší počet lidí, který okno potřebuje. Bez parametru nejvíc lidí v jakémkoli okně.",
-			"If-None-Match": "`ETag` z dřívějšího čtení."
+			"If-None-Match": "`ETag` z dřívějšího čtení.",
+			"If-Match": "`ETag` verze události, pro kterou je změna určena. Změna se odmítne, má-li událost jinou verzi. Ztrátu dostupnosti nepřijímá; to dělá `confirmedVersion`."
 		},
 		"headers": {
 			"ETag": "Verze události.",
@@ -367,9 +368,9 @@
 			"errors": "Chybné hodnoty.",
 			"retryAt": "U `too_many_attempts`: kdy jde heslo zkusit znovu.",
 			"losing": "U `confirmation_required`: kolik účastníků by přišlo o část dostupnosti.",
+			"confirmedVersion": "`ETag` odmítnutí `confirmation_required`. Změna smí odebrat dostupnost, kterou to odmítnutí započítalo, dokud má událost tu verzi.",
 			"pointer": "Ukazatel JSON Pointer podle RFC 6901 do těla požadavku.",
 			"parameter": "Název parametru dotazu.",
-			"confirmedLosing": "Kolik účastníků smí podle klienta přijít o část dostupnosti.",
 			"password": "Heslo jména, které už heslo má.",
 			"newPassword": "Nové heslo, 4 až 128 znaků.",
 			"currentPassword": "Heslo, které je nastavené teď."
@@ -422,6 +423,7 @@
 			"name_exists": "Toto jméno už některý účastník používá.",
 			"name_unknown": "Toto jméno žádný účastník nepoužívá.",
 			"confirmation_required": "Změna by účastníkům odebrala dostupnost.",
+			"event_changed": "Událost má jinou verzi, než jakou jmenuje hlavička `If-Match`.",
 			"payload_too_large": "Tělo je větší než 64 KB.",
 			"unsupported_media_type": "Tělo musí být application/json v UTF-8.",
 			"no_days": "Událost nemá žádný den.",

@@ -1,6 +1,7 @@
 import {
 	endpoint,
 	entityTag,
+	ifMatchPrecondition,
 	json,
 	matchesIfNoneMatch,
 	noContent,
@@ -10,21 +11,20 @@ import {
 	securedEndpoint,
 	unauthorized,
 } from "@/server/api/http";
-import { eventBody, eventChangeOf, eventProblemResponse } from "@/server/api/mapping";
+import {
+	confirmationOf,
+	eventBody,
+	eventChangeOf,
+	eventProblemResponse,
+} from "@/server/api/mapping";
 import { eventSchema, updateEventRequestSchema } from "@/server/api/schemas";
-import { eventVersion, readEvent } from "@/server/events";
+import { type EventView, eventVersion, readEvent } from "@/server/events";
 import { removeEvent, updateEvent } from "@/server/manage";
 
 type Params = { id: string };
 
 /** The event with its version as the entity tag. */
-async function eventResponse(id: string): Promise<Response> {
-	const view = await readEvent(id);
-
-	if (view === undefined) {
-		return problem("not_found");
-	}
-
+function eventResponse(view: EventView): Response {
 	const response = json(eventSchema, eventBody(view));
 
 	response.headers.set("ETag", entityTag(view.version));
@@ -41,9 +41,13 @@ export const GET = endpoint<Params>(async (request, { id }) => {
 
 	const tag = entityTag(version);
 
-	return matchesIfNoneMatch(request, tag)
-		? new Response(null, { status: 304, headers: { ETag: tag } })
-		: eventResponse(id);
+	if (matchesIfNoneMatch(request, tag)) {
+		return new Response(null, { status: 304, headers: { ETag: tag } });
+	}
+
+	const view = await readEvent(id);
+
+	return view === undefined ? problem("not_found") : eventResponse(view);
 });
 
 export const PATCH = securedEndpoint<Params>("admin", async (request, { id }, secret) => {
@@ -57,7 +61,9 @@ export const PATCH = securedEndpoint<Params>("admin", async (request, { id }, se
 		id,
 		secret,
 		eventChangeOf(body.value),
-		body.value.confirmedLosing ?? null,
+		ifMatchPrecondition(request),
+		undefined,
+		confirmationOf(body.value),
 	);
 
 	switch (result.status) {
@@ -65,10 +71,15 @@ export const PATCH = securedEndpoint<Params>("admin", async (request, { id }, se
 			return unauthorized();
 		case "invalid":
 			return eventProblemResponse(result.problems);
+		case "changed":
+			return problem("event_changed", { headers: { ETag: entityTag(result.version) } });
 		case "confirm":
-			return problem("confirmation_required", { members: { losing: result.losing } });
+			return problem("confirmation_required", {
+				members: { losing: result.losing },
+				headers: { ETag: entityTag(result.version) },
+			});
 		case "saved":
-			return eventResponse(id);
+			return eventResponse(result.event);
 	}
 });
 

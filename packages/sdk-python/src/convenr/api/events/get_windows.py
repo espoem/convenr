@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 
 import httpx2
@@ -16,7 +16,11 @@ def _get_kwargs(
     *,
     min_minutes: int | Unset = UNSET,
     min_people: int | Unset = UNSET,
+    if_none_match: str | Unset = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(if_none_match, Unset):
+        headers["If-None-Match"] = if_none_match
 
     params: dict[str, Any] = {}
 
@@ -34,16 +38,21 @@ def _get_kwargs(
         "params": params,
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx2.Response
-) -> Problem | Windows | None:
+) -> Any | Problem | Windows | None:
     if response.status_code == 200:
         response_200 = Windows.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 304:
+        response_304 = cast(Any, None)
+        return response_304
 
     if response.status_code == 400:
         response_400 = Problem.from_dict(response.json())
@@ -68,7 +77,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx2.Response
-) -> Response[Problem | Windows]:
+) -> Response[Any | Problem | Windows]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -83,29 +92,33 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     min_minutes: int | Unset = UNSET,
     min_people: int | Unset = UNSET,
-) -> Response[Problem | Windows]:
+    if_none_match: str | Unset = UNSET,
+) -> Response[Any | Problem | Windows]:
     """Best windows
 
      Up to five runs of consecutive slots when the most people are available, as the event page lists
-    them. A dated event's windows are taken per day in its reference zone.
+    them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of
+    the event; send it in `If-None-Match` to get `304` while nothing changed.
 
     Args:
         id (str):
         min_minutes (int | Unset):
         min_people (int | Unset):
+        if_none_match (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Problem | Windows]
+        Response[Any | Problem | Windows]
     """
 
     kwargs = _get_kwargs(
         id=id,
         min_minutes=min_minutes,
         min_people=min_people,
+        if_none_match=if_none_match,
     )
 
     response = client.get_httpx_client().request(
@@ -121,23 +134,26 @@ def sync(
     client: AuthenticatedClient | Client,
     min_minutes: int | Unset = UNSET,
     min_people: int | Unset = UNSET,
-) -> Problem | Windows | None:
+    if_none_match: str | Unset = UNSET,
+) -> Any | Problem | Windows | None:
     """Best windows
 
      Up to five runs of consecutive slots when the most people are available, as the event page lists
-    them. A dated event's windows are taken per day in its reference zone.
+    them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of
+    the event; send it in `If-None-Match` to get `304` while nothing changed.
 
     Args:
         id (str):
         min_minutes (int | Unset):
         min_people (int | Unset):
+        if_none_match (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Problem | Windows
+        Any | Problem | Windows
     """
 
     return sync_detailed(
@@ -145,6 +161,7 @@ def sync(
         client=client,
         min_minutes=min_minutes,
         min_people=min_people,
+        if_none_match=if_none_match,
     ).parsed
 
 
@@ -154,29 +171,33 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     min_minutes: int | Unset = UNSET,
     min_people: int | Unset = UNSET,
-) -> Response[Problem | Windows]:
+    if_none_match: str | Unset = UNSET,
+) -> Response[Any | Problem | Windows]:
     """Best windows
 
      Up to five runs of consecutive slots when the most people are available, as the event page lists
-    them. A dated event's windows are taken per day in its reference zone.
+    them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of
+    the event; send it in `If-None-Match` to get `304` while nothing changed.
 
     Args:
         id (str):
         min_minutes (int | Unset):
         min_people (int | Unset):
+        if_none_match (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Problem | Windows]
+        Response[Any | Problem | Windows]
     """
 
     kwargs = _get_kwargs(
         id=id,
         min_minutes=min_minutes,
         min_people=min_people,
+        if_none_match=if_none_match,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -190,23 +211,26 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     min_minutes: int | Unset = UNSET,
     min_people: int | Unset = UNSET,
-) -> Problem | Windows | None:
+    if_none_match: str | Unset = UNSET,
+) -> Any | Problem | Windows | None:
     """Best windows
 
      Up to five runs of consecutive slots when the most people are available, as the event page lists
-    them. A dated event's windows are taken per day in its reference zone.
+    them. A dated event's windows are taken per day in its reference zone. The `ETag` is the version of
+    the event; send it in `If-None-Match` to get `304` while nothing changed.
 
     Args:
         id (str):
         min_minutes (int | Unset):
         min_people (int | Unset):
+        if_none_match (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Problem | Windows
+        Any | Problem | Windows
     """
 
     return (
@@ -215,5 +239,6 @@ async def asyncio(
             client=client,
             min_minutes=min_minutes,
             min_people=min_people,
+            if_none_match=if_none_match,
         )
     ).parsed

@@ -9,15 +9,18 @@ from ...client import AuthenticatedClient, Client
 from ...models.event import Event
 from ...models.problem import Problem
 from ...models.update_event_request import UpdateEventRequest
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     id: str,
     *,
     body: UpdateEventRequest,
+    if_match: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(if_match, Unset):
+        headers["If-Match"] = if_match
 
     _kwargs: dict[str, Any] = {
         "method": "patch",
@@ -62,6 +65,11 @@ def _parse_response(
 
         return response_409
 
+    if response.status_code == 412:
+        response_412 = Problem.from_dict(response.json())
+
+        return response_412
+
     if response.status_code == 413:
         response_413 = Problem.from_dict(response.json())
 
@@ -104,15 +112,22 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: UpdateEventRequest,
+    if_match: str | Unset = UNSET,
 ) -> Response[Event | Problem]:
     """Change an event
 
      Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When
-    the change would remove slots that participants chose, it is refused with `confirmation_required`;
-    repeat it with `confirmedLosing` set to the `losing` of that problem.
+    the change would remove slots that participants chose, it is refused with `confirmation_required`,
+    which carries the number of participants in `losing` and the current `ETag`; repeat the same change
+    with that `ETag` as `confirmedVersion` to accept the loss. The loss is accepted only while the event
+    still has that version; after any other change the refusal comes again with the new count. `If-
+    Match` is a separate guard: a change that sends it is refused with `event_changed` when the event
+    has another version, so it never overwrites what the client has not seen, but it never accepts a
+    loss.
 
     Args:
         id (str):
+        if_match (str | Unset):
         body (UpdateEventRequest): The fields to change. A field left out keeps its value.
 
     Raises:
@@ -126,6 +141,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         id=id,
         body=body,
+        if_match=if_match,
     )
 
     response = client.get_httpx_client().request(
@@ -140,15 +156,22 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: UpdateEventRequest,
+    if_match: str | Unset = UNSET,
 ) -> Event | Problem | None:
     """Change an event
 
      Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When
-    the change would remove slots that participants chose, it is refused with `confirmation_required`;
-    repeat it with `confirmedLosing` set to the `losing` of that problem.
+    the change would remove slots that participants chose, it is refused with `confirmation_required`,
+    which carries the number of participants in `losing` and the current `ETag`; repeat the same change
+    with that `ETag` as `confirmedVersion` to accept the loss. The loss is accepted only while the event
+    still has that version; after any other change the refusal comes again with the new count. `If-
+    Match` is a separate guard: a change that sends it is refused with `event_changed` when the event
+    has another version, so it never overwrites what the client has not seen, but it never accepts a
+    loss.
 
     Args:
         id (str):
+        if_match (str | Unset):
         body (UpdateEventRequest): The fields to change. A field left out keeps its value.
 
     Raises:
@@ -163,6 +186,7 @@ def sync(
         id=id,
         client=client,
         body=body,
+        if_match=if_match,
     ).parsed
 
 
@@ -171,15 +195,22 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: UpdateEventRequest,
+    if_match: str | Unset = UNSET,
 ) -> Response[Event | Problem]:
     """Change an event
 
      Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When
-    the change would remove slots that participants chose, it is refused with `confirmation_required`;
-    repeat it with `confirmedLosing` set to the `losing` of that problem.
+    the change would remove slots that participants chose, it is refused with `confirmation_required`,
+    which carries the number of participants in `losing` and the current `ETag`; repeat the same change
+    with that `ETag` as `confirmedVersion` to accept the loss. The loss is accepted only while the event
+    still has that version; after any other change the refusal comes again with the new count. `If-
+    Match` is a separate guard: a change that sends it is refused with `event_changed` when the event
+    has another version, so it never overwrites what the client has not seen, but it never accepts a
+    loss.
 
     Args:
         id (str):
+        if_match (str | Unset):
         body (UpdateEventRequest): The fields to change. A field left out keeps its value.
 
     Raises:
@@ -193,6 +224,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         id=id,
         body=body,
+        if_match=if_match,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -205,15 +237,22 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: UpdateEventRequest,
+    if_match: str | Unset = UNSET,
 ) -> Event | Problem | None:
     """Change an event
 
      Changes the fields the request names and keeps the others. A schedule is replaced as a whole. When
-    the change would remove slots that participants chose, it is refused with `confirmation_required`;
-    repeat it with `confirmedLosing` set to the `losing` of that problem.
+    the change would remove slots that participants chose, it is refused with `confirmation_required`,
+    which carries the number of participants in `losing` and the current `ETag`; repeat the same change
+    with that `ETag` as `confirmedVersion` to accept the loss. The loss is accepted only while the event
+    still has that version; after any other change the refusal comes again with the new count. `If-
+    Match` is a separate guard: a change that sends it is refused with `event_changed` when the event
+    has another version, so it never overwrites what the client has not seen, but it never accepts a
+    loss.
 
     Args:
         id (str):
+        if_match (str | Unset):
         body (UpdateEventRequest): The fields to change. A field left out keeps its value.
 
     Raises:
@@ -229,5 +268,6 @@ async def asyncio(
             id=id,
             client=client,
             body=body,
+            if_match=if_match,
         )
     ).parsed
