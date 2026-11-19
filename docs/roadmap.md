@@ -103,6 +103,7 @@ Each phase ships on its own and is usable by real people.
 - Dashboard of my events and events I responded to.
 - A signed-in organizer can keep an event without a time limit.
 - Opt-in email notifications for new responses, finalization and reminders.
+- The event page renders for the visitor it is for. Until F5 the server does not know who has joined, so a joined browser first gets the join form and then swaps in the joined line and the participant's own grid once its script reads local storage. The page visibly changes while it loads. With cookies reconsidered here (ADR 0003 item 10), the server can render the joined state on the first response.
 
 ### F6: Calendar awareness
 
