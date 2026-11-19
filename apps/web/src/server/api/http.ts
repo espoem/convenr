@@ -6,6 +6,7 @@ import type { z } from "zod";
 import { isPublicId } from "@/domain/public-id";
 import { type SecretKind, secretKind } from "@/server/secrets";
 
+import en from "../../../messages/en.json" with { type: "json" };
 import { fieldErrors } from "./field-codes";
 import type { FieldError, ProblemBody } from "./schemas";
 
@@ -14,40 +15,46 @@ export const BODY_LIMIT_BYTES = 64 * 1024;
 /** The base of every problem's `type`; the code completes it. */
 export const PROBLEM_TYPE_BASE = "https://convenr.party/problems/";
 
-/** Every problem code the API sends, with its status and a title that does not vary. */
-export const PROBLEMS = {
-	invalid_request: [400, "The request does not match the schema."],
-	secret_in_query: [400, "A secret was sent in the query string."],
-	unauthorized: [401, "The secret is missing or wrong."],
-	wrong_secret_kind: [403, "This endpoint takes the other kind of secret."],
-	password_required: [403, "This name has a password."],
-	wrong_password: [403, "The password does not match."],
-	not_found: [404, "The event or participant does not exist."],
-	method_not_allowed: [405, "This path does not support the method."],
-	event_full: [409, "The event already has 100 participants."],
-	field_locked: [409, "Slot length, day mode and reference zone cannot change once people joined."],
-	no_password: [409, "The participant has no password."],
-	name_exists: [409, "A participant already uses this name."],
-	name_unknown: [409, "No participant uses this name."],
-	confirmation_required: [409, "The change would remove availability from participants."],
-	payload_too_large: [413, "The body is larger than 64 KB."],
-	unsupported_media_type: [415, "The body must be application/json in UTF-8."],
-	no_days: [422, "The event has no day."],
-	range_reversed: [422, "The last day is before the first."],
-	too_many_dates: [422, "The event has more than 31 dates."],
-	duplicate_day: [422, "A day is chosen more than once."],
-	date_in_past: [422, "A date lies before today in the reference zone."],
-	out_of_day: [422, "A daily time lies outside 00:00 to 24:00."],
-	end_not_after_start: [422, "The daily end is not after the daily start."],
-	not_on_slot_boundary: [422, "A daily time is not a multiple of the slot length."],
-	invalid_name: [422, "The display name is empty, too long or has a control character."],
-	invalid_password: [422, "A password has 4 to 128 characters."],
-	unknown_slot: [422, "The availability holds a slot the event does not have."],
-	too_many_attempts: [429, "Too many wrong passwords in a row."],
-	internal_error: [500, "The server failed to answer the request."],
-} as const satisfies Record<string, readonly [number, string]>;
+/** Every problem code the API sends, with its HTTP status. */
+export const PROBLEM_STATUS = {
+	invalid_request: 400,
+	secret_in_query: 400,
+	unauthorized: 401,
+	wrong_secret_kind: 403,
+	password_required: 403,
+	wrong_password: 403,
+	not_found: 404,
+	method_not_allowed: 405,
+	event_full: 409,
+	field_locked: 409,
+	no_password: 409,
+	name_exists: 409,
+	name_unknown: 409,
+	confirmation_required: 409,
+	payload_too_large: 413,
+	unsupported_media_type: 415,
+	no_days: 422,
+	range_reversed: 422,
+	too_many_dates: 422,
+	duplicate_day: 422,
+	date_in_past: 422,
+	out_of_day: 422,
+	end_not_after_start: 422,
+	not_on_slot_boundary: 422,
+	invalid_name: 422,
+	invalid_password: 422,
+	unknown_slot: 422,
+	too_many_attempts: 429,
+	internal_error: 500,
+} as const satisfies Record<string, number>;
 
-export type ProblemCode = keyof typeof PROBLEMS;
+export type ProblemCode = keyof typeof PROBLEM_STATUS;
+
+/**
+ * The title of each code, the same on every problem with that code. It is the English text of
+ * the reference page, so the page and the responses cannot drift apart.
+ */
+const PROBLEM_TITLES: Record<ProblemCode, string> = en.ApiReference.problems;
 
 export type ProblemOptions = {
 	errors?: FieldError[];
@@ -58,7 +65,8 @@ export type ProblemOptions = {
 
 /** An RFC 9457 problem response. */
 export function problem(code: ProblemCode, options: ProblemOptions = {}): Response {
-	const [status, title] = PROBLEMS[code];
+	const status = PROBLEM_STATUS[code];
+	const title = PROBLEM_TITLES[code];
 	const errors = options.errors === undefined ? {} : { errors: options.errors };
 	const body = { type: `${PROBLEM_TYPE_BASE}${code}`, status, title, code };
 

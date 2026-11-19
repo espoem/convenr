@@ -1,7 +1,7 @@
 import { routeMethods, staticEndpoint } from "@/server/api/http";
 import { openApiDocument } from "@/server/api/openapi";
 
-const document = openApiDocument();
+const document = openApiDocument("en");
 
 export const GET = staticEndpoint(() => Response.json(document));
 

@@ -1,13 +1,16 @@
 // The OpenAPI document of the public API. Its schemas are the zod schemas that check requests
 // and shape responses, turned into JSON Schema by zod itself: requests as zod reads them,
-// responses as zod writes them. Paths and operations are written here. The English texts come
-// from the message catalog, which the reference page reads in both languages.
+// responses as zod writes them. Paths and operations are written here. The texts come from the
+// message catalog: the served document is English, and the reference page builds it in the
+// visitor's language.
 import { z } from "zod";
 
 import { PUBLIC_ID_ALPHABET, PUBLIC_ID_LENGTH } from "@/domain/public-id";
+import type { Locale } from "@/i18n/routing";
 
-import en from "../../../messages/en.json";
-import { PROBLEMS, type ProblemCode } from "./http";
+import cs from "../../../messages/cs.json" with { type: "json" };
+import en from "../../../messages/en.json" with { type: "json" };
+import { PROBLEM_STATUS, type ProblemCode } from "./http";
 import {
 	availabilityRequestSchema,
 	createdEventSchema,
@@ -31,7 +34,7 @@ import {
 	windowsSchema,
 } from "./schemas";
 
-type JsonSchema = z.core.JSONSchema.JSONSchema;
+export type JsonSchema = z.core.JSONSchema.JSONSchema;
 
 type Io = "input" | "output";
 
@@ -43,6 +46,13 @@ const COMPONENTS = "#/components/schemas/";
 
 function ref(name: string): Reference {
 	return { $ref: `${COMPONENTS}${name}` };
+}
+
+/** The component a `$ref` points to, or `undefined` for any other reference. */
+export function referencedName(schema: { $ref?: string | undefined }): string | undefined {
+	return schema.$ref?.startsWith(COMPONENTS) === true
+		? schema.$ref.slice(COMPONENTS.length)
+		: undefined;
 }
 
 const [datesSchedule, rangeSchedule, weekdaysSchedule] = scheduleSchema.options;
@@ -108,7 +118,7 @@ function isDescribed(check: z.core.$ZodCheck): boolean {
 }
 
 /** A schema in place of `true` or `false`, which stand for any value and for none. */
-function schemaOf(value: z.core.JSONSchema._JSONSchema): JsonSchema | undefined {
+export function schemaOf(value: z.core.JSONSchema._JSONSchema): JsonSchema | undefined {
 	return value === true || value === false ? undefined : value;
 }
 
@@ -145,6 +155,11 @@ function adjust(io: Io) {
 }
 
 const discriminatorSchema = z.object({ propertyName: z.string() });
+
+/** The property that tells the variants of a tagged union apart, if `schema` is one. */
+export function tagOf(schema: JsonSchema): string | undefined {
+	return discriminatorSchema.safeParse(schema["discriminator"]).data?.propertyName;
+}
 
 /**
  * Maps each value of a union's tag to the component of its variant, as the SDK generators
@@ -220,6 +235,7 @@ const textsSchema = z.object({
 	/** A field's text wherever it appears, unless `propertiesOf` has one for its component. */
 	properties: z.record(z.string(), z.string()),
 	propertiesOf: z.record(z.string(), z.record(z.string(), z.string())),
+	problems: z.record(z.string(), z.string()),
 });
 
 type Texts = z.output<typeof textsSchema>;
@@ -445,9 +461,14 @@ function kindProblems(operation: Operation): ProblemCode[] {
 /** The codes an operation can return, in status order. */
 function problemCodes(operation: Operation): ProblemCode[] {
 	return [...new Set([...kindProblems(operation), ...operation.problems])].toSorted(
-		(left, right) => PROBLEMS[left][0] - PROBLEMS[right][0] || left.localeCompare(right),
+		(left, right) => PROBLEM_STATUS[left] - PROBLEM_STATUS[right] || left.localeCompare(right),
 	);
 }
+
+/** The problem codes of each operation by its id, which the reference page links to. */
+export const OPERATION_PROBLEMS: ReadonlyMap<string, ProblemCode[]> = new Map(
+	OPERATIONS.map((operation) => [operation.id, problemCodes(operation)]),
+);
 
 type Parameter = {
 	name: string;
@@ -570,9 +591,14 @@ function responses(operation: Operation, texts: Texts): Responses {
 		};
 	}
 
-	for (const [status, codes] of Map.groupBy(problemCodes(operation), (code) => PROBLEMS[code][0])) {
+	for (const [status, codes] of Map.groupBy(
+		problemCodes(operation),
+		(code) => PROBLEM_STATUS[code],
+	)) {
 		const response: ResponseObject = {
-			description: codes.map((code) => `\`${code}\`: ${PROBLEMS[code][1]}`).join("\n\n"),
+			description: codes
+				.map((code) => `\`${code}\`: ${lookup(texts.problems, "problems", code)}`)
+				.join("\n\n"),
 			content: { "application/problem+json": { schema: ref("Problem") } },
 		};
 
@@ -631,7 +657,7 @@ function operationObject(operation: Operation, texts: Texts): OperationObject {
 
 type SecurityScheme = { type: "http"; scheme: "bearer"; description: string };
 
-type OpenApiDocument = {
+export type OpenApiDocument = {
 	openapi: "3.1.1";
 	info: {
 		title: string;
@@ -648,9 +674,11 @@ type OpenApiDocument = {
 	};
 };
 
-/** The OpenAPI 3.1 document of `/api/v1`. */
-export function openApiDocument(): OpenApiDocument {
-	const texts = textsSchema.parse(en.ApiReference);
+const CATALOGS = { cs, en } satisfies Record<Locale, typeof en>;
+
+/** The OpenAPI 3.1 document of `/api/v1`, described in `locale`. */
+export function openApiDocument(locale: Locale): OpenApiDocument {
+	const texts = textsSchema.parse(CATALOGS[locale].ApiReference);
 	const output = componentSchemas("output", OUTPUT_COMPONENTS);
 	const input = componentSchemas("input", INPUT_COMPONENTS);
 	const schemas = { ...output, ...input };

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { componentSchemas, openApiDocument } from "./openapi";
 
-const document = openApiDocument();
+const document = openApiDocument("en");
 
 const json = `${JSON.stringify(document, null, "\t")}\n`;
 
