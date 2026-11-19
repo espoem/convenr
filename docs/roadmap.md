@@ -82,6 +82,11 @@ Each phase ships on its own and is usable by real people.
 - Poll mode: yes, if need be, or no on a few hand-picked options, on the same event model.
 - Light and dark theme: follows the system setting, with a manual switch.
 - Live updates that replace the 15-second reload, using the technique that fits the hosting chosen by then.
+- Guides for people who run convenr or build on it, as sections of the README. A guide that is too long for the README moves to `docs/guides/` and the README links to it. A guide is done when each of its commands runs on a clean clone.
+  1. Local deployment: run the application and PostgreSQL in containers, the settings an instance takes, and how to update it and back up its data.
+  2. Local API test: call a local instance with curl, from creating an event to its best windows, including the secrets and the problems a client meets.
+  3. Local SDK usage: use the TypeScript and the Python SDK against a local instance.
+  4. Local development: the tools mise installs, the development server, the tests and checks a change must pass, and how to regenerate the theme, the OpenAPI document and the SDKs.
 
 *Exit criterion:* an end-to-end test finalizes an event and a participant downloads an `.ics` file whose start and end match the chosen slot.
 
