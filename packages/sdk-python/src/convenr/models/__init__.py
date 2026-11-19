@@ -16,9 +16,16 @@ from .final_request import FinalRequest
 from .get_open_api_response_200 import GetOpenApiResponse200
 from .join_request import JoinRequest
 from .joined import Joined
+from .kept_option_input import KeptOptionInput
+from .new_option_input import NewOptionInput
+from .option import Option
+from .option_slot import OptionSlot
+from .option_slot_input import OptionSlotInput
 from .parameter_error import ParameterError
 from .participant import Participant
 from .pointer_error import PointerError
+from .poll_schedule import PollSchedule
+from .poll_schedule_input import PollScheduleInput
 from .problem import Problem
 from .range_schedule import RangeSchedule
 from .range_schedule_input import RangeScheduleInput
@@ -56,9 +63,16 @@ __all__ = (
     "GetOpenApiResponse200",
     "JoinRequest",
     "Joined",
+    "KeptOptionInput",
+    "NewOptionInput",
+    "Option",
+    "OptionSlot",
+    "OptionSlotInput",
     "ParameterError",
     "Participant",
     "PointerError",
+    "PollSchedule",
+    "PollScheduleInput",
     "Problem",
     "RangeSchedule",
     "RangeScheduleInput",

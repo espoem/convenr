@@ -360,9 +360,12 @@
 			"DatesSchedule": "Událost ve vybraných dnech.",
 			"RangeSchedule": "Událost v každém dni od jednoho data do druhého.",
 			"WeekdaysSchedule": "Událost ve dnech týdne, bez dat.",
-			"Slot": "Slot datované nebo týdenní události.",
+			"PollSchedule": "Anketa o několika vybraných časech; každý se odpovídá jako slot.",
+			"Option": "Čas, který anketa nabízí: začátek a konec v jednom dni v referenční zóně.",
+			"Slot": "Slot datované nebo týdenní události, nebo možnost ankety.",
 			"DatedSlot": "Slot datované události.",
 			"WeekdaySlot": "Slot týdenní události: čas na hodinách v referenční zóně.",
+			"OptionSlot": "Možnost ankety; odpovídá se na ni jako na slot.",
 			"Retention": "Kdy se událost smaže, rozlišené podle `kind`.",
 			"RetentionUntil": "Událost se smaže v daný den.",
 			"RetentionKept": "Událost se uchová, dokud ji někdo nesmaže.",
@@ -384,11 +387,16 @@
 			"DatesScheduleInput": "Událost ve vybraných dnech.",
 			"RangeScheduleInput": "Událost v každém dni od jednoho data do druhého.",
 			"WeekdaysScheduleInput": "Událost ve dnech týdne, bez dat.",
+			"PollScheduleInput": "Anketa o 2 až 20 možnostech.",
+			"OptionInput": "Možnost, kterou anketa ponechá, podle id, nebo nová, podle jejích časů.",
+			"KeptOptionInput": "Možnost, kterou anketa ponechá.",
+			"NewOptionInput": "Nová možnost. Možnost nejde změnit; nový čas je nová možnost.",
 			"JoinRequest": "Připojení. Nejvýš jedno z `password` a `newPassword`.",
 			"AvailabilityRequest": "Celá dostupnost účastníka.",
-			"SlotInput": "Slot datované nebo týdenní události.",
+			"SlotInput": "Slot datované nebo týdenní události, nebo možnost ankety.",
 			"DatedSlotInput": "Slot datované události.",
 			"WeekdaySlotInput": "Slot týdenní události.",
+			"OptionSlotInput": "Možnost ankety.",
 			"SetPasswordRequest": "Nové heslo.",
 			"RemovePasswordRequest": "Heslo k odebrání."
 		},
@@ -398,7 +406,9 @@
 			"name": "Název události.",
 			"description": "Popis události; prázdný, když žádný není.",
 			"referenceZone": "Časová zóna IANA, ve které organizátor událost naplánoval.",
-			"firstDayOfWeek": "První den týdne v mřížce: 1 je pondělí, 7 neděle.",
+			"firstDayOfWeek": "První den týdne v mřížce: 1 je pondělí, 7 neděle. Anketa ho nemá.",
+			"options": "Možnosti ankety v časovém pořadí.",
+			"option": "Id možnosti ankety.",
 			"schedule": "Kdy se událost může konat.",
 			"retention": "Kdy se událost smaže.",
 			"final": "Konečný čas, pokud ho pořadatel vybral.",
@@ -451,13 +461,31 @@
 				"id": "Veřejné id účastníka.",
 				"name": "Zobrazované jméno účastníka."
 			},
+			"Option": {
+				"id": "Id možnosti, v rámci události jedinečné.",
+				"start": "Začátek jako okamžik RFC 3339 v UTC.",
+				"end": "Konec jako okamžik RFC 3339 v UTC, ve stejný den jako začátek v referenční zóně."
+			},
+			"PollSchedule": {
+				"slots": "Jeden slot za každou možnost, v časovém pořadí."
+			},
+			"PollScheduleInput": {
+				"options": "2 až 20 možností. Změna jmenuje ponechané možnosti podle id a nové podle jejich časů; vynechaná možnost se odebere i s odpověďmi."
+			},
+			"KeptOptionInput": {
+				"id": "Id možnosti, kterou událost má."
+			},
+			"NewOptionInput": {
+				"start": "Začátek jako okamžik RFC 3339 v celou minutu, ne dřív než teď.",
+				"end": "Konec jako okamžik RFC 3339 v celou minutu, po začátku a ve stejný den v referenční zóně."
+			},
 			"FinalOpen": {
 				"kind": "Zda je konečný čas vybraný."
 			},
 			"FinalChosen": {
 				"kind": "Zda je konečný čas vybraný.",
 				"start": "Začátek jako okamžik RFC 3339 v UTC.",
-				"slots": "Sloty události uvnitř konečného času, v časovém pořadí."
+				"slots": "Sloty události uvnitř konečného času, v časovém pořadí; u ankety její jedna možnost."
 			},
 			"FinalRequest": {
 				"slots": "Sloty konečného času: souvislá řada slotů události v jednom dni, v libovolném pořadí.",
@@ -504,7 +532,7 @@
 			"not_finalized": "Událost nemá konečný čas.",
 			"method_not_allowed": "Tato cesta metodu nepodporuje.",
 			"event_full": "Událost už má 100 účastníků.",
-			"field_locked": "Délka slotu, režim dnů a referenční zóna se nemohou změnit, jakmile se někdo připojil.",
+			"field_locked": "Druh události, délka slotu, režim dnů a referenční zóna se nemohou změnit, jakmile se někdo připojil.",
 			"no_password": "Účastník nemá heslo.",
 			"name_exists": "Toto jméno už některý účastník používá.",
 			"name_unknown": "Toto jméno žádný účastník nepoužívá.",
@@ -523,7 +551,13 @@
 			"invalid_name": "Zobrazované jméno je prázdné, příliš dlouhé nebo obsahuje řídicí znak.",
 			"invalid_password": "Heslo má 4 až 128 znaků.",
 			"unknown_slot": "Dostupnost obsahuje slot, který událost nemá.",
-			"final_not_in_event": "Konečný čas není souvislá řada slotů události v jednom dni, nebo uvádí datum, které událost mít nemůže.",
+			"too_few_options": "Anketa potřebuje aspoň 2 možnosti.",
+			"too_many_options": "Anketa má nejvýš 20 možností.",
+			"option_end_not_after_start": "Možnost končí dřív, než začne, nebo ve stejnou chvíli.",
+			"option_not_one_day": "Možnost končí v referenčním pásmu až v jiný den, než začíná.",
+			"duplicate_option": "Dvě možnosti mají stejný začátek i konec.",
+			"unknown_option": "Změna ponechává možnost, kterou událost nemá.",
+			"final_not_in_event": "Konečný čas není souvislá řada slotů události v jednom dni ani jedna možnost ankety, nebo uvádí datum, které událost mít nemůže.",
 			"final_date_wrong_weekday": "Datum konečného času nepřipadá na den v týdnu jeho slotů.",
 			"too_many_attempts": "Příliš mnoho špatných hesel za sebou.",
 			"internal_error": "Server nedokázal na požadavek odpovědět."

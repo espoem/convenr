@@ -1,0 +1,721 @@
+{
+  "id": "a917c2b0-ab85-42c0-bb6a-41f703fe43c0",
+  "prevId": "acb09f5d-a21d-4a68-86ce-ccb3b8556ac9",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.dated_availability": {
+      "name": "dated_availability",
+      "schema": "",
+      "columns": {
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slot_start": {
+          "name": "slot_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'available'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dated_availability_participant_id_participants_id_fk": {
+          "name": "dated_availability_participant_id_participants_id_fk",
+          "tableFrom": "dated_availability",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "dated_availability_participant_id_slot_start_pk": {
+          "name": "dated_availability_participant_id_slot_start_pk",
+          "columns": [
+            "participant_id",
+            "slot_start"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "dated_availability_level": {
+          "name": "dated_availability_level",
+          "value": "\"dated_availability\".\"level\" in ('available', 'if_need_be')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.events": {
+      "name": "events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'grid'"
+        },
+        "day_mode": {
+          "name": "day_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "range_first": {
+          "name": "range_first",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "range_last": {
+          "name": "range_last",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dates": {
+          "name": "dates",
+          "type": "date[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weekdays": {
+          "name": "weekdays",
+          "type": "smallint[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daily_start": {
+          "name": "daily_start",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daily_end": {
+          "name": "daily_end",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slot_length": {
+          "name": "slot_length",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reference_zone": {
+          "name": "reference_zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_day_of_week": {
+          "name": "first_day_of_week",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_secret_hash": {
+          "name": "admin_secret_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "version": {
+          "name": "version",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "1"
+        },
+        "changed_at": {
+          "name": "changed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "activation_counted_at": {
+          "name": "activation_counted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "size_counted_at": {
+          "name": "size_counted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_response_counted_at": {
+          "name": "first_response_counted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_state": {
+          "name": "final_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "final_start": {
+          "name": "final_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_end": {
+          "name": "final_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_sequence": {
+          "name": "final_sequence",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "final_counted_at": {
+          "name": "final_counted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "events_schedule_matches_kind": {
+          "name": "events_schedule_matches_kind",
+          "value": "case \"events\".\"kind\"\n        when 'poll' then \"events\".\"day_mode\" is null and \"events\".\"range_first\" is null\n          and \"events\".\"range_last\" is null and \"events\".\"dates\" is null and \"events\".\"weekdays\" is null\n          and \"events\".\"daily_start\" is null and \"events\".\"daily_end\" is null\n          and \"events\".\"slot_length\" is null and \"events\".\"first_day_of_week\" is null\n        when 'grid' then \"events\".\"daily_start\" is not null and \"events\".\"daily_end\" is not null\n          and \"events\".\"slot_length\" is not null and \"events\".\"first_day_of_week\" is not null\n          and case \"events\".\"day_mode\"\n            when 'range' then \"events\".\"range_first\" is not null and \"events\".\"range_last\" is not null\n              and \"events\".\"dates\" is null and \"events\".\"weekdays\" is null\n            when 'dates' then \"events\".\"dates\" is not null\n              and \"events\".\"range_first\" is null and \"events\".\"range_last\" is null and \"events\".\"weekdays\" is null\n            when 'weekdays' then \"events\".\"weekdays\" is not null\n              and \"events\".\"range_first\" is null and \"events\".\"range_last\" is null and \"events\".\"dates\" is null\n            else false\n          end\n        else false\n      end"
+        },
+        "events_daily_range": {
+          "name": "events_daily_range",
+          "value": "\"events\".\"daily_start\" >= 0 and \"events\".\"daily_end\" <= 1440 and \"events\".\"daily_start\" < \"events\".\"daily_end\""
+        },
+        "events_slot_length": {
+          "name": "events_slot_length",
+          "value": "\"events\".\"slot_length\" in (15, 30, 60)"
+        },
+        "events_first_day_of_week": {
+          "name": "events_first_day_of_week",
+          "value": "\"events\".\"first_day_of_week\" between 1 and 7"
+        },
+        "events_final": {
+          "name": "events_final",
+          "value": "case \"events\".\"final_state\"\n        when 'open' then \"events\".\"final_start\" is null and \"events\".\"final_end\" is null\n        when 'chosen' then \"events\".\"final_start\" is not null and \"events\".\"final_end\" is not null\n          and \"events\".\"final_start\" < \"events\".\"final_end\"\n        else false\n      end"
+        },
+        "events_final_sequence": {
+          "name": "events_final_sequence",
+          "value": "\"events\".\"final_sequence\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.participant_tokens": {
+      "name": "participant_tokens",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participant_tokens_participant_id_participants_id_fk": {
+          "name": "participant_tokens_participant_id_participants_id_fk",
+          "tableFrom": "participant_tokens",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.participants": {
+      "name": "participants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_key": {
+          "name": "name_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_attempts": {
+          "name": "failed_attempts",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_attempt_at": {
+          "name": "last_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participants_event_id_events_id_fk": {
+          "name": "participants_event_id_events_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "participants_event_name": {
+          "name": "participants_event_name",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "name_key"
+          ]
+        },
+        "participants_public_id": {
+          "name": "participants_public_id",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        },
+        "participants_id_event": {
+          "name": "participants_id_event",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "event_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.poll_availability": {
+      "name": "poll_availability",
+      "schema": "",
+      "columns": {
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "option_id": {
+          "name": "option_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "poll_availability_participant": {
+          "name": "poll_availability_participant",
+          "tableFrom": "poll_availability",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id",
+            "event_id"
+          ],
+          "columnsTo": [
+            "id",
+            "event_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "poll_availability_option": {
+          "name": "poll_availability_option",
+          "tableFrom": "poll_availability",
+          "tableTo": "poll_options",
+          "columnsFrom": [
+            "event_id",
+            "option_id"
+          ],
+          "columnsTo": [
+            "event_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "poll_availability_participant_id_option_id_pk": {
+          "name": "poll_availability_participant_id_option_id_pk",
+          "columns": [
+            "participant_id",
+            "option_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "poll_availability_level": {
+          "name": "poll_availability_level",
+          "value": "\"poll_availability\".\"level\" in ('available', 'if_need_be')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.poll_options": {
+      "name": "poll_options",
+      "schema": "",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start": {
+          "name": "start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end": {
+          "name": "end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "poll_options_event_id_events_id_fk": {
+          "name": "poll_options_event_id_events_id_fk",
+          "tableFrom": "poll_options",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "poll_options_event_id_id_pk": {
+          "name": "poll_options_event_id_id_pk",
+          "columns": [
+            "event_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "poll_options_times": {
+          "name": "poll_options_times",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "start",
+            "end"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "poll_options_end_after_start": {
+          "name": "poll_options_end_after_start",
+          "value": "\"poll_options\".\"start\" < \"poll_options\".\"end\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.usage_counts": {
+      "name": "usage_counts",
+      "schema": "",
+      "columns": {
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metric": {
+          "name": "metric",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bucket": {
+          "name": "bucket",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "usage_counts_day_metric_bucket_pk": {
+          "name": "usage_counts_day_metric_bucket_pk",
+          "columns": [
+            "day",
+            "metric",
+            "bucket"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "usage_counts_bucket": {
+          "name": "usage_counts_bucket",
+          "value": "\"usage_counts\".\"bucket\" between 0 and 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.weekday_availability": {
+      "name": "weekday_availability",
+      "schema": "",
+      "columns": {
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weekday": {
+          "name": "weekday",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minute": {
+          "name": "minute",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'available'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "weekday_availability_participant_id_participants_id_fk": {
+          "name": "weekday_availability_participant_id_participants_id_fk",
+          "tableFrom": "weekday_availability",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "weekday_availability_participant_id_weekday_minute_pk": {
+          "name": "weekday_availability_participant_id_weekday_minute_pk",
+          "columns": [
+            "participant_id",
+            "weekday",
+            "minute"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "weekday_availability_level": {
+          "name": "weekday_availability_level",
+          "value": "\"weekday_availability\".\"level\" in ('available', 'if_need_be')"
+        },
+        "weekday_availability_weekday": {
+          "name": "weekday_availability_weekday",
+          "value": "\"weekday_availability\".\"weekday\" between 1 and 7"
+        },
+        "weekday_availability_minute": {
+          "name": "weekday_availability_minute",
+          "value": "\"weekday_availability\".\"minute\" between 0 and 1439"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

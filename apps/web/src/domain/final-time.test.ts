@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import { clearsFinal, type FinalTime, finalSlotKeys, finalWindow } from "./final-time";
-import type { Schedule } from "./schedule";
+import type { GridSchedule } from "./schedule";
 
-const evenings: Omit<Schedule, "days"> = {
+const evenings: Omit<GridSchedule, "days"> = {
+	kind: "grid",
+	firstDayOfWeek: 1,
 	dailyStart: 17 * 60,
 	dailyEnd: 20 * 60,
 	slotLength: 60,
 	referenceZone: "Europe/Prague",
 };
 
-const dated: Schedule = {
+const dated: GridSchedule = {
 	...evenings,
 	days: {
 		mode: "range",
@@ -19,7 +21,7 @@ const dated: Schedule = {
 	},
 };
 
-const weekly: Schedule = { ...evenings, days: { mode: "weekdays", weekdays: [1, 3] } };
+const weekly: GridSchedule = { ...evenings, days: { mode: "weekdays", weekdays: [1, 3] } };
 const now = Temporal.Instant.from("2027-03-01T12:00:00Z");
 const instant = (iso: string) => Temporal.Instant.from(iso);
 

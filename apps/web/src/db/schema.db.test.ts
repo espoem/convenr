@@ -75,7 +75,16 @@ describe("database schema", () => {
 	it("refuses days that do not match the day mode", async () => {
 		await expect(
 			database.insert(events).values({ ...rangeEvent, id: "abcdefghijkn", weekdays: [1] }),
-		).rejects.toMatchObject({ cause: { constraint: "events_days_match_mode" } });
+		).rejects.toMatchObject({ cause: { constraint: "events_schedule_matches_kind" } });
+	});
+
+	it("refuses a poll with a column of a grid and a grid without one", async () => {
+		await expect(
+			database.insert(events).values({ ...rangeEvent, id: "abcdefghijkp", kind: "poll" }),
+		).rejects.toMatchObject({ cause: { constraint: "events_schedule_matches_kind" } });
+		await expect(
+			database.insert(events).values({ ...rangeEvent, id: "abcdefghijkq", slotLength: null }),
+		).rejects.toMatchObject({ cause: { constraint: "events_schedule_matches_kind" } });
 	});
 
 	it("keeps a slot's UTC instant whatever zone the database session uses (ADR 0002)", async () => {

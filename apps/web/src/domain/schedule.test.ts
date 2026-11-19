@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { type Schedule, scheduleSlots, slotKey, validateSchedule } from "./schedule";
+import { type GridSchedule, scheduleSlots, slotKey, validateSchedule } from "./schedule";
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 const instant = (iso: string) => Temporal.Instant.from(iso);
-const keys = (schedule: Schedule) => scheduleSlots(schedule).map((slot) => slotKey(slot));
+const keys = (schedule: GridSchedule) => scheduleSlots(schedule).map((slot) => slotKey(slot));
 
-const evening: Schedule = {
+const evening: GridSchedule = {
+	kind: "grid",
+	firstDayOfWeek: 1,
 	days: { mode: "range", first: date("2027-04-05"), last: date("2027-04-09") },
 	dailyStart: 17 * 60,
 	dailyEnd: 21 * 60,
@@ -16,15 +18,15 @@ const evening: Schedule = {
 
 const now = instant("2027-03-01T12:00:00Z");
 
-function mayFrom(last: string): Schedule {
+function mayFrom(last: string): GridSchedule {
 	return { ...evening, days: { mode: "range", first: date("2027-05-01"), last: date(last) } };
 }
 
-function onDates(...isos: string[]): Schedule {
+function onDates(...isos: string[]): GridSchedule {
 	return { ...evening, days: { mode: "dates", dates: isos.map((iso) => date(iso)) } };
 }
 
-function onDateIn(iso: string, referenceZone: string): Schedule {
+function onDateIn(iso: string, referenceZone: string): GridSchedule {
 	return { ...evening, referenceZone, days: { mode: "dates", dates: [date(iso)] } };
 }
 
@@ -37,7 +39,7 @@ describe("days", () => {
 	});
 
 	it("refuses a range whose last date is before its first", () => {
-		const reversed: Schedule = {
+		const reversed: GridSchedule = {
 			...evening,
 			days: { mode: "range", first: date("2027-04-09"), last: date("2027-04-05") },
 		};
@@ -85,7 +87,7 @@ describe("days", () => {
 			{ code: "date_in_past", path: ["days", "dates", 2] },
 		]);
 
-		const started: Schedule = {
+		const started: GridSchedule = {
 			...evening,
 			days: { mode: "range", first: date("2027-02-27"), last: date("2027-03-02") },
 		};
@@ -116,7 +118,7 @@ describe("daily time range", () => {
 
 describe("slots of a dated event", () => {
 	it("walks the wall clock in the reference zone and identifies slots by UTC instant", () => {
-		const oneDay: Schedule = {
+		const oneDay: GridSchedule = {
 			...evening,
 			days: { mode: "dates", dates: [date("2027-04-05")] },
 			dailyEnd: 18 * 60,
@@ -126,7 +128,7 @@ describe("slots of a dated event", () => {
 	});
 
 	it("makes no slot for wall-clock times skipped when Prague moves forward on 28 March 2027", () => {
-		const springForward: Schedule = {
+		const springForward: GridSchedule = {
 			...evening,
 			days: { mode: "dates", dates: [date("2027-03-28")] },
 			dailyStart: 60,
@@ -143,7 +145,7 @@ describe("slots of a dated event", () => {
 	});
 
 	it("makes one slot at the first occurrence of times repeated when Prague moves back on 31 October 2027", () => {
-		const fallBack: Schedule = {
+		const fallBack: GridSchedule = {
 			...evening,
 			days: { mode: "dates", dates: [date("2027-10-31")] },
 			dailyStart: 60,
@@ -162,7 +164,7 @@ describe("slots of a dated event", () => {
 	});
 
 	it("orders specific dates and ignores the order they were given in", () => {
-		const outOfOrder: Schedule = {
+		const outOfOrder: GridSchedule = {
 			...evening,
 			days: { mode: "dates", dates: [date("2027-04-07"), date("2027-04-05")] },
 			dailyEnd: 17 * 60 + 30,
@@ -174,7 +176,7 @@ describe("slots of a dated event", () => {
 
 describe("slots of a weekday event", () => {
 	it("identifies slots by day of week and minute, sorted by ISO day, never converted", () => {
-		const weekly: Schedule = {
+		const weekly: GridSchedule = {
 			...evening,
 			referenceZone: "America/New_York",
 			days: { mode: "weekdays", weekdays: [3, 1] },

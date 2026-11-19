@@ -12,11 +12,17 @@ Returned in a `problems` list when a new or edited event is refused. A problem o
 | `range_reversed` | The last day of a date range is before the first. | E2 |
 | `too_many_dates` | A date range or list covers more than 31 dates. | E2 |
 | `duplicate_day` | A date or weekday is chosen more than once. | E2 |
-| `date_in_past` | A new date lies before today in the reference zone. | E2, M4 |
+| `date_in_past` | A new date lies before today in the reference zone, or a new option starts before now. | E2, M4, O2 |
 | `out_of_day` | The daily start or end lies outside 00:00 to 24:00. | E3 |
 | `end_not_after_start` | The daily end is not after the daily start. | E3 |
 | `not_on_slot_boundary` | The daily start or end is not a multiple of the slot length. | E3 |
-| `field_locked` | Slot length, day mode or reference zone changed on an event that has participants. | M3 |
+| `field_locked` | The kind of event, slot length, day mode or reference zone changed on an event that has participants. | M3, O1 |
+| `too_few_options` | A poll has fewer than 2 options. | O2 |
+| `too_many_options` | A poll has more than 20 options. | O2 |
+| `option_end_not_after_start` | An option's end is not after its start. | O2 |
+| `option_not_one_day` | An option ends on another date than it starts in the reference zone; an end at the midnight closing its date counts as the same date. | O2 |
+| `duplicate_option` | Two options have the same start and end. | O2 |
+| `unknown_option` | A change keeps an option by an `id` the event does not have. | A21 |
 
 ## Final time
 

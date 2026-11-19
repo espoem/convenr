@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { FinalTime } from "./final-time";
 import { deletionDate, expiresAt } from "./retention";
-import type { Schedule } from "./schedule";
+import type { GridSchedule } from "./schedule";
 
-const evenings: Omit<Schedule, "days"> = {
+const evenings: Omit<GridSchedule, "days"> = {
+	kind: "grid",
+	firstDayOfWeek: 1,
 	dailyStart: 17 * 60,
 	dailyEnd: 21 * 60,
 	slotLength: 30,
@@ -26,7 +28,7 @@ function chosen(day: string): FinalTime {
 
 describe("planned deletion date", () => {
 	it("is 90 days after the last date of a dated event, whenever it last changed", () => {
-		const schedule: Schedule = {
+		const schedule: GridSchedule = {
 			...evenings,
 			days: { mode: "dates", dates: [date("2027-04-20"), date("2027-04-05")] },
 		};
@@ -37,7 +39,7 @@ describe("planned deletion date", () => {
 	});
 
 	it("is 90 days after the last change of a weekday event, as a date in the reference zone", () => {
-		const schedule: Schedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
+		const schedule: GridSchedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
 		// 23:30 UTC on 31 March is already 1 April in Prague.
 		const change = Temporal.Instant.from("2027-03-31T23:30:00Z");
 
@@ -45,7 +47,7 @@ describe("planned deletion date", () => {
 	});
 
 	it("keeps a weekday event until the retention after a final date that lies beyond it", () => {
-		const schedule: Schedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
+		const schedule: GridSchedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
 		const change = Temporal.Instant.from("2027-04-01T10:00:00Z");
 
 		expect(deletionDate(schedule, change, 30, chosen("2027-05-10"))?.toString()).toBe("2027-06-09");
@@ -53,7 +55,7 @@ describe("planned deletion date", () => {
 	});
 
 	it("follows the current setting and is absent with never", () => {
-		const schedule: Schedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
+		const schedule: GridSchedule = { ...evenings, days: { mode: "weekdays", weekdays: [1] } };
 		const change = Temporal.Instant.from("2027-04-01T10:00:00Z");
 
 		expect(deletionDate(schedule, change, 30, open)?.toString()).toBe("2027-05-01");
@@ -63,7 +65,7 @@ describe("planned deletion date", () => {
 
 describe("expiry", () => {
 	it("comes at the end of the deletion date in the reference zone", () => {
-		const schedule: Schedule = {
+		const schedule: GridSchedule = {
 			...evenings,
 			days: { mode: "dates", dates: [date("2027-04-20")] },
 		};

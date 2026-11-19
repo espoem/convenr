@@ -8,6 +8,7 @@ from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
     from ..models.dated_slot import DatedSlot
+    from ..models.option_slot import OptionSlot
     from ..models.weekday_slot import WeekdaySlot
 
 
@@ -21,20 +22,21 @@ class Participant:
     Attributes:
         id (str): The public id of the participant.
         name (str): The display name of the participant.
-        availability (list[DatedSlot | WeekdaySlot]): The slots in which the participant is available, if need be
-            included, in time order. A client that knows no levels reads an if-need-be slot as available.
-        if_need_be (list[DatedSlot | WeekdaySlot]): The slots of `availability` in which the participant is available
-            only if need be, in time order.
+        availability (list[DatedSlot | OptionSlot | WeekdaySlot]): The slots in which the participant is available, if
+            need be included, in time order. A client that knows no levels reads an if-need-be slot as available.
+        if_need_be (list[DatedSlot | OptionSlot | WeekdaySlot]): The slots of `availability` in which the participant is
+            available only if need be, in time order.
     """
 
     id: str
     name: str
-    availability: list[DatedSlot | WeekdaySlot]
-    if_need_be: list[DatedSlot | WeekdaySlot]
+    availability: list[DatedSlot | OptionSlot | WeekdaySlot]
+    if_need_be: list[DatedSlot | OptionSlot | WeekdaySlot]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dated_slot import DatedSlot
+        from ..models.weekday_slot import WeekdaySlot
 
         id = self.id
 
@@ -43,7 +45,9 @@ class Participant:
         availability = []
         for availability_item_data in self.availability:
             availability_item: dict[str, Any]
-            if isinstance(availability_item_data, DatedSlot):
+            if isinstance(availability_item_data, DatedSlot) or isinstance(
+                availability_item_data, WeekdaySlot
+            ):
                 availability_item = availability_item_data.to_dict()
             else:
                 availability_item = availability_item_data.to_dict()
@@ -53,7 +57,9 @@ class Participant:
         if_need_be = []
         for if_need_be_item_data in self.if_need_be:
             if_need_be_item: dict[str, Any]
-            if isinstance(if_need_be_item_data, DatedSlot):
+            if isinstance(if_need_be_item_data, DatedSlot) or isinstance(
+                if_need_be_item_data, WeekdaySlot
+            ):
                 if_need_be_item = if_need_be_item_data.to_dict()
             else:
                 if_need_be_item = if_need_be_item_data.to_dict()
@@ -76,6 +82,7 @@ class Participant:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dated_slot import DatedSlot
+        from ..models.option_slot import OptionSlot
         from ..models.weekday_slot import WeekdaySlot
 
         d = dict(src_dict)
@@ -87,7 +94,9 @@ class Participant:
         _availability = d.pop("availability")
         for availability_item_data in _availability:
 
-            def _parse_availability_item(data: object) -> DatedSlot | WeekdaySlot:
+            def _parse_availability_item(
+                data: object,
+            ) -> DatedSlot | OptionSlot | WeekdaySlot:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -96,11 +105,19 @@ class Participant:
                     return componentsschemas_slot_type_0
                 except (TypeError, ValueError, AttributeError, KeyError):
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+
+                    return componentsschemas_slot_type_1
+                except (TypeError, ValueError, AttributeError, KeyError):
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+                componentsschemas_slot_type_2 = OptionSlot.from_dict(data)
 
-                return componentsschemas_slot_type_1
+                return componentsschemas_slot_type_2
 
             availability_item = _parse_availability_item(availability_item_data)
 
@@ -110,7 +127,9 @@ class Participant:
         _if_need_be = d.pop("ifNeedBe")
         for if_need_be_item_data in _if_need_be:
 
-            def _parse_if_need_be_item(data: object) -> DatedSlot | WeekdaySlot:
+            def _parse_if_need_be_item(
+                data: object,
+            ) -> DatedSlot | OptionSlot | WeekdaySlot:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -119,11 +138,19 @@ class Participant:
                     return componentsschemas_slot_type_0
                 except (TypeError, ValueError, AttributeError, KeyError):
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+
+                    return componentsschemas_slot_type_1
+                except (TypeError, ValueError, AttributeError, KeyError):
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+                componentsschemas_slot_type_2 = OptionSlot.from_dict(data)
 
-                return componentsschemas_slot_type_1
+                return componentsschemas_slot_type_2
 
             if_need_be_item = _parse_if_need_be_item(if_need_be_item_data)
 

@@ -1,5 +1,14 @@
-// The final time: the window the organizer picked, as one dated occurrence in UTC.
-import { type Schedule, type Slot, scheduleSlots, slotKey } from "./schedule";
+// The final time: the window or poll option the organizer picked, as one dated occurrence in UTC.
+import { optionKey } from "./poll";
+import {
+	type GridSchedule,
+	type GridSlot,
+	gridSlots,
+	type PollSchedule,
+	type Schedule,
+	type Slot,
+	slotKey,
+} from "./schedule";
 
 /** Whether a final time is picked. `sequence` counts the picks and changes, also after a clear. */
 export type FinalTime =
@@ -29,7 +38,7 @@ function occurrence(date: Temporal.PlainDate, minute: number, zone: string): Tem
 }
 
 /** Whether `slots`, in time order, follow each other directly within one day. */
-function isRun(slots: readonly Slot[], slotLength: number): boolean {
+function isRun(slots: readonly GridSlot[], slotLength: number): boolean {
 	return slots.every((slot, index) => {
 		const previous = slots[index - 1];
 
@@ -59,8 +68,30 @@ export function finalWindow(
 	request: FinalRequest,
 	now: Temporal.Instant,
 ): FinalResult {
+	return schedule.kind === "poll"
+		? finalOption(schedule, request)
+		: gridWindow(schedule, request, now);
+}
+
+/** A poll's final time: exactly one of its options. */
+function finalOption(schedule: PollSchedule, request: FinalRequest): FinalResult {
+	const [key, ...more] = request.slots;
+	const option = schedule.options.find((candidate) => optionKey(candidate) === key);
+
+	if (option === undefined || more.length > 0 || request.date !== undefined) {
+		return { ok: false, problem: "final_not_in_event" };
+	}
+
+	return { ok: true, start: option.start, end: option.end };
+}
+
+function gridWindow(
+	schedule: GridSchedule,
+	request: FinalRequest,
+	now: Temporal.Instant,
+): FinalResult {
 	const wanted = new Set(request.slots);
-	const slots = scheduleSlots(schedule).filter((slot) => wanted.has(slotKey(slot)));
+	const slots = gridSlots(schedule).filter((slot) => wanted.has(slotKey(slot)));
 	const first = slots[0];
 	const last = slots.at(-1);
 	const weekdays = schedule.days.mode === "weekdays";
@@ -117,13 +148,20 @@ export function finalSlotKeys(final: FinalTime, schedule: Schedule): string[] {
 		return [];
 	}
 
+	// A poll's options differ in start or end, so these name the one that was picked.
+	if (schedule.kind === "poll") {
+		return schedule.options.flatMap((option) =>
+			option.start.equals(final.start) && option.end.equals(final.end) ? [optionKey(option)] : [],
+		);
+	}
+
 	const date = finalDate(final.start, schedule);
 
 	const inside = (start: Temporal.Instant) =>
 		Temporal.Instant.compare(start, final.start) >= 0 &&
 		Temporal.Instant.compare(start, final.end) < 0;
 
-	return scheduleSlots(schedule).flatMap((slot) => {
+	return gridSlots(schedule).flatMap((slot) => {
 		if (slot.kind === "dated") {
 			return inside(slot.start) ? [slotKey(slot)] : [];
 		}

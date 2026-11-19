@@ -10,6 +10,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.dated_slot_input import DatedSlotInput
+    from ..models.option_slot_input import OptionSlotInput
     from ..models.weekday_slot_input import WeekdaySlotInput
 
 
@@ -21,22 +22,25 @@ class FinalRequest:
     """The final time to pick.
 
     Attributes:
-        slots (list[DatedSlotInput | WeekdaySlotInput]): The slots of the final time: a run of the event's slots in one
-            day, in any order.
+        slots (list[DatedSlotInput | OptionSlotInput | WeekdaySlotInput]): The slots of the final time: a run of the
+            event's slots in one day, in any order.
         date (datetime.date | Unset): Exactly for a weekday event: the date of the one occurrence, `YYYY-MM-DD`. It
             falls on the weekday of the slots and is not before today in the reference zone.
     """
 
-    slots: list[DatedSlotInput | WeekdaySlotInput]
+    slots: list[DatedSlotInput | OptionSlotInput | WeekdaySlotInput]
     date: datetime.date | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dated_slot_input import DatedSlotInput
+        from ..models.weekday_slot_input import WeekdaySlotInput
 
         slots = []
         for slots_item_data in self.slots:
             slots_item: dict[str, Any]
-            if isinstance(slots_item_data, DatedSlotInput):
+            if isinstance(slots_item_data, DatedSlotInput) or isinstance(
+                slots_item_data, WeekdaySlotInput
+            ):
                 slots_item = slots_item_data.to_dict()
             else:
                 slots_item = slots_item_data.to_dict()
@@ -62,6 +66,7 @@ class FinalRequest:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dated_slot_input import DatedSlotInput
+        from ..models.option_slot_input import OptionSlotInput
         from ..models.weekday_slot_input import WeekdaySlotInput
 
         d = dict(src_dict)
@@ -69,7 +74,9 @@ class FinalRequest:
         _slots = d.pop("slots")
         for slots_item_data in _slots:
 
-            def _parse_slots_item(data: object) -> DatedSlotInput | WeekdaySlotInput:
+            def _parse_slots_item(
+                data: object,
+            ) -> DatedSlotInput | OptionSlotInput | WeekdaySlotInput:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -78,11 +85,21 @@ class FinalRequest:
                     return componentsschemas_slot_input_type_0
                 except (TypeError, ValueError, AttributeError, KeyError):
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_slot_input_type_1 = WeekdaySlotInput.from_dict(
+                        data
+                    )
+
+                    return componentsschemas_slot_input_type_1
+                except (TypeError, ValueError, AttributeError, KeyError):
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_slot_input_type_1 = WeekdaySlotInput.from_dict(data)
+                componentsschemas_slot_input_type_2 = OptionSlotInput.from_dict(data)
 
-                return componentsschemas_slot_input_type_1
+                return componentsschemas_slot_input_type_2
 
             slots_item = _parse_slots_item(slots_item_data)
 

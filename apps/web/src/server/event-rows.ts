@@ -7,10 +7,13 @@ import {
 	events,
 	participants,
 	participantTokens,
+	pollAvailability,
+	pollOptions,
 	weekdayAvailability,
 } from "@/db/schema";
 import type { FinalTime } from "@/domain/final-time";
 import type { Level, Levels } from "@/domain/levels";
+import { inTimeOrder, optionKey } from "@/domain/poll";
 import { expiresAt } from "@/domain/retention";
 import {
 	type EventDays,
@@ -26,10 +29,35 @@ import type { EventVersion } from "@/lib/event-version";
 
 import { hashSecret } from "./secrets";
 
-export type EventRow = typeof events.$inferSelect;
+type OptionRow = typeof pollOptions.$inferSelect;
+
+/** An event's columns with its poll options; a grid has none. */
+export type EventRow = typeof events.$inferSelect & { options: OptionRow[] };
 
 /** The database or an open transaction on it. */
 export type Queries = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+/** The event `columns` with the options stored for it. */
+export async function withOptions(
+	queries: Queries,
+	columns: typeof events.$inferSelect,
+): Promise<EventRow> {
+	const options =
+		columns.kind === "poll"
+			? await queries.select().from(pollOptions).where(eq(pollOptions.eventId, columns.id))
+			: [];
+
+	return { ...columns, options };
+}
+
+/** A stored column of a grid, which the check constraint events_schedule_matches_kind fills. */
+function gridColumn<Value>(row: EventRow, value: Value | null): Value {
+	if (value === null) {
+		throw new Error(`Grid event ${row.id} lacks a column of its grid.`);
+	}
+
+	return value;
+}
 
 function weekday(stored: number): Weekday {
 	const found = toWeekday(stored);
@@ -68,17 +96,29 @@ function daysOf(row: EventRow): EventDays {
 		return { mode: "weekdays", weekdays: row.weekdays.map(weekday) };
 	}
 
-	// The check constraint events_days_match_mode makes this unreachable.
+	// The check constraint events_schedule_matches_kind makes this unreachable.
 	throw new Error(`Event ${row.id} has no days for its day mode.`);
 }
 
 export function scheduleOf(row: EventRow): Schedule {
+	if (row.kind === "poll") {
+		const options = row.options.map((option) => ({
+			id: option.id,
+			start: Temporal.Instant.from(option.start),
+			end: Temporal.Instant.from(option.end),
+		}));
+
+		return { kind: "poll", options: inTimeOrder(options), referenceZone: row.referenceZone };
+	}
+
 	return {
+		kind: "grid",
 		days: daysOf(row),
-		dailyStart: row.dailyStart,
-		dailyEnd: row.dailyEnd,
-		slotLength: slotLength(row.slotLength),
+		dailyStart: gridColumn(row, row.dailyStart),
+		dailyEnd: gridColumn(row, row.dailyEnd),
+		slotLength: slotLength(gridColumn(row, row.slotLength)),
 		referenceZone: row.referenceZone,
+		firstDayOfWeek: weekday(gridColumn(row, row.firstDayOfWeek)),
 	};
 }
 
@@ -103,10 +143,6 @@ export function finalOf(row: EventRow): FinalTime {
 		end: Temporal.Instant.from(row.finalEnd),
 		sequence,
 	};
-}
-
-export function firstDayOfWeekOf(row: EventRow): Weekday {
-	return weekday(row.firstDayOfWeek);
 }
 
 export function weekdaySlotKey(row: { weekday: number; minute: number }): string {
@@ -143,7 +179,53 @@ export async function participantRead(
 	};
 }
 
-/** The response of each of `participantIds`, by participant, from the table of the event's day mode. */
+type AnswerRow = { participantId: string; key: string; level: Level };
+
+/** The stored answers of `participantIds`, from the table of the event's kind and day mode. */
+async function answerRows(
+	queries: Queries,
+	event: EventRow,
+	participantIds: string[],
+): Promise<AnswerRow[]> {
+	if (event.kind === "poll") {
+		const rows = await queries
+			.select()
+			.from(pollAvailability)
+			.where(inArray(pollAvailability.participantId, participantIds));
+
+		return rows.map((row) => ({
+			participantId: row.participantId,
+			key: optionKey({ id: row.optionId }),
+			level: row.level,
+		}));
+	}
+
+	if (event.dayMode === "weekdays") {
+		const rows = await queries
+			.select()
+			.from(weekdayAvailability)
+			.where(inArray(weekdayAvailability.participantId, participantIds));
+
+		return rows.map((row) => ({
+			participantId: row.participantId,
+			key: weekdaySlotKey(row),
+			level: row.level,
+		}));
+	}
+
+	const rows = await queries
+		.select()
+		.from(datedAvailability)
+		.where(inArray(datedAvailability.participantId, participantIds));
+
+	return rows.map((row) => ({
+		participantId: row.participantId,
+		key: datedSlotKey(row),
+		level: row.level,
+	}));
+}
+
+/** The response of each of `participantIds`, by participant, from the table of the event's kind. */
 export async function responseLevels(
 	queries: Queries,
 	event: EventRow,
@@ -157,30 +239,7 @@ export async function responseLevels(
 		return byParticipant;
 	}
 
-	const rows =
-		event.dayMode === "weekdays"
-			? (
-					await queries
-						.select()
-						.from(weekdayAvailability)
-						.where(inArray(weekdayAvailability.participantId, participantIds))
-				).map((row) => ({
-					participantId: row.participantId,
-					key: weekdaySlotKey(row),
-					level: row.level,
-				}))
-			: (
-					await queries
-						.select()
-						.from(datedAvailability)
-						.where(inArray(datedAvailability.participantId, participantIds))
-				).map((row) => ({
-					participantId: row.participantId,
-					key: datedSlotKey(row),
-					level: row.level,
-				}));
-
-	for (const { participantId, key, level } of rows) {
+	for (const { participantId, key, level } of await answerRows(queries, event, participantIds)) {
 		const levels = byParticipant.get(participantId);
 
 		if (levels !== undefined) {
@@ -234,9 +293,15 @@ export async function liveEvent(
 	lock: "lock" | "read",
 ): Promise<EventRow | undefined> {
 	const query = queries.select().from(events).where(eq(events.id, id));
-	const [row] = lock === "lock" ? await query.for("update") : await query;
+	const [columns] = lock === "lock" ? await query.for("update") : await query;
 
-	return row !== undefined && isLive(row, now) ? row : undefined;
+	if (columns === undefined) {
+		return undefined;
+	}
+
+	const row = await withOptions(queries, columns);
+
+	return isLive(row, now) ? row : undefined;
 }
 
 /** The participant of a live event `eventId` that holds `token`, with its event, or `undefined`. */
@@ -253,7 +318,13 @@ export async function participantByToken(
 		.innerJoin(events, eq(events.id, participants.eventId))
 		.where(and(eq(participantTokens.tokenHash, hashSecret(token)), eq(events.id, eventId)));
 
-	return found !== undefined && isLive(found.event, now) ? found : undefined;
+	if (found === undefined) {
+		return;
+	}
+
+	const event = await withOptions(queries, found.event);
+
+	return isLive(event, now) ? { participant: found.participant, event } : undefined;
 }
 
 /**

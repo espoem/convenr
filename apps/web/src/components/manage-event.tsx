@@ -171,7 +171,7 @@ export function ManageEvent({ id, options, board, weekdayView, formatLocale }: M
 				<EventForm
 					key={saved}
 					options={options}
-					initial={event}
+					initial={event.kind === "grid" ? event : undefined}
 					locked={event.locked}
 					submitLabel={t("save")}
 					pendingLabel={t("saving")}

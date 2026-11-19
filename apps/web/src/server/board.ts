@@ -3,10 +3,18 @@
 import type { BoardEvent } from "@/components/event/event-board";
 import { gridView, type GridView } from "@/domain/grid-labels";
 import { weekdayLayout } from "@/domain/grid-layout";
+import type { GridSchedule } from "@/domain/schedule";
 
 import type { EventView } from "./events";
 
-export function boardOf(event: EventView): BoardEvent {
+/** An event whose schedule is a grid of slots. */
+export type GridEventView = EventView & { schedule: GridSchedule };
+
+export function isGridEvent(event: EventView): event is GridEventView {
+	return event.schedule.kind === "grid";
+}
+
+export function boardOf(event: GridEventView): BoardEvent {
 	const { schedule, final } = event;
 
 	return {
@@ -15,7 +23,7 @@ export function boardOf(event: EventView): BoardEvent {
 		segment: event.segment,
 		dated: schedule.days.mode !== "weekdays",
 		referenceZone: schedule.referenceZone,
-		firstDayOfWeek: event.firstDayOfWeek,
+		firstDayOfWeek: schedule.firstDayOfWeek,
 		slotLength: schedule.slotLength,
 		version: event.version,
 		rowCount: (schedule.dailyEnd - schedule.dailyStart) / schedule.slotLength,
@@ -35,10 +43,14 @@ export function boardOf(event: EventView): BoardEvent {
 }
 
 /** A weekday event's grid, laid out by the server (ADR 0002 item 9); `null` for a dated event. */
-export function weekdayViewOf(event: EventView, formatLocale: string): GridView | null {
+export function weekdayViewOf(event: GridEventView, formatLocale: string): GridView | null {
 	const { schedule } = event;
 
 	return schedule.days.mode === "weekdays"
-		? gridView(weekdayLayout(event.slots, event.firstDayOfWeek), schedule.slotLength, formatLocale)
+		? gridView(
+				weekdayLayout(event.slots, schedule.firstDayOfWeek),
+				schedule.slotLength,
+				formatLocale,
+			)
 		: null;
 }

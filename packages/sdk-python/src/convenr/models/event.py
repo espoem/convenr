@@ -6,11 +6,14 @@ from typing import TYPE_CHECKING, Any, Self, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.dates_schedule import DatesSchedule
     from ..models.final_chosen import FinalChosen
     from ..models.final_open import FinalOpen
     from ..models.participant import Participant
+    from ..models.poll_schedule import PollSchedule
     from ..models.range_schedule import RangeSchedule
     from ..models.retention_kept import RetentionKept
     from ..models.retention_until import RetentionUntil
@@ -29,23 +32,24 @@ class Event:
         name (str): The name of the event.
         description (str): A description of the event; empty when there is none.
         reference_zone (str): The IANA time zone in which the organizer planned the event.
-        first_day_of_week (int): The first day of the week in the grid: 1 is Monday, 7 is Sunday. Values so far: 1, 2,
-            3, 4, 5, 6, 7. A later version may add more.
-        schedule (DatesSchedule | RangeSchedule | WeekdaysSchedule): When the event can take place, tagged by `mode`.
+        schedule (DatesSchedule | PollSchedule | RangeSchedule | WeekdaysSchedule): When the event can take place,
+            tagged by `mode`.
         retention (RetentionKept | RetentionUntil): When the event will be deleted, tagged by `kind`.
         final (FinalChosen | FinalOpen): The final time, tagged by `kind`.
         participants (list[Participant]): The participants in joining order.
+        first_day_of_week (int | Unset): The first day of the week in the grid: 1 is Monday, 7 is Sunday. A poll has
+            none. Values so far: 1, 2, 3, 4, 5, 6, 7. A later version may add more.
     """
 
     id: str
     name: str
     description: str
     reference_zone: str
-    first_day_of_week: int
-    schedule: DatesSchedule | RangeSchedule | WeekdaysSchedule
+    schedule: DatesSchedule | PollSchedule | RangeSchedule | WeekdaysSchedule
     retention: RetentionKept | RetentionUntil
     final: FinalChosen | FinalOpen
     participants: list[Participant]
+    first_day_of_week: int | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -53,6 +57,7 @@ class Event:
         from ..models.final_open import FinalOpen
         from ..models.range_schedule import RangeSchedule
         from ..models.retention_until import RetentionUntil
+        from ..models.weekdays_schedule import WeekdaysSchedule
 
         id = self.id
 
@@ -62,11 +67,11 @@ class Event:
 
         reference_zone = self.reference_zone
 
-        first_day_of_week = self.first_day_of_week
-
         schedule: dict[str, Any]
-        if isinstance(self.schedule, DatesSchedule) or isinstance(
-            self.schedule, RangeSchedule
+        if (
+            isinstance(self.schedule, DatesSchedule)
+            or isinstance(self.schedule, RangeSchedule)
+            or isinstance(self.schedule, WeekdaysSchedule)
         ):
             schedule = self.schedule.to_dict()
         else:
@@ -89,6 +94,8 @@ class Event:
             participants_item = participants_item_data.to_dict()
             participants.append(participants_item)
 
+        first_day_of_week = self.first_day_of_week
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -97,13 +104,14 @@ class Event:
                 "name": name,
                 "description": description,
                 "referenceZone": reference_zone,
-                "firstDayOfWeek": first_day_of_week,
                 "schedule": schedule,
                 "retention": retention,
                 "final": final,
                 "participants": participants,
             }
         )
+        if first_day_of_week is not UNSET:
+            field_dict["firstDayOfWeek"] = first_day_of_week
 
         return field_dict
 
@@ -113,6 +121,7 @@ class Event:
         from ..models.final_chosen import FinalChosen
         from ..models.final_open import FinalOpen
         from ..models.participant import Participant
+        from ..models.poll_schedule import PollSchedule
         from ..models.range_schedule import RangeSchedule
         from ..models.retention_kept import RetentionKept
         from ..models.retention_until import RetentionUntil
@@ -127,11 +136,9 @@ class Event:
 
         reference_zone = d.pop("referenceZone")
 
-        first_day_of_week = d.pop("firstDayOfWeek")
-
         def _parse_schedule(
             data: object,
-        ) -> DatesSchedule | RangeSchedule | WeekdaysSchedule:
+        ) -> DatesSchedule | PollSchedule | RangeSchedule | WeekdaysSchedule:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -148,11 +155,19 @@ class Event:
                 return componentsschemas_schedule_type_1
             except (TypeError, ValueError, AttributeError, KeyError):
                 pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_schedule_type_2 = WeekdaysSchedule.from_dict(data)
+
+                return componentsschemas_schedule_type_2
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
             if not isinstance(data, dict):
                 raise TypeError()
-            componentsschemas_schedule_type_2 = WeekdaysSchedule.from_dict(data)
+            componentsschemas_schedule_type_3 = PollSchedule.from_dict(data)
 
-            return componentsschemas_schedule_type_2
+            return componentsschemas_schedule_type_3
 
         schedule = _parse_schedule(d.pop("schedule"))
 
@@ -197,16 +212,18 @@ class Event:
 
             participants.append(participants_item)
 
+        first_day_of_week = d.pop("firstDayOfWeek", UNSET)
+
         event = cls(
             id=id,
             name=name,
             description=description,
             reference_zone=reference_zone,
-            first_day_of_week=first_day_of_week,
             schedule=schedule,
             retention=retention,
             final=final,
             participants=participants,
+            first_day_of_week=first_day_of_week,
         )
 
         event.additional_properties = d

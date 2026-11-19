@@ -23,6 +23,10 @@ if (instance === undefined) {
 const client = createClient({ baseUrl: new URL("/api/v1", instance).toString() });
 
 function slotKey(slot: Slot): string {
+	if ("option" in slot) {
+		return slot.option;
+	}
+
 	return "start" in slot ? slot.start : `${slot.weekday}/${slot.minute}`;
 }
 
@@ -173,6 +177,76 @@ describe("the TypeScript SDK against a running instance", () => {
 
 		expect(moved).toContain(`UID:${event.id}@convenr`);
 		expect(moved).toContain("SEQUENCE:2");
+
+		await deleteEvent({ client, throwOnError: true, auth: adminSecret, path: { id: event.id } });
+	});
+
+	it("creates a poll, answers its options and picks the best one", async () => {
+		const day = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 7 });
+
+		const at = (hour: number, days: number) =>
+			day
+				.add({ days })
+				.toZonedDateTime({ timeZone: "Europe/Prague", plainTime: { hour } })
+				.toInstant()
+				.toString();
+
+		const created = await createEvent({
+			client,
+			throwOnError: true,
+			body: {
+				name: "Dinner",
+				referenceZone: "Europe/Prague",
+				schedule: {
+					mode: "poll",
+					options: [
+						{ start: at(18, 0), end: at(20, 0) },
+						{ start: at(18, 1), end: at(20, 1) },
+					],
+				},
+			},
+		});
+
+		const { event, adminSecret } = created.data;
+
+		if (event.schedule.mode !== "poll") {
+			throw new Error("The event was made as a poll.");
+		}
+
+		const [first, second] = event.schedule.slots;
+
+		if (first === undefined || second === undefined) {
+			throw new Error("The poll has two options.");
+		}
+
+		const ada = await join({
+			client,
+			throwOnError: true,
+			path: { id: event.id },
+			body: { name: "Ada" },
+		});
+
+		await saveAvailability({
+			client,
+			throwOnError: true,
+			auth: ada.data.participantToken,
+			path: { id: event.id },
+			body: { availability: [first, second], ifNeedBe: [second] },
+		});
+
+		const windows = await getWindows({ client, throwOnError: true, path: { id: event.id } });
+
+		expect(windows.data.windows.map((window) => window.slots)).toStrictEqual([[first], [second]]);
+
+		const picked = await pickFinal({
+			client,
+			throwOnError: true,
+			auth: adminSecret,
+			path: { id: event.id },
+			body: { slots: [first] },
+		});
+
+		expect(picked.data.final).toMatchObject({ kind: "chosen", start: at(18, 0), slots: [first] });
 
 		await deleteEvent({ client, throwOnError: true, auth: adminSecret, path: { id: event.id } });
 	});

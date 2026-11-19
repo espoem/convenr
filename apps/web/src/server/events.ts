@@ -3,22 +3,23 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db/client";
-import { events, participants } from "@/db/schema";
+import { events, participants, pollOptions } from "@/db/schema";
 import { characterCount } from "@/domain/display-name";
 import { eventSegment } from "@/domain/event-address";
-import type { EditProblem } from "@/domain/event-edit";
+import { type EditProblem, scheduleProblems } from "@/domain/event-edit";
 import { type FinalTime, finalSlotKeys } from "@/domain/final-time";
+import { MAX_OPTIONS } from "@/domain/poll";
 import { newPublicId } from "@/domain/public-id";
 import { deletionDate } from "@/domain/retention";
 import {
+	type GridSchedule,
 	MAX_DATES,
+	type PollOption,
 	type Schedule,
 	type ScheduleIssue,
 	scheduleSlots,
 	slotKey,
 	SLOT_LENGTHS,
-	validateSchedule,
-	type Weekday,
 } from "@/domain/schedule";
 import { env } from "@/env";
 import type { EventVersion } from "@/lib/event-version";
@@ -27,7 +28,6 @@ import { FIELD_CODES, fieldErrors } from "./api/field-codes";
 import {
 	type EventRow,
 	finalOf,
-	firstDayOfWeekOf,
 	liveEvent,
 	type ParticipantView,
 	type Queries,
@@ -74,7 +74,7 @@ function failsAs(code: InputCode) {
 
 const tooLong = failsAs("too_long");
 
-export const newEventSchema = z.object({
+const common = {
 	name: z
 		.string()
 		.trim()
@@ -84,6 +84,24 @@ export const newEventSchema = z.object({
 		.string()
 		.trim()
 		.refine((text) => characterCount(text) <= DESCRIPTION_MAX_LENGTH, tooLong),
+	referenceZone: z.string().refine(isTimeZone, failsAs("unknown_time_zone")),
+};
+
+/** An instant at a whole minute, as an option starts and ends. */
+const wholeMinute = z.iso
+	.datetime({ offset: true })
+	.transform((text) => Temporal.Instant.from(text))
+	.refine((instant) => instant.epochMilliseconds % 60_000 === 0, failsAs("invalid_value"));
+
+/** An option the event keeps, by id, or a new one, by its times. */
+const optionInput = z.union([
+	z.object({ id: z.string() }),
+	z.object({ start: wholeMinute, end: wholeMinute }),
+]);
+
+const gridEventSchema = z.object({
+	...common,
+	kind: z.literal("grid"),
 	days: z.discriminatedUnion("mode", [
 		z.object({ mode: z.literal("range"), first: isoDate, last: isoDate }),
 		// The upper bounds only stop oversized input; validateSchedule applies the real limits.
@@ -93,11 +111,101 @@ export const newEventSchema = z.object({
 	dailyStart: z.int(),
 	dailyEnd: z.int(),
 	slotLength: z.literal(SLOT_LENGTHS),
-	referenceZone: z.string().refine(isTimeZone, failsAs("unknown_time_zone")),
 	firstDayOfWeek: weekday,
 });
 
+const pollEventSchema = z.object({
+	...common,
+	kind: z.literal("poll"),
+	// The upper bound only stops oversized input; validatePoll applies the real limits.
+	options: z.array(optionInput).max(MAX_OPTIONS * 2),
+});
+
+export const newEventSchema = z.discriminatedUnion("kind", [gridEventSchema, pollEventSchema]);
+
 export type NewEvent = z.input<typeof newEventSchema>;
+
+export type GridEventInput = z.input<typeof gridEventSchema>;
+
+export type PollEventInput = z.input<typeof pollEventSchema>;
+
+/**
+ * The fields a change names, laid over the stored ones before the result is checked as a whole.
+ * A schedule is replaced as a whole, with its kind; a field the resulting kind lacks is ignored.
+ */
+export type EventChange = Partial<
+	Omit<GridEventInput, "kind"> & Omit<PollEventInput, "kind"> & { kind: NewEvent["kind"] }
+>;
+
+type ParsedEvent = z.output<typeof newEventSchema>;
+
+type OptionInput = z.output<typeof optionInput>;
+
+/**
+ * The poll options `input` asks for: kept ones by id from `stored`, and new ones with a new id.
+ * An id the event does not have is a problem at its place in the list.
+ */
+export function resolvedOptions(
+	input: readonly OptionInput[],
+	stored: readonly PollOption[],
+): { ok: true; options: PollOption[] } | { ok: false; problems: EventProblem[] } {
+	const byId = new Map(stored.map((option) => [option.id, option]));
+	const options: PollOption[] = [];
+	const problems: EventProblem[] = [];
+
+	for (const [index, option] of input.entries()) {
+		if (!("id" in option)) {
+			options.push({ id: newPublicId(), start: option.start, end: option.end });
+			continue;
+		}
+
+		const kept = byId.get(option.id);
+
+		if (kept === undefined) {
+			problems.push({ kind: "rule", code: "unknown_option", path: ["options", index, "id"] });
+		} else {
+			options.push(kept);
+		}
+	}
+
+	return problems.length > 0 ? { ok: false, problems } : { ok: true, options };
+}
+
+/**
+ * The schedule a parsed input describes, with poll options resolved against `stored`, the
+ * options the event has, or the problems of an unknown option. The options stay in the order
+ * of the request, so that a problem points at the option as it was sent.
+ */
+export function scheduleOfInput(
+	parsed: ParsedEvent,
+	stored: readonly PollOption[],
+): { ok: true; schedule: Schedule } | { ok: false; problems: EventProblem[] } {
+	if (parsed.kind === "grid") {
+		const { days, dailyStart, dailyEnd, slotLength, referenceZone, firstDayOfWeek } = parsed;
+
+		return {
+			ok: true,
+			schedule: {
+				kind: "grid",
+				days,
+				dailyStart,
+				dailyEnd,
+				slotLength,
+				referenceZone,
+				firstDayOfWeek,
+			},
+		};
+	}
+
+	const options = resolvedOptions(parsed.options, stored);
+
+	return options.ok
+		? {
+				ok: true,
+				schedule: { kind: "poll", options: options.options, referenceZone: parsed.referenceZone },
+			}
+		: options;
+}
 
 /**
  * Why a new or edited event was refused, at a path into `NewEvent` such as
@@ -134,7 +242,7 @@ export type CreateEventResult =
 	  }
 	| { ok: false; problems: EventProblem[] };
 
-export function storedDays(days: Schedule["days"]) {
+function storedDays(days: GridSchedule["days"]) {
 	const none = { rangeFirst: null, rangeLast: null, dates: null, weekdays: null };
 
 	if (days.mode === "range") {
@@ -148,6 +256,46 @@ export function storedDays(days: Schedule["days"]) {
 	return { ...none, weekdays: days.weekdays };
 }
 
+/** The event columns of a schedule; a poll leaves every column of a grid empty. */
+export function scheduleColumns(schedule: Schedule) {
+	if (schedule.kind === "poll") {
+		return {
+			kind: "poll",
+			dayMode: null,
+			rangeFirst: null,
+			rangeLast: null,
+			dates: null,
+			weekdays: null,
+			dailyStart: null,
+			dailyEnd: null,
+			slotLength: null,
+			firstDayOfWeek: null,
+			referenceZone: schedule.referenceZone,
+		} as const;
+	}
+
+	return {
+		kind: "grid",
+		dayMode: schedule.days.mode,
+		...storedDays(schedule.days),
+		dailyStart: schedule.dailyStart,
+		dailyEnd: schedule.dailyEnd,
+		slotLength: schedule.slotLength,
+		firstDayOfWeek: schedule.firstDayOfWeek,
+		referenceZone: schedule.referenceZone,
+	} as const;
+}
+
+/** The option rows of `options` for event `eventId`. */
+export function optionRows(eventId: string, options: readonly PollOption[]) {
+	return options.map((option) => ({
+		eventId,
+		id: option.id,
+		start: option.start.toString(),
+		end: option.end.toString(),
+	}));
+}
+
 /** Creates an event. */
 export async function createEvent(
 	input: NewEvent,
@@ -159,9 +307,14 @@ export async function createEvent(
 		return { ok: false, problems: inputProblems(parsed.error) };
 	}
 
-	const { name, description, days, dailyStart, dailyEnd, slotLength, referenceZone } = parsed.data;
-	const schedule: Schedule = { days, dailyStart, dailyEnd, slotLength, referenceZone };
-	const issues = validateSchedule(schedule, now);
+	const described = scheduleOfInput(parsed.data, []);
+
+	if (!described.ok) {
+		return described;
+	}
+
+	const { schedule } = described;
+	const issues = scheduleProblems(schedule, now);
 
 	if (issues.length > 0) {
 		return { ok: false, problems: ruleProblems(issues) };
@@ -172,20 +325,14 @@ export async function createEvent(
 	// About 70 random bits make a collision negligible; the primary key would refuse one.
 	const id = newPublicId();
 
-	const row = await db().transaction(async (tx) => {
+	const row = await db().transaction(async (tx): Promise<EventRow> => {
 		const [inserted] = await tx
 			.insert(events)
 			.values({
 				id,
-				name,
-				description,
-				dayMode: days.mode,
-				...storedDays(days),
-				dailyStart,
-				dailyEnd,
-				slotLength,
-				referenceZone,
-				firstDayOfWeek: parsed.data.firstDayOfWeek,
+				name: parsed.data.name,
+				description: parsed.data.description,
+				...scheduleColumns(schedule),
 				adminSecretHash: hashSecret(adminSecret),
 				createdAt: now.toString(),
 				changedAt: now.toString(),
@@ -196,9 +343,15 @@ export async function createEvent(
 			throw new Error("The event insert returned no row.");
 		}
 
+		const options = schedule.kind === "poll" ? optionRows(id, schedule.options) : [];
+
+		if (options.length > 0) {
+			await tx.insert(pollOptions).values(options);
+		}
+
 		await countCreated(tx, now);
 
-		return inserted;
+		return { ...inserted, options };
 	});
 
 	// Built from the inserted row, so the answer does not depend on a later read finding the event.
@@ -213,7 +366,6 @@ export type EventView = {
 	/** Compared by the page's version check. */
 	version: EventVersion;
 	schedule: Schedule;
-	firstDayOfWeek: Weekday;
 	/** `null` when the instance keeps events permanently. */
 	deletionDate: Temporal.PlainDate | null;
 	final: FinalTime;
@@ -289,7 +441,6 @@ function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 		segment: eventSegment(row.id, row.name),
 		version: row.version,
 		schedule,
-		firstDayOfWeek: firstDayOfWeekOf(row),
 		deletionDate: deletionDate(
 			schedule,
 			Temporal.Instant.from(row.changedAt),

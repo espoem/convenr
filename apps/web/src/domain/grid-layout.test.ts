@@ -8,6 +8,8 @@ const date = (iso: string) => Temporal.PlainDate.from(iso);
 describe("week blocks", () => {
 	it("splits a dated event into one block per calendar week starting on Monday", () => {
 		const keys = scheduleSlots({
+			kind: "grid",
+			firstDayOfWeek: 1,
 			days: {
 				mode: "dates",
 				dates: ["2027-06-10", "2027-06-11", "2027-06-14", "2027-06-15"].map((iso) => date(iso)),

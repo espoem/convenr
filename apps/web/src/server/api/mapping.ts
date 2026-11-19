@@ -1,14 +1,28 @@
 // The one place that maps between the API's shapes and the server's types. Slot keys stay
-// inside the server: a response names a dated slot by its start and a weekday slot by weekday
-// and minute.
+// inside the server: a response names a dated slot by its start, a weekday slot by weekday
+// and minute, and a poll option by its id.
 import { bestWindows, maximalWindows, mostPeople, windowTally } from "@/domain/best-windows";
 import type { FinalProblem, FinalRequest } from "@/domain/final-time";
 import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
 import { scoreOf, slotsAt } from "@/domain/levels";
-import { type Schedule, scheduleSlots, type Slot, slotKey } from "@/domain/schedule";
+import { bestOptions, optionTally } from "@/domain/poll";
+import {
+	gridSlots,
+	type PollSchedule,
+	type Schedule,
+	scheduleSlots,
+	type Slot,
+	slotKey,
+} from "@/domain/schedule";
 import { parseVersion } from "@/lib/event-version";
 import type { ParticipantView } from "@/server/event-rows";
-import type { EventProblem, EventView, NewEvent } from "@/server/events";
+import type {
+	EventChange,
+	EventProblem,
+	EventView,
+	GridEventInput,
+	NewEvent,
+} from "@/server/events";
 import type { Confirmation } from "@/server/manage";
 import type { JoinPassword, PasswordRefusal } from "@/server/participants";
 
@@ -38,8 +52,10 @@ export function clockTime(minutes: number): string {
 	return `${hours}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
-function scheduleFields(schedule: ScheduleInput) {
-	const days = (): NewEvent["days"] => {
+type GridScheduleInput = Exclude<ScheduleInput, { mode: "poll" }>;
+
+function gridFields(schedule: GridScheduleInput) {
+	const days = (): GridEventInput["days"] => {
 		switch (schedule.mode) {
 			case "dates":
 				return { mode: "dates", dates: schedule.dates };
@@ -51,21 +67,28 @@ function scheduleFields(schedule: ScheduleInput) {
 	};
 
 	return {
+		kind: "grid",
 		days: days(),
 		dailyStart: clockMinutes(schedule.dailyStart),
 		dailyEnd: clockMinutes(schedule.dailyEnd),
 		slotLength: schedule.slotMinutes,
-	};
+	} as const;
 }
 
 export function newEventOf(request: CreateEventRequest): NewEvent {
-	return {
+	const common = {
 		name: request.name,
 		description: request.description ?? "",
 		referenceZone: request.referenceZone,
-		firstDayOfWeek: request.firstDayOfWeek ?? 1,
-		...scheduleFields(request.schedule),
 	};
+
+	const { schedule } = request;
+
+	if (schedule.mode === "poll") {
+		return { ...common, kind: "poll", options: schedule.options };
+	}
+
+	return { ...common, ...gridFields(schedule), firstDayOfWeek: request.firstDayOfWeek ?? 1 };
 }
 
 /**
@@ -78,10 +101,17 @@ export function confirmationOf(request: UpdateEventRequest): Confirmation {
 	return version === undefined ? { kind: "none" } : { kind: "version", version };
 }
 
+function scheduleChange(schedule: ScheduleInput): EventChange {
+	return schedule.mode === "poll"
+		? { kind: "poll", options: schedule.options }
+		: gridFields(schedule);
+}
+
 /** The fields a change names; the server keeps the stored value of every other one. */
-export function eventChangeOf(request: UpdateEventRequest): Partial<NewEvent> {
+export function eventChangeOf(request: UpdateEventRequest): EventChange {
 	const { name, description, referenceZone, firstDayOfWeek, schedule } = request;
-	const change: Partial<NewEvent> = schedule === undefined ? {} : scheduleFields(schedule);
+
+	const change: EventChange = schedule === undefined ? {} : scheduleChange(schedule);
 
 	if (name !== undefined) {
 		change.name = name;
@@ -108,6 +138,14 @@ function requestPath(path: PropertyKey[]): PropertyKey[] {
 
 	if (field === "days") {
 		return ["schedule", ...rest];
+	}
+
+	if (field === "kind") {
+		return ["schedule", "mode", ...rest];
+	}
+
+	if (field === "options") {
+		return ["schedule", field, ...rest];
 	}
 
 	if (field === "dailyStart" || field === "dailyEnd") {
@@ -221,13 +259,22 @@ export function refusalResponse(
 }
 
 function slotBody(slot: Slot): SlotBody {
-	return slot.kind === "dated"
-		? { start: slot.start.toString() }
-		: { weekday: slot.weekday, minute: slot.minute };
+	switch (slot.kind) {
+		case "dated":
+			return { start: slot.start.toString() };
+		case "weekday":
+			return { weekday: slot.weekday, minute: slot.minute };
+		case "option":
+			return { option: slot.option };
+	}
 }
 
-/** The server's key of a slot in a request. A slot of the other mode gives a key no event has. */
+/** The server's key of a slot in a request. A slot of another kind gives a key no event has. */
 export function slotKeyOf(body: SlotBody): string {
+	if ("option" in body) {
+		return slotKey({ kind: "option", option: body.option });
+	}
+
 	return "start" in body
 		? slotKey({ kind: "dated", start: Temporal.Instant.from(body.start) })
 		: slotKey({ kind: "weekday", weekday: body.weekday, minute: body.minute });
@@ -252,7 +299,19 @@ export function participantBody(participant: ParticipantView, schedule: Schedule
 }
 
 function scheduleBody(schedule: Schedule): EventBody["schedule"] {
-	const slots = scheduleSlots(schedule);
+	if (schedule.kind === "poll") {
+		return {
+			mode: "poll",
+			options: schedule.options.map((option) => ({
+				id: option.id,
+				start: option.start.toString(),
+				end: option.end.toString(),
+			})),
+			slots: schedule.options.map((option) => ({ option: option.id })),
+		};
+	}
+
+	const slots = gridSlots(schedule);
 
 	const times = {
 		dailyStart: clockTime(schedule.dailyStart),
@@ -335,7 +394,8 @@ export function eventBody(view: EventView): EventBody {
 		name: view.name,
 		description: view.description,
 		referenceZone: view.schedule.referenceZone,
-		firstDayOfWeek: view.firstDayOfWeek,
+		// Left out of the JSON for a poll.
+		firstDayOfWeek: view.schedule.kind === "grid" ? view.schedule.firstDayOfWeek : undefined,
 		schedule: scheduleBody(view.schedule),
 		retention:
 			view.deletionDate === null
@@ -356,7 +416,13 @@ export function windowsBody(
 	view: EventView,
 	filters: { minMinutes?: number | undefined; minPeople?: number | undefined },
 ): WindowsBody {
-	const { schedule, firstDayOfWeek, participants } = view;
+	const { schedule, participants } = view;
+
+	if (schedule.kind === "poll") {
+		return optionsBody(view, schedule, filters);
+	}
+
+	const { firstDayOfWeek } = schedule;
 
 	const layout =
 		schedule.days.mode === "weekdays"
@@ -385,6 +451,47 @@ export function windowsBody(
 		}),
 		ifNeedBe: windowTally(window).ifNeedBe,
 		score: scoreOf(windowTally(window)),
+	}));
+
+	return { minMinutes, minPeople, windows };
+}
+
+/**
+ * A poll's best options as windows of one option each. The filters apply as to a grid, except
+ * that a poll lists every option somebody answered unless `minPeople` asks for more.
+ */
+function optionsBody(
+	view: EventView,
+	schedule: PollSchedule,
+	filters: { minMinutes?: number | undefined; minPeople?: number | undefined },
+): WindowsBody {
+	const minMinutes = filters.minMinutes ?? 1;
+	const minPeople = filters.minPeople ?? 1;
+	const { participants } = view;
+
+	const long = {
+		...schedule,
+		options: schedule.options.filter(
+			(option) => option.end.since(option.start).total("minutes") >= minMinutes,
+		),
+	};
+
+	const best = bestOptions(
+		long,
+		participants.map((participant) => participant.levels),
+		minPeople,
+	);
+
+	const windows = best.map((result) => ({
+		slots: [{ option: result.option.id }],
+		minutes: result.option.end.since(result.option.start).total("minutes"),
+		participantIds: result.people.flatMap(({ person }) => {
+			const found = participants[person];
+
+			return found === undefined ? [] : [found.id];
+		}),
+		ifNeedBe: optionTally(result).ifNeedBe,
+		score: scoreOf(optionTally(result)),
 	}));
 
 	return { minMinutes, minPeople, windows };

@@ -32,7 +32,9 @@ export type EventDays =
 	| { mode: "dates"; dates: Temporal.PlainDate[] }
 	| { mode: "weekdays"; weekdays: Weekday[] };
 
-export type Schedule = {
+/** An event's grid: days, a daily range and a slot length. */
+export type GridSchedule = {
+	kind: "grid";
 	days: EventDays;
 	/** Minutes after midnight in the reference zone, inclusive. */
 	dailyStart: number;
@@ -41,7 +43,23 @@ export type Schedule = {
 	slotLength: SlotLength;
 	/** IANA zone name. */
 	referenceZone: string;
+	/** The day the grid's weeks start on. */
+	firstDayOfWeek: Weekday;
 };
+
+/** A time a poll offers: a start and an end on one date in the reference zone. */
+export type PollOption = { id: string; start: Temporal.Instant; end: Temporal.Instant };
+
+/** An event's poll: a few hand-picked times. */
+export type PollSchedule = {
+	kind: "poll";
+	/** In time order as stored; in the order of the request while a change is checked. */
+	options: PollOption[];
+	/** IANA zone name. */
+	referenceZone: string;
+};
+
+export type Schedule = GridSchedule | PollSchedule;
 
 export type ScheduleProblem =
 	| "no_days"
@@ -66,11 +84,23 @@ export type DatedSlot = { kind: "dated"; start: Temporal.Instant };
 
 export type WeekdaySlot = { kind: "weekday"; weekday: Weekday; minute: number };
 
-export type Slot = DatedSlot | WeekdaySlot;
+/** A poll option, answered as a slot is. */
+export type OptionSlot = { kind: "option"; option: string };
+
+export type GridSlot = DatedSlot | WeekdaySlot;
+
+export type Slot = GridSlot | OptionSlot;
 
 /** The stored identity of a slot, as a string that sets and maps can compare. */
 export function slotKey(slot: Slot): string {
-	return slot.kind === "dated" ? slot.start.toString() : `w${slot.weekday}-${slot.minute}`;
+	switch (slot.kind) {
+		case "dated":
+			return slot.start.toString();
+		case "weekday":
+			return `w${slot.weekday}-${slot.minute}`;
+		case "option":
+			return `o-${slot.option}`;
+	}
 }
 
 /** The calendar dates of a dated event in ascending order, without duplicates. */
@@ -158,7 +188,7 @@ function dayIssues(
 	return issues;
 }
 
-function timeIssues(schedule: Schedule): ScheduleIssue[] {
+function timeIssues(schedule: GridSchedule): ScheduleIssue[] {
 	const { dailyStart, dailyEnd, slotLength } = schedule;
 
 	const outside: ScheduleIssue[] = [];
@@ -190,7 +220,7 @@ function timeIssues(schedule: Schedule): ScheduleIssue[] {
  * `keptDates`, the dates an edited event already had.
  */
 export function validateSchedule(
-	schedule: Schedule,
+	schedule: GridSchedule,
 	now: Temporal.Instant,
 	keptDates: ReadonlySet<string> = new Set(),
 ): ScheduleIssue[] {
@@ -200,13 +230,13 @@ export function validateSchedule(
 }
 
 /** The dates of a dated schedule as ISO strings; none for a weekday schedule. */
-export function scheduleDates(schedule: Schedule): Set<string> {
+export function scheduleDates(schedule: GridSchedule): Set<string> {
 	const { days } = schedule;
 
 	return new Set(days.mode === "weekdays" ? [] : eventDates(days).map(String));
 }
 
-function* dailyMinutes(schedule: Schedule): Generator<number> {
+function* dailyMinutes(schedule: GridSchedule): Generator<number> {
 	for (
 		let minute = schedule.dailyStart;
 		minute < schedule.dailyEnd;
@@ -216,23 +246,36 @@ function* dailyMinutes(schedule: Schedule): Generator<number> {
 	}
 }
 
-/**
- * Every slot of a valid schedule, in time order. A dated event walks
- * wall-clock times in the reference zone: a time that does not exist on a date gives no
- * slot, and a time that occurs twice gives one slot at its first occurrence.
- */
+/** Every slot of a valid schedule, in time order: a poll's options or a grid's slots. */
 export function scheduleSlots(schedule: Schedule): Slot[] {
+	if (schedule.kind === "poll") {
+		return schedule.options.map((option) => ({ kind: "option", option: option.id }));
+	}
+
+	return gridSlots(schedule);
+}
+
+/**
+ * Every slot of a valid grid, in time order. A dated event walks wall-clock times in the
+ * reference zone: a time that does not exist on a date gives no slot, and a time that occurs
+ * twice gives one slot at its first occurrence.
+ */
+export function gridSlots(schedule: GridSchedule): GridSlot[] {
 	const { days, referenceZone } = schedule;
 
 	if (days.mode === "weekdays") {
 		return [...new Set(days.weekdays)]
 			.toSorted((left, right) => left - right)
 			.flatMap((weekday) =>
-				[...dailyMinutes(schedule)].map((minute): Slot => ({ kind: "weekday", weekday, minute })),
+				[...dailyMinutes(schedule)].map((minute): GridSlot => ({
+					kind: "weekday",
+					weekday,
+					minute,
+				})),
 			);
 	}
 
-	const slots: Slot[] = [];
+	const slots: GridSlot[] = [];
 
 	for (const date of eventDates(days)) {
 		for (const minute of dailyMinutes(schedule)) {

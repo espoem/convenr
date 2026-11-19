@@ -8,6 +8,8 @@ function datedSlots(schedule: Schedule): DatedSlot[] {
 }
 
 const twoEvenings = datedSlots({
+	kind: "grid",
+	firstDayOfWeek: 1,
 	days: {
 		mode: "range",
 		first: Temporal.PlainDate.from("2027-04-05"),

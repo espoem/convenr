@@ -109,7 +109,8 @@ async function changeFinal(
 			throw new Error("The final time update returned no row.");
 		}
 
-		return { status: "saved", event: await eventViewOf(tx, written) };
+		// Picking a final time leaves the options as they are.
+		return { status: "saved", event: await eventViewOf(tx, { ...written, options: row.options }) };
 	});
 }
 

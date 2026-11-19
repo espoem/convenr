@@ -8,6 +8,7 @@ from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
     from ..models.dated_slot import DatedSlot
+    from ..models.option_slot import OptionSlot
     from ..models.weekday_slot import WeekdaySlot
 
 
@@ -19,7 +20,7 @@ class Window:
     """A run of consecutive slots when the same people are available.
 
     Attributes:
-        slots (list[DatedSlot | WeekdaySlot]): The slots of the window, in time order.
+        slots (list[DatedSlot | OptionSlot | WeekdaySlot]): The slots of the window, in time order.
         minutes (int): The length of the window in minutes.
         participant_ids (list[str]): Public ids of the participants available in every slot of the window, if need be
             included.
@@ -27,7 +28,7 @@ class Window:
         score (float): 1 for each person available in every slot and ½ for each at if need be in any of them.
     """
 
-    slots: list[DatedSlot | WeekdaySlot]
+    slots: list[DatedSlot | OptionSlot | WeekdaySlot]
     minutes: int
     participant_ids: list[str]
     if_need_be: int
@@ -36,11 +37,14 @@ class Window:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dated_slot import DatedSlot
+        from ..models.weekday_slot import WeekdaySlot
 
         slots = []
         for slots_item_data in self.slots:
             slots_item: dict[str, Any]
-            if isinstance(slots_item_data, DatedSlot):
+            if isinstance(slots_item_data, DatedSlot) or isinstance(
+                slots_item_data, WeekdaySlot
+            ):
                 slots_item = slots_item_data.to_dict()
             else:
                 slots_item = slots_item_data.to_dict()
@@ -72,6 +76,7 @@ class Window:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dated_slot import DatedSlot
+        from ..models.option_slot import OptionSlot
         from ..models.weekday_slot import WeekdaySlot
 
         d = dict(src_dict)
@@ -79,7 +84,7 @@ class Window:
         _slots = d.pop("slots")
         for slots_item_data in _slots:
 
-            def _parse_slots_item(data: object) -> DatedSlot | WeekdaySlot:
+            def _parse_slots_item(data: object) -> DatedSlot | OptionSlot | WeekdaySlot:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -88,11 +93,19 @@ class Window:
                     return componentsschemas_slot_type_0
                 except (TypeError, ValueError, AttributeError, KeyError):
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+
+                    return componentsschemas_slot_type_1
+                except (TypeError, ValueError, AttributeError, KeyError):
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+                componentsschemas_slot_type_2 = OptionSlot.from_dict(data)
 
-                return componentsschemas_slot_type_1
+                return componentsschemas_slot_type_2
 
             slots_item = _parse_slots_item(slots_item_data)
 

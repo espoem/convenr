@@ -22,6 +22,8 @@ import {
 	finalSchema,
 	joinedSchema,
 	joinRequestSchema,
+	optionSchema,
+	optionSlotSchema,
 	participantSchema,
 	problemSchema,
 	removePasswordRequestSchema,
@@ -57,12 +59,14 @@ export function referencedName(schema: { $ref?: string | undefined }): string | 
 		: undefined;
 }
 
-const [datesSchedule, rangeSchedule, weekdaysSchedule] = scheduleSchema.options;
-const [datesInput, rangeInput, weekdaysInput] = scheduleInputSchema.options;
+const [datesSchedule, rangeSchedule, weekdaysSchedule, pollSchedule] = scheduleSchema.options;
+const [datesInput, rangeInput, weekdaysInput, pollInput] = scheduleInputSchema.options;
+const optionInputSchema = pollInput.shape.options.element;
+const [keptOptionInput, newOptionInput] = optionInputSchema.options;
 const [retentionUntil, retentionKept] = retentionSchema.options;
 const [pointerError, parameterError] = fieldErrorSchema.options;
 const slotInputSchema = availabilityRequestSchema.shape.availability.element;
-const [datedSlotInput, weekdaySlotInput] = slotInputSchema.options;
+const [datedSlotInput, weekdaySlotInput, optionSlotInput] = slotInputSchema.options;
 const [finalOpen, finalChosen] = finalSchema.options;
 
 const OUTPUT_COMPONENTS: Component[] = [
@@ -72,9 +76,12 @@ const OUTPUT_COMPONENTS: Component[] = [
 	["DatesSchedule", datesSchedule],
 	["RangeSchedule", rangeSchedule],
 	["WeekdaysSchedule", weekdaysSchedule],
+	["PollSchedule", pollSchedule],
+	["Option", optionSchema],
 	["Slot", slotSchema],
 	["DatedSlot", datedSlotSchema],
 	["WeekdaySlot", weekdaySlotSchema],
+	["OptionSlot", optionSlotSchema],
 	["Retention", retentionSchema],
 	["RetentionUntil", retentionUntil],
 	["RetentionKept", retentionKept],
@@ -98,12 +105,17 @@ const INPUT_COMPONENTS: Component[] = [
 	["DatesScheduleInput", datesInput],
 	["RangeScheduleInput", rangeInput],
 	["WeekdaysScheduleInput", weekdaysInput],
+	["PollScheduleInput", pollInput],
+	["OptionInput", optionInputSchema],
+	["KeptOptionInput", keptOptionInput],
+	["NewOptionInput", newOptionInput],
 	["JoinRequest", joinRequestSchema],
 	["AvailabilityRequest", availabilityRequestSchema],
 	["FinalRequest", finalRequestSchema],
 	["SlotInput", slotInputSchema],
 	["DatedSlotInput", datedSlotInput],
 	["WeekdaySlotInput", weekdaySlotInput],
+	["OptionSlotInput", optionSlotInput],
 	["SetPasswordRequest", setPasswordRequestSchema],
 	["RemovePasswordRequest", removePasswordRequestSchema],
 ];

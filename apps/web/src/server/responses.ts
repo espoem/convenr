@@ -2,7 +2,7 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { datedAvailability, weekdayAvailability } from "@/db/schema";
+import { datedAvailability, pollAvailability, weekdayAvailability } from "@/db/schema";
 import { type LevelsInput, sameLevels, savedLevels } from "@/domain/levels";
 import { scheduleSlots, slotKey } from "@/domain/schedule";
 
@@ -79,17 +79,27 @@ export async function saveResponse(
 		await tx
 			.delete(weekdayAvailability)
 			.where(eq(weekdayAvailability.participantId, participantId));
+		await tx.delete(pollAvailability).where(eq(pollAvailability.participantId, participantId));
 
 		const dated = [];
 		const weekly = [];
+		const poll = [];
 
 		for (const [key, level] of Object.entries(levels)) {
 			const slot = slots.get(key);
 
-			if (slot?.kind === "dated") {
-				dated.push({ participantId, slotStart: slot.start.toString(), level });
-			} else if (slot?.kind === "weekday") {
-				weekly.push({ participantId, weekday: slot.weekday, minute: slot.minute, level });
+			switch (slot?.kind) {
+				case "dated":
+					dated.push({ participantId, slotStart: slot.start.toString(), level });
+					break;
+				case "weekday":
+					weekly.push({ participantId, weekday: slot.weekday, minute: slot.minute, level });
+					break;
+				case "option":
+					poll.push({ participantId, eventId, optionId: slot.option, level });
+					break;
+				case undefined:
+					break;
 			}
 		}
 
@@ -99,6 +109,10 @@ export async function saveResponse(
 
 		if (weekly.length > 0) {
 			await tx.insert(weekdayAvailability).values(weekly);
+		}
+
+		if (poll.length > 0) {
+			await tx.insert(pollAvailability).values(poll);
 		}
 
 		await touchEvent(tx, found.event, now);

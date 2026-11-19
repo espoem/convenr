@@ -360,9 +360,12 @@
 			"DatesSchedule": "An event on chosen dates.",
 			"RangeSchedule": "An event on every day from one date to another.",
 			"WeekdaysSchedule": "An event on days of the week, without dates.",
-			"Slot": "A slot of a dated or of a weekday event.",
+			"PollSchedule": "A poll of a few hand-picked times, each answered as a slot is.",
+			"Option": "A time a poll offers: a start and an end on one date in the reference zone.",
+			"Slot": "A slot of a dated or of a weekday event, or an option of a poll.",
 			"DatedSlot": "A slot of a dated event.",
 			"WeekdaySlot": "A slot of a weekday event: a wall-clock time in the reference zone.",
+			"OptionSlot": "An option of a poll, answered as a slot is.",
 			"Retention": "When the event will be deleted, tagged by `kind`.",
 			"RetentionUntil": "The event will be deleted on a date.",
 			"RetentionKept": "The event is kept until it is deleted.",
@@ -384,11 +387,16 @@
 			"DatesScheduleInput": "An event on chosen dates.",
 			"RangeScheduleInput": "An event on every day from one date to another.",
 			"WeekdaysScheduleInput": "An event on days of the week, without dates.",
+			"PollScheduleInput": "A poll of 2 to 20 options.",
+			"OptionInput": "An option the poll keeps, by id, or a new one, by its times.",
+			"KeptOptionInput": "An option the poll keeps.",
+			"NewOptionInput": "A new option. An option cannot be changed; a new time is a new option.",
 			"JoinRequest": "A join. At most one of `password` and `newPassword`.",
 			"AvailabilityRequest": "The participant's whole availability.",
-			"SlotInput": "A slot of a dated or of a weekday event.",
+			"SlotInput": "A slot of a dated or of a weekday event, or an option of a poll.",
 			"DatedSlotInput": "A slot of a dated event.",
 			"WeekdaySlotInput": "A slot of a weekday event.",
+			"OptionSlotInput": "An option of a poll.",
 			"SetPasswordRequest": "A new password.",
 			"RemovePasswordRequest": "The password to remove."
 		},
@@ -398,7 +406,9 @@
 			"name": "The name of the event.",
 			"description": "A description of the event; empty when there is none.",
 			"referenceZone": "The IANA time zone in which the organizer planned the event.",
-			"firstDayOfWeek": "The first day of the week in the grid: 1 is Monday, 7 is Sunday.",
+			"firstDayOfWeek": "The first day of the week in the grid: 1 is Monday, 7 is Sunday. A poll has none.",
+			"options": "The options of the poll, in time order.",
+			"option": "The id of the poll option.",
 			"schedule": "When the event can take place.",
 			"retention": "When the event will be deleted.",
 			"final": "The final time the organizer picked, if any.",
@@ -451,13 +461,31 @@
 				"id": "The public id of the participant.",
 				"name": "The display name of the participant."
 			},
+			"Option": {
+				"id": "The id of the option, unique within the event.",
+				"start": "The start as an RFC 3339 instant in UTC.",
+				"end": "The end as an RFC 3339 instant in UTC, on the date of the start in the reference zone."
+			},
+			"PollSchedule": {
+				"slots": "One slot for each option, in time order."
+			},
+			"PollScheduleInput": {
+				"options": "2 to 20 options. A change names the options it keeps by id and new ones by their times; an option it leaves out is removed with its answers."
+			},
+			"KeptOptionInput": {
+				"id": "The id of an option the event has."
+			},
+			"NewOptionInput": {
+				"start": "The start as an RFC 3339 instant at a whole minute, not before now.",
+				"end": "The end as an RFC 3339 instant at a whole minute, after the start and on its date in the reference zone."
+			},
 			"FinalOpen": {
 				"kind": "Whether a final time is picked."
 			},
 			"FinalChosen": {
 				"kind": "Whether a final time is picked.",
 				"start": "The start as an RFC 3339 instant in UTC.",
-				"slots": "The event's slots inside the final time, in time order."
+				"slots": "The event's slots inside the final time, in time order; for a poll, its one option."
 			},
 			"FinalRequest": {
 				"slots": "The slots of the final time: a run of the event's slots in one day, in any order.",
@@ -504,7 +532,7 @@
 			"not_finalized": "The event has no final time.",
 			"method_not_allowed": "This path does not support the method.",
 			"event_full": "The event already has 100 participants.",
-			"field_locked": "Slot length, day mode and reference zone cannot change once people joined.",
+			"field_locked": "The kind of event, slot length, day mode and reference zone cannot change once people joined.",
 			"no_password": "The participant has no password.",
 			"name_exists": "A participant already uses this name.",
 			"name_unknown": "No participant uses this name.",
@@ -523,7 +551,13 @@
 			"invalid_name": "The display name is empty, too long or has a control character.",
 			"invalid_password": "A password has 4 to 128 characters.",
 			"unknown_slot": "The availability holds a slot the event does not have.",
-			"final_not_in_event": "The final time is not a run of the event's slots in one day, or names a date the event cannot have.",
+			"too_few_options": "A poll needs at least 2 options.",
+			"too_many_options": "A poll has at most 20 options.",
+			"option_end_not_after_start": "An option ends at or before its start.",
+			"option_not_one_day": "An option ends on a later date than it starts, in the reference zone.",
+			"duplicate_option": "Two options have the same start and end.",
+			"unknown_option": "The change keeps an option the event does not have.",
+			"final_not_in_event": "The final time is not a run of the event's slots in one day, nor one option of a poll, or names a date the event cannot have.",
 			"final_date_wrong_weekday": "The date of the final time does not fall on the weekday of its slots.",
 			"too_many_attempts": "Too many wrong passwords in a row.",
 			"internal_error": "The server failed to answer the request."

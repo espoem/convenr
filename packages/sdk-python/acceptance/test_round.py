@@ -25,6 +25,10 @@ from convenr.models import (
     FinalRequest,
     JoinRequest,
     Joined,
+    NewOptionInput,
+    OptionSlotInput,
+    PollSchedule,
+    PollScheduleInput,
     Problem,
     WeekdaySlot,
     WeekdaySlotInput,
@@ -142,6 +146,62 @@ def test_weekday_event_with_two_participants() -> None:
     lines = calendar.replace("\r\n ", "").split("\r\n")
     assert f"UID:{event_id}@convenr" in lines
     assert "SEQUENCE:1" in lines
+
+    deleted = delete_event.sync_detailed(event_id, client=authenticated(created.admin_secret))
+    assert deleted.status_code == HTTPStatus.NO_CONTENT
+
+
+def test_poll_with_one_participant() -> None:
+    client = Client(base_url=BASE_URL)
+    prague = ZoneInfo("Europe/Prague")
+    day = datetime.now(prague).date() + timedelta(days=7)
+
+    def at(hour: int, days: int) -> datetime:
+        return datetime(day.year, day.month, day.day, hour, tzinfo=prague) + timedelta(days=days)
+
+    created = create_event.sync(
+        client=client,
+        body=CreateEventRequest(
+            name="Dinner",
+            reference_zone="Europe/Prague",
+            schedule=PollScheduleInput(
+                mode="poll",
+                options=[
+                    NewOptionInput(start=at(18, 0), end=at(20, 0)),
+                    NewOptionInput(start=at(18, 1), end=at(20, 1)),
+                ],
+            ),
+        ),
+    )
+    assert isinstance(created, CreatedEvent)
+    event_id = created.event.id
+    assert isinstance(created.event.schedule, PollSchedule)
+    first, second = (OptionSlotInput(option=slot.option) for slot in created.event.schedule.slots)
+
+    ada = join.sync(event_id, client=client, body=JoinRequest(name="Ada"))
+    assert isinstance(ada, Joined)
+    saved = save_availability.sync(
+        event_id,
+        client=authenticated(ada.participant_token),
+        body=AvailabilityRequest(availability=[first, second], if_need_be=[second]),
+    )
+    assert not isinstance(saved, Problem)
+
+    windows = get_windows.sync(event_id, client=client)
+    assert isinstance(windows, Windows)
+    assert [window.slots[0].to_dict() for window in windows.windows] == [
+        first.to_dict(),
+        second.to_dict(),
+    ]
+
+    picked = pick_final.sync(
+        event_id,
+        client=authenticated(created.admin_secret),
+        body=FinalRequest(slots=[first]),
+    )
+    assert isinstance(picked, Event)
+    assert isinstance(picked.final, FinalChosen)
+    assert picked.final.start == at(18, 0)
 
     deleted = delete_event.sync_detailed(event_id, client=authenticated(created.admin_secret))
     assert deleted.status_code == HTTPStatus.NO_CONTENT

@@ -11,7 +11,7 @@ import { runMaintenance } from "./maintenance";
 import { readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, identify, join, leave, readParticipant } from "./participants";
 import { saveResponse } from "./responses";
-import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
+import { creationTime, mondayEvenings, pragueEvenings, pragueOptions } from "./test-events";
 
 // With the default 90 days: the range ends on 6 April 2027, so its deletion date is 5 July and
 // it expires at midnight after it in Prague, 22:00 UTC in summer time. The weekday event last
@@ -184,6 +184,19 @@ describe("the purge", () => {
 		expect(await readEvent(id, expiry)).toBeUndefined();
 		expect(await purge(justBefore(expiry))).toBe(0);
 		expect(await purge(expiry)).toBe(1);
+	});
+
+	it("deletes a poll the retention after the date of its last option, as the pages expect", async () => {
+		const { id } = await created(pragueOptions);
+
+		// The last option is on 9 April; plus 90 days is 8 July, which ends at 22:00 UTC.
+		const expiry = Temporal.Instant.from("2027-07-08T22:00:00Z");
+
+		expect(await readEvent(id, justBefore(expiry))).toBeDefined();
+		expect(await readEvent(id, expiry)).toBeUndefined();
+		expect(await purge(justBefore(expiry))).toBe(0);
+		expect(await purge(expiry)).toBe(1);
+		expect(await count("poll_options")).toBe(0);
 	});
 
 	it("keeps a weekday event until the retention after a final date beyond its deletion date", async () => {

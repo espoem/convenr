@@ -12,6 +12,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.dates_schedule_input import DatesScheduleInput
+    from ..models.poll_schedule_input import PollScheduleInput
     from ..models.range_schedule_input import RangeScheduleInput
     from ..models.weekdays_schedule_input import WeekdaysScheduleInput
 
@@ -26,8 +27,8 @@ class CreateEventRequest:
     Attributes:
         name (str): The name of the event.
         reference_zone (str): The IANA time zone in which the organizer planned the event.
-        schedule (DatesScheduleInput | RangeScheduleInput | WeekdaysScheduleInput): When the event can take place,
-            tagged by `mode`. The server derives the slots.
+        schedule (DatesScheduleInput | PollScheduleInput | RangeScheduleInput | WeekdaysScheduleInput): When the event
+            can take place, tagged by `mode`. The server derives the slots.
         description (str | Unset): A description of the event. Empty when left out.
         first_day_of_week (CreateEventRequestFirstDayOfWeek | Unset): The first day of the week in the grid: 1 is
             Monday, 7 is Sunday. Monday when left out.
@@ -35,21 +36,29 @@ class CreateEventRequest:
 
     name: str
     reference_zone: str
-    schedule: DatesScheduleInput | RangeScheduleInput | WeekdaysScheduleInput
+    schedule: (
+        DatesScheduleInput
+        | PollScheduleInput
+        | RangeScheduleInput
+        | WeekdaysScheduleInput
+    )
     description: str | Unset = UNSET
     first_day_of_week: CreateEventRequestFirstDayOfWeek | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dates_schedule_input import DatesScheduleInput
         from ..models.range_schedule_input import RangeScheduleInput
+        from ..models.weekdays_schedule_input import WeekdaysScheduleInput
 
         name = self.name
 
         reference_zone = self.reference_zone
 
         schedule: dict[str, Any]
-        if isinstance(self.schedule, DatesScheduleInput) or isinstance(
-            self.schedule, RangeScheduleInput
+        if (
+            isinstance(self.schedule, DatesScheduleInput)
+            or isinstance(self.schedule, RangeScheduleInput)
+            or isinstance(self.schedule, WeekdaysScheduleInput)
         ):
             schedule = self.schedule.to_dict()
         else:
@@ -80,6 +89,7 @@ class CreateEventRequest:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dates_schedule_input import DatesScheduleInput
+        from ..models.poll_schedule_input import PollScheduleInput
         from ..models.range_schedule_input import RangeScheduleInput
         from ..models.weekdays_schedule_input import WeekdaysScheduleInput
 
@@ -90,7 +100,12 @@ class CreateEventRequest:
 
         def _parse_schedule(
             data: object,
-        ) -> DatesScheduleInput | RangeScheduleInput | WeekdaysScheduleInput:
+        ) -> (
+            DatesScheduleInput
+            | PollScheduleInput
+            | RangeScheduleInput
+            | WeekdaysScheduleInput
+        ):
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -111,13 +126,21 @@ class CreateEventRequest:
                 return componentsschemas_schedule_input_type_1
             except (TypeError, ValueError, AttributeError, KeyError):
                 pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_schedule_input_type_2 = (
+                    WeekdaysScheduleInput.from_dict(data)
+                )
+
+                return componentsschemas_schedule_input_type_2
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
             if not isinstance(data, dict):
                 raise TypeError()
-            componentsschemas_schedule_input_type_2 = WeekdaysScheduleInput.from_dict(
-                data
-            )
+            componentsschemas_schedule_input_type_3 = PollScheduleInput.from_dict(data)
 
-            return componentsschemas_schedule_input_type_2
+            return componentsschemas_schedule_input_type_3
 
         schedule = _parse_schedule(d.pop("schedule"))
 

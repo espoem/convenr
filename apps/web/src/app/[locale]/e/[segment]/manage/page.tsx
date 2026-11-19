@@ -10,7 +10,7 @@ import { currentLocale } from "@/i18n/current-locale";
 import { eventFormOptions } from "@/i18n/event-form-options";
 import { formatLocale } from "@/i18n/format-locale";
 import { Link } from "@/i18n/navigation";
-import { boardOf, weekdayViewOf } from "@/server/board";
+import { boardOf, isGridEvent, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 
 /** The small line above the event name in the heading. */
@@ -28,7 +28,8 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 	const id = eventIdFromSegment(segment);
 	const event = id === undefined ? undefined : await readEvent(id);
 
-	if (event === undefined) {
+	// A poll has no page of its own yet, so it is managed through the API only.
+	if (event === undefined || !isGridEvent(event)) {
 		notFound();
 	}
 

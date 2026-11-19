@@ -12,6 +12,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.dates_schedule_input import DatesScheduleInput
+    from ..models.poll_schedule_input import PollScheduleInput
     from ..models.range_schedule_input import RangeScheduleInput
     from ..models.weekdays_schedule_input import WeekdaysScheduleInput
 
@@ -28,9 +29,9 @@ class UpdateEventRequest:
         description (str | Unset): A description of the event; empty when there is none.
         reference_zone (str | Unset): The IANA time zone in which the organizer planned the event.
         first_day_of_week (UpdateEventRequestFirstDayOfWeek | Unset): The first day of the week in the grid: 1 is
-            Monday, 7 is Sunday.
-        schedule (DatesScheduleInput | RangeScheduleInput | Unset | WeekdaysScheduleInput): When the event can take
-            place, tagged by `mode`. The server derives the slots.
+            Monday, 7 is Sunday. A poll has none.
+        schedule (DatesScheduleInput | PollScheduleInput | RangeScheduleInput | Unset | WeekdaysScheduleInput): When the
+            event can take place, tagged by `mode`. The server derives the slots.
         confirmed_version (str | Unset): The `ETag` of a `confirmation_required` refusal. The change may remove the
             availability that refusal counted, while the event still has that version.
     """
@@ -40,13 +41,18 @@ class UpdateEventRequest:
     reference_zone: str | Unset = UNSET
     first_day_of_week: UpdateEventRequestFirstDayOfWeek | Unset = UNSET
     schedule: (
-        DatesScheduleInput | RangeScheduleInput | Unset | WeekdaysScheduleInput
+        DatesScheduleInput
+        | PollScheduleInput
+        | RangeScheduleInput
+        | Unset
+        | WeekdaysScheduleInput
     ) = UNSET
     confirmed_version: str | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dates_schedule_input import DatesScheduleInput
         from ..models.range_schedule_input import RangeScheduleInput
+        from ..models.weekdays_schedule_input import WeekdaysScheduleInput
 
         name = self.name
 
@@ -61,8 +67,10 @@ class UpdateEventRequest:
         schedule: dict[str, Any] | Unset
         if isinstance(self.schedule, Unset):
             schedule = UNSET
-        elif isinstance(self.schedule, DatesScheduleInput) or isinstance(
-            self.schedule, RangeScheduleInput
+        elif (
+            isinstance(self.schedule, DatesScheduleInput)
+            or isinstance(self.schedule, RangeScheduleInput)
+            or isinstance(self.schedule, WeekdaysScheduleInput)
         ):
             schedule = self.schedule.to_dict()
         else:
@@ -91,6 +99,7 @@ class UpdateEventRequest:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dates_schedule_input import DatesScheduleInput
+        from ..models.poll_schedule_input import PollScheduleInput
         from ..models.range_schedule_input import RangeScheduleInput
         from ..models.weekdays_schedule_input import WeekdaysScheduleInput
 
@@ -110,7 +119,13 @@ class UpdateEventRequest:
 
         def _parse_schedule(
             data: object,
-        ) -> DatesScheduleInput | RangeScheduleInput | Unset | WeekdaysScheduleInput:
+        ) -> (
+            DatesScheduleInput
+            | PollScheduleInput
+            | RangeScheduleInput
+            | Unset
+            | WeekdaysScheduleInput
+        ):
             if isinstance(data, Unset):
                 return data
             try:
@@ -133,13 +148,21 @@ class UpdateEventRequest:
                 return componentsschemas_schedule_input_type_1
             except (TypeError, ValueError, AttributeError, KeyError):
                 pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_schedule_input_type_2 = (
+                    WeekdaysScheduleInput.from_dict(data)
+                )
+
+                return componentsschemas_schedule_input_type_2
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
             if not isinstance(data, dict):
                 raise TypeError()
-            componentsschemas_schedule_input_type_2 = WeekdaysScheduleInput.from_dict(
-                data
-            )
+            componentsschemas_schedule_input_type_3 = PollScheduleInput.from_dict(data)
 
-            return componentsschemas_schedule_input_type_2
+            return componentsschemas_schedule_input_type_3
 
         schedule = _parse_schedule(d.pop("schedule", UNSET))
 

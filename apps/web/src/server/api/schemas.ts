@@ -34,10 +34,19 @@ export const datedSlotSchema = z.object(datedSlot);
 /** A slot of a weekday event: a wall-clock time in the reference zone, with no date. */
 export const weekdaySlotSchema = z.object(weekdaySlot);
 
-export const slotSchema = z.union([datedSlotSchema, weekdaySlotSchema]);
+const optionSlot = { option: z.string() };
+
+/** An option of a poll, answered as a slot is, by its id. */
+export const optionSlotSchema = z.object(optionSlot);
+
+export const slotSchema = z.union([datedSlotSchema, weekdaySlotSchema, optionSlotSchema]);
 
 /** A slot in a request. */
-const slotInputSchema = z.union([z.strictObject(datedSlot), z.strictObject(weekdaySlot)]);
+const slotInputSchema = z.union([
+	z.strictObject(datedSlot),
+	z.strictObject(weekdaySlot),
+	z.strictObject(optionSlot),
+]);
 
 const times = {
 	dailyStart: startTime,
@@ -49,11 +58,32 @@ const datesDays = { mode: z.literal("dates"), dates: z.array(isoDate) };
 const rangeDays = { mode: z.literal("range"), first: isoDate, last: isoDate };
 const weekdayDays = { mode: z.literal("weekdays"), weekdays: z.array(weekdaySchema) };
 
+/**
+ * A poll option in a request: one the event keeps, by id, or a new one, by its start and end as
+ * RFC 3339 instants at whole minutes. An option cannot be changed; a new time is a new option.
+ */
+const optionInputSchema = z.union([
+	z.strictObject({ id: z.string() }),
+	z.strictObject({
+		start: z.iso.datetime({ offset: true }),
+		end: z.iso.datetime({ offset: true }),
+	}),
+]);
+
+/** An option of a poll: a start and an end on one date in the reference zone, in UTC. */
+export const optionSchema = z.object({
+	id: z.string(),
+	start: z.iso.datetime(),
+	end: z.iso.datetime(),
+});
+
 /** The schedule a request sends; the server derives the slots. */
 export const scheduleInputSchema = z.discriminatedUnion("mode", [
 	z.strictObject({ ...datesDays, ...times }),
 	z.strictObject({ ...rangeDays, ...times }),
 	z.strictObject({ ...weekdayDays, ...times }),
+	/** 2 to 20 options. An option a change leaves out is removed with its answers. */
+	z.strictObject({ mode: z.literal("poll"), options: z.array(optionInputSchema) }),
 ]);
 
 /** The schedule of a response, with every slot of the event in time order. */
@@ -61,6 +91,12 @@ export const scheduleSchema = z.discriminatedUnion("mode", [
 	z.object({ ...datesDays, ...times, slots: z.array(datedSlotSchema) }),
 	z.object({ ...rangeDays, ...times, slots: z.array(datedSlotSchema) }),
 	z.object({ ...weekdayDays, ...times, slots: z.array(weekdaySlotSchema) }),
+	/** The options in time order; each is one slot. */
+	z.object({
+		mode: z.literal("poll"),
+		options: z.array(optionSchema),
+		slots: z.array(optionSlotSchema),
+	}),
 ]);
 
 export const retentionSchema = z.discriminatedUnion("kind", [
@@ -87,12 +123,15 @@ export const finalSchema = z.discriminatedUnion("kind", [
 		end: z.iso.datetime(),
 		/** How many times a final time was picked or changed, as in the calendar file. */
 		sequence: z.int().min(1),
-		/** The event's slots inside the final time, in time order. */
+		/** The event's slots inside the final time, in time order; for a poll, its one option. */
 		slots: z.array(slotSchema),
 	}),
 ]);
 
-/** A run of the event's slots in one day; a weekday event also names the date it falls on. */
+/**
+ * A run of the event's slots in one day, or a poll's one option; a weekday event also names
+ * the date it falls on.
+ */
 export const finalRequestSchema = z.strictObject({
 	slots: z.array(slotInputSchema).min(1),
 	/** Exactly for a weekday event: a date on the slots' weekday, not before today. */
@@ -105,7 +144,8 @@ export const eventSchema = z.object({
 	description: z.string(),
 	/** IANA zone name. */
 	referenceZone: z.string(),
-	firstDayOfWeek: weekdaySchema,
+	/** The day a grid's weeks start on; a poll has none. */
+	firstDayOfWeek: weekdaySchema.optional(),
 	schedule: scheduleSchema,
 	retention: retentionSchema,
 	final: finalSchema,
@@ -117,7 +157,7 @@ export const createEventRequestSchema = z.strictObject({
 	name: z.string(),
 	description: z.string().optional(),
 	referenceZone: z.string(),
-	/** Monday when left out. */
+	/** Monday when left out. A poll has no first day of the week and ignores it. */
 	firstDayOfWeek: weekdaySchema.optional(),
 	schedule: scheduleInputSchema,
 });

@@ -25,9 +25,9 @@ export type Event = {
      */
     referenceZone: string;
     /**
-     * The first day of the week in the grid: 1 is Monday, 7 is Sunday. Values so far: 1, 2, 3, 4, 5, 6, 7. A later version may add more.
+     * The first day of the week in the grid: 1 is Monday, 7 is Sunday. A poll has none. Values so far: 1, 2, 3, 4, 5, 6, 7. A later version may add more.
      */
-    firstDayOfWeek: number;
+    firstDayOfWeek?: number;
     /**
      * When the event can take place.
      */
@@ -77,7 +77,9 @@ export type Schedule = ({
     mode: 'range';
 } & RangeSchedule) | ({
     mode: 'weekdays';
-} & WeekdaysSchedule);
+} & WeekdaysSchedule) | ({
+    mode: 'poll';
+} & PollSchedule);
 
 /**
  * An event on chosen dates.
@@ -174,9 +176,45 @@ export type WeekdaysSchedule = {
 };
 
 /**
- * A slot of a dated or of a weekday event.
+ * A poll of a few hand-picked times, each answered as a slot is.
  */
-export type Slot = DatedSlot | WeekdaySlot;
+export type PollSchedule = {
+    /**
+     * The kind of schedule.
+     */
+    mode: 'poll';
+    /**
+     * The options of the poll, in time order.
+     */
+    options: Array<Option>;
+    /**
+     * One slot for each option, in time order.
+     */
+    slots: Array<OptionSlot>;
+};
+
+/**
+ * A time a poll offers: a start and an end on one date in the reference zone.
+ */
+export type Option = {
+    /**
+     * The id of the option, unique within the event.
+     */
+    id: string;
+    /**
+     * The start as an RFC 3339 instant in UTC.
+     */
+    start: string;
+    /**
+     * The end as an RFC 3339 instant in UTC, on the date of the start in the reference zone.
+     */
+    end: string;
+};
+
+/**
+ * A slot of a dated or of a weekday event, or an option of a poll.
+ */
+export type Slot = DatedSlot | WeekdaySlot | OptionSlot;
 
 /**
  * A slot of a dated event.
@@ -200,6 +238,16 @@ export type WeekdaySlot = {
      * The start of the slot in minutes after midnight.
      */
     minute: number;
+};
+
+/**
+ * An option of a poll, answered as a slot is.
+ */
+export type OptionSlot = {
+    /**
+     * The id of the poll option.
+     */
+    option: string;
 };
 
 /**
@@ -275,7 +323,7 @@ export type FinalChosen = {
      */
     sequence: number;
     /**
-     * The event's slots inside the final time, in time order.
+     * The event's slots inside the final time, in time order; for a poll, its one option.
      */
     slots: Array<Slot>;
 };
@@ -466,7 +514,7 @@ export type UpdateEventRequest = {
      */
     referenceZone?: string;
     /**
-     * The first day of the week in the grid: 1 is Monday, 7 is Sunday.
+     * The first day of the week in the grid: 1 is Monday, 7 is Sunday. A poll has none.
      */
     firstDayOfWeek?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
     /**
@@ -488,7 +536,9 @@ export type ScheduleInput = ({
     mode: 'range';
 } & RangeScheduleInput) | ({
     mode: 'weekdays';
-} & WeekdaysScheduleInput);
+} & WeekdaysScheduleInput) | ({
+    mode: 'poll';
+} & PollScheduleInput);
 
 /**
  * An event on chosen dates.
@@ -573,6 +623,49 @@ export type WeekdaysScheduleInput = {
 };
 
 /**
+ * A poll of 2 to 20 options.
+ */
+export type PollScheduleInput = {
+    /**
+     * The kind of schedule.
+     */
+    mode: 'poll';
+    /**
+     * 2 to 20 options. A change names the options it keeps by id and new ones by their times; an option it leaves out is removed with its answers.
+     */
+    options: Array<OptionInput>;
+};
+
+/**
+ * An option the poll keeps, by id, or a new one, by its times.
+ */
+export type OptionInput = KeptOptionInput | NewOptionInput;
+
+/**
+ * An option the poll keeps.
+ */
+export type KeptOptionInput = {
+    /**
+     * The id of an option the event has.
+     */
+    id: string;
+};
+
+/**
+ * A new option. An option cannot be changed; a new time is a new option.
+ */
+export type NewOptionInput = {
+    /**
+     * The start as an RFC 3339 instant at a whole minute, not before now.
+     */
+    start: string;
+    /**
+     * The end as an RFC 3339 instant at a whole minute, after the start and on its date in the reference zone.
+     */
+    end: string;
+};
+
+/**
  * A join. At most one of `password` and `newPassword`.
  */
 export type JoinRequest = {
@@ -619,9 +712,9 @@ export type FinalRequest = {
 };
 
 /**
- * A slot of a dated or of a weekday event.
+ * A slot of a dated or of a weekday event, or an option of a poll.
  */
-export type SlotInput = DatedSlotInput | WeekdaySlotInput;
+export type SlotInput = DatedSlotInput | WeekdaySlotInput | OptionSlotInput;
 
 /**
  * A slot of a dated event.
@@ -645,6 +738,16 @@ export type WeekdaySlotInput = {
      * The start of the slot in minutes after midnight.
      */
     minute: number;
+};
+
+/**
+ * An option of a poll.
+ */
+export type OptionSlotInput = {
+    /**
+     * The id of the poll option.
+     */
+    option: string;
 };
 
 /**
@@ -850,7 +953,7 @@ export type UpdateEventErrors = {
     /**
      * `confirmation_required`: The change would remove availability from participants.
      *
-     * `field_locked`: Slot length, day mode and reference zone cannot change once people joined.
+     * `field_locked`: The kind of event, slot length, day mode and reference zone cannot change once people joined.
      */
     409: Problem;
     /**
@@ -1002,7 +1105,7 @@ export type PickFinalErrors = {
      *
      * `final_date_wrong_weekday`: The date of the final time does not fall on the weekday of its slots.
      *
-     * `final_not_in_event`: The final time is not a run of the event's slots in one day, or names a date the event cannot have.
+     * `final_not_in_event`: The final time is not a run of the event's slots in one day, nor one option of a poll, or names a date the event cannot have.
      */
     422: Problem;
     /**

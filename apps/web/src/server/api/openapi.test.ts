@@ -54,6 +54,7 @@ describe("the OpenAPI document", () => {
 				dates: "#/components/schemas/DatesSchedule",
 				range: "#/components/schemas/RangeSchedule",
 				weekdays: "#/components/schemas/WeekdaysSchedule",
+				poll: "#/components/schemas/PollSchedule",
 			},
 		});
 
@@ -63,6 +64,7 @@ describe("the OpenAPI document", () => {
 				dates: "#/components/schemas/DatesScheduleInput",
 				range: "#/components/schemas/RangeScheduleInput",
 				weekdays: "#/components/schemas/WeekdaysScheduleInput",
+				poll: "#/components/schemas/PollScheduleInput",
 			},
 		});
 	});

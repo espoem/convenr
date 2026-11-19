@@ -12,7 +12,7 @@ import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
 import { getPathname } from "@/i18n/navigation";
-import { boardOf, weekdayViewOf } from "@/server/board";
+import { boardOf, isGridEvent, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 
 // One database read per request, shared by the metadata and the page.
@@ -35,7 +35,8 @@ export async function generateMetadata({
 export default async function EventPage({ params }: PageProps<"/[locale]/e/[segment]">) {
 	const event = await eventOf((await params).segment);
 
-	if (event === undefined) {
+	// A poll has no page of its own yet, so it is reached through the API only.
+	if (event === undefined || !isGridEvent(event)) {
 		notFound();
 	}
 

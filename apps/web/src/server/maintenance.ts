@@ -67,6 +67,10 @@ with gone as (
   where (
     (
       case
+        when kind = 'poll' then (
+          select max((start at time zone reference_zone)::date)
+          from poll_options where poll_options.event_id = events.id
+        )
         when day_mode = 'range' then range_last
         when day_mode = 'dates' then (select max(day) from unnest(dates) as day)
         when final_state = 'chosen' and (final_start at time zone reference_zone)::date

@@ -9,6 +9,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.dated_slot_input import DatedSlotInput
+    from ..models.option_slot_input import OptionSlotInput
     from ..models.weekday_slot_input import WeekdaySlotInput
 
 
@@ -20,24 +21,29 @@ class AvailabilityRequest:
     """The participant's whole availability.
 
     Attributes:
-        availability (list[DatedSlotInput | WeekdaySlotInput]): Every slot in which the participant is available, if
-            need be included.
-        if_need_be (list[DatedSlotInput | WeekdaySlotInput] | Unset): The slots of `availability` that are only if need
-            be; a slot missing from `availability` is refused with `invalid_request` and the field code
+        availability (list[DatedSlotInput | OptionSlotInput | WeekdaySlotInput]): Every slot in which the participant is
+            available, if need be included.
+        if_need_be (list[DatedSlotInput | OptionSlotInput | WeekdaySlotInput] | Unset): The slots of `availability` that
+            are only if need be; a slot missing from `availability` is refused with `invalid_request` and the field code
             `if_need_be_not_available`. Left out, each slot keeps its stored level and a new slot is available. Empty, every
             slot is available.
     """
 
-    availability: list[DatedSlotInput | WeekdaySlotInput]
-    if_need_be: list[DatedSlotInput | WeekdaySlotInput] | Unset = UNSET
+    availability: list[DatedSlotInput | OptionSlotInput | WeekdaySlotInput]
+    if_need_be: list[DatedSlotInput | OptionSlotInput | WeekdaySlotInput] | Unset = (
+        UNSET
+    )
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dated_slot_input import DatedSlotInput
+        from ..models.weekday_slot_input import WeekdaySlotInput
 
         availability = []
         for availability_item_data in self.availability:
             availability_item: dict[str, Any]
-            if isinstance(availability_item_data, DatedSlotInput):
+            if isinstance(availability_item_data, DatedSlotInput) or isinstance(
+                availability_item_data, WeekdaySlotInput
+            ):
                 availability_item = availability_item_data.to_dict()
             else:
                 availability_item = availability_item_data.to_dict()
@@ -49,7 +55,9 @@ class AvailabilityRequest:
             if_need_be = []
             for if_need_be_item_data in self.if_need_be:
                 if_need_be_item: dict[str, Any]
-                if isinstance(if_need_be_item_data, DatedSlotInput):
+                if isinstance(if_need_be_item_data, DatedSlotInput) or isinstance(
+                    if_need_be_item_data, WeekdaySlotInput
+                ):
                     if_need_be_item = if_need_be_item_data.to_dict()
                 else:
                     if_need_be_item = if_need_be_item_data.to_dict()
@@ -71,6 +79,7 @@ class AvailabilityRequest:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dated_slot_input import DatedSlotInput
+        from ..models.option_slot_input import OptionSlotInput
         from ..models.weekday_slot_input import WeekdaySlotInput
 
         d = dict(src_dict)
@@ -80,7 +89,7 @@ class AvailabilityRequest:
 
             def _parse_availability_item(
                 data: object,
-            ) -> DatedSlotInput | WeekdaySlotInput:
+            ) -> DatedSlotInput | OptionSlotInput | WeekdaySlotInput:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -89,25 +98,37 @@ class AvailabilityRequest:
                     return componentsschemas_slot_input_type_0
                 except (TypeError, ValueError, AttributeError, KeyError):
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_slot_input_type_1 = WeekdaySlotInput.from_dict(
+                        data
+                    )
+
+                    return componentsschemas_slot_input_type_1
+                except (TypeError, ValueError, AttributeError, KeyError):
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_slot_input_type_1 = WeekdaySlotInput.from_dict(data)
+                componentsschemas_slot_input_type_2 = OptionSlotInput.from_dict(data)
 
-                return componentsschemas_slot_input_type_1
+                return componentsschemas_slot_input_type_2
 
             availability_item = _parse_availability_item(availability_item_data)
 
             availability.append(availability_item)
 
         _if_need_be = d.pop("ifNeedBe", UNSET)
-        if_need_be: list[DatedSlotInput | WeekdaySlotInput] | Unset = UNSET
+        if_need_be: (
+            list[DatedSlotInput | OptionSlotInput | WeekdaySlotInput] | Unset
+        ) = UNSET
         if _if_need_be is not UNSET:
             if_need_be = []
             for if_need_be_item_data in _if_need_be:
 
                 def _parse_if_need_be_item(
                     data: object,
-                ) -> DatedSlotInput | WeekdaySlotInput:
+                ) -> DatedSlotInput | OptionSlotInput | WeekdaySlotInput:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -118,13 +139,23 @@ class AvailabilityRequest:
                         return componentsschemas_slot_input_type_0
                     except (TypeError, ValueError, AttributeError, KeyError):
                         pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        componentsschemas_slot_input_type_1 = (
+                            WeekdaySlotInput.from_dict(data)
+                        )
+
+                        return componentsschemas_slot_input_type_1
+                    except (TypeError, ValueError, AttributeError, KeyError):
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    componentsschemas_slot_input_type_1 = WeekdaySlotInput.from_dict(
+                    componentsschemas_slot_input_type_2 = OptionSlotInput.from_dict(
                         data
                     )
 
-                    return componentsschemas_slot_input_type_1
+                    return componentsschemas_slot_input_type_2
 
                 if_need_be_item = _parse_if_need_be_item(if_need_be_item_data)
 

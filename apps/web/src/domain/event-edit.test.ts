@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { editProblems, removedSlots } from "./event-edit";
-import { type Schedule, slotKey } from "./schedule";
+import { type GridSchedule, slotKey } from "./schedule";
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 
 const beforeDates = [date("2027-04-05"), date("2027-04-06")];
 
-const before: Schedule = {
+const before: GridSchedule = {
+	kind: "grid",
+	firstDayOfWeek: 1,
 	days: { mode: "dates", dates: beforeDates },
 	dailyStart: 17 * 60,
 	dailyEnd: 19 * 60,
@@ -20,7 +22,7 @@ const now = Temporal.Instant.from("2027-04-06T08:00:00Z");
 
 describe("editProblems", () => {
 	it("keeps past dates the event already had and refuses added past dates", () => {
-		const extended: Schedule = {
+		const extended: GridSchedule = {
 			...before,
 			days: {
 				mode: "dates",
@@ -28,7 +30,7 @@ describe("editProblems", () => {
 			},
 		};
 
-		const backdated: Schedule = {
+		const backdated: GridSchedule = {
 			...before,
 			days: { mode: "dates", dates: [date("2027-04-04"), date("2027-04-06")] },
 		};
@@ -40,7 +42,7 @@ describe("editProblems", () => {
 	});
 
 	it("locks slot length, day mode and zone once someone joined, at the changed field", () => {
-		const changes: [Schedule, string[]][] = [
+		const changes: [GridSchedule, string[]][] = [
 			[{ ...before, slotLength: 30 }, ["slotLength"]],
 			[{ ...before, referenceZone: "Europe/London" }, ["referenceZone"]],
 			[
@@ -80,7 +82,7 @@ describe("removedSlots", () => {
 	});
 
 	it("lists the slots of a removed weekday", () => {
-		const weekly: Schedule = { ...before, days: { mode: "weekdays", weekdays: [1, 3] } };
+		const weekly: GridSchedule = { ...before, days: { mode: "weekdays", weekdays: [1, 3] } };
 		const removed = removedSlots(weekly, { ...weekly, days: { mode: "weekdays", weekdays: [1] } });
 
 		expect(removed.map((slot) => slotKey(slot))).toEqual(["w3-1020", "w3-1080"]);

@@ -1,2 +1,4 @@
 response-property-enum-value-added info
 response-mediatype-enum-value-added info
+response-property-one-of-added info
+response-property-any-of-added info

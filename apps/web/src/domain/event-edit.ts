@@ -1,4 +1,5 @@
 // Changing an event's schedule: what stays fixed once people joined, and which slots disappear.
+import { type PollProblem, validatePoll } from "./poll";
 import {
 	type Schedule,
 	type ScheduleIssue,
@@ -10,12 +11,22 @@ import {
 	validateSchedule,
 } from "./schedule";
 
-export type EditProblem = ScheduleProblem | "field_locked";
+export type EditProblem = ScheduleProblem | PollProblem | "field_locked" | "unknown_option";
+
+type Locked = { path: (string | number)[]; differs: boolean };
+
+/** The problems of a valid new schedule. */
+export function scheduleProblems(
+	schedule: Schedule,
+	now: Temporal.Instant,
+): ScheduleIssue<EditProblem>[] {
+	return schedule.kind === "poll" ? validatePoll(schedule, now) : validateSchedule(schedule, now);
+}
 
 /**
  * Problems of changing `before` into `after`, each at the field it concerns. Once the event has
- * participants, slot length, day mode and reference zone stay as they are. Dates the event
- * already had may lie in the past; added dates may not.
+ * participants, its kind and reference zone stay as they are, and so do a grid's slot length
+ * and day mode. Dates and options the event already had may lie in the past; added ones may not.
  */
 export function editProblems(
 	before: Schedule,
@@ -23,11 +34,17 @@ export function editProblems(
 	hasParticipants: boolean,
 	now: Temporal.Instant,
 ): ScheduleIssue<EditProblem>[] {
-	const changed = [
-		{ path: ["slotLength"], differs: after.slotLength !== before.slotLength },
-		{ path: ["days", "mode"], differs: after.days.mode !== before.days.mode },
+	const changed: Locked[] = [
+		{ path: ["kind"], differs: after.kind !== before.kind },
 		{ path: ["referenceZone"], differs: after.referenceZone !== before.referenceZone },
 	];
+
+	if (before.kind === "grid" && after.kind === "grid") {
+		changed.push(
+			{ path: ["slotLength"], differs: after.slotLength !== before.slotLength },
+			{ path: ["days", "mode"], differs: after.days.mode !== before.days.mode },
+		);
+	}
 
 	const locked = hasParticipants
 		? changed.flatMap(({ path, differs }) =>
@@ -35,7 +52,21 @@ export function editProblems(
 			)
 		: [];
 
-	return [...locked, ...validateSchedule(after, now, scheduleDates(before))];
+	return [...locked, ...afterProblems(before, after, now)];
+}
+
+function afterProblems(
+	before: Schedule,
+	after: Schedule,
+	now: Temporal.Instant,
+): ScheduleIssue<EditProblem>[] {
+	if (after.kind === "poll") {
+		const kept = new Set(before.kind === "poll" ? before.options.map((option) => option.id) : []);
+
+		return validatePoll(after, now, kept);
+	}
+
+	return validateSchedule(after, now, before.kind === "grid" ? scheduleDates(before) : new Set());
 }
 
 /** The slots of `before` that `after` no longer has. */

@@ -19,7 +19,7 @@ import {
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import type { EventVersion } from "@/lib/event-version";
 import { formText } from "@/lib/form-text";
-import type { EventProblem, NewEvent } from "@/server/events";
+import type { EventProblem, GridEventInput } from "@/server/events";
 import type { Confirmation } from "@/server/manage";
 
 export type EventFormOptions = {
@@ -43,20 +43,25 @@ export type FormOutcome =
 	| { status: "confirm"; losing: number; clearsFinal: boolean; version: EventVersion };
 
 /** A change the server asked to confirm: what it would cost, at the version that was counted. */
-type PendingLoss = { input: NewEvent; losing: number; clearsFinal: boolean; version: EventVersion };
+type PendingLoss = {
+	input: GridEventInput;
+	losing: number;
+	clearsFinal: boolean;
+	version: EventVersion;
+};
 
 type EventFormProps = {
 	options: EventFormOptions;
 	/** The stored event on the manage page; the create form starts empty. */
-	initial?: NewEvent | undefined;
+	initial?: GridEventInput | undefined;
 	/** Slot length, day mode and reference zone cannot change because people joined. */
 	locked?: boolean;
 	submitLabel: string;
 	pendingLabel: string;
-	onSubmit: (input: NewEvent, confirmation: Confirmation) => Promise<FormOutcome>;
+	onSubmit: (input: GridEventInput, confirmation: Confirmation) => Promise<FormOutcome>;
 };
 
-type DayMode = NewEvent["days"]["mode"];
+type DayMode = GridEventInput["days"]["mode"];
 
 const DAY_MODES: DayMode[] = ["dates", "range", "weekdays"];
 
@@ -150,7 +155,7 @@ export function EventForm({
 		);
 	}
 
-	function send(input: NewEvent, confirmation: Confirmation) {
+	function send(input: GridEventInput, confirmation: Confirmation) {
 		startTransition(async () => {
 			const outcome = await onSubmit(input, confirmation);
 
@@ -175,7 +180,7 @@ export function EventForm({
 		const form = new FormData(event.currentTarget);
 		const text = (name: string) => formText(form, name);
 
-		function chosenDays(): NewEvent["days"] {
+		function chosenDays(): GridEventInput["days"] {
 			switch (mode) {
 				case "range":
 					return { mode, first: text("first"), last: text("last") };
@@ -191,6 +196,7 @@ export function EventForm({
 
 		send(
 			{
+				kind: "grid",
 				name: text("name"),
 				description: text("description"),
 				days: chosenDays(),

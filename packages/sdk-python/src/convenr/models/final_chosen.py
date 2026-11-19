@@ -16,6 +16,7 @@ from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
     from ..models.dated_slot import DatedSlot
+    from ..models.option_slot import OptionSlot
     from ..models.weekday_slot import WeekdaySlot
 
 
@@ -32,18 +33,20 @@ class FinalChosen:
         end (datetime.datetime): The end as an RFC 3339 instant in UTC.
         sequence (int): How many times a final time was picked or changed. It does not go back when the final time is
             cleared.
-        slots (list[DatedSlot | WeekdaySlot]): The event's slots inside the final time, in time order.
+        slots (list[DatedSlot | OptionSlot | WeekdaySlot]): The event's slots inside the final time, in time order; for
+            a poll, its one option.
     """
 
     kind: Literal["chosen"]
     start: datetime.datetime
     end: datetime.datetime
     sequence: int
-    slots: list[DatedSlot | WeekdaySlot]
+    slots: list[DatedSlot | OptionSlot | WeekdaySlot]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dated_slot import DatedSlot
+        from ..models.weekday_slot import WeekdaySlot
 
         kind = self.kind
 
@@ -56,7 +59,9 @@ class FinalChosen:
         slots = []
         for slots_item_data in self.slots:
             slots_item: dict[str, Any]
-            if isinstance(slots_item_data, DatedSlot):
+            if isinstance(slots_item_data, DatedSlot) or isinstance(
+                slots_item_data, WeekdaySlot
+            ):
                 slots_item = slots_item_data.to_dict()
             else:
                 slots_item = slots_item_data.to_dict()
@@ -80,6 +85,7 @@ class FinalChosen:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         from ..models.dated_slot import DatedSlot
+        from ..models.option_slot import OptionSlot
         from ..models.weekday_slot import WeekdaySlot
 
         d = dict(src_dict)
@@ -97,7 +103,7 @@ class FinalChosen:
         _slots = d.pop("slots")
         for slots_item_data in _slots:
 
-            def _parse_slots_item(data: object) -> DatedSlot | WeekdaySlot:
+            def _parse_slots_item(data: object) -> DatedSlot | OptionSlot | WeekdaySlot:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -106,11 +112,19 @@ class FinalChosen:
                     return componentsschemas_slot_type_0
                 except (TypeError, ValueError, AttributeError, KeyError):
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+
+                    return componentsschemas_slot_type_1
+                except (TypeError, ValueError, AttributeError, KeyError):
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                componentsschemas_slot_type_1 = WeekdaySlot.from_dict(data)
+                componentsschemas_slot_type_2 = OptionSlot.from_dict(data)
 
-                return componentsschemas_slot_type_1
+                return componentsschemas_slot_type_2
 
             slots_item = _parse_slots_item(slots_item_data)
 

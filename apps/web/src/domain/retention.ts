@@ -1,4 +1,5 @@
 import { type FinalTime, finalDate } from "./final-time";
+import { optionDate } from "./poll";
 import { eventDates, type Schedule } from "./schedule";
 
 /** The retention period in days, or `never` to keep events permanently. */
@@ -6,7 +7,7 @@ export type Retention = number | "never";
 
 /**
  * The planned deletion date, computed from the current retention setting. A dated event is
- * deleted `retention` days after its last date. A weekday event is deleted `retention` days
+ * deleted `retention` days after its last date, and a poll after the date of its last option. A weekday event is deleted `retention` days
  * after `lastChange`, taken as a date in the reference zone, unless its final time lies after
  * that date: then it is deleted `retention` days after the final date. With `never` there is no
  * deletion date.
@@ -19,6 +20,17 @@ export function deletionDate(
 ): Temporal.PlainDate | null {
 	if (retention === "never") {
 		return null;
+	}
+
+	if (schedule.kind === "poll") {
+		const last = schedule.options.map((option) => optionDate(option, schedule.referenceZone));
+		const latest = last.toSorted((a, b) => Temporal.PlainDate.compare(a, b)).at(-1);
+
+		if (latest === undefined) {
+			throw new Error("A poll without options has no deletion date.");
+		}
+
+		return latest.add({ days: retention });
 	}
 
 	const { days, referenceZone } = schedule;

@@ -3,33 +3,44 @@
 import { and, asc, count, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { datedAvailability, events, participants, weekdayAvailability } from "@/db/schema";
+import {
+	datedAvailability,
+	events,
+	participants,
+	pollAvailability,
+	pollOptions,
+	weekdayAvailability,
+} from "@/db/schema";
 import { eventSegment } from "@/domain/event-address";
 import { editProblems, removedSlots } from "@/domain/event-edit";
 import { clearsFinal } from "@/domain/final-time";
-import type { Schedule, Slot } from "@/domain/schedule";
+import type { PollOption, Schedule, Slot } from "@/domain/schedule";
 import type { EventVersion } from "@/lib/event-version";
 
 import {
 	changeStamp,
 	type EventRow,
 	finalOf,
-	firstDayOfWeekOf,
 	OPEN_FINAL,
 	liveEvent,
 	type Queries,
 	scheduleOf,
 	touchEvent,
+	withOptions,
 } from "./event-rows";
 import {
+	type EventChange,
 	type EventProblem,
 	type EventView,
 	eventViewOf,
+	type GridEventInput,
 	inputProblems,
 	type NewEvent,
 	newEventSchema,
+	optionRows,
 	ruleProblems,
-	storedDays,
+	scheduleColumns,
+	scheduleOfInput,
 } from "./events";
 import { matchesSecret } from "./secrets";
 import { countDeleted } from "./usage";
@@ -109,9 +120,21 @@ function keepsEveryValue(row: EventRow, values: Partial<EventRow>): boolean {
 }
 
 function inputOf(row: EventRow): NewEvent {
-	const { days, dailyStart, dailyEnd, slotLength, referenceZone } = scheduleOf(row);
+	const schedule = scheduleOf(row);
+	const common = { name: row.name, description: row.description };
 
-	const shown = (): NewEvent["days"] => {
+	if (schedule.kind === "poll") {
+		return {
+			...common,
+			kind: "poll",
+			referenceZone: schedule.referenceZone,
+			options: schedule.options.map((option) => ({ id: option.id })),
+		};
+	}
+
+	const { days, dailyStart, dailyEnd, slotLength, referenceZone, firstDayOfWeek } = schedule;
+
+	const shown = (): GridEventInput["days"] => {
 		switch (days.mode) {
 			case "range":
 				return { mode: "range", first: days.first.toString(), last: days.last.toString() };
@@ -123,14 +146,14 @@ function inputOf(row: EventRow): NewEvent {
 	};
 
 	return {
-		name: row.name,
-		description: row.description,
+		...common,
+		kind: "grid",
 		days: shown(),
 		dailyStart,
 		dailyEnd,
 		slotLength,
 		referenceZone,
-		firstDayOfWeek: firstDayOfWeekOf(row),
+		firstDayOfWeek,
 	};
 }
 
@@ -181,6 +204,8 @@ function removedAvailability(queries: Queries, eventId: string, removed: Slot[])
 			: [],
 	);
 
+	const options = removedOptions(removed);
+
 	return {
 		dated:
 			starts.length === 0
@@ -193,12 +218,32 @@ function removedAvailability(queries: Queries, eventId: string, removed: Slot[])
 			weekly.length === 0
 				? undefined
 				: and(inArray(weekdayAvailability.participantId, people), or(...weekly)),
+		poll:
+			options.length === 0
+				? undefined
+				: and(eq(pollAvailability.eventId, eventId), inArray(pollAvailability.optionId, options)),
 	};
 }
 
+/** The ids of the options among `removed`. */
+function removedOptions(removed: Slot[]): string[] {
+	return removed.flatMap((slot) => (slot.kind === "option" ? [slot.option] : []));
+}
+
 async function losingParticipants(queries: Queries, eventId: string, removed: Slot[]) {
-	const { dated, weekly } = removedAvailability(queries, eventId, removed);
+	const { dated, weekly, poll } = removedAvailability(queries, eventId, removed);
 	const losing = new Set<string>();
+
+	if (poll !== undefined) {
+		const rows = await queries
+			.selectDistinct({ id: pollAvailability.participantId })
+			.from(pollAvailability)
+			.where(poll);
+
+		for (const row of rows) {
+			losing.add(row.id);
+		}
+	}
 
 	if (dated !== undefined) {
 		const rows = await queries
@@ -235,6 +280,15 @@ async function deleteAvailability(queries: Queries, eventId: string, removed: Sl
 	if (weekly !== undefined) {
 		await queries.delete(weekdayAvailability).where(weekly);
 	}
+
+	const options = removedOptions(removed);
+
+	// Removing an option removes its answers with it.
+	if (options.length > 0) {
+		await queries
+			.delete(pollOptions)
+			.where(and(eq(pollOptions.eventId, eventId), inArray(pollOptions.id, options)));
+	}
 }
 
 /**
@@ -248,7 +302,7 @@ async function deleteAvailability(queries: Queries, eventId: string, removed: Sl
 export async function updateEvent(
 	id: string,
 	secret: string,
-	change: Partial<NewEvent>,
+	change: EventChange,
 	precondition: Precondition,
 	now = Temporal.Now.instant(),
 	confirmation: Confirmation = NO_CONFIRMATION,
@@ -266,41 +320,48 @@ export async function updateEvent(
 			return { status: "changed", version };
 		}
 
-		const parsed = newEventSchema.safeParse({ ...inputOf(row), ...change }, { reportInput: true });
+		// A poll that becomes a grid starts its weeks on Monday unless the change says otherwise.
+		const parsed = newEventSchema.safeParse(
+			{ firstDayOfWeek: 1, ...inputOf(row), ...change },
+			{ reportInput: true },
+		);
 
 		if (!parsed.success) {
 			return { status: "invalid", problems: inputProblems(parsed.error) };
 		}
 
-		const { name, description, days, dailyStart, dailyEnd, slotLength, referenceZone } =
-			parsed.data;
+		const before = scheduleOf(row);
+		const described = scheduleOfInput(parsed.data, before.kind === "poll" ? before.options : []);
+
+		if (!described.ok) {
+			return { status: "invalid", problems: described.problems };
+		}
+
+		const after = described.schedule;
 
 		const stored = {
-			name,
-			description,
-			dayMode: days.mode,
-			...storedDays(days),
-			dailyStart,
-			dailyEnd,
-			slotLength,
-			referenceZone,
-			firstDayOfWeek: parsed.data.firstDayOfWeek,
+			name: parsed.data.name,
+			description: parsed.data.description,
+			...scheduleColumns(after),
 		};
+
+		const added = addedOptions(before, after);
 
 		// A change that keeps every value writes nothing, so the version and a weekday event's
 		// deletion date stay where they are.
-		if (keepsEveryValue(row, stored)) {
+		if (
+			keepsEveryValue(row, stored) &&
+			added.length === 0 &&
+			removedSlots(before, after).length === 0
+		) {
 			return { status: "saved", event: await eventViewOf(tx, row) };
 		}
-
-		const after: Schedule = { days, dailyStart, dailyEnd, slotLength, referenceZone };
 
 		const [people] = await tx
 			.select({ total: count() })
 			.from(participants)
 			.where(eq(participants.eventId, id));
 
-		const before = scheduleOf(row);
 		const issues = editProblems(before, after, (people?.total ?? 0) > 0, now);
 
 		if (issues.length > 0) {
@@ -332,8 +393,23 @@ export async function updateEvent(
 			throw new Error("The event update returned no row.");
 		}
 
-		return { status: "saved", event: await eventViewOf(tx, written) };
+		if (added.length > 0) {
+			await tx.insert(pollOptions).values(optionRows(id, added));
+		}
+
+		return { status: "saved", event: await eventViewOf(tx, await withOptions(tx, written)) };
 	});
+}
+
+/** The options of `after` that `before` does not have. */
+function addedOptions(before: Schedule, after: Schedule): PollOption[] {
+	if (after.kind !== "poll") {
+		return [];
+	}
+
+	const kept = new Set(before.kind === "poll" ? before.options.map((option) => option.id) : []);
+
+	return after.options.filter((option) => !kept.has(option.id));
 }
 
 /**

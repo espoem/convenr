@@ -282,7 +282,7 @@
 						}
 					},
 					"409": {
-						"description": "`confirmation_required`: The change would remove availability from participants.\n\n`field_locked`: Slot length, day mode and reference zone cannot change once people joined.",
+						"description": "`confirmation_required`: The change would remove availability from participants.\n\n`field_locked`: The kind of event, slot length, day mode and reference zone cannot change once people joined.",
 						"content": {
 							"application/problem+json": {
 								"schema": {
@@ -578,7 +578,7 @@
 						}
 					},
 					"422": {
-						"description": "`date_in_past`: A date lies before today in the reference zone.\n\n`final_date_wrong_weekday`: The date of the final time does not fall on the weekday of its slots.\n\n`final_not_in_event`: The final time is not a run of the event's slots in one day, or names a date the event cannot have.",
+						"description": "`date_in_past`: A date lies before today in the reference zone.\n\n`final_date_wrong_weekday`: The date of the final time does not fall on the weekday of its slots.\n\n`final_not_in_event`: The final time is not a run of the event's slots in one day, nor one option of a poll, or names a date the event cannot have.",
 						"content": {
 							"application/problem+json": {
 								"schema": {
@@ -1845,7 +1845,7 @@
 					},
 					"firstDayOfWeek": {
 						"type": "integer",
-						"description": "The first day of the week in the grid: 1 is Monday, 7 is Sunday. Values so far: 1, 2, 3, 4, 5, 6, 7. A later version may add more."
+						"description": "The first day of the week in the grid: 1 is Monday, 7 is Sunday. A poll has none. Values so far: 1, 2, 3, 4, 5, 6, 7. A later version may add more."
 					},
 					"schedule": {
 						"$ref": "#/components/schemas/Schedule",
@@ -1872,7 +1872,6 @@
 					"name",
 					"description",
 					"referenceZone",
-					"firstDayOfWeek",
 					"schedule",
 					"retention",
 					"final",
@@ -1924,6 +1923,9 @@
 					},
 					{
 						"$ref": "#/components/schemas/WeekdaysSchedule"
+					},
+					{
+						"$ref": "#/components/schemas/PollSchedule"
 					}
 				],
 				"discriminator": {
@@ -1931,7 +1933,8 @@
 					"mapping": {
 						"dates": "#/components/schemas/DatesSchedule",
 						"range": "#/components/schemas/RangeSchedule",
-						"weekdays": "#/components/schemas/WeekdaysSchedule"
+						"weekdays": "#/components/schemas/WeekdaysSchedule",
+						"poll": "#/components/schemas/PollSchedule"
 					}
 				},
 				"description": "When the event can take place, tagged by `mode`."
@@ -2083,6 +2086,61 @@
 				],
 				"description": "An event on days of the week, without dates."
 			},
+			"PollSchedule": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "poll",
+						"description": "The kind of schedule."
+					},
+					"options": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Option"
+						},
+						"description": "The options of the poll, in time order."
+					},
+					"slots": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/OptionSlot"
+						},
+						"description": "One slot for each option, in time order."
+					}
+				},
+				"required": [
+					"mode",
+					"options",
+					"slots"
+				],
+				"description": "A poll of a few hand-picked times, each answered as a slot is."
+			},
+			"Option": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The id of the option, unique within the event."
+					},
+					"start": {
+						"type": "string",
+						"format": "date-time",
+						"description": "The start as an RFC 3339 instant in UTC."
+					},
+					"end": {
+						"type": "string",
+						"format": "date-time",
+						"description": "The end as an RFC 3339 instant in UTC, on the date of the start in the reference zone."
+					}
+				},
+				"required": [
+					"id",
+					"start",
+					"end"
+				],
+				"description": "A time a poll offers: a start and an end on one date in the reference zone."
+			},
 			"Slot": {
 				"anyOf": [
 					{
@@ -2090,9 +2148,12 @@
 					},
 					{
 						"$ref": "#/components/schemas/WeekdaySlot"
+					},
+					{
+						"$ref": "#/components/schemas/OptionSlot"
 					}
 				],
-				"description": "A slot of a dated or of a weekday event."
+				"description": "A slot of a dated or of a weekday event, or an option of a poll."
 			},
 			"DatedSlot": {
 				"type": "object",
@@ -2127,6 +2188,19 @@
 					"minute"
 				],
 				"description": "A slot of a weekday event: a wall-clock time in the reference zone."
+			},
+			"OptionSlot": {
+				"type": "object",
+				"properties": {
+					"option": {
+						"type": "string",
+						"description": "The id of the poll option."
+					}
+				},
+				"required": [
+					"option"
+				],
+				"description": "An option of a poll, answered as a slot is."
 			},
 			"Retention": {
 				"oneOf": [
@@ -2240,7 +2314,7 @@
 						"items": {
 							"$ref": "#/components/schemas/Slot"
 						},
-						"description": "The event's slots inside the final time, in time order."
+						"description": "The event's slots inside the final time, in time order; for a poll, its one option."
 					}
 				},
 				"required": [
@@ -2526,7 +2600,7 @@
 							6,
 							7
 						],
-						"description": "The first day of the week in the grid: 1 is Monday, 7 is Sunday."
+						"description": "The first day of the week in the grid: 1 is Monday, 7 is Sunday. A poll has none."
 					},
 					"schedule": {
 						"$ref": "#/components/schemas/ScheduleInput",
@@ -2550,6 +2624,9 @@
 					},
 					{
 						"$ref": "#/components/schemas/WeekdaysScheduleInput"
+					},
+					{
+						"$ref": "#/components/schemas/PollScheduleInput"
 					}
 				],
 				"discriminator": {
@@ -2557,7 +2634,8 @@
 					"mapping": {
 						"dates": "#/components/schemas/DatesScheduleInput",
 						"range": "#/components/schemas/RangeScheduleInput",
-						"weekdays": "#/components/schemas/WeekdaysScheduleInput"
+						"weekdays": "#/components/schemas/WeekdaysScheduleInput",
+						"poll": "#/components/schemas/PollScheduleInput"
 					}
 				},
 				"description": "When the event can take place, tagged by `mode`. The server derives the slots."
@@ -2711,6 +2789,75 @@
 				"additionalProperties": false,
 				"description": "An event on days of the week, without dates."
 			},
+			"PollScheduleInput": {
+				"type": "object",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"const": "poll",
+						"description": "The kind of schedule."
+					},
+					"options": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/OptionInput"
+						},
+						"description": "2 to 20 options. A change names the options it keeps by id and new ones by their times; an option it leaves out is removed with its answers."
+					}
+				},
+				"required": [
+					"mode",
+					"options"
+				],
+				"additionalProperties": false,
+				"description": "A poll of 2 to 20 options."
+			},
+			"OptionInput": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/KeptOptionInput"
+					},
+					{
+						"$ref": "#/components/schemas/NewOptionInput"
+					}
+				],
+				"description": "An option the poll keeps, by id, or a new one, by its times."
+			},
+			"KeptOptionInput": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The id of an option the event has."
+					}
+				},
+				"required": [
+					"id"
+				],
+				"additionalProperties": false,
+				"description": "An option the poll keeps."
+			},
+			"NewOptionInput": {
+				"type": "object",
+				"properties": {
+					"start": {
+						"type": "string",
+						"format": "date-time",
+						"description": "The start as an RFC 3339 instant at a whole minute, not before now."
+					},
+					"end": {
+						"type": "string",
+						"format": "date-time",
+						"description": "The end as an RFC 3339 instant at a whole minute, after the start and on its date in the reference zone."
+					}
+				},
+				"required": [
+					"start",
+					"end"
+				],
+				"additionalProperties": false,
+				"description": "A new option. An option cannot be changed; a new time is a new option."
+			},
 			"JoinRequest": {
 				"type": "object",
 				"properties": {
@@ -2787,9 +2934,12 @@
 					},
 					{
 						"$ref": "#/components/schemas/WeekdaySlotInput"
+					},
+					{
+						"$ref": "#/components/schemas/OptionSlotInput"
 					}
 				],
-				"description": "A slot of a dated or of a weekday event."
+				"description": "A slot of a dated or of a weekday event, or an option of a poll."
 			},
 			"DatedSlotInput": {
 				"type": "object",
@@ -2835,6 +2985,20 @@
 				],
 				"additionalProperties": false,
 				"description": "A slot of a weekday event."
+			},
+			"OptionSlotInput": {
+				"type": "object",
+				"properties": {
+					"option": {
+						"type": "string",
+						"description": "The id of the poll option."
+					}
+				},
+				"required": [
+					"option"
+				],
+				"additionalProperties": false,
+				"description": "An option of a poll."
 			},
 			"SetPasswordRequest": {
 				"type": "object",

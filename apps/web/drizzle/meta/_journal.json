@@ -43,6 +43,13 @@
       "when": 1795116760592,
       "tag": "0005_final_time",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795124067899,
+      "tag": "0006_poll",
+      "breakpoints": true
     }
   ]
 }
