@@ -81,6 +81,12 @@ Each phase ships on its own and is usable by real people.
 - An "if need be" level in addition to "available".
 - Poll mode: yes, if need be, or no on a few hand-picked options, on the same event model.
 - Light and dark theme: follows the system setting, with a manual switch.
+- Visual review of the application, which may revise the palette and how the grid marks cells in `DESIGN.md`. Defects seen so far (2026-11-19):
+  1. A grid cell focused from the keyboard has too little contrast, and its outline is hard to see.
+  2. A chosen best time in the list below the grid shifts its content by a pixel, because the mark widens the border from 1 to 2 px.
+  3. The marks in the grid (availability, best time) have too little contrast against each other and the background.
+  4. Switching the language shifts the layout.
+  5. After switching the language, "Change password" and the rest of the line for the joined participant appear noticeably later than the other text. The board learns who has joined only after the browser sends its stored token to the server (`identifyAction` in `event-board.tsx`), so the line waits for that round trip on every page load.
 - Live updates that replace the 15-second reload, using the technique that fits the hosting chosen by then.
 - Guides for people who run convenr or build on it, as sections of the README. A guide that is too long for the README moves to `docs/guides/` and the README links to it. A guide is done when each of its commands runs on a clean clone.
   1. Local deployment: run the application and PostgreSQL in containers, the settings an instance takes, and how to update it and back up its data.
