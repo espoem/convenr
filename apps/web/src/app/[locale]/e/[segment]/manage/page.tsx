@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { ManageEvent } from "@/components/manage-event";
 import { PageShell } from "@/components/page-shell";
@@ -7,6 +8,15 @@ import { eventIdFromSegment } from "@/domain/event-address";
 import { eventFormOptions } from "@/i18n/event-form-options";
 import { Link } from "@/i18n/navigation";
 import { readEvent } from "@/server/events";
+
+/** The small line above the event name in the heading. */
+function label(chunks: ReactNode) {
+	return (
+		<span className="block font-sans text-base font-normal tracking-normal text-ink-muted">
+			{chunks}
+		</span>
+	);
+}
 
 /** The manage page. Its content waits for the admin secret. */
 export default async function ManagePage({ params }: PageProps<"/[locale]/e/[segment]/manage">) {
@@ -24,7 +34,9 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 		<PageShell>
 			<main className="flex flex-col gap-8">
 				<div className="flex flex-col gap-3">
-					<h1 className="text-3xl break-words sm:text-4xl">{t("heading", { name: event.name })}</h1>
+					<h1 className="text-3xl text-balance break-words sm:text-4xl">
+						{t.rich("heading", { name: event.name, label })}
+					</h1>
 					<Link
 						href={`/e/${event.segment}`}
 						className="w-fit text-action underline underline-offset-4"

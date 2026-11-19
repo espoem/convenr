@@ -59,6 +59,13 @@ function withoutParticipant(stored: LocalEvent | undefined): LocalEvent | undefi
 	return rest;
 }
 
+function withPassword(hasPassword: boolean) {
+	return (stored: LocalEvent | undefined): LocalEvent | undefined =>
+		stored?.participant === undefined || stored.participant.hasPassword === hasPassword
+			? stored
+			: { ...stored, participant: { ...stored.participant, hasPassword } };
+}
+
 function sameSet(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
 	return left.size === right.size && [...left].every((key) => right.has(key));
 }
@@ -73,7 +80,6 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const viewerZone = useViewerZone();
 	const stored = useLocalEvents().get(event.id);
 	const wrapper = useRef<HTMLDivElement>(null);
-	const [hasPassword, setHasPassword] = useState(false);
 	const [tab, setTab] = useState<"group" | "me">("group");
 	const [draft, setDraft] = useState<Set<string> | null>(null);
 	const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -92,7 +98,13 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const token = stored?.participant?.token;
 
 	const joined: Joined | null =
-		stored?.participant === undefined ? null : { ...stored.participant, hasPassword };
+		stored?.participant === undefined
+			? null
+			: { ...stored.participant, hasPassword: stored.participant.hasPassword ?? false };
+
+	function rememberPassword(hasPassword: boolean) {
+		updateLocalEvent(event.id, withPassword(hasPassword));
+	}
 
 	const listed = event.participants.some((participant) => participant.name === joined?.name);
 	const confirmedToken = useRef<string | null>(null);
@@ -120,7 +132,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 				setDropped(true);
 			} else {
 				confirmedToken.current = token;
-				setHasPassword(found.hasPassword);
+				updateLocalEvent(event.id, withPassword(found.hasPassword));
 			}
 		});
 
@@ -230,15 +242,14 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 			.toLocaleString(formatLocale, { hour: "numeric", minute: "2-digit" });
 	}
 
-	function joinedAs(name: string, newToken: string, withPassword: boolean) {
+	function joinedAs(name: string, newToken: string, passwordSet: boolean) {
 		updateLocalEvent(event.id, (current) => ({
 			...current,
 			id: event.id,
 			name: event.name,
 			segment: event.segment,
-			participant: { name, token: newToken },
+			participant: { name, token: newToken, hasPassword: passwordSet },
 		}));
-		setHasPassword(withPassword);
 		setDropped(false);
 		setDraft(null);
 		setTab("me");
@@ -349,10 +360,10 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 						const names = namesIn(keys);
 
 						if (person !== null) {
-							return names.has(person) ? "bg-heat-4" : "bg-heat-0";
+							return names.has(person) ? 4 : 0;
 						}
 
-						return HEAT[heatStep(names.size, total)];
+						return heatStep(names.size, total);
 					}}
 					describe={(keys) => t("count", { available: namesIn(keys).size, total })}
 					onInspect={inspect}
@@ -367,7 +378,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 				view={view}
 				slotLength={event.slotLength}
 				label={t("myGrid")}
-				fill={(keys) => (keys.every((key) => selection.has(key)) ? "bg-heat-4" : "bg-heat-0")}
+				fill={(keys) => (keys.every((key) => selection.has(key)) ? 4 : 0)}
 				describe={(keys) =>
 					keys.every((key) => selection.has(key)) ? t("youCan") : t("youCannot")
 				}
@@ -396,7 +407,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 				joined={joined}
 				onJoined={joinedAs}
 				onForget={forget}
-				onPasswordChange={setHasPassword}
+				onPasswordChange={rememberPassword}
 				formatTime={formatTime}
 			/>
 
@@ -575,7 +586,11 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 				</div>
 			) : null}
 
-			{view === null ? null : (
+			{view === null ? (
+				// Room for the heading, the filters and one window, so the list below does not
+				// jump when the browser has laid out a dated grid.
+				<div aria-hidden style={{ minHeight: "12.5rem" }} />
+			) : (
 				<BestWindows
 					view={view}
 					windows={windows}

@@ -75,7 +75,7 @@
 		"missing": "Odkaz pro správu se ukazuje jen v prohlížeči, ve kterém jste událost vytvořili. Odkaz pro účastníky je tady."
 	},
 	"Manage": {
-		"heading": "Správa: {name}",
+		"heading": "<label>Správa události</label> {name}",
 		"checking": "Ověřuji odkaz pro správu…",
 		"invalid": "Tento odkaz pro správu neplatí. Zkontrolujte, že jste ho zkopírovali celý.",
 		"open": "Otevřít událost",
@@ -194,6 +194,7 @@
 	},
 	"NotFound": {
 		"heading": "Stránka nenalezena",
+		"hint": "Odkaz může být neúplný, nebo byla událost smazána či už vypršela.",
 		"back": "Přejít na úvodní stránku"
 	},
 	"ApiReference": {

@@ -107,7 +107,7 @@ export function BestWindows({
 									type="button"
 									aria-pressed={on}
 									onClick={() => onSelect(on ? null : window)}
-									className="flex w-full flex-col items-start gap-1 rounded-md border border-earth px-3 py-2 text-left aria-pressed:border-2 aria-pressed:border-ink"
+									className="flex w-full flex-col items-start gap-1 rounded-md border border-earth px-3 py-2 text-left aria-pressed:border-ink aria-pressed:shadow-[inset_0_0_0_1px_var(--cv-ink)]"
 								>
 									<span className="flex w-full flex-wrap justify-between gap-x-4">
 										<span className="font-semibold">

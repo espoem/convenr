@@ -11,7 +11,11 @@ const localEventSchema = z.object({
 	name: z.string(),
 	segment: z.string(),
 	adminSecret: z.string().optional(),
-	participant: z.object({ name: z.string(), token: z.string() }).optional(),
+	// `hasPassword` is remembered so the joined line is complete before the server confirms the
+	// token; records from before it was kept read as having none until then.
+	participant: z
+		.object({ name: z.string(), token: z.string(), hasPassword: z.boolean().optional() })
+		.optional(),
 });
 
 export type LocalEvent = z.infer<typeof localEventSchema>;

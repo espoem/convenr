@@ -120,3 +120,108 @@
 		}
 	}
 }
+
+/* The availability grid, as DESIGN.md draws it. A cell draws its own right and bottom line in
+   a color that stays visible on its fill; the block's outer edge stays earth. */
+@layer components {
+	.cv-cell {
+		--cell-fill: var(--cv-background);
+		--cell-line: var(--cv-earth);
+
+		position: relative;
+		border-right: 1px solid var(--cell-line);
+		border-bottom: 1px solid var(--cell-line);
+		background: var(--cell-fill);
+	}
+
+	.cv-cell[data-heat="0"] {
+		--cell-fill: var(--cv-heat-0);
+	}
+
+	.cv-cell[data-heat="1"] {
+		--cell-fill: var(--cv-heat-1);
+	}
+
+	.cv-cell[data-heat="2"] {
+		--cell-fill: var(--cv-heat-2);
+	}
+
+	.cv-cell[data-heat="3"] {
+		--cell-fill: var(--cv-heat-3);
+		--cell-line: var(--cv-surface);
+	}
+
+	.cv-cell[data-heat="4"] {
+		--cell-fill: var(--cv-heat-4);
+		--cell-line: var(--cv-surface);
+	}
+
+	.cv-cell[data-half] {
+		border-bottom-color: color-mix(in srgb, var(--cell-line) 45%, var(--cell-fill));
+	}
+
+	.cv-cell[data-block-end] {
+		border-right-color: var(--cv-earth);
+	}
+
+	.cv-cell[data-last-row] {
+		border-bottom-color: var(--cv-earth);
+	}
+
+	/* Focus sits inside the cell, so it neither covers a neighbour nor gets cut off at the
+	   edge of the scrolling grid. */
+	.cv-cell-button:focus-visible,
+	.cv-cell[data-marked] > .cv-cell-button {
+		outline: none;
+		box-shadow:
+			inset 0 0 0 1px var(--cv-surface),
+			inset 0 0 0 4px var(--cv-ink),
+			inset 0 0 0 5px var(--cv-surface);
+	}
+
+	/* The selected best window is stitched: a dashed ink line on a surface strip, inside the
+	   window's edge. Each cell draws the sides it shares with the window's edge. */
+	.cv-cell[data-window]::before,
+	.cv-cell[data-window]::after {
+		content: "";
+		position: absolute;
+		pointer-events: none;
+	}
+
+	.cv-cell[data-window] {
+		--strip-top: 0px;
+		--strip-bottom: 0px;
+	}
+
+	.cv-cell[data-window]::after {
+		inset: 0;
+		box-shadow:
+			inset 4px 0 0 var(--cv-surface),
+			inset -4px 0 0 var(--cv-surface),
+			inset 0 var(--strip-top) 0 var(--cv-surface),
+			inset 0 calc(-1 * var(--strip-bottom)) 0 var(--cv-surface);
+	}
+
+	.cv-cell[data-window]::before {
+		z-index: 1;
+		inset: 1px;
+		border: 0 dashed var(--cv-ink);
+		border-inline-width: 2px;
+	}
+
+	.cv-cell[data-window~="top"] {
+		--strip-top: 4px;
+	}
+
+	.cv-cell[data-window~="bottom"] {
+		--strip-bottom: 4px;
+	}
+
+	.cv-cell[data-window~="top"]::before {
+		border-top-width: 2px;
+	}
+
+	.cv-cell[data-window~="bottom"]::before {
+		border-bottom-width: 2px;
+	}
+}

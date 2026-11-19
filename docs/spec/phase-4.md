@@ -105,7 +105,7 @@ These rules extend Phase 2 rules U1 to U7.
 2. A chosen best window in the list does not move its content: marking it changes no border width.
 3. Availability, if need be, the best-window outline and the final time are told apart in the grid by more than color, and each mark has at least 3:1 against what surrounds it.
 4. Switching the language does not shift the layout (Q3).
-5. The joined participant's line appears with the rest of the page. The page shows it from the name in local storage (B1) as soon as it runs, and checks the token with the server afterwards; a token the server refuses leads to F4. The server renders the space of the line, so showing it shifts nothing. The token stays in local storage (ADR 0003 item 10); cookies are reconsidered with accounts in F5.
+5. The joined participant's line appears complete as soon as the page runs. Local storage (B1) also keeps whether the participant has a password, so the line, its password button included, needs no answer from the server; the page checks the token afterwards and corrects the stored value, and a token the server refuses leads to F4. The server cannot know the participant, so it renders the join form, which the line replaces for a joined browser. The token stays in local storage (ADR 0003 item 10); cookies are reconsidered with accounts in F5.
 
 ## 9. Live update rules
 

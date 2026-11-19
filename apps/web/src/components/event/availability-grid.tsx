@@ -4,6 +4,7 @@ import { Fragment, useRef, useState, type KeyboardEvent, type PointerEvent } fro
 
 import type { GridView } from "@/domain/grid-labels";
 import { closesHour } from "@/domain/grid-layout";
+import type { HeatStep } from "@/domain/heat";
 import { cn } from "@/lib/utils";
 
 export type CellRef = { column: number; row: number };
@@ -17,8 +18,8 @@ type AvailabilityGridProps = {
 	view: GridView;
 	slotLength: number;
 	label: string;
-	/** Classes that fill a cell holding these slot keys. */
-	fill: (keys: readonly string[]) => string;
+	/** The heat step that fills a cell holding these slot keys. */
+	fill: (keys: readonly string[]) => HeatStep;
 	/** What a screen reader hears after the cell's day and time. */
 	describe: (keys: readonly string[]) => string;
 	/** Present in edit mode. */
@@ -30,23 +31,14 @@ type AvailabilityGridProps = {
 	highlight?: { column: number; first: number; last: number } | null | undefined;
 };
 
-// An ink edge with a surface strip inside stays visible on every heat step, the darkest included.
-const EDGE = "var(--color-ink)";
-const GAP = "var(--color-surface)";
+// A day column never grows past this, so a short event does not stretch across a wide screen.
+const MAX_COLUMN = "6rem";
 
-function outline(sides: { top: boolean; bottom: boolean }): string {
-	const edges = [
-		[3, 0],
-		[-3, 0],
-		...(sides.top ? [[0, 3]] : []),
-		...(sides.bottom ? [[0, -3]] : []),
-	];
+// Wide enough for the longest time label in every locale ("10:00 PM"), so a language
+// switch does not move the grid.
+const TIME_COLUMN = "4.5rem";
 
-	return [
-		...edges.map(([x = 0, y = 0]) => `inset ${x}px ${y}px 0 ${EDGE}`),
-		...edges.map(([x = 0, y = 0]) => `inset ${x * 2}px ${y * 2}px 0 ${GAP}`),
-	].join(", ");
-}
+const BLOCK_GAP = "0.75rem";
 
 const ARROWS = new Map([
 	["ArrowLeft", { column: -1, row: 0 }],
@@ -118,6 +110,14 @@ export function AvailabilityGrid({
 			view.layout.blocks.slice(0, index).reduce((sum, block) => sum + block.length, 0),
 		),
 	);
+
+	const gaps = view.layout.blocks.length - 1;
+
+	const lastRow = view.layout.rows.length - 1;
+
+	// Equal day columns that fill the width, from the minimum cell up to MAX_COLUMN.
+	const width = (column: string) =>
+		`calc(${TIME_COLUMN} + ${columns.length} * ${column} + ${gaps} * ${BLOCK_GAP})`;
 
 	const keysOf = (cell: CellRef) => columns[cell.column]?.cells[cell.row] ?? [];
 
@@ -214,25 +214,38 @@ export function AvailabilityGrid({
 					onInspect?.(null, null);
 				}
 			}}
-			className="border-separate border-spacing-0 select-none"
+			style={{
+				width: "100%",
+				minWidth: width("var(--cv-cell-min-width)"),
+				maxWidth: width(MAX_COLUMN),
+			}}
+			className="table-fixed border-separate border-spacing-0 select-none"
 		>
 			<caption className="sr-only">{label}</caption>
 			<thead>
 				<tr>
 					{/* Below the time labels, so the first label can reach up to its line. */}
-					<td aria-hidden className="sticky top-0 left-0 z-[5] bg-background" />
+					<td
+						aria-hidden
+						style={{ width: TIME_COLUMN }}
+						className="sticky top-0 left-0 z-[5] bg-background"
+					/>
 					{columns.map((column, index) => {
 						const text = view.columns[index];
 
 						return (
 							<Fragment key={column.kind === "date" ? column.date : column.weekday}>
 								{index > 0 && blockStarts.has(index) ? (
-									<td aria-hidden className="sticky top-0 z-10 w-3 min-w-3 bg-background" />
+									<td
+										aria-hidden
+										style={{ width: BLOCK_GAP }}
+										className="sticky top-0 z-10 bg-background"
+									/>
 								) : null}
 								<th
 									scope="col"
 									aria-label={text?.long}
-									className="sticky top-0 z-10 min-w-(--cv-cell-min-width) bg-background px-1 pb-1.5 text-center leading-tight font-normal"
+									className="sticky top-0 z-10 bg-background px-1 pb-1.5 text-center leading-tight font-normal"
 								>
 									<span aria-hidden className="block text-sm">
 										{text?.day}
@@ -283,27 +296,29 @@ export function AvailabilityGrid({
 								const inWindow =
 									highlight?.column === index && row >= highlight.first && row <= highlight.last;
 
+								// The edges of the stitched best-window mark that this cell carries.
+								const window = inWindow
+									? [row === highlight.first && "top", row === highlight.last && "bottom"]
+											.filter(Boolean)
+											.join(" ") || "middle"
+									: undefined;
+
 								return (
 									<Fragment key={cellId(cell)}>
 										{index > 0 && blockStarts.has(index) ? <td aria-hidden /> : null}
 										<td
-											style={
-												inWindow
-													? {
-															boxShadow: outline({
-																top: row === highlight.first,
-																bottom: row === highlight.last,
-															}),
-														}
-													: undefined
+											data-heat={empty ? undefined : fill(keys)}
+											data-half={solid ? undefined : ""}
+											data-block-end={
+												index === columns.length - 1 || blockStarts.has(index + 1) ? "" : undefined
 											}
+											data-last-row={row === lastRow ? "" : undefined}
+											data-window={window}
+											data-marked={marked ? "" : undefined}
 											className={cn(
-												"h-7 min-w-(--cv-cell-min-width) border-r border-b border-earth p-0 sm:w-18",
-												solid ? "[border-bottom-style:solid]" : "[border-bottom-style:dotted]",
-												blockStarts.has(index) && "border-l",
-												row === 0 && "border-t",
-												empty ? "bg-background" : fill(keys),
-												marked && "outline-2 -outline-offset-2 outline-ink",
+												"cv-cell h-7 p-0",
+												blockStarts.has(index) && "border-l border-l-earth",
+												row === 0 && "border-t border-t-earth",
 											)}
 										>
 											{empty ? null : (
@@ -341,7 +356,7 @@ export function AvailabilityGrid({
 														}
 													}}
 													className={cn(
-														"block h-7 w-full cursor-pointer",
+														"cv-cell-button block h-7 w-full cursor-pointer",
 														edit !== undefined && "touch-none",
 													)}
 												/>

@@ -75,7 +75,7 @@
 		"missing": "The admin link is shown only in the browser that created the event. Here is the link for participants."
 	},
 	"Manage": {
-		"heading": "Manage: {name}",
+		"heading": "<label>Manage the event</label> {name}",
 		"checking": "Checking the admin link…",
 		"invalid": "This admin link is not valid. Check that you copied all of it.",
 		"open": "Open the event",
@@ -194,6 +194,7 @@
 	},
 	"NotFound": {
 		"heading": "Page not found",
+		"hint": "The link may be incomplete, or the event was deleted or has expired.",
 		"back": "Go to the start page"
 	},
 	"ApiReference": {
