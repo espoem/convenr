@@ -20,6 +20,7 @@ Run every command through mise from the repository root.
 | Format                                          | `mise run format`                     |
 | Lint                                            | `mise run lint`                       |
 | Type check                                      | `mise run typecheck`                  |
+| Lint the GitHub workflows                       | `mise run workflows:lint`             |
 | Unit and database tests (starts PostgreSQL)     | `mise run test`                       |
 | Regenerate the theme after a `DESIGN.md` change | `mise run theme`                      |
 | Rewrite the OpenAPI copy after an API change    | `mise run openapi`                    |
