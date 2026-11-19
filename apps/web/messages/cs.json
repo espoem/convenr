@@ -326,6 +326,7 @@
 			"SetPasswordRequest": "Nové heslo.",
 			"RemovePasswordRequest": "Heslo k odebrání."
 		},
+		"knownValues": "Dosavadní hodnoty: {values}. Pozdější verze mohou přidat další.",
 		"properties": {
 			"id": "Veřejné id události.",
 			"name": "Název události.",

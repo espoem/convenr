@@ -14,8 +14,6 @@ from typing import (
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.range_schedule_slot_minutes import RangeScheduleSlotMinutes
-
 if TYPE_CHECKING:
     from ..models.dated_slot import DatedSlot
 
@@ -33,7 +31,7 @@ class RangeSchedule:
         last (datetime.date): The last day, `YYYY-MM-DD`.
         daily_start (str): The start of each day's slots, `HH:MM`.
         daily_end (str): The end of each day's slots, `HH:MM`; `24:00` is midnight.
-        slot_minutes (RangeScheduleSlotMinutes): The length of a slot in minutes.
+        slot_minutes (int): The length of a slot in minutes. Values so far: 15, 30, 60. A later version may add more.
         slots (list[DatedSlot]): Every slot of the event, in time order.
     """
 
@@ -42,7 +40,7 @@ class RangeSchedule:
     last: datetime.date
     daily_start: str
     daily_end: str
-    slot_minutes: RangeScheduleSlotMinutes
+    slot_minutes: int
     slots: list[DatedSlot]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -57,7 +55,7 @@ class RangeSchedule:
 
         daily_end = self.daily_end
 
-        slot_minutes = self.slot_minutes.value
+        slot_minutes = self.slot_minutes
 
         slots = []
         for slots_item_data in self.slots:
@@ -97,7 +95,7 @@ class RangeSchedule:
 
         daily_end = d.pop("dailyEnd")
 
-        slot_minutes = RangeScheduleSlotMinutes(d.pop("slotMinutes"))
+        slot_minutes = d.pop("slotMinutes")
 
         slots = []
         _slots = d.pop("slots")

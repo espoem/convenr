@@ -6,8 +6,6 @@ from typing import Any, Self, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.weekday_slot_weekday import WeekdaySlotWeekday
-
 T = TypeVar("T", bound="WeekdaySlot")
 
 
@@ -16,16 +14,17 @@ class WeekdaySlot:
     """A slot of a weekday event: a wall-clock time in the reference zone.
 
     Attributes:
-        weekday (WeekdaySlotWeekday): The day of the week: 1 is Monday, 7 is Sunday.
+        weekday (int): The day of the week: 1 is Monday, 7 is Sunday. Values so far: 1, 2, 3, 4, 5, 6, 7. A later
+            version may add more.
         minute (int): The start of the slot in minutes after midnight.
     """
 
-    weekday: WeekdaySlotWeekday
+    weekday: int
     minute: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        weekday = self.weekday.value
+        weekday = self.weekday
 
         minute = self.minute
 
@@ -43,7 +42,7 @@ class WeekdaySlot:
     @classmethod
     def from_dict(cls, src_dict: Mapping[str, Any]) -> Self:
         d = dict(src_dict)
-        weekday = WeekdaySlotWeekday(d.pop("weekday"))
+        weekday = d.pop("weekday")
 
         minute = d.pop("minute")
 

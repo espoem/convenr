@@ -101,6 +101,9 @@ const INPUT_COMPONENTS: Component[] = [
 	["RemovePasswordRequest", removePasswordRequestSchema],
 ];
 
+/** Marks the values of a response enum until the text names them. */
+const KNOWN_VALUES = "x-known-values";
+
 /** Checks that zod writes as JSON Schema keywords. Any other check would be left out. */
 const DESCRIBED_CHECKS = [
 	z.core.$ZodCheckLessThan,
@@ -127,7 +130,9 @@ export function schemaOf(value: z.core.JSONSchema._JSONSchema): JsonSchema | und
  * - a check that JSON Schema cannot express stops the build instead of being left out;
  * - a response object accepts fields added later (forward compatibility);
  * - a tagged union names its tag, so a client can narrow it;
- * - a set of whole numbers is typed as integers.
+ * - a set of whole numbers is typed as integers, and in a response it stays a plain integer, so
+ *   that a client does not refuse a value a later version adds (the values go into the text);
+ * - zod's safe-integer bounds and the pattern that repeats a date format are left out.
  */
 function adjust(io: Io) {
 	return ({ zodSchema, jsonSchema }: { zodSchema: z.core.$ZodType; jsonSchema: JsonSchema }) => {
@@ -150,6 +155,23 @@ function adjust(io: Io) {
 
 		if (jsonSchema.type === "number" && values.length > 0 && whole) {
 			jsonSchema.type = "integer";
+		}
+
+		if (io === "output" && jsonSchema.type === "integer" && values.length > 0) {
+			jsonSchema[KNOWN_VALUES] = values;
+			delete jsonSchema.enum;
+		}
+
+		if (jsonSchema.minimum === -Number.MAX_SAFE_INTEGER) {
+			delete jsonSchema.minimum;
+		}
+
+		if (jsonSchema.maximum === Number.MAX_SAFE_INTEGER) {
+			delete jsonSchema.maximum;
+		}
+
+		if (jsonSchema.format === "date" || jsonSchema.format === "date-time") {
+			delete jsonSchema.pattern;
 		}
 	};
 }
@@ -232,6 +254,8 @@ const textsSchema = z.object({
 	headers: z.record(z.string(), z.string()),
 	responses: z.record(z.string(), z.string()),
 	schemas: z.record(z.string(), z.string()),
+	/** Names the values of a response enum; `{values}` stands for the list. */
+	knownValues: z.string(),
 	/** A field's text wherever it appears, unless `propertiesOf` has one for its component. */
 	properties: z.record(z.string(), z.string()),
 	propertiesOf: z.record(z.string(), z.record(z.string(), z.string())),
@@ -264,6 +288,34 @@ function describeComponents(schemas: Record<string, JsonSchema>, texts: Texts): 
 					texts.propertiesOf[name]?.[property] ?? lookup(texts.properties, "properties", property);
 			}
 		}
+	}
+}
+
+/** Replaces the marked values of a response enum with a sentence in the text of the field. */
+function nameKnownValues(schema: JsonSchema, texts: Texts): void {
+	const values = z.array(z.number()).safeParse(schema[KNOWN_VALUES]);
+
+	if (values.success) {
+		const sentence = texts.knownValues.replace("{values}", values.data.join(", "));
+
+		schema.description =
+			schema.description === undefined ? sentence : `${schema.description} ${sentence}`;
+		delete schema[KNOWN_VALUES];
+	}
+
+	for (const property of Object.values(schema.properties ?? {})) {
+		const described = schemaOf(property);
+
+		if (described !== undefined) {
+			nameKnownValues(described, texts);
+		}
+	}
+
+	const items = Array.isArray(schema.items) ? undefined : schema.items;
+	const element = items === undefined ? undefined : schemaOf(items);
+
+	if (element !== undefined) {
+		nameKnownValues(element, texts);
 	}
 }
 
@@ -688,6 +740,10 @@ export function openApiDocument(locale: Locale): OpenApiDocument {
 	}
 
 	describeComponents(schemas, texts);
+
+	for (const schema of Object.values(output)) {
+		nameKnownValues(schema, texts);
+	}
 
 	const paths: OpenApiDocument["paths"] = {};
 

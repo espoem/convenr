@@ -25,9 +25,9 @@ export type Event = {
      */
     referenceZone: string;
     /**
-     * The first day of the week in the grid: 1 is Monday, 7 is Sunday.
+     * The first day of the week in the grid: 1 is Monday, 7 is Sunday. Values so far: 1, 2, 3, 4, 5, 6, 7. A later version may add more.
      */
-    firstDayOfWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    firstDayOfWeek: number;
     /**
      * When the event can take place.
      */
@@ -92,9 +92,9 @@ export type DatesSchedule = {
      */
     dailyEnd: string;
     /**
-     * The length of a slot in minutes.
+     * The length of a slot in minutes. Values so far: 15, 30, 60. A later version may add more.
      */
-    slotMinutes: 15 | 30 | 60;
+    slotMinutes: number;
     /**
      * Every slot of the event, in time order.
      */
@@ -126,9 +126,9 @@ export type RangeSchedule = {
      */
     dailyEnd: string;
     /**
-     * The length of a slot in minutes.
+     * The length of a slot in minutes. Values so far: 15, 30, 60. A later version may add more.
      */
-    slotMinutes: 15 | 30 | 60;
+    slotMinutes: number;
     /**
      * Every slot of the event, in time order.
      */
@@ -146,7 +146,7 @@ export type WeekdaysSchedule = {
     /**
      * The chosen days of the week: 1 is Monday, 7 is Sunday.
      */
-    weekdays: Array<1 | 2 | 3 | 4 | 5 | 6 | 7>;
+    weekdays: Array<number>;
     /**
      * The start of each day's slots, `HH:MM`.
      */
@@ -156,9 +156,9 @@ export type WeekdaysSchedule = {
      */
     dailyEnd: string;
     /**
-     * The length of a slot in minutes.
+     * The length of a slot in minutes. Values so far: 15, 30, 60. A later version may add more.
      */
-    slotMinutes: 15 | 30 | 60;
+    slotMinutes: number;
     /**
      * Every slot of the event, in time order.
      */
@@ -185,9 +185,9 @@ export type DatedSlot = {
  */
 export type WeekdaySlot = {
     /**
-     * The day of the week: 1 is Monday, 7 is Sunday.
+     * The day of the week: 1 is Monday, 7 is Sunday. Values so far: 1, 2, 3, 4, 5, 6, 7. A later version may add more.
      */
-    weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    weekday: number;
     /**
      * The start of the slot in minutes after midnight.
      */

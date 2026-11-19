@@ -54,6 +54,23 @@ def test_keeps_the_fields_a_later_version_adds() -> None:
     assert event.to_dict() == EVENT
 
 
+def test_keeps_a_response_enum_value_it_does_not_know() -> None:
+    later = {
+        **EVENT,
+        "firstDayOfWeek": 8,
+        "schedule": {**EVENT["schedule"], "slotMinutes": 45, "weekdays": [1, 8]},
+    }
+    client = serving(200, later, "application/json")
+
+    event = get_event.sync(EVENT_ID, client=client)
+
+    assert isinstance(event, Event)
+    assert event.first_day_of_week == 8
+    assert event.schedule.slot_minutes == 45
+    assert event.schedule.weekdays == [1, 8]
+    assert event.to_dict() == later
+
+
 def test_keeps_a_problem_code_it_does_not_know() -> None:
     problem = {
         "type": "https://convenr.party/problems/added_later",

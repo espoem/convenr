@@ -67,7 +67,12 @@ describe("the TypeScript SDK against a running instance", () => {
 		});
 
 		const { event, adminSecret } = created.data;
-		const slots = event.schedule.slots;
+
+		if (event.schedule.mode !== "dates") {
+			throw new Error("The event was made on dates.");
+		}
+
+		const { slots } = event.schedule;
 
 		expect(slots).toHaveLength(8);
 

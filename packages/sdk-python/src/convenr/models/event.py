@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, Self, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.event_first_day_of_week import EventFirstDayOfWeek
-
 if TYPE_CHECKING:
     from ..models.dates_schedule import DatesSchedule
     from ..models.participant import Participant
@@ -29,7 +27,8 @@ class Event:
         name (str): The name of the event.
         description (str): A description of the event; empty when there is none.
         reference_zone (str): The IANA time zone in which the organizer planned the event.
-        first_day_of_week (EventFirstDayOfWeek): The first day of the week in the grid: 1 is Monday, 7 is Sunday.
+        first_day_of_week (int): The first day of the week in the grid: 1 is Monday, 7 is Sunday. Values so far: 1, 2,
+            3, 4, 5, 6, 7. A later version may add more.
         schedule (DatesSchedule | RangeSchedule | WeekdaysSchedule): When the event can take place, tagged by `mode`.
         retention (RetentionKept | RetentionUntil): When the event will be deleted, tagged by `kind`.
         participants (list[Participant]): The participants in joining order.
@@ -39,7 +38,7 @@ class Event:
     name: str
     description: str
     reference_zone: str
-    first_day_of_week: EventFirstDayOfWeek
+    first_day_of_week: int
     schedule: DatesSchedule | RangeSchedule | WeekdaysSchedule
     retention: RetentionKept | RetentionUntil
     participants: list[Participant]
@@ -58,7 +57,7 @@ class Event:
 
         reference_zone = self.reference_zone
 
-        first_day_of_week = self.first_day_of_week.value
+        first_day_of_week = self.first_day_of_week
 
         schedule: dict[str, Any]
         if isinstance(self.schedule, DatesSchedule) or isinstance(
@@ -114,7 +113,7 @@ class Event:
 
         reference_zone = d.pop("referenceZone")
 
-        first_day_of_week = EventFirstDayOfWeek(d.pop("firstDayOfWeek"))
+        first_day_of_week = d.pop("firstDayOfWeek")
 
         def _parse_schedule(
             data: object,

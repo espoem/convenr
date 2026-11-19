@@ -13,9 +13,6 @@ from typing import (
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.weekdays_schedule_slot_minutes import WeekdaysScheduleSlotMinutes
-from ..models.weekdays_schedule_weekdays_item import WeekdaysScheduleWeekdaysItem
-
 if TYPE_CHECKING:
     from ..models.weekday_slot import WeekdaySlot
 
@@ -29,34 +26,31 @@ class WeekdaysSchedule:
 
     Attributes:
         mode (Literal['weekdays']): The kind of schedule.
-        weekdays (list[WeekdaysScheduleWeekdaysItem]): The chosen days of the week: 1 is Monday, 7 is Sunday.
+        weekdays (list[int]): The chosen days of the week: 1 is Monday, 7 is Sunday.
         daily_start (str): The start of each day's slots, `HH:MM`.
         daily_end (str): The end of each day's slots, `HH:MM`; `24:00` is midnight.
-        slot_minutes (WeekdaysScheduleSlotMinutes): The length of a slot in minutes.
+        slot_minutes (int): The length of a slot in minutes. Values so far: 15, 30, 60. A later version may add more.
         slots (list[WeekdaySlot]): Every slot of the event, in time order.
     """
 
     mode: Literal["weekdays"]
-    weekdays: list[WeekdaysScheduleWeekdaysItem]
+    weekdays: list[int]
     daily_start: str
     daily_end: str
-    slot_minutes: WeekdaysScheduleSlotMinutes
+    slot_minutes: int
     slots: list[WeekdaySlot]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         mode = self.mode
 
-        weekdays = []
-        for weekdays_item_data in self.weekdays:
-            weekdays_item = weekdays_item_data.value
-            weekdays.append(weekdays_item)
+        weekdays = self.weekdays
 
         daily_start = self.daily_start
 
         daily_end = self.daily_end
 
-        slot_minutes = self.slot_minutes.value
+        slot_minutes = self.slot_minutes
 
         slots = []
         for slots_item_data in self.slots:
@@ -87,18 +81,13 @@ class WeekdaysSchedule:
         if mode != "weekdays":
             raise ValueError(f"mode must match const 'weekdays', got '{mode}'")
 
-        weekdays = []
-        _weekdays = d.pop("weekdays")
-        for weekdays_item_data in _weekdays:
-            weekdays_item = WeekdaysScheduleWeekdaysItem(weekdays_item_data)
-
-            weekdays.append(weekdays_item)
+        weekdays = cast(list[int], d.pop("weekdays"))
 
         daily_start = d.pop("dailyStart")
 
         daily_end = d.pop("dailyEnd")
 
-        slot_minutes = WeekdaysScheduleSlotMinutes(d.pop("slotMinutes"))
+        slot_minutes = d.pop("slotMinutes")
 
         slots = []
         _slots = d.pop("slots")

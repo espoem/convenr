@@ -71,6 +71,31 @@ describe("the OpenAPI document", () => {
 		expect(components.schemas["DatesScheduleInput"]?.["additionalProperties"]).toBe(false);
 	});
 
+	it("leaves out zod's default bounds and the patterns that repeat a date format", () => {
+		const text = JSON.stringify(document);
+
+		expect(text).not.toContain("9007199254740991");
+		expect(text).not.toContain("-02-29");
+		expect(components.schemas["Problem"]?.["properties"]).toMatchObject({
+			status: { minimum: 100, maximum: 599 },
+			losing: { minimum: 0 },
+		});
+	});
+
+	it("keeps an enum in a request and a plain integer in a response", () => {
+		const day = z.object({
+			properties: z.object({ firstDayOfWeek: z.record(z.string(), z.unknown()) }),
+		});
+
+		const event = day.parse(components.schemas["Event"]);
+		const request = day.parse(components.schemas["CreateEventRequest"]);
+
+		expect(event.properties.firstDayOfWeek).toMatchObject({ type: "integer" });
+		expect(event.properties.firstDayOfWeek).not.toHaveProperty("enum");
+		expect(event.properties.firstDayOfWeek["description"]).toContain("1, 2, 3, 4, 5, 6, 7");
+		expect(request.properties.firstDayOfWeek["enum"]).toEqual([1, 2, 3, 4, 5, 6, 7]);
+	});
+
 	it("stops at a check that JSON Schema cannot express", () => {
 		const refined = z.object({ name: z.string().refine((name) => name !== "admin") });
 

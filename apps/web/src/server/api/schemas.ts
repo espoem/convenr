@@ -146,13 +146,13 @@ export const windowsQuerySchema = z.object({
 
 export const windowsSchema = z.object({
 	/** The filters applied, with the defaults filled in. */
-	minMinutes: z.int(),
-	minPeople: z.int(),
+	minMinutes: z.int().min(1).max(MINUTES_PER_DAY),
+	minPeople: z.int().min(1),
 	/** At most five, the most people first, then the longest, then the earliest. */
 	windows: z.array(
 		z.object({
 			slots: z.array(slotSchema).min(1),
-			minutes: z.int(),
+			minutes: z.int().min(1),
 			/** Public ids of the participants available in every slot. */
 			participantIds: z.array(z.string()),
 		}),
@@ -172,14 +172,14 @@ export const fieldErrorSchema = z.union([
 export const problemSchema = z.object({
 	/** `https://convenr.party/problems/` followed by the code. */
 	type: z.string(),
-	status: z.int(),
+	status: z.int().min(100).max(599),
 	title: z.string(),
 	code: z.string(),
 	errors: z.array(fieldErrorSchema).optional(),
 	/** With `too_many_attempts`: when a password may be tried again. */
 	retryAt: z.iso.datetime().optional(),
 	/** With `confirmation_required`: how many participants would lose availability. */
-	losing: z.int().optional(),
+	losing: z.int().min(0).optional(),
 });
 
 export type CreateEventRequest = z.output<typeof createEventRequestSchema>;

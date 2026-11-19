@@ -326,6 +326,7 @@
 			"SetPasswordRequest": "A new password.",
 			"RemovePasswordRequest": "The password to remove."
 		},
+		"knownValues": "Values so far: {values}. A later version may add more.",
 		"properties": {
 			"id": "The public id of the event.",
 			"name": "The name of the event.",
