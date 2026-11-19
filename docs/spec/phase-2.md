@@ -83,7 +83,7 @@ These rules replace the last sentence of Phase 1 rule E7: the number of days is 
 
 **X3. Expiry.** An event expires at the end of its deletion date in the reference zone. From then on, every page, action and version check treats it as unknown (E9), even before it is deleted from the database.
 
-**X4. Purge.** Expired events are deleted from the database with their participants and responses. The server runs the purge every hour. The same purge is available as a command, so an operator can schedule it from outside. Running it twice in a row has the same result as running it once.
+**X4. Purge.** Expired events are deleted from the database with their participants and responses. The server runs the purge every hour; where the platform keeps no server running, a scheduled job runs it at least every six hours (ADR 0005). The same purge is available as a command, so an operator can schedule it from outside. Running it twice in a row has the same result as running it once.
 
 ## 7. Usage rules
 
@@ -93,7 +93,7 @@ These rules replace the last sentence of Phase 1 rule E7: the number of days is 
 
 **U3. Activation.** When an event is 7 days old, or when it is deleted before that, the day's count of evaluated events grows by one, and the count of activated events grows by one if the event has at least 2 participants.
 
-**U4. Group size.** When an event is 30 days old, or when it is deleted before that, its number of participants (0 to 100) is added to the day's histogram. The count goes to the day the event reached the age; the number of participants is the one at the hourly pass that counts it, so a participant who joins less than an hour after the age may be included.
+**U4. Group size.** When an event is 30 days old, or when it is deleted before that, its number of participants (0 to 100) is added to the day's histogram. The count goes to the day the event reached the age; the number of participants is the one at the maintenance pass that counts it, so a participant who joins between the age and that pass (at most an hour later, or six hours with a scheduled job) may be included.
 
 **U5. Time to first response.** When the first participant of an event joins (M3), the time since creation is added to the day's histogram in one of these buckets: under 1 hour, under 6 hours, under 1 day, under 3 days, under 7 days, 7 days or more.
 

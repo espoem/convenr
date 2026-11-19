@@ -1,0 +1,14 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"framework": "nextjs",
+	"installCommand": "",
+	"buildCommand": "next build",
+	"regions": ["fra1"],
+	"git": { "deploymentEnabled": false },
+	"headers": [
+		{
+			"source": "/(.*)",
+			"headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+		}
+	]
+}

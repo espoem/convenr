@@ -11,6 +11,7 @@ playwright-report/
 !.env.example
 .DS_Store
 next-env.d.ts
+.vercel/
 .venv/
 __pycache__/
 .pytest_cache/

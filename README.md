@@ -37,7 +37,18 @@ mise run db:up
 mise run dev
 ```
 
-`scripts/compose.sh` uses Podman when it is installed and Docker otherwise. Set `CONTAINER_ENGINE=docker` or `CONTAINER_ENGINE=podman` to choose.
+The database listens on `127.0.0.1:5432` (`DB_PORT` changes the host port) with user, password and database `convenr`, which is fine on your own machine only. The server applies pending migrations when it starts; `mise run db:migrate` applies them without starting it.
+
+Or run the production build with Node.js, the same server the end-to-end tests use:
+
+```sh
+mise run build
+DATABASE_URL='postgres://convenr:convenr@127.0.0.1:5432/convenr' PORT=3000 node apps/web/scripts/start-standalone.mts
+```
+
+`scripts/compose.sh` uses Podman when it is installed and Docker otherwise. Set `CONTAINER_ENGINE=docker` or `CONTAINER_ENGINE=podman` to choose. With Podman on macOS or Windows, run `podman machine start` first.
+
+The `purge`, `usage` and `db:migrate` tasks read `DATABASE_URL` and `RETENTION_DAYS` from `.env` or from the environment. The development and production servers read only the environment of the shell that starts them.
 
 ## Check a change
 
@@ -68,6 +79,8 @@ An instance is one container image and one PostgreSQL database.
 The server deletes expired events every hour. To delete them from outside, for example from a scheduler, run `node apps/web/scripts/purge.mts` in the image with the same settings, or `mise run purge` in a checkout.
 
 The server keeps daily usage counts without names, contents or identifiers. `node apps/web/scripts/usage.mts` in the image (or `mise run usage`) prints them for the last 30 days; add a first and a last day, such as `2027-03-01 2027-03-31`, for another range.
+
+On Vercel, where no server process lasts, the server neither migrates nor purges. CI applies migrations with `node apps/web/scripts/migrate.mts` before it deploys, and the scheduled `Maintenance` workflow runs the purge every six hours ([ADR 0005](docs/adr/0005-vercel-deployment.md)).
 
 The image contains a plain Node.js server and uses no platform-specific API, so any host that runs containers works. `compose.yaml` is a working example of the whole setup. Change `POSTGRES_PASSWORD` before using it anywhere but your own machine.
 

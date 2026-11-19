@@ -1,0 +1,36 @@
+name: Maintenance
+
+# The production instance on Vercel runs no long-lived process, so this schedule runs the
+# maintenance pass (usage counts by age, then the purge) in its place (ADR 0005).
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maintenance
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    name: Count usage and delete expired events
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
+        with:
+          install_args: node npm:@nubjs/nub
+      - name: Install dependencies
+        run: nub ci
+      - name: Run the maintenance pass
+        run: node apps/web/scripts/purge.mts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          RETENTION_DAYS: ${{ vars.RETENTION_DAYS }}

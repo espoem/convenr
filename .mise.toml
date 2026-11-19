@@ -1,4 +1,4 @@
-min_version = "2026.11.0"
+min_version = "2026.11.10"
 
 [tools]
 node = "26.13.1"
@@ -14,6 +14,9 @@ hk = "2.13.0"
 # The Python SDK: uv installs its locked generator, test runner and dependencies.
 python = "3.14.10"
 uv = "0.13.9"
+# Builds and deploys the Vercel instance from CI. Vercel publishes it from a private repository,
+# so it has no npm provenance; mise 2026.11.10 is the first whose trust check knows that.
+"npm:vercel" = "65.17.0"
 
 [env]
 _.path = ["node_modules/.bin"]
@@ -119,9 +122,9 @@ dir = "apps/web"
 run = "nubx drizzle-kit generate"
 
 [tasks."db:migrate"]
-description = "Apply pending SQL migrations"
+description = "Apply pending SQL migrations with the server's migrator and lock"
 dir = "apps/web"
-run = "nubx drizzle-kit migrate"
+run = "node --env-file-if-exists=../../.env scripts/migrate.mts"
 
 [tasks.test]
 description = "Run unit tests and database tests; starts PostgreSQL"

@@ -9,6 +9,12 @@ export async function register() {
 	// Before anything can fail, so that no logged query error carries its values.
 	installSafeConsole();
 
+	// Vercel runs this on every cold start of a short-lived instance, where a timer does not
+	// survive. The deployment migrates before it ships, and a schedule runs the maintenance pass (ADR 0005).
+	if (process.env["VERCEL"] === "1") {
+		return;
+	}
+
 	const { db } = await import("@/db/client");
 	const { applyMigrations } = await import("@/db/migrate");
 
