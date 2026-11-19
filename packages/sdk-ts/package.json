@@ -1,0 +1,32 @@
+{
+	"name": "@convenr/sdk",
+	"version": "0.0.0",
+	"description": "Client for the convenr API, generated from its OpenAPI document",
+	"license": "MIT",
+	"files": [
+		"dist",
+		"LICENSE",
+		"THIRD_PARTY_NOTICES.md"
+	],
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run --project unit",
+		"test:acceptance": "vitest run --project acceptance",
+		"prepack": "tsc -p tsconfig.build.json"
+	},
+	"devDependencies": {
+		"typescript": "7.0.2",
+		"vitest": "5.1.0"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

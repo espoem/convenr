@@ -32,8 +32,10 @@ jobs:
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
       - name: Install dependencies
         run: nub ci
-      - name: Format, lint, theme, type check, unit tests, OpenAPI checks, build
+      - name: Format, lint, theme, type check, unit tests, OpenAPI and SDK checks, build
         run: mise run check
+      - name: SDK acceptance tests
+        run: mise run sdk:acceptance
       - name: Install the test browser
         working-directory: apps/web
         run: nubx playwright install --with-deps chromium

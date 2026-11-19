@@ -155,4 +155,6 @@ The tests name no rule numbers. This list is the only link from rules to tests.
 - `apps/web/e2e/api.spec.ts` covers that the running server serves the committed copy at `GET /api/v1/openapi.json` (G1).
 - `mise run openapi:lint` and `mise run openapi:breaking`, both part of `mise run check`, cover G3.
 - `apps/web/e2e/api-reference.spec.ts` covers H1 in both languages with scripts turned off, including that every endpoint, schema, problem code and field code has its anchor, and that a problem's `type` address of A8 resolves to the code on the reference page.
-- G4 is delivered in a later step and has no tests yet.
+- `mise run sdk:check`, part of `mise run check`, covers that both committed SDKs match the ones generated from the committed document (G4).
+- `packages/sdk-ts/src/sdk.test.ts` and `packages/sdk-python/tests/test_forward_compatibility.py` cover that both SDKs keep unknown response fields and problem codes (G4, A9).
+- `packages/sdk-ts/acceptance/round.test.ts` and `packages/sdk-python/acceptance/test_round.py` are the acceptance test of section 7. `mise run sdk:acceptance` runs both against the production build on an empty database.

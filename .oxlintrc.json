@@ -68,6 +68,7 @@
 		"**/drizzle/**",
 		"**/next-env.d.ts",
 		"**/components/ui/**",
+		"packages/sdk-ts/src/generated/**",
 		".agents/**",
 		".claude/**"
 	]

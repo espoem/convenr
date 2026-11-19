@@ -1,0 +1,6 @@
+project_name_override: convenr
+package_name_override: convenr
+# Formats the generated code with the ruff locked in uv.lock, so every run writes the same files.
+post_hooks:
+  - "ruff check . --fix-only --quiet --no-cache"
+  - "ruff format . --quiet --no-cache"

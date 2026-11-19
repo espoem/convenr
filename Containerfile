@@ -6,6 +6,9 @@ WORKDIR /repo
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
+# The lockfile names every workspace package, so a frozen install needs each manifest.
+COPY packages/sdk-ts/package.json packages/sdk-ts/package.json
+COPY packages/sdk-codegen/package.json packages/sdk-codegen/package.json
 RUN nub ci
 
 FROM deps AS build

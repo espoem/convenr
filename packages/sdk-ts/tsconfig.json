@@ -1,0 +1,11 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"lib": ["ES2025", "esnext.temporal", "DOM", "DOM.Iterable"],
+		// The generated client passes `undefined` to optional properties.
+		"exactOptionalPropertyTypes": false
+	},
+	"include": ["src", "acceptance", "vitest.config.ts"]
+}

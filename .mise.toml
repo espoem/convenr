@@ -11,6 +11,9 @@ hk = "2.13.0"
 "npm:@redocly/cli" = "2.79.0"
 # Finds breaking changes between two OpenAPI documents.
 "github:oasdiff/oasdiff" = "1.39.0"
+# The Python SDK: uv installs its locked generator, test runner and dependencies.
+python = "3.14.10"
+uv = "0.13.9"
 
 [env]
 _.path = ["node_modules/.bin"]
@@ -81,6 +84,23 @@ run = "redocly lint apps/web/openapi.json"
 description = "Fail when the OpenAPI document breaks clients of main's; OPENAPI_BASE sets another base"
 run = "scripts/openapi-breaking.sh"
 
+[tasks.sdk]
+description = "Generate both SDKs from apps/web/openapi.json"
+run = [
+  "cd packages/sdk-codegen && nubx openapi-ts",
+  "cd packages/sdk-python && uv run --locked openapi-python-client generate --path ../../apps/web/openapi.json --config openapi-python-client.yaml --meta none --output-path src/convenr --overwrite",
+]
+
+[tasks."sdk:check"]
+description = "Fail when a committed SDK differs from one generated afresh"
+depends = ["sdk"]
+run = "scripts/sdk-check.sh"
+
+[tasks."sdk:acceptance"]
+description = "Run both SDKs' acceptance tests against the production build (needs `mise run build`); starts PostgreSQL"
+depends = ["db:up"]
+run = "node apps/web/scripts/sdk-acceptance.mts"
+
 [tasks.up]
 description = "Build and start the application and PostgreSQL in containers"
 run = "scripts/compose.sh up --build --detach --wait"
@@ -106,7 +126,7 @@ run = "nubx drizzle-kit migrate"
 [tasks.test]
 description = "Run unit tests and database tests; starts PostgreSQL"
 depends = ["db:up"]
-run = "nub run -r test"
+run = ["nub run -r test", "cd packages/sdk-python && uv run --locked pytest"]
 
 [tasks.e2e]
 description = "Run end-to-end tests against the production build (needs `mise run build`); starts PostgreSQL"
@@ -124,5 +144,6 @@ run = [
   "mise run test",
   "mise run openapi:lint",
   "mise run openapi:breaking",
+  "mise run sdk:check",
   "mise run build",
 ]

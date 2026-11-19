@@ -23,12 +23,14 @@ Run every command through mise from the repository root.
 | Unit and database tests (starts PostgreSQL)     | `mise run test`                       |
 | Regenerate the theme after a `DESIGN.md` change | `mise run theme`                      |
 | Rewrite the OpenAPI copy after an API change    | `mise run openapi`                    |
+| Regenerate both SDKs after an OpenAPI change    | `mise run sdk`                        |
+| SDK acceptance tests (needs a build)            | `mise run sdk:acceptance`             |
 | Everything CI checks except end-to-end tests    | `mise run check`                      |
 | End-to-end tests (needs a build)                | `mise run e2e`                        |
 | Development server                              | `mise run db:up`, then `mise run dev` |
 | Application and database in containers          | `mise run up`, `mise run down`        |
 
-A change is done when `mise run check` and `mise run e2e` exit with code 0.
+A change is done when `mise run check`, `mise run e2e` and `mise run sdk:acceptance` exit with code 0.
 
 ## Rules
 
