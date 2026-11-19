@@ -1,4 +1,12 @@
-import { type Browser, expect as baseExpect, type Page } from "@playwright/test";
+import {
+	type APIRequestContext,
+	type Browser,
+	expect as baseExpect,
+	type Page,
+} from "@playwright/test";
+
+import { eventIdFromSegment } from "../src/domain/event-address";
+import { joinedSchema } from "../src/server/api/schemas";
 
 // Several browsers in one test, next to the other tests' browsers, can take far longer than the
 // default 5 seconds on a busy machine: joins and saves took over 15 seconds at a load of 50.
@@ -63,28 +71,56 @@ export async function mark(page: Page, date: Temporal.PlainDate, starts: string[
 export async function joinAs(browser: Browser, share: string, name: string): Promise<Page> {
 	const page = await freshPage(browser);
 
+	await joinIn(page, share, name);
+
+	return page;
+}
+
+/** Joins in `page`, which may have its clock installed first. */
+export async function joinIn(page: Page, share: string, name: string): Promise<void> {
 	await page.goto(share);
 	// A dated grid appears only after hydration; a click before it would be lost.
 	await expect(page.getByRole("table")).toBeVisible();
 	await page.getByLabel("Vaše jméno").fill(name);
 	await page.getByRole("button", { name: "Pokračovat" }).click();
 	await expect(page.getByRole("tab", { name: "Já" })).toHaveAttribute("aria-selected", "true");
-
-	return page;
 }
 
-/** A participant in a fresh browser who joins and saves the slots starting at `starts`. */
+/**
+ * A participant who joins and saves the slots starting at `starts`, in Prague time, through
+ * the API. Tests whose subject is not the response itself set the group up this way, so they
+ * start no browser per participant; joining and painting in the page are tested on their own.
+ */
 export async function respond(
-	browser: Browser,
+	request: APIRequestContext,
 	share: string,
 	name: string,
 	date: Temporal.PlainDate,
 	starts: string[],
-) {
-	const page = await joinAs(browser, share, name);
+): Promise<void> {
+	const id = eventIdFromSegment(new URL(share).pathname.split("/").at(-1) ?? "");
 
-	await mark(page, date, starts);
-	await page.getByRole("button", { name: "Uložit" }).click();
-	await expect(page.getByText("Uloženo.")).toBeVisible();
-	await page.context().close();
+	if (id === undefined) {
+		throw new Error(`${share} is not an event address.`);
+	}
+
+	const joining = await request.post(`/api/v1/events/${id}/participants`, { data: { name } });
+
+	expect(joining.ok()).toBe(true);
+
+	const { participantToken } = joinedSchema.parse(await joining.json());
+
+	const availability = starts.map((start) => ({
+		start: date
+			.toZonedDateTime({ timeZone: "Europe/Prague", plainTime: start })
+			.toInstant()
+			.toString(),
+	}));
+
+	const saving = await request.put(`/api/v1/events/${id}/participants/me/availability`, {
+		headers: { Authorization: `Bearer ${participantToken}` },
+		data: { availability },
+	});
+
+	expect(saving.ok()).toBe(true);
 }

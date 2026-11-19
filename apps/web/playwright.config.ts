@@ -7,13 +7,20 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 const ci = (process.env["CI"] ?? "") !== "";
 
+// Two browsers at a time, also on a CI runner: more made a shared machine slow enough for
+// assertions to time out. `E2E_WORKERS` raises it on a machine that has room.
+const workers = Number(process.env["E2E_WORKERS"] ?? 2);
+
 export default defineConfig({
 	testDir: "./e2e",
 	fullyParallel: true,
+	workers,
 	forbidOnly: ci,
 	retries: ci ? 1 : 0,
 	reporter: ci ? [["github"], ["html", { open: "never" }]] : "list",
-	use: { baseURL, trace: "retain-on-failure" },
+	// Recording a trace costs every test screenshots and snapshots, so only a retry records
+	// one. Pass `--trace on` to record them locally.
+	use: { baseURL, trace: "on-first-retry" },
 	projects: [
 		// Phones are the main target, so every end-to-end test runs at phone size.
 		{

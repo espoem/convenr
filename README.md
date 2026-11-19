@@ -57,7 +57,7 @@ mise run check   # format, lint, theme, type check, unit tests, build
 mise run e2e     # end-to-end tests against the production build
 ```
 
-The end-to-end tests need the test browser once: run `nubx playwright install chromium` in `apps/web`.
+The end-to-end tests need the test browser once: run `nubx playwright install chromium` in `apps/web`. They run two browsers at a time; set `E2E_WORKERS` to change that, and `E2E_PORT` to serve the build on a port other than 3100. A trace is recorded only for a retry in CI; add `-- --trace on` to record traces locally.
 
 ## Deploy
 

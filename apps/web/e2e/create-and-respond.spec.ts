@@ -114,8 +114,13 @@ test("ten people find the one hour that suits everyone", async ({ browser }) => 
 		await page.context().close();
 	}
 
-	// The ten browsers work at the same time, as a group answering a shared link would.
-	await Promise.all(PEOPLE.map((name, index) => respond(name, index)));
+	// One browser at a time: the spec asks for separate contexts, not for ten at once, which
+	// overloaded a shared machine and made the run flaky. Concurrent joins are covered by the
+	// database tests.
+	await PEOPLE.reduce(async (previous: Promise<void>, name, index) => {
+		await previous;
+		await respond(name, index);
+	}, Promise.resolve());
 
 	// Step 4: a visitor who has not joined sees "10 of 10" in exactly the two common slots.
 	const visitor = await freshPage(browser);

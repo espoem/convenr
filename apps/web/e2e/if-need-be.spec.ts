@@ -9,6 +9,7 @@ test.setTimeout(180_000);
 
 test("a slot painted at if need be is hatched and counts apart in the results", async ({
 	browser,
+	request,
 }) => {
 	const first = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 14 });
 	const organizer = await freshPage(browser);
@@ -47,7 +48,7 @@ test("a slot painted at if need be is hatched and counts apart in the results", 
 	await jana.getByRole("button", { name: "Uložit" }).click();
 	await expect(jana.getByText("Uloženo.")).toBeVisible();
 	await jana.context().close();
-	await respond(browser, share, "Petr", first, ["20:00"]);
+	await respond(request, share, "Petr", first, ["20:00"]);
 
 	const viewer = await freshPage(browser);
 

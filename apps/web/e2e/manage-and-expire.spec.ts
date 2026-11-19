@@ -23,7 +23,10 @@ function idOf(link: string): string {
 	return link.split("-").at(-1) ?? "";
 }
 
-test("the organizer manages an event and expired events disappear", async ({ browser }) => {
+test("the organizer manages an event and expired events disappear", async ({
+	browser,
+	request,
+}) => {
 	const database = new Pool({ connectionString: DATABASE_URL, max: 1 });
 
 	async function rows(query: string, values: string[]): Promise<number> {
@@ -39,8 +42,8 @@ test("the organizer manages an event and expired events disappear", async ({ bro
 	const a = await createEvent(organizer, "Zkouška kapely", first);
 	const b = await createEvent(organizer, "Výlet", first);
 
-	await respond(browser, a.share, "Jana", first, ["20:00"]);
-	await respond(browser, a.share, "Petr", first, ["20:00"]);
+	await respond(request, a.share, "Jana", first, ["20:00"]);
+	await respond(request, a.share, "Petr", first, ["20:00"]);
 
 	// Step 2: narrowing the hours names how many participants lose availability.
 	await organizer.goto(a.admin);

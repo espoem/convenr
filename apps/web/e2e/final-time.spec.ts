@@ -11,14 +11,15 @@ test.setTimeout(180_000);
 
 test("the organizer picks a final time that the event page shows, and narrowing clears it", async ({
 	browser,
+	request,
 }) => {
 	const first = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 14 });
 	const day = first.toLocaleString("cs", { weekday: "long", day: "numeric", month: "long" });
 	const organizer = await freshPage(browser);
 	const { share, admin } = await createEvent(organizer, "Výběr termínu", first);
 
-	await respond(browser, share, "Jana", first, ["17:00", "17:30"]);
-	await respond(browser, share, "Petr", first, ["17:00"]);
+	await respond(request, share, "Jana", first, ["17:00", "17:30"]);
+	await respond(request, share, "Petr", first, ["17:00"]);
 
 	// A best window, picked on the manage page.
 	await organizer.goto(admin);
