@@ -10,7 +10,14 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push to a pull request makes its older run moot. A run on main may be migrating
+  # or deploying, so it finishes, and the newest waiting run follows with every commit before it.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# With bash named, a step runs with pipefail, so a failing command before a pipe fails the step.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   check:

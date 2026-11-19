@@ -14,6 +14,10 @@ concurrency:
   group: maintenance
   cancel-in-progress: false
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   purge:
     name: Count usage and delete expired events

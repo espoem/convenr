@@ -17,8 +17,8 @@ uv = "0.13.9"
 # Builds and deploys the Vercel instance from CI. Vercel publishes it from a private repository,
 # so it has no npm provenance; mise 2026.11.10 is the first whose trust check knows that.
 "npm:vercel" = "65.17.0"
-# Lint the GitHub workflows; actionlint runs shellcheck on each `run` script.
-actionlint = "1.7.12"
+# Lint the GitHub workflows; jactionlint runs shellcheck on each `run` script.
+jactionlint = "2.6.0"
 shellcheck = "0.11.0"
 zizmor = "1.32.0"
 
@@ -92,9 +92,9 @@ description = "Fail when the OpenAPI document breaks clients of main's; OPENAPI_
 run = "scripts/openapi-breaking.sh"
 
 [tasks."workflows:lint"]
-description = "Lint the GitHub workflows with actionlint and zizmor"
+description = "Lint the GitHub workflows with jactionlint and zizmor"
 # Offline, so a GitHub token in the shell does not add checks that CI does not run.
-run = ["actionlint", "zizmor --offline .github/workflows"]
+run = ["jactionlint", "zizmor --offline .github/workflows"]
 
 [tasks.sdk]
 description = "Generate both SDKs from apps/web/openapi.json"
