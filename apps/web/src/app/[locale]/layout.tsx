@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
 
 import { routing } from "@/i18n/routing";
+import { readTheme } from "@/server/theme";
 
 import "../globals.css";
 
@@ -24,8 +25,11 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
 
 	const locale = await getLocale();
 
+	const theme = await readTheme();
+
 	return (
-		<html lang={locale}>
+		// Without a choice the device setting decides through CSS alone.
+		<html lang={locale} data-theme={theme === "system" ? undefined : theme}>
 			<body>
 				<NextIntlClientProvider>{children}</NextIntlClientProvider>
 			</body>

@@ -26,14 +26,58 @@ test.describe("start page", () => {
 
 	test("switches language and stays on the start page", async ({ page }) => {
 		await page.goto("/en");
+		await page.getByLabel("Language: English").click();
 		await page
 			.getByRole("navigation", { name: "Language" })
 			.getByRole("link", { name: "Čeština" })
 			.click();
 		await expect(page).toHaveURL(/\/cs$/u);
+		await page.getByLabel("Jazyk: Čeština").click();
 		await expect(
 			page.getByRole("navigation", { name: "Jazyk" }).getByRole("link", { name: "Čeština" }),
 		).toHaveAttribute("aria-current", "true");
+	});
+
+	test("keeps the header in place when the language changes", async ({ page }) => {
+		await page.goto("/cs");
+
+		const before = await page.getByLabel("Vzhled: Podle systému").boundingBox();
+
+		await page.getByLabel("Jazyk: Čeština").click();
+		await page.getByRole("link", { name: "English" }).click();
+		await expect(page).toHaveURL(/\/en$/u);
+
+		const after = await page.getByLabel("Appearance: System").boundingBox();
+
+		expect(after?.x).toBe(before?.x);
+	});
+
+	test("keeps a chosen theme without JavaScript", async ({ browser }) => {
+		const context = await browser.newContext({ javaScriptEnabled: false, colorScheme: "light" });
+		const page = await context.newPage();
+		await page.goto("/en");
+		await page.getByLabel("Appearance: System").click();
+		await page.getByRole("button", { name: "Dark" }).click();
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+		// The server renders the choice, so a fresh page starts dark before any script runs.
+		await page.goto("/en");
+		const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+		expect(background).toBe("rgb(27, 22, 18)");
+
+		await page.getByLabel("Appearance: Dark").click();
+		await page.getByRole("button", { name: "System", exact: true }).click();
+		await expect(page.locator("html")).not.toHaveAttribute("data-theme");
+		await context.close();
+	});
+
+	test("follows the device in the dark", async ({ browser }) => {
+		const context = await browser.newContext({ colorScheme: "dark" });
+		const page = await context.newPage();
+		await page.goto("/en");
+		const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+		expect(background).toBe("rgb(27, 22, 18)");
+		await context.close();
 	});
 
 	test("does not scroll sideways", async ({ page }) => {

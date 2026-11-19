@@ -189,8 +189,15 @@
 	},
 	"LocaleSwitch": {
 		"label": "Language",
+		"button": "Language: {language}",
 		"cs": "Čeština",
 		"en": "English"
+	},
+	"ThemeMenu": {
+		"button": "Appearance: {theme}",
+		"system": "System",
+		"light": "Light",
+		"dark": "Dark"
 	},
 	"NotFound": {
 		"heading": "Page not found",

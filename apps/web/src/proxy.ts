@@ -34,7 +34,9 @@ export default function proxy(request: NextRequest) {
 	const response = localize(request);
 
 	response.headers.set("Content-Security-Policy", policy);
-	response.headers.set("Referrer-Policy", "no-referrer");
+	// Other sites never learn an event's address; convenr's own forms keep their origin, which a
+	// Server Action posted without JavaScript needs (ADR 0007).
+	response.headers.set("Referrer-Policy", "same-origin");
 	response.headers.set("X-Content-Type-Options", "nosniff");
 
 	return response;

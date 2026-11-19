@@ -17,6 +17,8 @@ const viewports = [
 
 const locales = ["cs", "en"] as const;
 
+const schemes = ["light", "dark"] as const;
+
 const slotSchema = z.object({ start: z.string() });
 
 type Slot = z.infer<typeof slotSchema>;
@@ -125,16 +127,15 @@ async function sampleEvent(): Promise<Sample> {
 
 type Viewport = (typeof viewports)[number];
 
-async function newPage(
-	browser: Browser,
-	viewport: Viewport,
-	locale: string,
-	stored?: string,
-): Promise<Page> {
+/** One combination of device setting and language to shoot every page in. */
+type Look = { viewport: Viewport; locale: string; scheme: (typeof schemes)[number] };
+
+async function newPage(browser: Browser, look: Look, stored?: string): Promise<Page> {
 	const context = await browser.newContext({
-		viewport: viewport.size,
-		hasTouch: viewport.touch,
-		locale,
+		viewport: look.viewport.size,
+		hasTouch: look.viewport.touch,
+		locale: look.locale,
+		colorScheme: look.scheme,
 		timezoneId: "Europe/Prague",
 	});
 
@@ -171,10 +172,12 @@ async function main(): Promise<void> {
 
 	const browser = await chromium.launch();
 
-	async function visit(viewport: Viewport, locale: string): Promise<void> {
-		const prefix = `${viewport.name}-${locale}`;
+	async function visit(look: Look): Promise<void> {
+		const { locale } = look;
 
-		const visitor = await newPage(browser, viewport, locale);
+		const prefix = `${look.scheme}-${look.viewport.name}-${locale}`;
+
+		const visitor = await newPage(browser, look);
 
 		await visitor.goto(`${baseUrl}/${locale}`);
 		await shoot(visitor, `${prefix}-01-start`);
@@ -199,7 +202,7 @@ async function main(): Promise<void> {
 		await shoot(visitor, `${prefix}-10-api-reference`);
 		await visitor.context().close();
 
-		const joined = await newPage(browser, viewport, locale, viewer);
+		const joined = await newPage(browser, look, viewer);
 
 		await joined.goto(`${baseUrl}/${locale}/e/${segment}`);
 		await joined.getByRole("table").waitFor();
@@ -208,7 +211,7 @@ async function main(): Promise<void> {
 		await shoot(joined, `${prefix}-06-event-me`);
 		await joined.context().close();
 
-		const organizer = await newPage(browser, viewport, locale);
+		const organizer = await newPage(browser, look);
 
 		await organizer.goto(`${baseUrl}/${locale}/e/${segment}/manage#${sample.adminSecret}`);
 		await organizer.getByRole("heading").first().waitFor();
@@ -217,7 +220,9 @@ async function main(): Promise<void> {
 	}
 
 	await Promise.all(
-		viewports.flatMap((viewport) => locales.map((locale) => visit(viewport, locale))),
+		schemes.flatMap((scheme) =>
+			viewports.flatMap((viewport) => locales.map((locale) => visit({ viewport, locale, scheme }))),
+		),
 	);
 
 	await browser.close();

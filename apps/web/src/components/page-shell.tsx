@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { LocaleSwitch } from "@/components/locale-switch";
+import { ThemeMenu } from "@/components/theme-menu";
 import { Link } from "@/i18n/navigation";
 
 /** The brand bar and the page width shared by every page. */
@@ -11,7 +12,10 @@ export function PageShell({ children }: { children: ReactNode }) {
 				<Link href="/" className="font-heading text-xl font-semibold text-action">
 					convenr
 				</Link>
-				<LocaleSwitch />
+				<div className="flex items-center gap-1">
+					<ThemeMenu />
+					<LocaleSwitch />
+				</div>
 			</header>
 			{children}
 		</div>

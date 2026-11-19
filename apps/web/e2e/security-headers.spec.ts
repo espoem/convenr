@@ -20,10 +20,11 @@ test.describe("security headers", () => {
 		expect(policy).toMatch(/script-src 'self' 'nonce-[\w+/=]+' 'strict-dynamic'/u);
 		expect(policy).toContain("frame-ancestors 'none'");
 		expect(second.headers()["content-security-policy"]).not.toBe(policy);
-		expect(first?.headers()["referrer-policy"]).toBe("no-referrer");
+		expect(first?.headers()["referrer-policy"]).toBe("same-origin");
 		expect(first?.headers()["cache-control"]).toContain("no-store");
 
 		// A button that only works after hydration proves the page's scripts ran.
+		await page.getByLabel("Jazyk: Čeština").click();
 		await page
 			.getByRole("navigation", { name: "Jazyk" })
 			.getByRole("link", { name: "English" })

@@ -189,8 +189,15 @@
 	},
 	"LocaleSwitch": {
 		"label": "Jazyk",
+		"button": "Jazyk: {language}",
 		"cs": "Čeština",
 		"en": "English"
+	},
+	"ThemeMenu": {
+		"button": "Vzhled: {theme}",
+		"system": "Podle systému",
+		"light": "Světlý",
+		"dark": "Tmavý"
 	},
 	"NotFound": {
 		"heading": "Stránka nenalezena",

@@ -1,5 +1,8 @@
-// Generates apps/web/src/app/tokens.css from the token block in DESIGN.md.
-// Usage: nub apps/web/scripts/generate-theme.ts [--check]
+// Generates apps/web/src/app/tokens.css from the token block in DESIGN.md and measures every
+// contrast that DESIGN.md states, for the light and the dark theme.
+// Usage: nub apps/web/scripts/generate-theme.ts [--check | --contrast]
+//   --check     fail when tokens.css is out of date
+//   --contrast  print the measured contrasts, to copy into DESIGN.md after a palette change
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -9,12 +12,28 @@ const tokenGroup = z.record(z.string(), z.string());
 
 const tokensSchema = z.object({
 	color: tokenGroup,
+	"color-dark": tokenGroup,
 	font: z.object({ display: z.string(), body: z.string(), mono: z.string() }),
 	radius: z.object({ base: z.string() }),
 	size: tokenGroup,
 });
 
 type Tokens = z.infer<typeof tokensSchema>;
+
+type Colors = Tokens["color"];
+
+// `fg` as a pair states that the better of the two reaches `min`, as for a mark drawn in two colors.
+const contrastSchema = z.array(
+	z.object({
+		fg: z.union([z.string(), z.tuple([z.string(), z.string()])]),
+		bg: z.string(),
+		min: z.number(),
+		light: z.number(),
+		dark: z.number(),
+	}),
+);
+
+type Contrast = z.infer<typeof contrastSchema>[number];
 
 const repositoryRoot = join(import.meta.dirname, "..", "..", "..");
 const designPath = join(repositoryRoot, "DESIGN.md");
@@ -42,15 +61,59 @@ const shadcnColors = {
 	ring: "earth",
 } satisfies Record<string, string>;
 
-function readTokens(): Tokens {
-	const design = readFileSync(designPath, "utf8");
-	const tokensJson = /```json tokens\n([\s\S]*?)\n```/u.exec(design)?.[1] ?? "";
+const design = readFileSync(designPath, "utf8");
 
-	if (tokensJson === "") {
-		throw new Error("DESIGN.md has no ```json tokens block");
+function block<Block>(language: string, schema: z.ZodType<Block>): Block {
+	const body = new RegExp(`\`\`\`json ${language}\\n([\\s\\S]*?)\\n\`\`\``, "u").exec(design)?.[1];
+
+	if (body === undefined) {
+		throw new Error(`DESIGN.md has no \`\`\`json ${language} block`);
 	}
 
-	return tokensSchema.parse(JSON.parse(tokensJson));
+	return schema.parse(JSON.parse(body));
+}
+
+/** The hex value of a color token; a value that names another token of the theme follows it. */
+function hex(colors: Colors, name: string): string {
+	const value = colors[name];
+
+	if (value === undefined) {
+		throw new Error(`DESIGN.md does not define the color token "${name}"`);
+	}
+
+	return value.startsWith("#") ? value : hex(colors, value);
+}
+
+/** A color value as CSS: a reference to another token becomes its variable. */
+function cssValue(value: string): string {
+	return value.startsWith("#") ? value : `var(--cv-${value})`;
+}
+
+function luminance(color: string): number {
+	const [red = 0, green = 0, blue = 0] = [1, 3, 5].map((start) => {
+		const channel = Number.parseInt(color.slice(start, start + 2), 16) / 255;
+
+		return channel <= 0.040_45 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+	});
+
+	return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+/** The WCAG contrast ratio of two colors, rounded to two decimals as DESIGN.md states it. */
+function ratio(first: string, second: string): number {
+	const lighter = Math.max(luminance(first), luminance(second));
+
+	const darker = Math.min(luminance(first), luminance(second));
+
+	return Math.round(((lighter + 0.05) / (darker + 0.05)) * 100) / 100;
+}
+
+function measure(colors: Colors, contrast: Contrast): number {
+	const background = hex(colors, contrast.bg);
+
+	const foregrounds = [contrast.fg].flat();
+
+	return Math.max(...foregrounds.map((name) => ratio(hex(colors, name), background)));
 }
 
 function render(tokens: Tokens): string {
@@ -58,10 +121,11 @@ function render(tokens: Tokens): string {
 		"/* Generated from DESIGN.md by apps/web/scripts/generate-theme.ts. Do not edit. */",
 		"",
 		":root {",
+		"  color-scheme: light;",
 	];
 
 	for (const [name, value] of Object.entries(tokens.color)) {
-		lines.push(`  --cv-${name}: ${value};`);
+		lines.push(`  --cv-${name}: ${cssValue(value)};`);
 	}
 
 	for (const [name, value] of Object.entries(tokens.size)) {
@@ -71,14 +135,34 @@ function render(tokens: Tokens): string {
 	lines.push("");
 
 	for (const [variable, token] of Object.entries(shadcnColors)) {
-		if (tokens.color[token] === undefined) {
-			throw new Error(`DESIGN.md does not define the color token "${token}"`);
-		}
-
+		hex(tokens.color, token);
 		lines.push(`  --${variable}: var(--cv-${token});`);
 	}
 
-	lines.push(`  --radius: ${tokens.radius.base};`, "}", "", "@theme inline {");
+	lines.push(`  --radius: ${tokens.radius.base};`, "}", "");
+
+	// The device setting chooses the theme unless the visitor picked one, which the server
+	// writes on the root element.
+	const dark = [
+		"  color-scheme: dark;",
+		...Object.entries(tokens["color-dark"]).map(
+			([name, value]) => `  --cv-${name}: ${cssValue(value)};`,
+		),
+	];
+
+	lines.push(
+		"@media (prefers-color-scheme: dark) {",
+		'  :root:not([data-theme="light"]) {',
+		...dark.map((line) => `  ${line}`),
+		"  }",
+		"}",
+		"",
+		':root[data-theme="dark"] {',
+		...dark,
+		"}",
+		"",
+		"@theme inline {",
+	);
 
 	for (const name of Object.keys(tokens.color)) {
 		lines.push(`  --color-${name}: var(--cv-${name});`);
@@ -95,12 +179,66 @@ function render(tokens: Tokens): string {
 	return lines.join("\n");
 }
 
-const css = render(readTokens());
+/** Every way the tokens and the stated contrasts disagree. */
+function problems(tokens: Tokens, contrasts: Contrast[]): string[] {
+	const found: string[] = [];
+
+	const lightNames = Object.keys(tokens.color).toSorted().join();
+
+	if (Object.keys(tokens["color-dark"]).toSorted().join() !== lightNames) {
+		found.push("color and color-dark must define the same tokens");
+	}
+
+	for (const contrast of contrasts) {
+		const label = `${String(contrast.fg)} on ${contrast.bg}`;
+
+		for (const theme of ["light", "dark"] as const) {
+			const measured = measure(theme === "light" ? tokens.color : tokens["color-dark"], contrast);
+
+			if (measured !== contrast[theme]) {
+				found.push(
+					`${label} (${theme}): DESIGN.md states ${contrast[theme]}, measured ${measured}`,
+				);
+			}
+
+			if (measured < contrast.min) {
+				found.push(`${label} (${theme}): ${measured} is below ${contrast.min}`);
+			}
+		}
+	}
+
+	return found;
+}
+
+const tokens = block("tokens", tokensSchema);
+
+const contrasts = block("contrast", contrastSchema);
+
+if (process.argv.includes("--contrast")) {
+	for (const contrast of contrasts) {
+		console.log(
+			JSON.stringify({
+				...contrast,
+				light: measure(tokens.color, contrast),
+				dark: measure(tokens["color-dark"], contrast),
+			}),
+		);
+	}
+
+	process.exit(0);
+}
+
+const found = problems(tokens, contrasts);
+
+if (found.length > 0) {
+	console.error(`DESIGN.md disagrees with its tokens:\n${found.join("\n")}`);
+	process.exit(1);
+}
+
+const css = render(tokens);
 
 if (process.argv.includes("--check")) {
-	const current = readFileSync(outputPath, "utf8");
-
-	if (current !== css) {
+	if (readFileSync(outputPath, "utf8") !== css) {
 		console.error("apps/web/src/app/tokens.css is out of date. Run: mise run theme");
 		process.exit(1);
 	}

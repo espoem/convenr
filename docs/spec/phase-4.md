@@ -177,3 +177,9 @@ The tests name no rule numbers. This list is the only link from rules to tests. 
 - End-to-end tests cover L2 and L3 by touch and keyboard, O1 and O3 on a poll event, Q2 without JavaScript and without a flash on load, Q3, Q5 items 1, 2, 4 and 5, S1 to S3 for both transports (including the fallback when the stream is blocked) and S5.
 - The SDK acceptance suites gain a poll event, a final time and its `.ics` file.
 - A script in `mise run check` measures every contrast `DESIGN.md` states, for both themes (Q1).
+
+Files so far:
+
+- Q1: `apps/web/scripts/generate-theme.ts` reads both token blocks and the `json contrast` block of `DESIGN.md`; `mise run theme:check` fails on a stated contrast that does not match.
+- Q2, Q3: `apps/web/src/components/theme-menu.tsx`, `locale-switch.tsx` and `header-menu.tsx`, the action in `apps/web/src/server/theme-actions.ts`; tested in `apps/web/e2e/start-page.spec.ts` (the theme without JavaScript, the dark device setting, the header staying in place when the language changes). Q2 without JavaScript needs `Referrer-Policy: same-origin` (ADR 0007).
+- Q5 items 1, 2, 4 and 5: `availability-grid.tsx`, `best-windows.tsx` and `event-board.tsx` in `apps/web/src/components/event/`; item 4 is tested in `start-page.spec.ts`.
