@@ -1,3 +1,0 @@
-POST /events the response property `event/firstDayOfWeek` became optional for the status `201`
-GET /events/{id} the response property `firstDayOfWeek` became optional for the status `200`
-PATCH /events/{id} the response property `firstDayOfWeek` became optional for the status `200`
