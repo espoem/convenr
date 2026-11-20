@@ -230,7 +230,6 @@
 		"pollYours": "Vaše odpověď",
 		"pollYoursFor": "Vaše odpověď na {when}",
 		"pollResult": "Skupina",
-		"pollScore": "skóre {score, number}",
 		"pollAvailable": "Můžou: {names}",
 		"pollIfNeedBe": "Když bude nutné: {names}",
 		"pollLevel": {

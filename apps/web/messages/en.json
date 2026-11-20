@@ -230,7 +230,6 @@
 		"pollYours": "Your answer",
 		"pollYoursFor": "Your answer for {when}",
 		"pollResult": "Group",
-		"pollScore": "score {score, number}",
 		"pollAvailable": "Available: {names}",
 		"pollIfNeedBe": "If need be: {names}",
 		"pollLevel": {

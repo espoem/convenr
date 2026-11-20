@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, useId } from "react";
 
 import { heatStep } from "@/domain/heat";
-import { type Level, type Levels, scoreOf, type Tally } from "@/domain/levels";
+import { type Level, type Levels, type Tally } from "@/domain/levels";
 import { useTemporalReady } from "@/lib/browser-time";
 import { cn } from "@/lib/utils";
 
@@ -64,7 +64,7 @@ function useNames(formatLocale: string) {
 
 /**
  * The options of a poll, one row each with its time, an optional action and its results: the
- * heads, the score and the names by level. In a narrow container each row becomes a card.
+ * heads and the names by level. In a narrow container each row becomes a card.
  */
 export function PollTable({ event, zone, formatLocale, label, action }: PollTableProps) {
 	const t = useTranslations("Event");
@@ -139,9 +139,6 @@ export function PollTable({ event, zone, formatLocale, label, action }: PollTabl
 											)}
 										/>
 										<span>{count(tally, total)}</span>
-										<span className="text-ink-muted">
-											{t("pollScore", { score: scoreOf(tally) })}
-										</span>
 									</span>
 									{available.length === 0 ? null : (
 										<span className="mt-1 block text-sm break-words">

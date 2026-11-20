@@ -127,7 +127,7 @@ test("a poll is created, answered and finalized, and removing an answered option
 	const firstRow = eva.getByRole("row", { name: /18:00–20:00/u });
 
 	await expect(firstRow).toContainText("2 z 2, z toho 1 když bude nutné");
-	await expect(firstRow).toContainText("skóre 1,5");
+	await expect(firstRow).not.toContainText("skóre");
 	await expect(firstRow).toContainText("Můžou: Jana");
 	await expect(firstRow).toContainText("Když bude nutné: Eva");
 	await expect(
