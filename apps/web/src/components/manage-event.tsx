@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import { EventForm, type EventFormOptions, type FormOutcome } from "@/components/event-form";
 import type { BoardEvent } from "@/components/event/event-board";
@@ -12,6 +12,7 @@ import type { StoredOption } from "@/components/poll-options-editor";
 import { Button } from "@/components/ui/button";
 import type { GridView } from "@/domain/grid-labels";
 import { useRouter } from "@/i18n/navigation";
+import type { EventVersion } from "@/lib/event-version";
 import { updateLocalEvent, useLocalEvents } from "@/lib/local-events";
 import {
 	loadManageAction,
@@ -33,6 +34,8 @@ type ManageEventProps = {
 	board: ManagedBoard;
 	/** A poll's options as stored, so that the form can show the kept ones. */
 	storedOptions: StoredOption[];
+	/** The version the page was rendered at. */
+	version: EventVersion;
 	formatLocale: string;
 };
 
@@ -40,12 +43,21 @@ type ManageEventProps = {
  * The manage page. The admin secret comes from the address fragment,
  * which never reaches the server in an address (ADR 0003 item 2), or from local storage.
  */
-export function ManageEvent({ id, options, board, storedOptions, formatLocale }: ManageEventProps) {
+export function ManageEvent({
+	id,
+	options,
+	board,
+	storedOptions,
+	version,
+	formatLocale,
+}: ManageEventProps) {
 	const t = useTranslations("Manage");
 	const router = useRouter();
 	const storedSecret = useLocalEvents().get(id)?.adminSecret;
 	// `null` until the first answer; then the secret used and the event, or `null` if refused.
 	const [loaded, setLoaded] = useState<{ secret: string; event: ManagedEvent | null } | null>(null);
+	// The version the loaded fields belong to.
+	const loadedAt = useRef(version);
 	const [saved, setSaved] = useState(0);
 	const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
 	const [deleting, setDeleting] = useState(false);
@@ -85,6 +97,26 @@ export function ManageEvent({ id, options, board, storedOptions, formatLocale }:
 			current = false;
 		};
 	}, [load, storedSecret]);
+
+	// A new version, after a change anyone made, reloads the participants and the stored fields.
+	useEffect(() => {
+		if (loaded === null || loadedAt.current === version) {
+			return;
+		}
+
+		let current = true;
+
+		loadedAt.current = version;
+		void load(loaded.secret).then((answer) => {
+			if (current) {
+				setLoaded(answer);
+			}
+		});
+
+		return () => {
+			current = false;
+		};
+	}, [load, loaded, version]);
 
 	if (loaded === null) {
 		return <p aria-live="polite">{t("checking")}</p>;

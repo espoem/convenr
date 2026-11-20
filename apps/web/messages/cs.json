@@ -222,6 +222,7 @@
 		"durationHoursMinutes": "{hours} h {minutes} min",
 		"windowsNoParticipants": "Nejlepší časy se ukážou, až se někdo zapíše.",
 		"windowsNone": "Žádný čas nesplňuje filtry. Zkuste snížit délku nebo počet lidí.",
+		"paused": "Aktualizace jsou pozastavené, dokud jste pryč. Obnovíte je klepnutím nebo stiskem klávesy.",
 		"pollHeading": "Termíny",
 		"pollHint": "Odpovězte na každý termín a uložte.",
 		"pollJoinFirst": "Na termíny odpovíte, až se nahoře zapíšete.",

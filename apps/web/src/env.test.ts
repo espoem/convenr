@@ -25,6 +25,32 @@ describe("parseEnv", () => {
 		expect(() => parseEnv({ DATABASE_URL: url, RETENTION_DAYS: "0" })).toThrow(/RETENTION_DAYS/u);
 	});
 
+	it("streams changes by default and reads the live update timings", () => {
+		const url = "postgres://user@localhost/convenr";
+		const defaults = parseEnv({ DATABASE_URL: url });
+
+		expect(defaults.LIVE_UPDATES).toBe("push");
+		expect(defaults.LIVE_POLL_SECONDS).toBe(15);
+		expect(defaults.LIVE_STREAM_SECONDS).toBe(300);
+		expect(defaults.LIVE_IDLE_MINUTES).toBe(30);
+		expect(defaults.DATABASE_LISTEN_URL).toBeUndefined();
+
+		const poll = parseEnv({
+			DATABASE_URL: url,
+			LIVE_UPDATES: "poll",
+			LIVE_POLL_SECONDS: "5",
+			LIVE_IDLE_MINUTES: "10",
+		});
+
+		expect(poll.LIVE_UPDATES).toBe("poll");
+		expect(poll.LIVE_POLL_SECONDS).toBe(5);
+		expect(poll.LIVE_IDLE_MINUTES).toBe(10);
+		expect(() => parseEnv({ DATABASE_URL: url, LIVE_UPDATES: "stream" })).toThrow(/LIVE_UPDATES/u);
+		expect(() => parseEnv({ DATABASE_URL: url, LIVE_POLL_SECONDS: "0" })).toThrow(
+			/LIVE_POLL_SECONDS/u,
+		);
+	});
+
 	it("rejects a URL for another database", () => {
 		expect(() => parseEnv({ DATABASE_URL: "mysql://user@localhost/convenr" })).toThrow(
 			/DATABASE_URL/u,

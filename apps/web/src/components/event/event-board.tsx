@@ -18,9 +18,7 @@ import {
 } from "@/domain/levels";
 import type { Weekday } from "@/domain/schedule";
 import { useViewerZone } from "@/lib/browser-time";
-import type { EventVersion } from "@/lib/event-version";
 import { cn } from "@/lib/utils";
-import { useVersionCheck } from "@/lib/version-check";
 
 import { AvailabilityGrid, type CellFill, type CellRef } from "./availability-grid";
 import { BestWindows } from "./best-windows";
@@ -43,8 +41,6 @@ export type BoardEvent = {
 	referenceZone: string;
 	firstDayOfWeek: Weekday;
 	slotLength: number;
-	/** For the version check. */
-	version: EventVersion;
 	/** Rows of one day, to reserve the grid's height before the browser lays it out. */
 	rowCount: number;
 	slots: string[];
@@ -91,8 +87,6 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	// Not stored, so every visit starts in the viewer's zone.
 	const [inReferenceZone, setInReferenceZone] = useState(false);
 	const [chosenWindow, setChosenWindow] = useState<Window | null>(null);
-
-	useVersionCheck(event.id, event.version);
 
 	const participation = useParticipation(event, formatLocale, {
 		onJoined: () => setTab("me"),

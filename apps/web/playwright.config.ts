@@ -1,9 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 import { DATABASE_URL } from "./e2e/database";
-
-const port = Number(process.env["E2E_PORT"] ?? 3100);
-const baseURL = `http://127.0.0.1:${port}`;
+import { BASE_URL, PORT, POLL_BASE_URL, POLL_PORT, POLL_SECONDS } from "./e2e/servers";
 
 const ci = (process.env["CI"] ?? "") !== "";
 
@@ -20,7 +18,7 @@ export default defineConfig({
 	reporter: ci ? [["github"], ["html", { open: "never" }]] : "list",
 	// Recording a trace costs every test screenshots and snapshots, so only a retry records
 	// one. Pass `--trace on` to record them locally.
-	use: { baseURL, trace: "on-first-retry" },
+	use: { baseURL: BASE_URL, trace: "on-first-retry" },
 	projects: [
 		// Phones are the main target, so every end-to-end test runs at phone size.
 		{
@@ -29,16 +27,27 @@ export default defineConfig({
 		},
 		{ name: "desktop", use: { ...devices["Desktop Chrome"] } },
 	],
-	webServer: {
-		// Serves the production build. Run `mise run build` first.
-		command: "node scripts/start-standalone.mts",
-		url: `${baseURL}/en`,
-		reuseExistingServer: !ci,
-		env: {
-			PORT: String(port),
-			HOSTNAME: "127.0.0.1",
-			DATABASE_URL,
+	// Both serve the production build. Run `mise run build` first.
+	webServer: [
+		{
+			command: "node scripts/start-standalone.mts",
+			url: `${BASE_URL}/en`,
+			reuseExistingServer: !ci,
+			env: { PORT: String(PORT), HOSTNAME: "127.0.0.1", DATABASE_URL },
+			timeout: 60_000,
 		},
-		timeout: 60_000,
-	},
+		{
+			command: "node scripts/start-standalone.mts",
+			url: `${POLL_BASE_URL}/en`,
+			reuseExistingServer: !ci,
+			env: {
+				PORT: String(POLL_PORT),
+				HOSTNAME: "127.0.0.1",
+				DATABASE_URL,
+				LIVE_UPDATES: "poll",
+				LIVE_POLL_SECONDS: String(POLL_SECONDS),
+			},
+			timeout: 60_000,
+		},
+	],
 });

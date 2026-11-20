@@ -50,6 +50,13 @@
       "when": 1795124067899,
       "tag": "0006_poll",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795167125747,
+      "tag": "0007_live_updates",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { LiveUpdates } from "@/components/live-updates";
 import { ManageEvent, type ManagedBoard } from "@/components/manage-event";
 import { PageShell } from "@/components/page-shell";
 import { eventIdFromSegment } from "@/domain/event-address";
@@ -12,6 +13,7 @@ import { formatLocale } from "@/i18n/format-locale";
 import { Link } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
+import { liveSettings } from "@/server/live";
 
 /** The small line above the event name in the heading. */
 function label(chunks: ReactNode) {
@@ -56,6 +58,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 
 	return (
 		<PageShell>
+			<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
 			<main className="flex flex-col gap-8">
 				<div className="flex flex-col gap-3">
 					<h1 className="text-3xl text-balance break-words sm:text-4xl">
@@ -73,6 +76,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 					options={await eventFormOptions()}
 					board={board}
 					storedOptions={storedOptions}
+					version={event.version}
 					formatLocale={format}
 				/>
 			</main>

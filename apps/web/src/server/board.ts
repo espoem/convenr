@@ -23,7 +23,6 @@ export function boardOf(event: GridEventView): BoardEvent {
 		referenceZone: schedule.referenceZone,
 		firstDayOfWeek: schedule.firstDayOfWeek,
 		slotLength: schedule.slotLength,
-		version: event.version,
 		rowCount: (schedule.dailyEnd - schedule.dailyStart) / schedule.slotLength,
 		slots: event.slots,
 		participants: event.participants,
@@ -67,7 +66,6 @@ export function pollBoardOf(event: PollEventView): PollBoardEvent {
 		name: event.name,
 		segment: event.segment,
 		referenceZone: schedule.referenceZone,
-		version: event.version,
 		options: inTimeOrder(schedule.options).map((option) => ({
 			key: optionKey(option),
 			start: option.start.toString(),

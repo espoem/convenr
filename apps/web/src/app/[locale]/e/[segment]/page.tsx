@@ -7,6 +7,7 @@ import { cache } from "react";
 import { EventBoard } from "@/components/event/event-board";
 import { FinalBanner } from "@/components/event/final-time";
 import { PollBoard } from "@/components/event/poll-board";
+import { LiveUpdates } from "@/components/live-updates";
 import { PageShell } from "@/components/page-shell";
 import { ShareLink } from "@/components/share-link";
 import { eventIdFromSegment } from "@/domain/event-address";
@@ -15,6 +16,7 @@ import { formatLocale } from "@/i18n/format-locale";
 import { getPathname } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
+import { liveSettings } from "@/server/live";
 
 // One database read per request, shared by the metadata and the page.
 const eventOf = cache(async (segment: string) => {
@@ -60,6 +62,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 
 	return (
 		<PageShell>
+			<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
 			<main className="flex flex-col gap-6">
 				{final.kind === "chosen" ? (
 					<FinalBanner

@@ -6,8 +6,6 @@ import { useId, useState } from "react";
 import { SteadyLabel } from "@/components/steady-label";
 import { type Brush, type Level, withLevel } from "@/domain/levels";
 import { useViewerZone } from "@/lib/browser-time";
-import type { EventVersion } from "@/lib/event-version";
-import { useVersionCheck } from "@/lib/version-check";
 
 import type { ShownFinal } from "./event-board";
 import { JoinBand } from "./join-band";
@@ -22,8 +20,6 @@ export type PollBoardEvent = {
 	name: string;
 	segment: string;
 	referenceZone: string;
-	/** For the version check. */
-	version: EventVersion;
 	/** In time order. */
 	options: ShownOption[];
 	/** The best options, best first. */
@@ -84,8 +80,6 @@ export function PollBoard({ event, formatLocale }: PollBoardProps) {
 	const viewerZone = useViewerZone();
 	// Not stored, so every visit starts in the viewer's zone.
 	const [inReferenceZone, setInReferenceZone] = useState(false);
-
-	useVersionCheck(event.id, event.version);
 
 	const participation = useParticipation(event, formatLocale);
 	const { joined, selection, dirty, edit } = participation;

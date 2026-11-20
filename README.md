@@ -67,12 +67,17 @@ An instance is one container image and one PostgreSQL database.
 2. Provide a PostgreSQL 18 database.
 3. Run the image with these settings:
 
-   | Variable         | Required | Meaning                                                                                                                         |
-   | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-   | `DATABASE_URL`   | yes      | `postgres://user:password@host:5432/database`                                                                                   |
-   | `PORT`           | no       | Port to listen on. Default `3000`.                                                                                              |
-   | `HOSTNAME`       | no       | Address to bind. Default `0.0.0.0`.                                                                                             |
-   | `RETENTION_DAYS` | no       | Days after an event's last date (or last change, for days of the week) until it is deleted. Default `90`; `never` keeps events. |
+   | Variable              | Required | Meaning                                                                                                                         |
+   | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`        | yes      | `postgres://user:password@host:5432/database`                                                                                   |
+   | `PORT`                | no       | Port to listen on. Default `3000`.                                                                                              |
+   | `HOSTNAME`            | no       | Address to bind. Default `0.0.0.0`.                                                                                             |
+   | `RETENTION_DAYS`      | no       | Days after an event's last date (or last change, for days of the week) until it is deleted. Default `90`; `never` keeps events. |
+   | `LIVE_UPDATES`        | no       | How open pages learn of changes: `push` (default) streams them from the server, `poll` checks at an interval.                   |
+   | `LIVE_POLL_SECONDS`   | no       | Seconds between checks with `poll`, or after a stream failed. Default `15`.                                                     |
+   | `LIVE_STREAM_SECONDS` | no       | Seconds after which the server closes a stream and the page opens a new one. Default `300`.                                     |
+   | `LIVE_IDLE_MINUTES`   | no       | Minutes without input after which a page stops its updates until the next input. Default `30`.                                  |
+   | `DATABASE_LISTEN_URL` | no       | A direct database address for `push` when `DATABASE_URL` goes through a transaction pooler. Default `DATABASE_URL`.             |
 
 4. Put a reverse proxy that terminates TLS in front of it, and point a health check at `/api/health`.
 
@@ -80,7 +85,7 @@ The server deletes expired events every hour. To delete them from outside, for e
 
 The server keeps daily usage counts without names, contents or identifiers. `node apps/web/scripts/usage.mts` in the image (or `mise run usage`) prints them for the last 30 days; add a first and a last day, such as `2027-03-01 2027-03-31`, for another range.
 
-On Vercel, where no server process lasts, the server neither migrates nor purges. CI applies migrations with `node apps/web/scripts/migrate.mts` before it deploys, and the scheduled `Maintenance` workflow runs the purge every six hours ([ADR 0005](docs/adr/0005-vercel-deployment.md)).
+On Vercel, where no server process lasts, the server neither migrates nor purges. CI applies migrations with `node apps/web/scripts/migrate.mts` before it deploys, and the scheduled `Maintenance` workflow runs the purge every six hours ([ADR 0005](docs/adr/0005-vercel-deployment.md)). The Vercel project sets `LIVE_UPDATES=poll`, `LIVE_POLL_SECONDS=15` and `LIVE_IDLE_MINUTES=10`, because a function cannot hold a stream cheaply ([ADR 0006](docs/adr/0006-live-updates.md)).
 
 The image contains a plain Node.js server and uses no platform-specific API, so any host that runs containers works. `compose.yaml` is a working example of the whole setup. Change `POSTGRES_PASSWORD` before using it anywhere but your own machine.
 

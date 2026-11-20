@@ -222,6 +222,7 @@
 		"durationHoursMinutes": "{hours} h {minutes} min",
 		"windowsNoParticipants": "The best times appear once someone joins.",
 		"windowsNone": "No time passes the filters. Try a shorter length or fewer people.",
+		"paused": "Updates are paused while you are away. Touch the page or press a key to resume.",
 		"pollHeading": "Times",
 		"pollHint": "Answer each time, then save.",
 		"pollJoinFirst": "Join above to answer the times.",
