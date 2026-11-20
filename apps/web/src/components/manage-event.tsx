@@ -240,7 +240,7 @@ export function ManageEvent({
 				{event.participants.length === 0 ? (
 					<p className="text-ink-muted">{t("noParticipants")}</p>
 				) : (
-					<ul className="flex max-w-xl flex-col divide-y divide-line border-y border-line">
+					<ul className="flex max-w-(--cv-form) flex-col divide-y divide-line border-y border-line">
 						{event.participants.map((person) => (
 							<li
 								key={person.id}

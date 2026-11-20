@@ -106,6 +106,7 @@ These rules extend Phase 2 rules U1 to U7.
 3. Availability, if need be, the best-window outline and the final time are told apart in the grid by more than color, and each mark has at least 3:1 against what surrounds it.
 4. Switching the language does not shift the layout (Q3).
 5. The joined participant's line appears complete as soon as the page runs. Local storage (B1) also keeps whether the participant has a password, so the line, its password button included, needs no answer from the server; the page checks the token afterwards and corrects the stored value, and a token the server refuses leads to F4. The server cannot know the participant, so it renders the join form, which the line replaces for a joined browser. The token stays in local storage (ADR 0003 item 10); cookies are reconsidered with accounts in F5.
+6. Each part of a page takes one of the three widths that `DESIGN.md` names: the page column, the form width or the text measure.
 
 ## 9. Live update rules
 
@@ -183,6 +184,7 @@ Files so far:
 - Q1: `apps/web/scripts/generate-theme.ts` reads both token blocks and the `json contrast` block of `DESIGN.md`; `mise run theme:check` fails on a stated contrast that does not match.
 - Q2, Q3: `apps/web/src/components/theme-menu.tsx`, `locale-switch.tsx` and `header-menu.tsx`, the action in `apps/web/src/server/theme-actions.ts`; tested in `apps/web/e2e/start-page.spec.ts` (the theme without JavaScript, the dark device setting, the header staying in place when the language changes). Q2 without JavaScript needs `Referrer-Policy: same-origin` (ADR 0007).
 - Q5 items 1, 2, 4 and 5: `availability-grid.tsx`, `best-windows.tsx` and `event-board.tsx` in `apps/web/src/components/event/`; item 4 is tested in `start-page.spec.ts`.
+- Q5 item 6: the `form` and `measure` tokens of `DESIGN.md`, used by `best-windows.tsx` and `poll-table.tsx` in `apps/web/src/components/event/`, the event page, `event-form.tsx`, `created-links.tsx`, `manage-event.tsx` and `poll-options-editor.tsx`; checked on screenshots, with no test.
 - L1, L4, L6 and L7: `apps/web/src/domain/levels.ts` (levels, score, heads, the saved shape), `heat.ts` and `best-windows.ts`; tested in `levels.test.ts`, `heat.test.ts` and `best-windows.test.ts` beside them. Storage: the `level` column of both availability tables, added by `apps/web/drizzle/0004_availability_level.sql` with a default, so a release before levels keeps writing rows that read as available; `apps/web/src/server/responses.ts` saves, and `responses.db.test.ts` covers the migration, the kept levels and the refusals.
 - L2, L3 and L5: `level-marks.tsx` (the brush and the legend), `availability-grid.tsx`, `slot-detail.tsx`, `count.ts` and `best-windows.tsx` in `apps/web/src/components/event/`, the hatching in `apps/web/src/app/globals.css`; tested in `apps/web/e2e/if-need-be.spec.ts` by touch and keyboard. The stripes' contrast is a pair of the `json contrast` block (Q1).
 - A19 and A20: `apps/web/src/server/api/schemas.ts`, `mapping.ts` and the availability route; tested in `participants-api.db.test.ts` and `events-api.db.test.ts`.

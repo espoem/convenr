@@ -96,7 +96,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 									}),
 								})}
 					</p>
-					<div className="max-w-2xl">
+					<div className="max-w-(--cv-form)">
 						<ShareLink
 							label={t("shareLink")}
 							path={getPathname({ href: `/e/${event.segment}`, locale })}

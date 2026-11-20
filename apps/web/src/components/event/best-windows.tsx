@@ -70,7 +70,7 @@ export function BestWindows({
 			<h2 id={`${id}-heading`} className="text-xl">
 				{t("windowsHeading")}
 			</h2>
-			<div className="flex max-w-2xl flex-wrap gap-4">
+			<div className="flex max-w-(--cv-form) flex-wrap gap-4">
 				<Field id={`${id}-slots`} label={t("minDuration")} className="flex-[1_1_9rem]">
 					<select
 						id={`${id}-slots`}
@@ -106,7 +106,7 @@ export function BestWindows({
 					{emptyMessage()}
 				</p>
 			) : (
-				<ol aria-live="polite" className="flex max-w-2xl flex-col gap-2">
+				<ol aria-live="polite" className="flex flex-col gap-2">
 					{shown.map((window) => {
 						const on = sameWindow(selected, window);
 

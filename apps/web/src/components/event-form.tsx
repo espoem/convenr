@@ -321,7 +321,7 @@ export function EventForm({
 		));
 
 	return (
-		<form onSubmit={submit} noValidate className="flex max-w-2xl flex-col gap-8">
+		<form onSubmit={submit} noValidate className="flex max-w-(--cv-form) flex-col gap-8">
 			<Field id={`${id}-name`} label={t("name")} error={error("name")}>
 				<input
 					id={`${id}-name`}

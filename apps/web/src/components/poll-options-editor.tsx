@@ -118,7 +118,7 @@ export function PollOptionsEditor({
 			</p>
 
 			{options.length === 0 ? null : (
-				<ul className="flex max-w-2xl flex-col divide-y divide-line border-y border-line">
+				<ul className="flex max-w-(--cv-form) flex-col divide-y divide-line border-y border-line">
 					{options.map((option, index) => {
 						const shown = label(option);
 						const problem = optionProblems.get(index);
@@ -151,7 +151,7 @@ export function PollOptionsEditor({
 				{t("pollCount", { count: options.length, max: MAX_OPTIONS })}
 			</p>
 
-			<div className="flex max-w-2xl flex-wrap items-end gap-4">
+			<div className="flex max-w-(--cv-form) flex-wrap items-end gap-4">
 				<Field
 					id={`${id}-date`}
 					label={t("pollDate")}

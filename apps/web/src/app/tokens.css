@@ -28,6 +28,7 @@
   --cv-cell-min-height: 1.5rem;
   --cv-touch-target: 2.75rem;
   --cv-measure: 65ch;
+  --cv-form: 42rem;
 
   --background: var(--cv-background);
   --foreground: var(--cv-ink);

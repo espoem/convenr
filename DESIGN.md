@@ -70,7 +70,8 @@ convenr is a small, warm tool for getting a group to agree on a time. It should 
     "cell-min-width": "2.75rem",
     "cell-min-height": "1.5rem",
     "touch-target": "2.75rem",
-    "measure": "65ch"
+    "measure": "65ch",
+    "form": "42rem"
   }
 }
 ```
@@ -142,7 +143,10 @@ The contrasts in this table are for the light theme. Measured contrast below sta
 6. **Destructive actions** use `action-active` as an outline and text color, and ask for confirmation inside the page.
 7. **Focus** is a 2-pixel `earth` ring with a 2-pixel offset. It is never removed. A grid cell is the exception, because a ring outside it would cover its neighbours and be cut off at the edge of a scrolling grid: its focus sits inside the cell as a 3-pixel `ink` ring between two 1-pixel `surface` rings. On every heat step one of `ink` and `surface` reaches at least 3.73:1 in the light theme and 4.27:1 in the dark one, so the ring shows on every step.
 8. **Type.** Headings use the display face at weight 600 with tight tracking. Body text uses the body face at 16 pixels minimum. Times and counts use tabular figures.
-9. **Sizes.** A grid cell is at least `cell-min-width` by `cell-min-height`. Any other control is at least `touch-target` high on a touch screen. Running text is at most `measure` wide.
+9. **Sizes.** A grid cell is at least `cell-min-width` by `cell-min-height`. Any other control is at least `touch-target` high on a touch screen. A page part takes one of three widths:
+   - The page column: bands with the form they hold, such as the join band, tabs, grids, tables and lists of results, such as the best times.
+   - `form`: a form, a row of fields such as a link with its copy button or the filters of the best times, and a list edited in place.
+   - `measure`: running text and notes. A note of one or two lines that belongs to a form may run the width of that form.
 10. **Motion.** Transitions are 150 ms or shorter and are disabled when the viewer asks for reduced motion.
 11. **Dark theme.** `color-dark` holds the same tokens as `color`, derived from the light palette: the same hues on a dark brown ground, and a heat scale that brightens as more people can come. The device setting chooses the theme unless the visitor picked one in the theme menu; the server writes that choice on the root element as `data-theme`. Every pair under Measured contrast holds in both themes.
 12. **Locked controls.** A control that cannot change keeps its value in `ink` on a `locked` fill with a `line` border, so the value stays readable. Directly below it, a lock icon in `ink-muted` and one sentence say why. A locked control is inactive, so its `line` border may stay below 3:1.

@@ -287,16 +287,16 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 					{tab === "group" ? (
 						<>
 							<div
-								className="flex items-center gap-2 text-sm tabular-nums"
+								className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm tabular-nums"
 								aria-label={t("legendLabel", { total })}
 							>
-								<span>{t("count", { available: 0, total })}</span>
+								<span className="whitespace-nowrap">{t("count", { available: 0, total })}</span>
 								<span aria-hidden className="flex border border-earth">
 									{HEAT.map((step) => (
 										<span key={step} className={cn("h-5 w-6", step)} />
 									))}
 								</span>
-								<span>{t("count", { available: total, total })}</span>
+								<span className="whitespace-nowrap">{t("count", { available: total, total })}</span>
 								<span aria-hidden className="text-ink-muted">
 									{t("legendHalf")}
 								</span>

@@ -79,7 +79,7 @@ export function PollTable({ event, zone, formatLocale, label, action }: PollTabl
 
 	return (
 		<div className="@container">
-			<table className="w-full max-w-5xl border-collapse text-left @max-3xl:block">
+			<table className="w-full border-collapse text-left @max-3xl:block">
 				<caption className="sr-only">{label}</caption>
 				<thead className="border-b border-earth @max-3xl:hidden">
 					<tr>
@@ -192,7 +192,7 @@ export function BestOptions({ options, best, names, zone, formatLocale }: BestOp
 			{best.length === 0 ? (
 				<p className="max-w-(--cv-measure) text-sm text-ink-muted">{emptyMessage()}</p>
 			) : (
-				<ol className="flex max-w-2xl flex-col gap-2">
+				<ol className="flex flex-col gap-2">
 					{best.map((result) => {
 						const option = options.find((candidate) => candidate.key === result.key);
 						const ifNeedBe = result.people.filter(({ level }) => level === "if_need_be").length;
