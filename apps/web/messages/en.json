@@ -34,6 +34,26 @@
 		"zone": "Time zone of the event",
 		"zoneHint": "Participants in another zone see the times converted to their own.",
 		"firstDayOfWeek": "Week starts on",
+		"kind": "What to plan",
+		"kindName": {
+			"grid": "A grid of days and times",
+			"poll": "A few chosen times"
+		},
+		"kindHint": {
+			"grid": "Everyone marks when they can.",
+			"poll": "Everyone answers each time you offer."
+		},
+		"pollOptions": "Times to offer",
+		"pollOptionsHint": "Each time is a date with a start and an end. Offer {min} to {max} times.",
+		"pollCount": "{count} of at most {max} times.",
+		"pollDate": "Date",
+		"pollStart": "From",
+		"pollEnd": "To",
+		"pollAdd": "Add the time",
+		"pollFull": "A poll can have at most {max} times.",
+		"pollRemove": "Remove",
+		"pollRemoveLabel": "Remove {when}",
+		"pollZoneHint": "The times you enter are in this zone. Participants in another zone see them converted to their own.",
 		"submit": "Create event",
 		"creating": "Creating…",
 		"fixProblems": "The event cannot be saved. Fix the marked fields.",
@@ -43,6 +63,8 @@
 		"confirmLossYes": "Save and remove",
 		"confirmLossNo": "Back to editing",
 		"confirmClearsFinal": "The change removes part of the final time, so the final time will be cleared.",
+		"pollConfirmLoss": "{count, plural, one {# participant loses an answer} other {# participants lose an answer}}, because you remove times they answered.",
+		"pollConfirmClearsFinal": "The change removes the final time, so the final time will be cleared.",
 		"problem": {
 			"field_locked": "Slot length, how days are chosen and the time zone can no longer change.",
 			"name": "Enter a name of at most 100 characters.",
@@ -59,7 +81,17 @@
 			"firstDayOfWeek": "Choose the day the week starts on.",
 			"slotLength": "Choose a slot length.",
 			"dailyStart": "Choose a start time.",
-			"dailyEnd": "Choose an end time."
+			"dailyEnd": "Choose an end time.",
+			"kind_locked": "The kind of event can no longer change.",
+			"too_few_options": "Offer at least 2 times.",
+			"too_many_options": "A poll can have at most 20 times.",
+			"option_incomplete": "Fill in the date and both times.",
+			"option_end_not_after_start": "The end must be after the start.",
+			"option_not_one_day": "A time must end on the day it starts.",
+			"duplicate_option": "This time is offered twice.",
+			"option_in_past": "This time has already begun.",
+			"option_invalid": "This time cannot be read. Remove it and add it again.",
+			"unknown_option": "This time no longer exists. Reload the page."
 		}
 	},
 	"MyEvents": {
@@ -106,6 +138,10 @@
 		"finalDateHint": "The event repeats every week, so the final time needs one date.",
 		"finalPick": "Pick as the final time",
 		"finalClear": "Clear the final time",
+		"pollFinalHint": "Pick one of the times as the final time.",
+		"pollFinalTable": "Times for picking the final time",
+		"pollIsFinal": "Picked",
+		"pollPickLabel": "Pick {when} as the final time",
 		"finalProblem": {
 			"final_not_in_event": "This is not one run of the event's slots. Select it again.",
 			"final_date_wrong_weekday": "That date is not on the day of the selected slots.",
@@ -185,7 +221,26 @@
 		"durationHours": "{hours} h",
 		"durationHoursMinutes": "{hours} h {minutes} min",
 		"windowsNoParticipants": "The best times appear once someone joins.",
-		"windowsNone": "No time passes the filters. Try a shorter length or fewer people."
+		"windowsNone": "No time passes the filters. Try a shorter length or fewer people.",
+		"pollHeading": "Times",
+		"pollHint": "Answer each time, then save.",
+		"pollJoinFirst": "Join above to answer the times.",
+		"pollTime": "Time",
+		"pollYours": "Your answer",
+		"pollYoursFor": "Your answer for {when}",
+		"pollResult": "Group",
+		"pollScore": "score {score, number}",
+		"pollAvailable": "Available: {names}",
+		"pollIfNeedBe": "If need be: {names}",
+		"pollLevel": {
+			"available": "Available",
+			"if_need_be": "If need be",
+			"clear": "Not available"
+		},
+		"pollBestNone": "The best times appear once someone answers.",
+		"pollShownInZone": "Times are shown in your zone, {zone}.",
+		"pollShownInReferenceZone": "Times are shown in the event's zone, {zone}.",
+		"pollChanged": "The organizer changed the times meanwhile. The list is current and your answers stayed where they could. Save them again."
 	},
 	"Join": {
 		"heading": "Add your availability",

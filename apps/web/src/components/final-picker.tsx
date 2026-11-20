@@ -45,6 +45,46 @@ function occurrences(weekday: Weekday, zone: string): string[] {
 	);
 }
 
+/**
+ * Sending a pick or a clear of the final time: the message to show, and whether one is under
+ * way. `onSaved` runs after a change the server accepted, before the page reloads.
+ */
+export function useFinalChange(onDenied: () => void, onSaved: () => void = () => {}) {
+	const t = useTranslations("Manage");
+	const router = useRouter();
+	const [message, setMessage] = useState<string | null>(null);
+	const [pending, startTransition] = useTransition();
+
+	function answer(change: FinalChange) {
+		switch (change.status) {
+			case "saved":
+				onSaved();
+				setMessage(null);
+				router.refresh();
+
+				return;
+			case "denied":
+				onDenied();
+
+				return;
+			case "invalid":
+				setMessage(t(`finalProblem.${change.problem}`));
+		}
+	}
+
+	function send(action: () => Promise<FinalChange>) {
+		startTransition(async () => {
+			try {
+				answer(await action());
+			} catch {
+				setMessage(t("failed"));
+			}
+		});
+	}
+
+	return { message, setMessage, pending, send };
+}
+
 /** Picking and clearing the final time on the manage page: a best window or a run in the grid. */
 export function FinalPicker({
 	event,
@@ -57,15 +97,17 @@ export function FinalPicker({
 	const tEvent = useTranslations("Event");
 	const count = useCount();
 	const id = useId();
-	const router = useRouter();
 	const viewerZone = useViewerZone();
 	const when = useFinalWhen();
 	const [proposal, setProposal] = useState<Run | null>(null);
 	// The first cell of a run picked in the grid, until a second cell in its column ends it.
 	const [anchor, setAnchor] = useState<CellRef | null>(null);
 	const [chosenDate, setChosenDate] = useState<string | null>(null);
-	const [message, setMessage] = useState<string | null>(null);
-	const [pending, startTransition] = useTransition();
+
+	const { message, setMessage, pending, send } = useFinalChange(onDenied, () => {
+		setProposal(null);
+		setAnchor(null);
+	});
 
 	const { view, windows } = useBoardView(event, weekdayView, viewerZone, formatLocale);
 
@@ -108,34 +150,6 @@ export function FinalPicker({
 
 		setAnchor(cell);
 		setProposal({ column: cell.column, first: cell.row, last: cell.row });
-	}
-
-	function answer(change: FinalChange) {
-		switch (change.status) {
-			case "saved":
-				setProposal(null);
-				setAnchor(null);
-				setMessage(null);
-				router.refresh();
-
-				return;
-			case "denied":
-				onDenied();
-
-				return;
-			case "invalid":
-				setMessage(t(`finalProblem.${change.problem}`));
-		}
-	}
-
-	function send(action: () => Promise<FinalChange>) {
-		startTransition(async () => {
-			try {
-				answer(await action());
-			} catch {
-				setMessage(t("failed"));
-			}
-		});
 	}
 
 	function pick(run: Run) {

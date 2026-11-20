@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 const BRUSHES = ["available", "if_need_be", "clear"] as const satisfies readonly Brush[];
 
 /** The mark of a level as the participant's own grid draws it, for the brush and the legend. */
-function Swatch({ mark }: { mark: Brush }) {
+export function Swatch({ mark }: { mark: Brush }) {
 	return (
 		<span
 			aria-hidden

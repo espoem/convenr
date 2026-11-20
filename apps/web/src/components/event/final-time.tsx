@@ -22,8 +22,15 @@ const DATE: Intl.DateTimeFormatOptions = {
 
 const TIME: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" };
 
-/** The final time in `zone`: one date with a time range, or two dated ends across midnight. */
-export function useFinalWhen(): (final: Chosen, zone: string, locale: string) => string {
+/**
+ * A final time or a poll option in `zone`: one date with a time range, or two dated ends across
+ * midnight.
+ */
+export function useFinalWhen(): (
+	final: Pick<Chosen, "start" | "end">,
+	zone: string,
+	locale: string,
+) => string {
 	const t = useTranslations("Event");
 
 	return (final, zone, locale) => {

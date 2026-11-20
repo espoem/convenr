@@ -34,6 +34,26 @@
 		"zone": "Časové pásmo události",
 		"zoneHint": "Účastníci v jiném pásmu uvidí časy převedené na svůj čas.",
 		"firstDayOfWeek": "Týden začíná",
+		"kind": "Co plánujete",
+		"kindName": {
+			"grid": "Mřížku dnů a časů",
+			"poll": "Pár vybraných termínů"
+		},
+		"kindHint": {
+			"grid": "Každý označí, kdy může.",
+			"poll": "Každý odpoví na každý nabídnutý termín."
+		},
+		"pollOptions": "Nabízené termíny",
+		"pollOptionsHint": "Každý termín je datum se začátkem a koncem. Nabídněte {min} až {max} termínů.",
+		"pollCount": "{count} z nejvýš {max} termínů.",
+		"pollDate": "Datum",
+		"pollStart": "Od",
+		"pollEnd": "Do",
+		"pollAdd": "Přidat termín",
+		"pollFull": "Anketa může mít nejvýš {max} termínů.",
+		"pollRemove": "Odebrat",
+		"pollRemoveLabel": "Odebrat {when}",
+		"pollZoneHint": "Zadané časy platí v tomto pásmu. Účastníci v jiném pásmu je uvidí převedené na svůj čas.",
 		"submit": "Vytvořit událost",
 		"creating": "Vytvářím…",
 		"fixProblems": "Událost nejde uložit. Opravte označená pole.",
@@ -43,6 +63,8 @@
 		"confirmLossYes": "Uložit a odebrat",
 		"confirmLossNo": "Zpět k úpravám",
 		"confirmClearsFinal": "Změna odebere část konečného času, takže se konečný čas zruší.",
+		"pollConfirmLoss": "{count, plural, one {# účastník přijde} few {# účastníci přijdou} other {# účastníků přijde}} o odpověď, protože odebíráte termíny, na které odpověděli.",
+		"pollConfirmClearsFinal": "Změna odebere termín, který je konečným časem, takže se konečný čas zruší.",
 		"problem": {
 			"field_locked": "Délku políčka, způsob výběru dnů a časové pásmo už nejde změnit.",
 			"name": "Zadejte název, nejvýš 100 znaků.",
@@ -59,7 +81,17 @@
 			"firstDayOfWeek": "Vyberte den, kterým začíná týden.",
 			"slotLength": "Vyberte délku políčka.",
 			"dailyStart": "Vyberte začátek.",
-			"dailyEnd": "Vyberte konec."
+			"dailyEnd": "Vyberte konec.",
+			"kind_locked": "Druh události už nejde změnit.",
+			"too_few_options": "Nabídněte aspoň 2 termíny.",
+			"too_many_options": "Anketa může mít nejvýš 20 termínů.",
+			"option_incomplete": "Vyplňte datum a oba časy.",
+			"option_end_not_after_start": "Konec musí být po začátku.",
+			"option_not_one_day": "Termín musí skončit ve dni, kdy začíná.",
+			"duplicate_option": "Tenhle termín je nabídnutý dvakrát.",
+			"option_in_past": "Tenhle termín už začal.",
+			"option_invalid": "Termín nejde přečíst. Odeberte ho a přidejte znovu.",
+			"unknown_option": "Tenhle termín už neexistuje. Načtěte stránku znovu."
 		}
 	},
 	"MyEvents": {
@@ -106,6 +138,10 @@
 		"finalDateHint": "Událost se opakuje každý týden, takže konečný čas potřebuje jedno datum.",
 		"finalPick": "Vybrat jako konečný čas",
 		"finalClear": "Zrušit konečný čas",
+		"pollFinalHint": "Vyberte jeden z termínů jako konečný čas.",
+		"pollFinalTable": "Termíny pro výběr konečného času",
+		"pollIsFinal": "Vybráno",
+		"pollPickLabel": "Vybrat {when} jako konečný čas",
 		"finalProblem": {
 			"final_not_in_event": "Tohle není souvislý úsek slotů události. Označte ho znovu.",
 			"final_date_wrong_weekday": "Datum nepřipadá na den vybraných slotů.",
@@ -185,7 +221,26 @@
 		"durationHours": "{hours} h",
 		"durationHoursMinutes": "{hours} h {minutes} min",
 		"windowsNoParticipants": "Nejlepší časy se ukážou, až se někdo zapíše.",
-		"windowsNone": "Žádný čas nesplňuje filtry. Zkuste snížit délku nebo počet lidí."
+		"windowsNone": "Žádný čas nesplňuje filtry. Zkuste snížit délku nebo počet lidí.",
+		"pollHeading": "Termíny",
+		"pollHint": "Odpovězte na každý termín a uložte.",
+		"pollJoinFirst": "Na termíny odpovíte, až se nahoře zapíšete.",
+		"pollTime": "Termín",
+		"pollYours": "Vaše odpověď",
+		"pollYoursFor": "Vaše odpověď na {when}",
+		"pollResult": "Skupina",
+		"pollScore": "skóre {score, number}",
+		"pollAvailable": "Můžou: {names}",
+		"pollIfNeedBe": "Když bude nutné: {names}",
+		"pollLevel": {
+			"available": "Můžu",
+			"if_need_be": "Když bude nutné",
+			"clear": "Nemůžu"
+		},
+		"pollBestNone": "Nejlepší termíny se ukážou, až někdo odpoví.",
+		"pollShownInZone": "Termíny jsou ve vašem pásmu, {zone}.",
+		"pollShownInReferenceZone": "Termíny jsou v pásmu události, {zone}.",
+		"pollChanged": "Pořadatel mezitím změnil termíny. Seznam je aktuální a vaše odpovědi zůstaly, kde to šlo. Uložte je znovu."
 	},
 	"Join": {
 		"heading": "Zapište svou dostupnost",

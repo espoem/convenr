@@ -8,6 +8,9 @@ import { createEvent, expect, expectSteady, freshPage, joinAs, respond } from ".
 const CONTROLS = "[aria-pressed]:not(.cv-cell-button), [role='tab']";
 const GROUP = "fieldset, [role='tablist'], ul, ol, table";
 
+// The two kinds of event, the first controls of the create form.
+const KINDS = 2;
+
 test.setTimeout(180_000);
 
 /**
@@ -57,7 +60,11 @@ test("pressing or selecting a control does not move the controls beside it", asy
 	await organizer.goto("/cs");
 	// The date picker appears once the page has hydrated.
 	await expect(organizer.locator("main").locator(CONTROLS).first()).toBeVisible();
+	// The kind of event comes first; choosing a poll hides the grid's controls, so the grid is
+	// chosen again before the controls after the two kinds are pressed.
 	expect(await pressEach(organizer)).toBeGreaterThan(0);
+	await organizer.getByRole("button", { name: /^Mřížku dnů a časů/u }).click();
+	expect(await pressEach(organizer, KINDS)).toBeGreaterThan(0);
 
 	const { share } = await createEvent(organizer, "Klidná stránka", first);
 

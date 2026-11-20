@@ -3,14 +3,14 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { ManageEvent } from "@/components/manage-event";
+import { ManageEvent, type ManagedBoard } from "@/components/manage-event";
 import { PageShell } from "@/components/page-shell";
 import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { eventFormOptions } from "@/i18n/event-form-options";
 import { formatLocale } from "@/i18n/format-locale";
 import { Link } from "@/i18n/navigation";
-import { boardOf, isGridEvent, weekdayViewOf } from "@/server/board";
+import { boardOf, byKind, pollBoardOf, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 
 /** The small line above the event name in the heading. */
@@ -28,13 +28,31 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 	const id = eventIdFromSegment(segment);
 	const event = id === undefined ? undefined : await readEvent(id);
 
-	// A poll has no page of its own yet, so it is managed through the API only.
-	if (event === undefined || !isGridEvent(event)) {
+	if (event === undefined) {
 		notFound();
 	}
 
 	const t = await getTranslations("Manage");
 	const format = formatLocale(await currentLocale(), (await headers()).get("accept-language"));
+	const kind = byKind(event);
+
+	const board: ManagedBoard =
+		kind.kind === "grid"
+			? {
+					kind: "grid",
+					board: boardOf(kind.event),
+					weekdayView: weekdayViewOf(kind.event, format),
+				}
+			: { kind: "poll", board: pollBoardOf(kind.event) };
+
+	const storedOptions =
+		kind.kind === "poll"
+			? kind.event.schedule.options.map((option) => ({
+					id: option.id,
+					start: option.start.toString(),
+					end: option.end.toString(),
+				}))
+			: [];
 
 	return (
 		<PageShell>
@@ -53,8 +71,8 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 				<ManageEvent
 					id={event.id}
 					options={await eventFormOptions()}
-					board={boardOf(event)}
-					weekdayView={weekdayViewOf(event, format)}
+					board={board}
+					storedOptions={storedOptions}
 					formatLocale={format}
 				/>
 			</main>

@@ -6,13 +6,14 @@ import { cache } from "react";
 
 import { EventBoard } from "@/components/event/event-board";
 import { FinalBanner } from "@/components/event/final-time";
+import { PollBoard } from "@/components/event/poll-board";
 import { PageShell } from "@/components/page-shell";
 import { ShareLink } from "@/components/share-link";
 import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
 import { getPathname } from "@/i18n/navigation";
-import { boardOf, isGridEvent, weekdayViewOf } from "@/server/board";
+import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 
 // One database read per request, shared by the metadata and the page.
@@ -35,8 +36,7 @@ export async function generateMetadata({
 export default async function EventPage({ params }: PageProps<"/[locale]/e/[segment]">) {
 	const event = await eventOf((await params).segment);
 
-	// A poll has no page of its own yet, so it is reached through the API only.
-	if (event === undefined || !isGridEvent(event)) {
+	if (event === undefined) {
 		notFound();
 	}
 
@@ -44,12 +44,24 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 	const format = formatLocale(locale, (await headers()).get("accept-language"));
 	const t = await getTranslations("Event");
 	const { schedule } = event;
-	const board = boardOf(event);
+	const final = shownFinal(event);
+	const kind = byKind(event);
+
+	const board =
+		kind.kind === "grid" ? (
+			<EventBoard
+				event={boardOf(kind.event)}
+				weekdayView={weekdayViewOf(kind.event, format)}
+				formatLocale={format}
+			/>
+		) : (
+			<PollBoard event={pollBoardOf(kind.event)} formatLocale={format} />
+		);
 
 	return (
 		<PageShell>
 			<main className="flex flex-col gap-6">
-				{board.final.kind === "chosen" ? (
+				{final.kind === "chosen" ? (
 					<FinalBanner
 						event={{
 							id: event.id,
@@ -57,7 +69,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 							description: event.description,
 							segment: event.segment,
 						}}
-						final={board.final}
+						final={final}
 						formatLocale={format}
 					/>
 				) : null}
@@ -88,11 +100,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 						/>
 					</div>
 				</header>
-				<EventBoard
-					event={board}
-					weekdayView={weekdayViewOf(event, format)}
-					formatLocale={format}
-				/>
+				{board}
 			</main>
 		</PageShell>
 	);

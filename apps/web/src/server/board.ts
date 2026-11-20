@@ -1,21 +1,19 @@
 // What the event page and the manage page send to the grid in the browser: plain values only,
 // because Temporal values do not cross from a server component to a client component.
-import type { BoardEvent } from "@/components/event/event-board";
+import type { BoardEvent, ShownFinal } from "@/components/event/event-board";
+import type { PollBoardEvent } from "@/components/event/poll-board";
 import { gridView, type GridView } from "@/domain/grid-labels";
 import { weekdayLayout } from "@/domain/grid-layout";
-import type { GridSchedule } from "@/domain/schedule";
+import { bestOptions, inTimeOrder, optionKey } from "@/domain/poll";
+import type { GridSchedule, PollSchedule } from "@/domain/schedule";
 
 import type { EventView } from "./events";
 
 /** An event whose schedule is a grid of slots. */
 export type GridEventView = EventView & { schedule: GridSchedule };
 
-export function isGridEvent(event: EventView): event is GridEventView {
-	return event.schedule.kind === "grid";
-}
-
 export function boardOf(event: GridEventView): BoardEvent {
-	const { schedule, final } = event;
+	const { schedule } = event;
 
 	return {
 		id: event.id,
@@ -29,16 +27,59 @@ export function boardOf(event: GridEventView): BoardEvent {
 		rowCount: (schedule.dailyEnd - schedule.dailyStart) / schedule.slotLength,
 		slots: event.slots,
 		participants: event.participants,
-		final:
-			final.kind === "open"
-				? { kind: "open" }
-				: {
-						kind: "chosen",
-						start: final.start.toString(),
-						end: final.end.toString(),
-						sequence: final.sequence,
-						slots: event.finalSlots,
-					},
+		final: shownFinal(event),
+	};
+}
+
+/** The final time as plain values, with the event's slots inside it. */
+export function shownFinal({ final, finalSlots }: EventView): ShownFinal {
+	return final.kind === "open"
+		? { kind: "open" }
+		: {
+				kind: "chosen",
+				start: final.start.toString(),
+				end: final.end.toString(),
+				sequence: final.sequence,
+				slots: finalSlots,
+			};
+}
+
+/** An event whose schedule is a poll's options. */
+export type PollEventView = EventView & { schedule: PollSchedule };
+
+/** The event tagged by its kind, so that one check selects the grid or the poll view. */
+export function byKind(
+	event: EventView,
+): { kind: "grid"; event: GridEventView } | { kind: "poll"; event: PollEventView } {
+	const { schedule } = event;
+
+	return schedule.kind === "grid"
+		? { kind: "grid", event: { ...event, schedule } }
+		: { kind: "poll", event: { ...event, schedule } };
+}
+
+export function pollBoardOf(event: PollEventView): PollBoardEvent {
+	const { schedule } = event;
+	const levels = event.participants.map((participant) => participant.levels);
+
+	return {
+		id: event.id,
+		name: event.name,
+		segment: event.segment,
+		referenceZone: schedule.referenceZone,
+		version: event.version,
+		options: inTimeOrder(schedule.options).map((option) => ({
+			key: optionKey(option),
+			start: option.start.toString(),
+			end: option.end.toString(),
+		})),
+		best: bestOptions(schedule, levels).map((result) => ({
+			key: optionKey(result.option),
+			people: result.people,
+		})),
+		slots: event.slots,
+		participants: event.participants,
+		final: shownFinal(event),
 	};
 }
 

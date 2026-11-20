@@ -5,7 +5,10 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 
 import { EventForm, type EventFormOptions, type FormOutcome } from "@/components/event-form";
 import type { BoardEvent } from "@/components/event/event-board";
+import type { PollBoardEvent } from "@/components/event/poll-board";
 import { FinalPicker } from "@/components/final-picker";
+import { PollFinalPicker } from "@/components/poll-final-picker";
+import type { StoredOption } from "@/components/poll-options-editor";
 import { Button } from "@/components/ui/button";
 import type { GridView } from "@/domain/grid-labels";
 import { useRouter } from "@/i18n/navigation";
@@ -19,11 +22,17 @@ import {
 import type { NewEvent } from "@/server/events";
 import type { Confirmation, ManagedEvent } from "@/server/manage";
 
+/** What the final time is picked from: a grid, or a poll's options. */
+export type ManagedBoard =
+	| { kind: "grid"; board: BoardEvent; weekdayView: GridView | null }
+	| { kind: "poll"; board: PollBoardEvent };
+
 type ManageEventProps = {
 	id: string;
 	options: EventFormOptions;
-	board: BoardEvent;
-	weekdayView: GridView | null;
+	board: ManagedBoard;
+	/** A poll's options as stored, so that the form can show the kept ones. */
+	storedOptions: StoredOption[];
 	formatLocale: string;
 };
 
@@ -31,7 +40,7 @@ type ManageEventProps = {
  * The manage page. The admin secret comes from the address fragment,
  * which never reaches the server in an address (ADR 0003 item 2), or from local storage.
  */
-export function ManageEvent({ id, options, board, weekdayView, formatLocale }: ManageEventProps) {
+export function ManageEvent({ id, options, board, storedOptions, formatLocale }: ManageEventProps) {
 	const t = useTranslations("Manage");
 	const router = useRouter();
 	const storedSecret = useLocalEvents().get(id)?.adminSecret;
@@ -156,13 +165,22 @@ export function ManageEvent({ id, options, board, weekdayView, formatLocale }: M
 
 	return (
 		<div className="flex flex-col gap-12">
-			<FinalPicker
-				event={board}
-				weekdayView={weekdayView}
-				formatLocale={formatLocale}
-				secret={secret}
-				onDenied={() => setLoaded({ secret, event: null })}
-			/>
+			{board.kind === "grid" ? (
+				<FinalPicker
+					event={board.board}
+					weekdayView={board.weekdayView}
+					formatLocale={formatLocale}
+					secret={secret}
+					onDenied={() => setLoaded({ secret, event: null })}
+				/>
+			) : (
+				<PollFinalPicker
+					event={board.board}
+					formatLocale={formatLocale}
+					secret={secret}
+					onDenied={() => setLoaded({ secret, event: null })}
+				/>
+			)}
 
 			<section aria-labelledby="edit" className="flex flex-col gap-6">
 				<h2 id="edit" className="text-2xl">
@@ -171,7 +189,8 @@ export function ManageEvent({ id, options, board, weekdayView, formatLocale }: M
 				<EventForm
 					key={saved}
 					options={options}
-					initial={event.kind === "grid" ? event : undefined}
+					initial={event}
+					storedOptions={storedOptions}
 					locked={event.locked}
 					submitLabel={t("save")}
 					pendingLabel={t("saving")}
