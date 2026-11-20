@@ -127,7 +127,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 			>
 				{problem === null ? "" : t(`problem.${problem.key}`, { time: problem.time ?? "" })}
 			</p>
-			<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("note")}</p>
+			<p className="text-sm text-ink-muted">{t("note")}</p>
 		</form>
 	);
 }

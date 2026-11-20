@@ -87,6 +87,7 @@ Each phase ships on its own and is usable by real people.
   3. The marks in the grid (availability, best time) have too little contrast against each other and the background.
   4. Switching the language shifts the layout.
   5. After switching the language, "Change password" and the rest of the line for the joined participant appear noticeably later than the other text. The board learns who has joined only after the browser sends its stored token to the server (`identifyAction` in `event-board.tsx`), so the line waits for that round trip on every page load.
+  6. The parts of the event page have no common width. Some stop at about 80 % of the page, others take its full width, and short notes wrap well before the line ends. The layout of the grid page needs one review that sets which parts take the full width and which keep the text measure.
 - Live updates that replace the 15-second reload, using the technique that fits the hosting chosen by then.
 - Guides for people who run convenr or build on it, as sections of the README. A guide that is too long for the README moves to `docs/guides/` and the README links to it. A guide is done when each of its commands runs on a clean clone.
   1. Local deployment: run the application and PostgreSQL in containers, the settings an instance takes, and how to update it and back up its data.
@@ -124,6 +125,8 @@ Each phase ships on its own and is usable by real people.
 - More languages, Slovak and German first.
 
 F5 to F8 get an exit criterion when each is planned in detail.
+
+Each of F5 to F8 ends with a UI and UX review of what it added and of the pages it changed: layout and widths, flow, copy, accessibility and behavior on a phone. Its defects are listed in the phase, as in F4, and fixed before the phase is done.
 
 ## 4. Decisions
 
