@@ -17,6 +17,8 @@ uv = "0.13.9"
 # Builds and deploys the Vercel instance from CI. Vercel publishes it from a private repository,
 # so it has no npm provenance; mise 2026.11.10 is the first whose trust check knows that.
 "npm:vercel" = "65.17.0"
+# Reads the JSON answers in the API guide of the README.
+jq = "1.8.2"
 # Lint the GitHub workflows; jactionlint runs shellcheck on each `run` script.
 jactionlint = "2.6.0"
 shellcheck = "0.11.0"
@@ -109,7 +111,7 @@ depends = ["sdk"]
 run = "scripts/sdk-check.sh"
 
 [tasks."sdk:acceptance"]
-description = "Run both SDKs' acceptance tests against the production build (needs `mise run build`); starts PostgreSQL"
+description = "Run both SDKs' acceptance tests and the README's API guide against the production build (needs `mise run build`); starts PostgreSQL"
 depends = ["db:up"]
 run = "node apps/web/scripts/sdk-acceptance.mts"
 
