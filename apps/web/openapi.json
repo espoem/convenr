@@ -2161,7 +2161,7 @@
 					"start": {
 						"type": "string",
 						"format": "date-time",
-						"description": "The start of the slot as an RFC 3339 instant in UTC."
+						"description": "The start of the slot as an RFC 3339 instant. A request may give any offset; an answer gives it in UTC with Z."
 					}
 				},
 				"required": [
@@ -2947,7 +2947,7 @@
 					"start": {
 						"type": "string",
 						"format": "date-time",
-						"description": "The start of the slot as an RFC 3339 instant in UTC."
+						"description": "The start of the slot as an RFC 3339 instant. A request may give any offset; an answer gives it in UTC with Z."
 					}
 				},
 				"required": [

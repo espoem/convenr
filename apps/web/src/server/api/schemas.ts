@@ -41,9 +41,12 @@ export const optionSlotSchema = z.object(optionSlot);
 
 export const slotSchema = z.union([datedSlotSchema, weekdaySlotSchema, optionSlotSchema]);
 
-/** A slot in a request. */
+/**
+ * A slot in a request. A dated slot's start may carry any offset, such as the `+00:00` that
+ * many libraries write for UTC; the answer names it in UTC with `Z`.
+ */
 const slotInputSchema = z.union([
-	z.strictObject(datedSlot),
+	z.strictObject({ start: z.iso.datetime({ offset: true }) }),
 	z.strictObject(weekdaySlot),
 	z.strictObject(optionSlot),
 ]);

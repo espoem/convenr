@@ -482,7 +482,7 @@
 			"dailyEnd": "Konec slotů každého dne, `HH:MM`; `24:00` je půlnoc.",
 			"slotMinutes": "Délka slotu v minutách.",
 			"slots": "Všechny sloty události v časovém pořadí.",
-			"start": "Začátek slotu jako okamžik podle RFC 3339 v UTC.",
+			"start": "Začátek slotu jako okamžik podle RFC 3339. Požadavek může uvést jakýkoli posun; odpověď ho uvádí v UTC se Z.",
 			"weekday": "Den týdne: 1 je pondělí, 7 neděle.",
 			"minute": "Začátek slotu v minutách po půlnoci.",
 			"kind": "Zda má událost datum smazání.",

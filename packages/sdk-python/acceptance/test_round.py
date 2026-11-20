@@ -20,6 +20,10 @@ from convenr.models import (
     AvailabilityRequest,
     CreatedEvent,
     CreateEventRequest,
+    DatedSlotInput,
+    DatesSchedule,
+    DatesScheduleInput,
+    DatesScheduleInputSlotMinutes,
     Event,
     FinalChosen,
     FinalRequest,
@@ -27,6 +31,7 @@ from convenr.models import (
     Joined,
     NewOptionInput,
     OptionSlotInput,
+    Participant,
     PollSchedule,
     PollScheduleInput,
     Problem,
@@ -204,4 +209,45 @@ def test_poll_with_one_participant() -> None:
     assert picked.final.start == at(18, 0)
 
     deleted = delete_event.sync_detailed(event_id, client=authenticated(created.admin_secret))
+    assert deleted.status_code == HTTPStatus.NO_CONTENT
+
+
+def test_dated_slots_go_back_as_read() -> None:
+    """A dated slot read from the event is saved as it is; Python writes its UTC as +00:00."""
+    client = Client(base_url=BASE_URL)
+    day = datetime.now(ZoneInfo("Europe/Prague")).date() + timedelta(days=7)
+
+    created = create_event.sync(
+        client=client,
+        body=CreateEventRequest(
+            name="Team lunch",
+            reference_zone="Europe/Prague",
+            schedule=DatesScheduleInput(
+                mode="dates",
+                dates=[day],
+                daily_start="11:00",
+                daily_end="13:00",
+                slot_minutes=DatesScheduleInputSlotMinutes(60),
+            ),
+        ),
+    )
+    assert isinstance(created, CreatedEvent)
+    assert isinstance(created.event.schedule, DatesSchedule)
+    slots = [DatedSlotInput(start=slot.start) for slot in created.event.schedule.slots]
+
+    ada = join.sync(created.event.id, client=client, body=JoinRequest(name="Ada"))
+    assert isinstance(ada, Joined)
+    saved = save_availability.sync(
+        created.event.id,
+        client=authenticated(ada.participant_token),
+        body=AvailabilityRequest(availability=slots),
+    )
+    assert isinstance(saved, Participant)
+    assert [slot.to_dict() for slot in saved.availability] == [
+        slot.to_dict() for slot in created.event.schedule.slots
+    ]
+
+    deleted = delete_event.sync_detailed(
+        created.event.id, client=authenticated(created.admin_secret)
+    )
     assert deleted.status_code == HTTPStatus.NO_CONTENT

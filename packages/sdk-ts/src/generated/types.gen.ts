@@ -221,7 +221,7 @@ export type Slot = DatedSlot | WeekdaySlot | OptionSlot;
  */
 export type DatedSlot = {
     /**
-     * The start of the slot as an RFC 3339 instant in UTC.
+     * The start of the slot as an RFC 3339 instant. A request may give any offset; an answer gives it in UTC with Z.
      */
     start: string;
 };
@@ -721,7 +721,7 @@ export type SlotInput = DatedSlotInput | WeekdaySlotInput | OptionSlotInput;
  */
 export type DatedSlotInput = {
     /**
-     * The start of the slot as an RFC 3339 instant in UTC.
+     * The start of the slot as an RFC 3339 instant. A request may give any offset; an answer gives it in UTC with Z.
      */
     start: string;
 };

@@ -482,7 +482,7 @@
 			"dailyEnd": "The end of each day's slots, `HH:MM`; `24:00` is midnight.",
 			"slotMinutes": "The length of a slot in minutes.",
 			"slots": "Every slot of the event, in time order.",
-			"start": "The start of the slot as an RFC 3339 instant in UTC.",
+			"start": "The start of the slot as an RFC 3339 instant. A request may give any offset; an answer gives it in UTC with Z.",
 			"weekday": "The day of the week: 1 is Monday, 7 is Sunday.",
 			"minute": "The start of the slot in minutes after midnight.",
 			"kind": "Whether the event has a deletion date.",

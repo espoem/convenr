@@ -15,7 +15,8 @@ class DatedSlot:
     """A slot of a dated event.
 
     Attributes:
-        start (datetime.datetime): The start of the slot as an RFC 3339 instant in UTC.
+        start (datetime.datetime): The start of the slot as an RFC 3339 instant. A request may give any offset; an
+            answer gives it in UTC with Z.
     """
 
     start: datetime.datetime

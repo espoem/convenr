@@ -226,6 +226,22 @@ describe("availability", () => {
 		});
 	});
 
+	it("reads a slot's start with any offset and answers it in UTC with Z", async () => {
+		const { id } = await createdEvent();
+		const { token } = await joined(id, "Jana");
+
+		// Python's isoformat writes UTC as +00:00; another offset names the same instant too.
+		const sent = [{ start: "2027-04-05T15:00:00+00:00" }, { start: "2027-04-05T18:00:00+02:00" }];
+
+		const response = await call(
+			saveAvailability,
+			{ id },
+			{ method: "PUT", secret: token, body: { availability: sent } },
+		);
+
+		expect((await bodyOf(response, participantSchema)).availability).toEqual([FIVE, SIX]);
+	});
+
 	it("keeps if-need-be slots in the availability and lists them apart", async () => {
 		const { id } = await createdEvent();
 		const { token } = await joined(id, "Jana");

@@ -57,7 +57,7 @@ An `{id}` or `{participantId}` that is not a public id (ADR 0003 item 1, A7) can
 
 **A5. Schedule.** An event has a `schedule` object tagged by `mode`, which alone decides the kind of event:
 
-- `mode: "dates"` with `dates` (a list of `YYYY-MM-DD`), or `mode: "range"` with `first` and `last`. Their slots are `{ "start": "2027-04-05T07:00:00Z" }`, an RFC 3339 instant in UTC.
+- `mode: "dates"` with `dates` (a list of `YYYY-MM-DD`), or `mode: "range"` with `first` and `last`. Their slots are `{ "start": "2027-04-05T07:00:00Z" }`, an RFC 3339 instant in UTC. A request may give a slot's start with any offset, such as `+00:00`; the answer gives it with `Z`.
 - `mode: "weekdays"` with `weekdays` (a list of ISO days, 1 for Monday to 7 for Sunday). Its slots are `{ "weekday": 1, "minute": 1080 }`, a wall-clock time in the reference zone (ADR 0002).
 
 Every mode also has `dailyStart` and `dailyEnd` (`HH:MM`, with `24:00` allowed as the end) and `slotMinutes` (15, 30 or 60). In a response the schedule also holds `slots`, every slot of the event in time order. A request sends the schedule without `slots`, because the server derives them (E4, E5).
