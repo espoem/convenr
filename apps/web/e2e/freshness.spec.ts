@@ -129,6 +129,9 @@ test("an idle page pauses its updates and resumes on input", async ({ browser })
 	await jana.clock.install();
 	await jana.goto(share);
 	await expect(jana.getByRole("heading", { name: "Účastníci (0)" })).toBeVisible();
+	// The idle timer starts with hydration, after which the dated grid appears; a clock moved
+	// before it would pass unnoticed.
+	await expect(jana.getByRole("table")).toBeVisible();
 
 	// Thirty minutes without input stop the stream and say so.
 	await jana.clock.fastForward("30:00");
