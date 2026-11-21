@@ -14,7 +14,7 @@ import {
 import type { FinalTime } from "@/domain/final-time";
 import type { Level, Levels } from "@/domain/levels";
 import { inTimeOrder, optionKey } from "@/domain/poll";
-import { expiresAt } from "@/domain/retention";
+import { type Deletion, deletionOf, expiresAt, type Keeping } from "@/domain/retention";
 import {
 	type EventDays,
 	type Schedule,
@@ -272,14 +272,45 @@ export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.
  * to every page, action and version check, even before the purge deletes it.
  */
 export function isLive(row: EventRow, now: Temporal.Instant): boolean {
-	const end = expiresAt(
+	const end = expiresAt(deletionOfRow(row), row.referenceZone);
+
+	return end === null || Temporal.Instant.compare(now, end) < 0;
+}
+
+// The keeping is stored in `events.kept_until`: null when never kept, `infinity` while kept, and
+// the end instant otherwise. Outside these two functions only SQL knows the form: the check
+// events_kept_by_owner, the trigger events_keeping_ends_with_owner and the purge.
+const KEPT = "infinity";
+
+/** The keeping as stored. */
+export function keepingOf(row: { keptUntil: string | null }): Keeping {
+	if (row.keptUntil === null) {
+		return { kind: "not_kept" };
+	}
+
+	return row.keptUntil === KEPT
+		? { kind: "kept" }
+		: { kind: "ended", at: Temporal.Instant.from(row.keptUntil) };
+}
+
+/** The keeping in the form `keepingOf` reads. */
+export function storedKeeping(keeping: Keeping): string | null {
+	if (keeping.kind === "ended") {
+		return keeping.at.toString();
+	}
+
+	return keeping.kind === "kept" ? KEPT : null;
+}
+
+/** When the event is deleted under the current retention setting, or who keeps it. */
+export function deletionOfRow(row: EventRow): Deletion {
+	return deletionOf(
 		scheduleOf(row),
 		Temporal.Instant.from(row.changedAt),
 		env().RETENTION_DAYS,
 		finalOf(row),
+		keepingOf(row),
 	);
-
-	return end === null || Temporal.Instant.compare(now, end) < 0;
 }
 
 /**

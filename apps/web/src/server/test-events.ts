@@ -1,6 +1,7 @@
 // Shared input for the data access layer tests.
 import { db } from "@/db/client";
 import { authUsers, events } from "@/db/schema";
+import type { Deletion } from "@/domain/retention";
 
 import { createEvent, type GridEventInput, type NewEvent, type PollEventInput } from "./events";
 
@@ -48,6 +49,15 @@ export async function freshEvent(input: NewEvent = pragueEvenings): Promise<stri
 	}
 
 	return created.event.id;
+}
+
+/** The deletion date of an event view as `YYYY-MM-DD`, or `kept` while it is kept. */
+export function deletionDay(view: { deletion: Deletion } | undefined): string | undefined {
+	if (view === undefined) {
+		return undefined;
+	}
+
+	return view.deletion.kind === "kept" ? "kept" : view.deletion.date.toString();
 }
 
 /** A new account, as signing in creates one; its id is unique, so tests need not clean up. */

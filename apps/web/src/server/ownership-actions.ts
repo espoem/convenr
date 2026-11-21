@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 import { ensureToken, heldToken } from "./browser-key";
-import { type ClaimResult, claimEvent } from "./ownership";
+import { type ClaimResult, claimEvent, releaseEvent, setKeeping } from "./ownership";
 import { type LinkResult, linkHeld, unlink } from "./participants";
 import { currentVisitor } from "./session";
 
@@ -46,6 +46,33 @@ export async function linkParticipantAction(id: string): Promise<LinkOutcome> {
 	return args.success && held !== undefined
 		? (await linkHeld(args.data, held, visitor.accountId)).status
 		: "not_joined";
+}
+
+/**
+ * Removes an owned event from the account. The browser keeps the admin secret only if local
+ * storage already had it, since the owner's page never learns it.
+ */
+export async function releaseAction(id: string): Promise<boolean> {
+	const args = eventId.safeParse(id);
+	const visitor = await currentVisitor();
+
+	return (
+		args.success &&
+		visitor.kind === "signed_in" &&
+		(await releaseEvent(args.data, visitor.accountId)).status === "changed"
+	);
+}
+
+/** Keeps the owned event without a time limit, or ends the keeping. */
+export async function setKeepingAction(id: string, keep: boolean): Promise<boolean> {
+	const args = z.tuple([eventId, z.boolean()]).safeParse([id, keep]);
+	const visitor = await currentVisitor();
+
+	return (
+		args.success &&
+		visitor.kind === "signed_in" &&
+		(await setKeeping(args.data[0], visitor.accountId, args.data[1])).status === "changed"
+	);
 }
 
 /** Unlinks the account's participant in the event; this browser stays joined as it. */

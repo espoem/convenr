@@ -117,6 +117,33 @@ test("an organizer adds an event to the account and manages it from another brow
 	).toBeVisible();
 	await expect(there.getByRole("region", { name: "Events in this browser" })).toHaveCount(0);
 
+	// The owner keeps the event, and releasing it from the account ends the keeping.
+	const organized = there.getByRole("region", { name: "Events I organize" });
+
+	await organized
+		.getByRole("listitem")
+		.filter({ hasText: "Oběd" })
+		.getByRole("link", { name: "Manage" })
+		.click();
+
+	const keep = there.getByRole("button", { name: "Keep without a time limit" });
+
+	await keep.click();
+	await expect(keep).toHaveAttribute("aria-pressed", "true");
+	await there.getByRole("link", { name: "Open the event" }).click();
+	await expect(there.getByText("the organizer keeps the event")).toBeVisible();
+
+	await there.goto("/en/account");
+	await expect(organized.getByRole("listitem").filter({ hasText: "Oběd" })).toContainText(
+		"you keep it",
+	);
+	await organized
+		.getByRole("listitem")
+		.filter({ hasText: "Oběd" })
+		.getByRole("button", { name: "Remove from account" })
+		.click();
+	await expect(organized.getByRole("link", { name: "Oběd" })).toHaveCount(0);
+
 	await here.context().close();
 	await there.context().close();
 });

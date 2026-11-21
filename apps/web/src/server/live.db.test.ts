@@ -1,13 +1,15 @@
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
-import { events } from "@/db/schema";
+import { authUsers, events } from "@/db/schema";
 
 import { createEvent } from "./events";
 import { type LiveChange, stopListening, watchEvent } from "./live";
 import { bySecret, removeEvent, updateEvent } from "./manage";
+import { setKeeping } from "./ownership";
 import { join } from "./participants";
-import { creationTime, pragueEvenings } from "./test-events";
+import { creationTime, freshAccount, pragueEvenings } from "./test-events";
 
 /** The next change `watchEvent` hands over for event `id`, and the function that stops watching. */
 async function nextChange(id: string) {
@@ -62,6 +64,41 @@ describe("watchEvent", () => {
 		);
 
 		expect(await arrived).toEqual({ kind: "version", version: event.version + 1n });
+		unwatch();
+	});
+
+	it("hands over the new version when deleting the owner's account ends the keeping", async () => {
+		const owner = await freshAccount("jana");
+
+		const result = await createEvent(pragueEvenings, creationTime, {
+			kind: "account",
+			accountId: owner,
+		});
+
+		if (!result.ok) {
+			throw new Error("The test event is invalid.");
+		}
+
+		const { id } = result.event;
+
+		await setKeeping(id, owner, true, creationTime.add({ minutes: 1 }));
+
+		// The keeping's own announcement may still be on its way, so wait for the version after it.
+		const ended = result.event.version + 2n;
+		const { promise: arrived, resolve } = Promise.withResolvers<LiveChange>();
+
+		const unwatch = await watchEvent(id, {
+			onChange: (change) => {
+				if (change.kind === "version" && change.version === ended) {
+					resolve(change);
+				}
+			},
+			onFailure: () => {},
+		});
+
+		await db().delete(authUsers).where(eq(authUsers.id, owner));
+
+		expect(await arrived).toEqual({ kind: "version", version: ended });
 		unwatch();
 	});
 

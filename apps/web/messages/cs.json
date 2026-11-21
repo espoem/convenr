@@ -124,6 +124,14 @@
 		"removeParticipantConfirm": "Smazat účastníka {name}? Smaže se i jeho dostupnost a heslo a jméno se uvolní.",
 		"removeParticipantYes": "Smazat účastníka",
 		"keep": "Ponechat",
+		"keeping": {
+			"heading": "Ponechat událost",
+			"intro": "Dokud událost ponecháváte, nesmaže se. Když ji přestanete ponechávat, smaže se nejdříve po uplynutí doby uchování od toho dne.",
+			"switch": "Ponechat bez časového omezení",
+			"on": "Událost ponecháváte.",
+			"off": "Událost se smaže v plánovaném termínu.",
+			"failed": "Nepovedlo se to. Zkuste to prosím znovu."
+		},
 		"deleteHeading": "Smazat událost",
 		"deleteLead": "Událost zmizí i s dostupností všech účastníků. Oba odkazy přestanou fungovat.",
 		"deleteEvent": "Smazat událost",
@@ -241,7 +249,8 @@
 		"pollBestNone": "Nejlepší termíny se ukážou, až někdo odpoví.",
 		"pollShownInZone": "Termíny jsou ve vašem pásmu, {zone}.",
 		"pollShownInReferenceZone": "Termíny jsou v pásmu události, {zone}.",
-		"pollChanged": "Pořadatel mezitím změnil termíny. Seznam je aktuální a vaše odpovědi zůstaly, kde to šlo. Uložte je znovu."
+		"pollChanged": "Pořadatel mezitím změnil termíny. Seznam je aktuální a vaše odpovědi zůstaly, kde to šlo. Uložte je znovu.",
+		"keptByOrganizer": "organizátor událost ponechává"
 	},
 	"Join": {
 		"heading": "Zapište svou dostupnost",
@@ -336,7 +345,8 @@
 			"open": "Termín zatím není vybraný",
 			"final": "Termín {when}",
 			"deletion": "smaže se {date}",
-			"kept": "nemaže se"
+			"kept": "nemaže se",
+			"keptByOrganizer": "ponecháváte ji"
 		},
 		"claim": {
 			"heading": "Události v tomto prohlížeči",

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { KeepEvent } from "@/components/keep-event";
 import { LiveUpdates } from "@/components/live-updates";
 import { ManageEvent, type ManagedBoard } from "@/components/manage-event";
 import { PageShell } from "@/components/page-shell";
@@ -14,6 +15,8 @@ import { Link } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 import { liveSettings } from "@/server/live";
+import { ownerView } from "@/server/ownership";
+import { currentVisitor } from "@/server/session";
 
 /** The small line above the event name in the heading. */
 function label(chunks: ReactNode) {
@@ -37,6 +40,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 	const t = await getTranslations("Manage");
 	const format = formatLocale(await currentLocale(), (await headers()).get("accept-language"));
 	const kind = byKind(event);
+	const owner = await ownerView(await currentVisitor(), event);
 
 	const board: ManagedBoard =
 		kind.kind === "grid"
@@ -71,6 +75,9 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 						{t("open")}
 					</Link>
 				</div>
+				{owner.kind === "owner" && owner.keeping.kind === "shown" ? (
+					<KeepEvent eventId={event.id} kept={owner.keeping.kept} />
+				) : null}
 				<ManageEvent
 					id={event.id}
 					options={await eventFormOptions()}

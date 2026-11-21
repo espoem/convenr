@@ -8,7 +8,7 @@ import { asEventVersion } from "@/lib/event-version";
 import { createEvent, type NewEvent, readEvent } from "./events";
 import { clearFinal, pickFinal } from "./final";
 import { bySecret, type Precondition, updateEvent } from "./manage";
-import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
+import { creationTime, deletionDay, mondayEvenings, pragueEvenings } from "./test-events";
 
 const later = Temporal.Instant.from("2027-03-02T12:00:00Z");
 
@@ -120,7 +120,7 @@ describe("pickFinal and clearFinal", () => {
 			later,
 		);
 
-		expect((await readEvent(id, later))?.deletionDate?.toString()).toBe("2028-02-29");
+		expect(deletionDay(await readEvent(id, later))).toBe("2028-02-29");
 	});
 });
 

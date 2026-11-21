@@ -9,7 +9,13 @@ import { createEvent, readEvent } from "./events";
 import { join } from "./participants";
 import { saveResponse } from "./responses";
 import { hashSecret } from "./secrets";
-import { creationTime, freshEvent, mondayEvenings, pragueEvenings } from "./test-events";
+import {
+	creationTime,
+	deletionDay,
+	freshEvent,
+	mondayEvenings,
+	pragueEvenings,
+} from "./test-events";
 
 beforeEach(async () => {
 	await db().delete(events);
@@ -30,7 +36,7 @@ describe("createEvent", () => {
 		expect(created.event.segment).toBe(`schuzka-vyboru-2027-${id}`);
 		// The prefix names the kind, followed by 32 bytes in base64url (ADR 0004).
 		expect(created.adminSecret).toMatch(/^cva_[\w-]{43}$/u);
-		expect(created.event.deletionDate?.toString()).toBe("2027-07-05");
+		expect(deletionDay(created.event)).toBe("2027-07-05");
 		// The event comes from the insert itself, the same as a later read sees it.
 		expect(created.event).toEqual(await readEvent(id, creationTime));
 
@@ -118,6 +124,6 @@ describe("readEvent", () => {
 
 		await join(id, "Jana", undefined, later);
 
-		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-08-08");
+		expect(deletionDay(await readEvent(id))).toBe("2027-08-08");
 	});
 });

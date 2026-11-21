@@ -6,22 +6,23 @@ import { useState, useTransition } from "react";
 import { useFinalWhen } from "@/components/event/final-time";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
-import { unlinkAction } from "@/server/ownership-actions";
+import { releaseAction, unlinkAction } from "@/server/ownership-actions";
 
 /** An event of the account's lists as the server sends it: Temporal values travel as strings. */
 export type AccountEventItem = {
 	id: string;
 	name: string;
 	segment: string;
-	/** `YYYY-MM-DD`, or `null` when the event has no deletion date. */
-	deletionDate: string | null;
+	/** The deletion date as `YYYY-MM-DD`, or who keeps the event. */
+	deletion: { kind: "on"; date: string } | { kind: "kept"; by: "instance" | "organizer" };
 	final: { kind: "open" } | { kind: "chosen"; start: string; end: string };
 	role: { kind: "organizer" } | { kind: "participant"; name: string };
 };
 
 /**
- * One of the account's lists, with each event's deletion date and final time: the organizer's
- * events link to their manage page, the participant's can be unlinked.
+ * One of the account's lists, with each event's deletion date and final time. The organizer's
+ * events link to their manage page; each event can be removed from the account, which releases
+ * an owned event and unlinks a joined one.
  */
 export function AccountEvents({
 	events,
@@ -47,10 +48,10 @@ export function AccountEvents({
 
 	function details(event: AccountEventItem): string {
 		const deletion =
-			event.deletionDate === null
-				? t("kept")
+			event.deletion.kind === "kept"
+				? t(event.deletion.by === "organizer" ? "keptByOrganizer" : "kept")
 				: t("deletion", {
-						date: Temporal.PlainDate.from(event.deletionDate).toLocaleString(formatLocale, {
+						date: Temporal.PlainDate.from(event.deletion.date).toLocaleString(formatLocale, {
 							day: "numeric",
 							month: "long",
 							year: "numeric",
@@ -67,11 +68,14 @@ export function AccountEvents({
 		return `${t("final", { when: final })} · ${deletion}`;
 	}
 
-	function unlinkFrom(id: string) {
+	function remove(event: AccountEventItem) {
 		startTransition(async () => {
-			const unlinked = await unlinkAction(id);
+			const removed =
+				event.role.kind === "organizer"
+					? await releaseAction(event.id)
+					: await unlinkAction(event.id);
 
-			setFailed(unlinked ? null : id);
+			setFailed(removed ? null : event.id);
 			router.refresh();
 		});
 	}
@@ -94,16 +98,15 @@ export function AccountEvents({
 							>
 								{t("manage")}
 							</Link>
-						) : (
-							<button
-								type="button"
-								disabled={pending}
-								onClick={() => unlinkFrom(event.id)}
-								className="min-h-11 text-action underline underline-offset-4"
-							>
-								{t("unlink")}
-							</button>
-						)}
+						) : null}
+						<button
+							type="button"
+							disabled={pending}
+							onClick={() => remove(event)}
+							className="min-h-11 text-action underline underline-offset-4"
+						>
+							{t("unlink")}
+						</button>
 					</span>
 					{event.role.kind === "participant" ? (
 						<span className="text-sm">{t("as", { name: event.role.name })}</span>

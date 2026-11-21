@@ -10,7 +10,7 @@ import { type EditProblem, scheduleProblems } from "@/domain/event-edit";
 import { type FinalTime, finalSlotKeys } from "@/domain/final-time";
 import { MAX_OPTIONS } from "@/domain/poll";
 import { newPublicId } from "@/domain/public-id";
-import { deletionDate } from "@/domain/retention";
+import type { Deletion } from "@/domain/retention";
 import {
 	type GridSchedule,
 	MAX_DATES,
@@ -21,11 +21,11 @@ import {
 	slotKey,
 	SLOT_LENGTHS,
 } from "@/domain/schedule";
-import { env } from "@/env";
 import type { EventVersion } from "@/lib/event-version";
 
 import { FIELD_CODES, fieldErrors } from "./api/field-codes";
 import {
+	deletionOfRow,
 	type EventRow,
 	finalOf,
 	liveEvent,
@@ -373,8 +373,7 @@ export type EventView = {
 	/** Compared by the page's version check. */
 	version: EventVersion;
 	schedule: Schedule;
-	/** `null` when the instance keeps events permanently. */
-	deletionDate: Temporal.PlainDate | null;
+	deletion: Deletion;
 	final: FinalTime;
 	/** Keys of the event's slots inside the final time, in time order; empty while it is open. */
 	finalSlots: string[];
@@ -437,16 +436,6 @@ export async function eventViewOf(queries: Queries, row: EventRow): Promise<Even
 	);
 }
 
-/** The last day the event exists, or `null` when the instance keeps events permanently. */
-export function deletionDateOf(row: EventRow): Temporal.PlainDate | null {
-	return deletionDate(
-		scheduleOf(row),
-		Temporal.Instant.from(row.changedAt),
-		env().RETENTION_DAYS,
-		finalOf(row),
-	);
-}
-
 function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 	const schedule = scheduleOf(row);
 	const final = finalOf(row);
@@ -458,7 +447,7 @@ function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 		segment: eventSegment(row.id, row.name),
 		version: row.version,
 		schedule,
-		deletionDate: deletionDateOf(row),
+		deletion: deletionOfRow(row),
 		final,
 		finalSlots: finalSlotKeys(final, schedule),
 		slots: scheduleSlots(schedule).map((slot) => slotKey(slot)),

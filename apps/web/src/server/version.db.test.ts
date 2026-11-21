@@ -9,7 +9,7 @@ import { createEvent, eventVersion, readEvent } from "./events";
 import { bySecret, readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, join, leave } from "./participants";
 import { saveResponse } from "./responses";
-import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
+import { creationTime, deletionDay, mondayEvenings, pragueEvenings } from "./test-events";
 
 /** A distinct instant for each step, so each step's change time can be told apart. */
 function minute(count: number) {
@@ -170,7 +170,7 @@ describe("changed_at", () => {
 
 		const { id } = created.event;
 
-		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-05-30");
+		expect(deletionDay(await readEvent(id))).toBe("2027-05-30");
 
 		const jana = await join(id, "Jana", undefined, creationTime.add({ hours: 24 * 10 }));
 
@@ -182,7 +182,7 @@ describe("changed_at", () => {
 			version: 2n,
 			changedAt: creationTime.add({ hours: 24 * 10 }),
 		});
-		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-06-09");
+		expect(deletionDay(await readEvent(id))).toBe("2027-06-09");
 
 		await saveResponse(
 			id,
@@ -196,6 +196,6 @@ describe("changed_at", () => {
 			{ available: [] },
 			creationTime.add({ hours: 24 * 30 }),
 		);
-		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-06-09");
+		expect(deletionDay(await readEvent(id))).toBe("2027-06-09");
 	});
 });

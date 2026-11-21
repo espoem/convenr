@@ -59,13 +59,14 @@ on conflict (day, metric, bucket) do update set count = usage_counts.count + exc
 // The expiry is the SQL form of `expiresAt` in `src/domain/retention.ts`: the end of the
 // deletion date in the reference zone. A database test keeps the two in step. A weekday event
 // whose final date lies after its planned deletion date is kept until the retention after the
-// final date. Deleting an event deletes its participants, tokens and responses through the
-// foreign keys.
+// final date. An event its owner keeps is never deleted, and once the keeping ended the event
+// lasts at least the retention after that day (greatest skips a null). Deleting an event
+// deletes its participants, tokens and responses through the foreign keys.
 const PURGE = `
 with gone as (
   delete from events
-  where (
-    (
+  where kept_until is distinct from 'infinity' and ((
+    greatest(
       case
         when kind = 'poll' then (
           select max((start at time zone reference_zone)::date)
@@ -77,8 +78,10 @@ with gone as (
           > (changed_at at time zone reference_zone)::date + $1::integer
           then (final_start at time zone reference_zone)::date
         else (changed_at at time zone reference_zone)::date
-      end + $1::integer + 1
-    )::timestamp at time zone reference_zone
+      end,
+      (kept_until at time zone reference_zone)::date
+    ) + $1::integer + 1
+  )::timestamp at time zone reference_zone
   ) <= $2::timestamptz
   returning
     activation_counted_at is null as activation,

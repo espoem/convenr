@@ -7,10 +7,22 @@ import { db } from "@/db/client";
 import { events, participants } from "@/db/schema";
 import { eventSegment } from "@/domain/event-address";
 import type { FinalTime } from "@/domain/final-time";
+import type { Deletion, Keeping } from "@/domain/retention";
 
-import { finalOf, isLive, withOptions } from "./event-rows";
-import { deletionDateOf } from "./events";
+import {
+	changeStamp,
+	deletionOfRow,
+	type EventRow,
+	finalOf,
+	isLive,
+	keepingOf,
+	liveEvent,
+	type Queries,
+	storedKeeping,
+	withOptions,
+} from "./event-rows";
 import { adminRow, bySecret } from "./manage";
+import type { Visitor } from "./session";
 
 export type ClaimResult =
 	| { status: "claimed" }
@@ -50,6 +62,99 @@ export async function claimEvent(
 	});
 }
 
+export type OwnerChangeResult =
+	| { status: "changed" }
+	/** The event is unknown or expired. */
+	| { status: "event_gone" }
+	/** Another account owns the event, or nobody does. */
+	| { status: "not_owner" };
+
+/** Runs `change` on the live event `id`, locked, when `accountId` owns it. */
+async function changeOwned(
+	id: string,
+	accountId: string,
+	now: Temporal.Instant,
+	change: (tx: Queries, row: EventRow) => Promise<void>,
+): Promise<OwnerChangeResult> {
+	return db().transaction(async (tx): Promise<OwnerChangeResult> => {
+		const row = await liveEvent(tx, id, now, "lock");
+
+		if (row === undefined) {
+			return { status: "event_gone" };
+		}
+
+		if (row.ownerId !== accountId) {
+			return { status: "not_owner" };
+		}
+
+		await change(tx, row);
+
+		return { status: "changed" };
+	});
+}
+
+/**
+ * Turns the owner's keeping on or off. Turning it off ends it now, so the event gets a full
+ * retention period from today. The event page shows the change, so the version moves.
+ */
+export async function setKeeping(
+	id: string,
+	accountId: string,
+	keep: boolean,
+	now = Temporal.Now.instant(),
+): Promise<OwnerChangeResult> {
+	return changeOwned(id, accountId, now, async (tx, row) => {
+		if (keep === (keepingOf(row).kind === "kept")) {
+			return;
+		}
+
+		const keeping: Keeping = keep ? { kind: "kept" } : { kind: "ended", at: now };
+
+		await tx
+			.update(events)
+			.set({ ...changeStamp(now), keptUntil: storedKeeping(keeping) })
+			.where(eq(events.id, id));
+	});
+}
+
+/**
+ * Removes the event from the account. The trigger events_keeping_ends_with_owner ends a kept
+ * event's keeping, as it does when the account is deleted.
+ */
+export async function releaseEvent(
+	id: string,
+	accountId: string,
+	now = Temporal.Now.instant(),
+): Promise<OwnerChangeResult> {
+	return changeOwned(id, accountId, now, async (tx) => {
+		await tx.update(events).set({ ownerId: null }).where(eq(events.id, id));
+	});
+}
+
+/** The owner's switch for keeping: shown with its state, or hidden while the instance keeps every event. */
+export type KeepingSwitch = { kind: "shown"; kept: boolean } | { kind: "hidden" };
+
+/** What the visitor may do as the event's owner, beyond what the admin link allows. */
+export type OwnerView = { kind: "not_owner" } | { kind: "owner"; keeping: KeepingSwitch };
+
+/** Whether `visitor` owns the event, and what its keeping switch shows. */
+export async function ownerView(
+	visitor: Visitor,
+	event: { id: string; deletion: Deletion },
+): Promise<OwnerView> {
+	if (visitor.kind !== "signed_in" || !(await owns(visitor.accountId, event.id))) {
+		return { kind: "not_owner" };
+	}
+
+	const { deletion } = event;
+
+	if (deletion.kind === "kept" && deletion.by === "instance") {
+		return { kind: "owner", keeping: { kind: "hidden" } };
+	}
+
+	return { kind: "owner", keeping: { kind: "shown", kept: deletion.kind === "kept" } };
+}
+
 /** Whether `accountId` owns event `id`. */
 export async function owns(accountId: string, id: string): Promise<boolean> {
 	const [row] = await db()
@@ -68,7 +173,7 @@ export type AccountEvent = {
 	id: string;
 	name: string;
 	segment: string;
-	deletionDate: Temporal.PlainDate | null;
+	deletion: Deletion;
 	final: FinalTime;
 	role: AccountRole;
 };
@@ -88,7 +193,7 @@ async function listed(
 			id: row.id,
 			name: row.name,
 			segment: eventSegment(row.id, row.name),
-			deletionDate: deletionDateOf(row),
+			deletion: deletionOfRow(row),
 			final: finalOf(row),
 			role,
 		}));

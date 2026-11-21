@@ -102,7 +102,7 @@ describe("the account's list", () => {
 
 		expect(listed.map((event) => event.name).toSorted()).toEqual(["Druhá", "První"]);
 		expect(listed[0]).toMatchObject({ final: { kind: "open" } });
-		expect(listed[0]?.deletionDate).toBeInstanceOf(Temporal.PlainDate);
+		expect(listed[0]?.deletion.kind).toBe("on");
 		// After its deletion date an event is gone from the list as from everywhere else.
 		expect(await ownedEvents(jana, Temporal.Instant.from("2030-01-01T00:00:00Z"))).toEqual([]);
 	});

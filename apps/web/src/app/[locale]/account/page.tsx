@@ -73,7 +73,10 @@ function listItem(event: AccountEvent): AccountEventItem {
 		id: event.id,
 		name: event.name,
 		segment: event.segment,
-		deletionDate: event.deletionDate?.toString() ?? null,
+		deletion:
+			event.deletion.kind === "kept"
+				? event.deletion
+				: { kind: "on", date: event.deletion.date.toString() },
 		final:
 			event.final.kind === "open"
 				? { kind: "open" }

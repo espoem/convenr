@@ -399,10 +399,11 @@ export function eventBody(view: EventView): EventBody {
 		// Left out of the JSON for a poll.
 		firstDayOfWeek: view.schedule.kind === "grid" ? view.schedule.firstDayOfWeek : undefined,
 		schedule: scheduleBody(view.schedule),
+		// The API does not say who keeps an event.
 		retention:
-			view.deletionDate === null
+			view.deletion.kind === "kept"
 				? { kind: "kept" }
-				: { kind: "until", date: view.deletionDate.toString() },
+				: { kind: "until", date: view.deletion.date.toString() },
 		final: finalBody(view),
 		participants: view.participants.map((participant) =>
 			participantBody(participant, view.schedule),

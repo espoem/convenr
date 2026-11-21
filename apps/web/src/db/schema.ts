@@ -77,6 +77,12 @@ export const events = pgTable(
 		 * or none, and deleting the account leaves the event without an owner.
 		 */
 		ownerId: text().references(() => authUsers.id, { onDelete: "set null" }),
+		/**
+		 * The owner's keeping in one field: `null` when never kept, `infinity` while kept, and the
+		 * instant the keeping ended otherwise. Only an owned event is kept; the trigger
+		 * events_keeping_ends_with_owner ends the keeping when the event loses its owner.
+		 */
+		keptUntil: instant(),
 	},
 	(table) => [
 		index("events_owner").on(table.ownerId),
@@ -117,6 +123,10 @@ export const events = pgTable(
       end`,
 		),
 		check("events_final_sequence", sql`${table.finalSequence} >= 0`),
+		check(
+			"events_kept_by_owner",
+			sql`${table.keptUntil} is distinct from 'infinity' or ${table.ownerId} is not null`,
+		),
 	],
 );
 

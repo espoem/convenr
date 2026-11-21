@@ -18,7 +18,7 @@ import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/serve
 import { readEvent } from "@/server/events";
 import { currentHolder } from "@/server/holder";
 import { liveSettings } from "@/server/live";
-import { owns } from "@/server/ownership";
+import { ownerView } from "@/server/ownership";
 import { identify } from "@/server/participants";
 import { currentVisitor } from "@/server/session";
 
@@ -56,8 +56,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 	// joined (ADR 0008).
 	const holder = await currentHolder(event.id);
 	const viewer = holder === undefined ? null : ((await identify(event.id, holder)) ?? null);
-	const visitor = await currentVisitor();
-	const isOwner = visitor.kind === "signed_in" && (await owns(visitor.accountId, event.id));
+	const owner = await ownerView(await currentVisitor(), event);
 
 	const board =
 		kind.kind === "grid" ? (
@@ -97,17 +96,17 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 					<p className="text-ink-muted">
 						{t("referenceZone", { zone: schedule.referenceZone.replaceAll("_", " ") })}
 						{" · "}
-						{event.deletionDate === null
-							? t("kept")
+						{event.deletion.kind === "kept"
+							? t(event.deletion.by === "organizer" ? "keptByOrganizer" : "kept")
 							: t("deletion", {
-									date: event.deletionDate.toLocaleString(format, {
+									date: event.deletion.date.toLocaleString(format, {
 										day: "numeric",
 										month: "long",
 										year: "numeric",
 									}),
 								})}
 					</p>
-					{isOwner ? (
+					{owner.kind === "owner" ? (
 						<Link
 							href={`/e/${event.segment}/manage`}
 							className="flex min-h-11 w-fit items-center text-action underline underline-offset-4"

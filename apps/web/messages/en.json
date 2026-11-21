@@ -124,6 +124,14 @@
 		"removeParticipantConfirm": "Delete participant {name}? Their availability and password are deleted too, and the name becomes free.",
 		"removeParticipantYes": "Delete participant",
 		"keep": "Keep",
+		"keeping": {
+			"heading": "Keep the event",
+			"intro": "While you keep the event, it is not deleted. When you stop, it is deleted no sooner than the retention period after that day.",
+			"switch": "Keep without a time limit",
+			"on": "You keep the event.",
+			"off": "The event is deleted on its planned date.",
+			"failed": "That did not work. Please try again."
+		},
 		"deleteHeading": "Delete the event",
 		"deleteLead": "The event disappears with every participant's availability. Both links stop working.",
 		"deleteEvent": "Delete event",
@@ -241,7 +249,8 @@
 		"pollBestNone": "The best times appear once someone answers.",
 		"pollShownInZone": "Times are shown in your zone, {zone}.",
 		"pollShownInReferenceZone": "Times are shown in the event's zone, {zone}.",
-		"pollChanged": "The organizer changed the times meanwhile. The list is current and your answers stayed where they could. Save them again."
+		"pollChanged": "The organizer changed the times meanwhile. The list is current and your answers stayed where they could. Save them again.",
+		"keptByOrganizer": "the organizer keeps the event"
 	},
 	"Join": {
 		"heading": "Add your availability",
@@ -336,7 +345,8 @@
 			"open": "No final time yet",
 			"final": "Final time {when}",
 			"deletion": "deleted on {date}",
-			"kept": "kept"
+			"kept": "kept",
+			"keptByOrganizer": "you keep it"
 		},
 		"claim": {
 			"heading": "Events in this browser",

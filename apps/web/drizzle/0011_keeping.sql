@@ -1,0 +1,2 @@
+ALTER TABLE "events" ADD COLUMN "kept_until" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "events" ADD CONSTRAINT "events_kept_by_owner" CHECK ("events"."kept_until" is distinct from 'infinity' or "events"."owner_id" is not null);
