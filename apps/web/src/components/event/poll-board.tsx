@@ -8,7 +8,7 @@ import { type Brush, type Level, withLevel } from "@/domain/levels";
 import { useViewerZone } from "@/lib/browser-time";
 
 import type { ShownFinal } from "./event-board";
-import { JoinBand } from "./join-band";
+import { JoinBand, type Joined } from "./join-band";
 import { Swatch } from "./level-marks";
 import { BestOptions, PollTable, type ShownOption, type ShownResult } from "./poll-table";
 import { SaveBar } from "./save-bar";
@@ -70,10 +70,15 @@ function AnswerButtons({ level, label, onChange }: AnswerButtonsProps) {
 	);
 }
 
-type PollBoardProps = { event: PollBoardEvent; formatLocale: string };
+type PollBoardProps = {
+	event: PollBoardEvent;
+	/** The participant the server recognized from the browser's key. */
+	viewer: Joined | null;
+	formatLocale: string;
+};
 
 /** The event page of a poll below its header: join band, the options with answers and results. */
-export function PollBoard({ event, formatLocale }: PollBoardProps) {
+export function PollBoard({ event, viewer, formatLocale }: PollBoardProps) {
 	const t = useTranslations("Event");
 	const tJoin = useTranslations("Join");
 	const id = useId();
@@ -81,7 +86,7 @@ export function PollBoard({ event, formatLocale }: PollBoardProps) {
 	// Not stored, so every visit starts in the viewer's zone.
 	const [inReferenceZone, setInReferenceZone] = useState(false);
 
-	const participation = useParticipation(event, formatLocale);
+	const participation = useParticipation(event, viewer, formatLocale);
 	const { joined, selection, dirty, edit } = participation;
 	const zone = inReferenceZone ? event.referenceZone : viewerZone;
 	const names = event.participants.map((participant) => participant.name);

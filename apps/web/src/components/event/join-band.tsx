@@ -7,16 +7,22 @@ import { controlClass, Field } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { formText } from "@/lib/form-text";
 import { cn } from "@/lib/utils";
-import { changePasswordAction, joinAction, leaveAction } from "@/server/participant-actions";
+import {
+	changePasswordAction,
+	forgetAction,
+	joinAction,
+	leaveAction,
+} from "@/server/participant-actions";
 
-export type Joined = { name: string; token: string; hasPassword: boolean };
+/** The participant the browser joined as, as the server knows it. */
+export type Joined = { name: string; hasPassword: boolean };
 
 type JoinBandProps = {
 	eventId: string;
 	joined: Joined | null;
-	onJoined: (name: string, token: string, hasPassword: boolean) => void;
-	/** The browser forgets its token; with `left` the participant was also deleted. */
-	onForget: (left: boolean) => void;
+	onJoined: (name: string, hasPassword: boolean) => void;
+	/** The browser no longer opens the event as the participant, who may also have left. */
+	onForget: () => void;
 	onPasswordChange: (hasPassword: boolean) => void;
 	/** A lockout's end, formatted for the page. */
 	formatTime: (instant: string) => string;
@@ -64,7 +70,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 
 				if (joined.ok) {
 					setProblem(null);
-					onJoined(joined.name, joined.token, given !== "");
+					onJoined(joined.name, given !== "");
 
 					return;
 				}
@@ -154,7 +160,6 @@ function JoinedLine({
 			try {
 				const changed = await changePasswordAction(
 					eventId,
-					joined.token,
 					current === "" ? null : current,
 					remove || next === "" ? null : next,
 				);
@@ -182,9 +187,19 @@ function JoinedLine({
 	function leave() {
 		startTransition(async () => {
 			try {
-				const left = await leaveAction(eventId, joined.token);
+				await leaveAction(eventId);
+				onForget();
+			} catch {
+				setMessage({ text: t("problem.failed"), problem: true });
+			}
+		});
+	}
 
-				onForget(left.ok);
+	function notMe() {
+		startTransition(async () => {
+			try {
+				await forgetAction(eventId);
+				onForget();
 			} catch {
 				setMessage({ text: t("problem.failed"), problem: true });
 			}
@@ -200,7 +215,8 @@ function JoinedLine({
 				<div className="flex flex-wrap gap-x-4">
 					<button
 						type="button"
-						onClick={() => onForget(false)}
+						disabled={pending}
+						onClick={notMe}
 						className="min-h-11 text-action underline underline-offset-4"
 					>
 						{t("notYou", { name: joined.name })}

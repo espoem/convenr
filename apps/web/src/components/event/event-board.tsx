@@ -25,7 +25,7 @@ import { BestWindows } from "./best-windows";
 import { useBoardView } from "./board-view";
 import { useCount } from "./count";
 import { FinalLegend } from "./final-time";
-import { JoinBand } from "./join-band";
+import { JoinBand, type Joined } from "./join-band";
 import { BrushPicker, PersonLegend } from "./level-marks";
 import { HEAT } from "./poll-table";
 import { SaveBar } from "./save-bar";
@@ -55,6 +55,8 @@ export type ShownFinal =
 
 type EventBoardProps = {
 	event: BoardEvent;
+	/** The participant the server recognized from the browser's key. */
+	viewer: Joined | null;
 	/** A weekday event's grid, laid out by the server (ADR 0002 item 9). */
 	weekdayView: GridView | null;
 	formatLocale: string;
@@ -72,7 +74,7 @@ function ownFill(level: Level | null): CellFill {
 }
 
 /** The event page below its header: join band, tabs, grid and participants (spec 6 and 8). */
-export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps) {
+export function EventBoard({ event, viewer, weekdayView, formatLocale }: EventBoardProps) {
 	const t = useTranslations("Event");
 	const tJoin = useTranslations("Join");
 	const count = useCount();
@@ -88,7 +90,7 @@ export function EventBoard({ event, weekdayView, formatLocale }: EventBoardProps
 	const [inReferenceZone, setInReferenceZone] = useState(false);
 	const [chosenWindow, setChosenWindow] = useState<Window | null>(null);
 
-	const participation = useParticipation(event, formatLocale, {
+	const participation = useParticipation(event, viewer, formatLocale, {
 		onJoined: () => setTab("me"),
 		onLeft: () => setTab("group"),
 	});

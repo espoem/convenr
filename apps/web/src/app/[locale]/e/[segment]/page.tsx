@@ -15,8 +15,10 @@ import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
 import { getPathname } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/server/board";
+import { heldToken } from "@/server/browser-key";
 import { readEvent } from "@/server/events";
 import { liveSettings } from "@/server/live";
+import { identify } from "@/server/participants";
 
 // One database read per request, shared by the metadata and the page.
 const eventOf = cache(async (segment: string) => {
@@ -48,16 +50,20 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 	const { schedule } = event;
 	const final = shownFinal(event);
 	const kind = byKind(event);
+	// The participant the browser's key names, so the page arrives already joined (ADR 0008).
+	const held = await heldToken(event.id);
+	const viewer = held === undefined ? null : ((await identify(event.id, held)) ?? null);
 
 	const board =
 		kind.kind === "grid" ? (
 			<EventBoard
 				event={boardOf(kind.event)}
+				viewer={viewer}
 				weekdayView={weekdayViewOf(kind.event, format)}
 				formatLocale={format}
 			/>
 		) : (
-			<PollBoard event={pollBoardOf(kind.event)} formatLocale={format} />
+			<PollBoard event={pollBoardOf(kind.event)} viewer={viewer} formatLocale={format} />
 		);
 
 	return (

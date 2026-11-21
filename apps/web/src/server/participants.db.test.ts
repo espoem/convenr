@@ -5,18 +5,20 @@ import { db } from "@/db/client";
 import { participants, participantTokens } from "@/db/schema";
 import { isPublicId, newPublicId } from "@/domain/public-id";
 
-import { readEvent } from "./events";
+import { createEvent, readEvent } from "./events";
 import {
 	ATTEMPTS_KEPT,
 	changePassword,
+	forgetToken,
 	identify,
 	join,
 	leave,
 	MAX_PARTICIPANTS,
+	moveToken,
 	readParticipant,
 } from "./participants";
 import { saveResponse } from "./responses";
-import { creationTime, freshEvent } from "./test-events";
+import { creationTime, freshEvent, pragueEvenings } from "./test-events";
 
 let eventId = "";
 
@@ -355,5 +357,67 @@ describe("leaving", () => {
 		const [row] = await db().select().from(participants).where(eq(participants.nameKey, "jana"));
 
 		expect(row?.passwordHash).toBeNull();
+	});
+});
+
+/** A token a browser derives from its key, as the web actions pass it. */
+function browser(token: string) {
+	return { kind: "browser", token } as const;
+}
+
+describe("a browser's token", () => {
+	const mine = "cvp_mine-derived-from-the-browser-key-0000000";
+
+	it("is the token a join stores, so the browser opens the event joined", async () => {
+		const joined = await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
+
+		expect(joined).toMatchObject({ ok: true, token: mine });
+		expect(await identify(eventId, mine, creationTime)).toEqual({
+			name: "Jana",
+			hasPassword: false,
+		});
+	});
+
+	it("moves to the name the browser joins under next", async () => {
+		await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
+		await join(eventId, "Petr", undefined, creationTime, undefined, browser(mine));
+
+		expect(await identify(eventId, mine, creationTime)).toMatchObject({ name: "Petr" });
+		expect(await db().select().from(participantTokens)).toHaveLength(1);
+	});
+
+	it("takes over a token kept in local storage and retires it", async () => {
+		const old = await tokenOf("Jana", "tajne");
+
+		expect(await moveToken(eventId, old, mine, creationTime)).toEqual({
+			name: "Jana",
+			hasPassword: true,
+		});
+		expect(await identify(eventId, mine, creationTime)).toMatchObject({ name: "Jana" });
+		expect(await identify(eventId, old, creationTime)).toBeUndefined();
+	});
+
+	it("moves nothing for a token the event does not know", async () => {
+		expect(await moveToken(eventId, "cvp_unknown", mine, creationTime)).toBeUndefined();
+		expect(await db().select().from(participantTokens)).toEqual([]);
+	});
+
+	it("is forgotten without the participant, who keeps their other tokens", async () => {
+		const other = await tokenOf("Jana");
+
+		await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
+		await forgetToken(eventId, mine, creationTime);
+
+		expect(await identify(eventId, mine, creationTime)).toBeUndefined();
+		expect(await identify(eventId, other, creationTime)).toMatchObject({ name: "Jana" });
+	});
+
+	it("is not forgotten through another event", async () => {
+		const other = await createEvent(pragueEvenings, creationTime);
+
+		await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
+		await forgetToken(other.ok ? other.event.id : "", mine, creationTime);
+
+		expect(await identify(eventId, mine, creationTime)).toMatchObject({ name: "Jana" });
 	});
 });

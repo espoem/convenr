@@ -153,4 +153,8 @@ The tests name no rule numbers. This list is the only link from rules to tests. 
 - Database tests cover Y3, Y4, AU6, AU8 to AU10, OW1 to OW6, NT3, X5, X6 and U11 to U13 in the server functions.
 - End-to-end tests cover Y1, Y3 and Y4 (a browser that held a token in local storage before the change), AU3 to AU5 and AU7 with Mailpit, AU4 with a virtual authenticator, OW3, NT1 and NT5.
 
-Files so far: none.
+Files so far:
+
+- Y1 and Y2: `apps/web/src/server/browser-key.ts` (the cookie, its value of key and renewal date, the derived token); the daily renewal in `apps/web/src/proxy.ts`, which also tells the server whether the request came over HTTPS. An instance served over plain HTTP gets the cookie `convenr-key` without the `__Host-` prefix, which needs a secure origin; a secure instance reads only the prefixed cookie. Tested in `browser-key.test.ts`.
+- Y3, Y4 and Y6: the actions in `apps/web/src/server/participant-actions.ts` read the cookie and pass no token to the page; `join` takes the browser's token, `moveToken` and `forgetToken` in `apps/web/src/server/participants.ts`, tested in `participants.db.test.ts`. "Not you?" removes the browser's token for the event and keeps the participant. The event page renders the recognized participant (`apps/web/src/app/[locale]/e/[segment]/page.tsx`), and `apps/web/src/components/event/use-participation.ts` moves an old token and notices a participant the server no longer knows. Tested in `apps/web/e2e/identity.spec.ts`; the dropped participant in `freshness.spec.ts`.
+- Y5: `apps/web/src/lib/local-events.ts` keeps the name only.

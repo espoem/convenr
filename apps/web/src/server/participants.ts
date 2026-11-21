@@ -68,10 +68,32 @@ function isPasswordLength(password: string): boolean {
 	return password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH;
 }
 
-async function issueToken(queries: Queries, participantId: string): Promise<string> {
-	const token = newSecret("participant");
+/**
+ * Where a joining participant's token comes from: a new random one for an API client, or the
+ * token a browser derives from its key (ADR 0008), which it already holds.
+ */
+export type TokenSource = { kind: "random" } | { kind: "browser"; token: string };
 
-	await queries.insert(participantTokens).values({ tokenHash: hashSecret(token), participantId });
+const RANDOM_TOKEN: TokenSource = { kind: "random" };
+
+/**
+ * Stores the token's hash for the participant. A browser's token for an event points at one
+ * participant only, so a browser that joins under another name moves its token there.
+ */
+async function issueToken(
+	queries: Queries,
+	participantId: string,
+	source: TokenSource,
+): Promise<string> {
+	const token = source.kind === "random" ? newSecret("participant") : source.token;
+
+	await queries
+		.insert(participantTokens)
+		.values({ tokenHash: hashSecret(token), participantId })
+		.onConflictDoUpdate({
+			target: participantTokens.tokenHash,
+			set: { participantId, createdAt: sql`now()` },
+		});
 
 	return token;
 }
@@ -259,6 +281,7 @@ export async function join(
 	password: JoinPassword = NO_PASSWORD,
 	now = Temporal.Now.instant(),
 	verify: PasswordVerifier = verifyPassword,
+	source: TokenSource = RANDOM_TOKEN,
 ): Promise<JoinResult> {
 	const name = parseDisplayName(rawName);
 
@@ -275,12 +298,12 @@ export async function join(
 
 	const joined =
 		existing === undefined
-			? await joinNew(eventId, name, password, now)
-			: await joinExisting(eventId, existing, password, now, verify);
+			? await joinNew(eventId, name, password, now, source)
+			: await joinExisting(eventId, existing, password, now, verify, source);
 
 	// Another browser took or freed the name between the lookup and the lock.
 	if (!joined.ok && joined.problem === "name_taken") {
-		return join(eventId, rawName, password, now, verify);
+		return join(eventId, rawName, password, now, verify, source);
 	}
 
 	return joined;
@@ -295,6 +318,7 @@ async function joinExisting(
 	password: JoinPassword,
 	now: Temporal.Instant,
 	verify: PasswordVerifier,
+	source: TokenSource,
 ): Promise<JoinResult | NameTaken> {
 	if (password.kind === "new") {
 		return { ok: false, problem: "name_exists" };
@@ -332,7 +356,7 @@ async function joinExisting(
 
 		return {
 			ok: true,
-			token: await issueToken(tx, existing.id),
+			token: await issueToken(tx, existing.id, source),
 			...(await participantRead(tx, event, existing)),
 		};
 	});
@@ -344,6 +368,7 @@ async function joinNew(
 	name: { name: string; key: string },
 	password: JoinPassword,
 	now: Temporal.Instant,
+	source: TokenSource,
 ): Promise<JoinResult | NameTaken> {
 	if (password.kind === "current") {
 		return { ok: false, problem: "name_unknown" };
@@ -406,7 +431,7 @@ async function joinNew(
 
 		return {
 			ok: true,
-			token: await issueToken(tx, row.id),
+			token: await issueToken(tx, row.id, source),
 			participant: { id: row.publicId, name: name.name, levels: {} },
 			schedule: scheduleOf(event),
 		} as const;
@@ -420,6 +445,50 @@ export async function identify(eventId: string, token: string, now = Temporal.No
 	return found === undefined
 		? undefined
 		: { name: found.participant.displayName, hasPassword: found.participant.passwordHash !== null };
+}
+
+/**
+ * Moves a participant from a token a browser kept in local storage before ADR 0008 to the token
+ * it derives from its key, and retires the old token, which then exists nowhere else. Returns
+ * what `identify` returns for the participant, or `undefined` when the old token is unknown.
+ */
+export async function moveToken(
+	eventId: string,
+	oldToken: string,
+	browserToken: string,
+	now = Temporal.Now.instant(),
+): Promise<{ name: string; hasPassword: boolean } | undefined> {
+	return db().transaction(async (tx) => {
+		const found = await participantByToken(tx, eventId, oldToken, now);
+
+		if (found === undefined) {
+			return;
+		}
+
+		await issueToken(tx, found.participant.id, { kind: "browser", token: browserToken });
+
+		if (oldToken !== browserToken) {
+			await tx
+				.delete(participantTokens)
+				.where(eq(participantTokens.tokenHash, hashSecret(oldToken)));
+		}
+
+		return {
+			name: found.participant.displayName,
+			hasPassword: found.participant.passwordHash !== null,
+		};
+	});
+}
+
+/** Removes one token, so its browser no longer opens the event joined; the participant stays. */
+export async function forgetToken(eventId: string, token: string, now = Temporal.Now.instant()) {
+	const found = await participantByToken(db(), eventId, token, now);
+
+	if (found !== undefined) {
+		await db()
+			.delete(participantTokens)
+			.where(eq(participantTokens.tokenHash, hashSecret(token)));
+	}
 }
 
 /** The participant that holds `token` in `eventId` as the event shows them, or `undefined`. */

@@ -1,7 +1,16 @@
 import createMiddleware from "next-intl/middleware";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 
 import { routing } from "./i18n/routing";
+import {
+	cookieName,
+	cookieOptions,
+	formatBrowserKey,
+	needsRenewal,
+	parseBrowserKey,
+	renewed,
+	SECURE_HEADER,
+} from "./server/browser-key";
 
 const localize = createMiddleware(routing);
 
@@ -24,6 +33,16 @@ function contentSecurityPolicy(nonce: string): string {
 	].join("; ");
 }
 
+/** Keeps a browser's key alive for 400 days after its last visit, with one renewal a day at most. */
+function renewBrowserKey(request: NextRequest, response: NextResponse, secure: boolean) {
+	const name = cookieName(secure);
+	const stored = parseBrowserKey(request.cookies.get(name)?.value);
+
+	if (stored !== undefined && needsRenewal(stored)) {
+		response.cookies.set(name, formatBrowserKey(renewed(stored)), cookieOptions(secure));
+	}
+}
+
 export default function proxy(request: NextRequest) {
 	const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64");
 	const policy = contentSecurityPolicy(nonce);
@@ -31,7 +50,13 @@ export default function proxy(request: NextRequest) {
 	// Next.js reads the nonce from the request's policy header and puts it on its scripts.
 	request.headers.set("Content-Security-Policy", policy);
 
+	const secure = request.nextUrl.protocol === "https:";
+
+	request.headers.set(SECURE_HEADER, secure ? "1" : "0");
+
 	const response = localize(request);
+
+	renewBrowserKey(request, response, secure);
 
 	response.headers.set("Content-Security-Policy", policy);
 	// Other sites never learn an event's address; convenr's own forms keep their origin, which a

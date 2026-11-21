@@ -1,5 +1,6 @@
 "use client";
-// The browser's own record of its events, as in ADR 0003 item 10.
+// The browser's own record of its events: the admin secrets it holds and the names it joined
+// under. Participant tokens live in no storage the page can read (ADR 0008).
 // Storage can be missing, full or blocked; the record then lives in memory until the page
 // unloads, so the current visit still works.
 
@@ -11,11 +12,9 @@ const localEventSchema = z.object({
 	name: z.string(),
 	segment: z.string(),
 	adminSecret: z.string().optional(),
-	// `hasPassword` is remembered so the joined line is complete before the server confirms the
-	// token; records from before it was kept read as having none until then.
-	participant: z
-		.object({ name: z.string(), token: z.string(), hasPassword: z.boolean().optional() })
-		.optional(),
+	// The name only, for the start page's list: the server knows the participant from the
+	// browser's key (ADR 0008). A `token` is one kept before the key existed, until it moves.
+	participant: z.object({ name: z.string(), token: z.string().optional() }).optional(),
 });
 
 export type LocalEvent = z.infer<typeof localEventSchema>;

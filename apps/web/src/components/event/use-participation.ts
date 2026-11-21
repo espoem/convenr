@@ -1,6 +1,7 @@
 "use client";
-// The participant this browser holds for an event: joining, the stored token checked by the
-// server, and the unsaved edits of the response with their save. The grid and the poll share it.
+// The participant this browser joined an event as: joining, the participant the server
+// recognized from the browser's key (ADR 0008), and the unsaved edits of the response with
+// their save. The grid and the poll share it.
 
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useTransition } from "react";
 
@@ -8,7 +9,7 @@ import { type Levels, sameLevels, slotsAt } from "@/domain/levels";
 import { useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import { type LocalEvent, updateLocalEvent, useLocalEvents } from "@/lib/local-events";
-import { identifyAction, saveAction } from "@/server/participant-actions";
+import { moveTokenAction, saveAction } from "@/server/participant-actions";
 
 import type { Joined } from "./join-band";
 
@@ -31,6 +32,13 @@ type Moves = {
 	onLeft?: () => void;
 };
 
+/**
+ * What an action answered, standing in for the server's view of the participant until the
+ * page's refresh brings a new one. `basis` is the event as the server rendered it when the
+ * action answered; every render of the server sends a new object, so a refresh ends the answer.
+ */
+type Answered = { joined: Joined | null; basis: ParticipationEvent };
+
 const nobody: Levels = {};
 
 function withoutParticipant(stored: LocalEvent | undefined): LocalEvent | undefined {
@@ -43,15 +51,9 @@ function withoutParticipant(stored: LocalEvent | undefined): LocalEvent | undefi
 	return rest;
 }
 
-function withPassword(hasPassword: boolean) {
-	return (stored: LocalEvent | undefined): LocalEvent | undefined =>
-		stored?.participant === undefined || stored.participant.hasPassword === hasPassword
-			? stored
-			: { ...stored, participant: { ...stored.participant, hasPassword } };
-}
-
 export function useParticipation(
 	event: ParticipationEvent,
+	viewer: Joined | null,
 	formatLocale: string,
 	moves: Moves = {},
 ) {
@@ -59,55 +61,83 @@ export function useParticipation(
 	const temporalReady = useTemporalReady();
 	const viewerZone = useViewerZone();
 	const stored = useLocalEvents().get(event.id);
+	const [answered, setAnswered] = useState<Answered | null>(null);
 	const [draft, setDraft] = useState<Levels | null>(null);
 	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | null>(null);
 	const [saving, startSaving] = useTransition();
 	// The organizer deleted this browser's participant, or it left in another tab.
 	const [dropped, setDropped] = useState(false);
 	const { onJoined, onLeft } = moves;
-	const refused = useEffectEvent(() => onLeft?.());
+	const moving = useRef(false);
 
-	const token = stored?.participant?.token;
+	const droppedOut = useEffectEvent(() => {
+		updateLocalEvent(event.id, withoutParticipant);
+		onLeft?.();
+	});
 
-	const joined: Joined | null =
-		stored?.participant === undefined
-			? null
-			: { ...stored.participant, hasPassword: stored.participant.hasPassword ?? false };
+	// The moved participant stands in until the refresh brings the server's view of it.
+	const moved = useEffectEvent((found: Joined) => setAnswered({ joined: found, basis: event }));
 
-	const listed = event.participants.some((participant) => participant.name === joined?.name);
-	const confirmedToken = useRef<string | null>(null);
+	const joined = answered !== null && answered.basis === event ? answered.joined : viewer;
+	const oldToken = stored?.participant?.token;
+	const remembered = stored?.participant?.name;
 
-	// A stored token opens the event already joined, once the server confirms it. When
-	// the name later leaves the list, the server is asked again; right after
-	// joining the name is missing too, until the page reloads, so the list alone cannot decide.
+	// A token kept in local storage before the browser had a key moves to the key once.
 	useEffect(() => {
-		if (token === undefined || (listed && confirmedToken.current === token)) {
+		if (oldToken === undefined || moving.current) {
 			return;
 		}
 
-		let current = true;
+		moving.current = true;
 
-		void identifyAction(event.id, token).then((found) => {
-			if (!current) {
-				return;
-			}
+		void moveTokenAction(event.id, oldToken)
+			.then((found) => {
+				if (found !== null) {
+					moved(found);
+				}
 
-			if (found === null) {
-				confirmedToken.current = null;
-				updateLocalEvent(event.id, withoutParticipant);
-				setDraft(null);
-				refused();
-				setDropped(true);
-			} else {
-				confirmedToken.current = token;
-				updateLocalEvent(event.id, withPassword(found.hasPassword));
-			}
-		});
+				updateLocalEvent(event.id, (current) =>
+					found === null || current === undefined
+						? withoutParticipant(current)
+						: { ...current, participant: { name: found.name } },
+				);
+				router.refresh();
+			})
+			.finally(() => {
+				moving.current = false;
+			});
+	}, [event.id, oldToken, router]);
 
-		return () => {
-			current = false;
-		};
-	}, [event.id, token, listed]);
+	// The browser remembers joining, but the server no longer knows it: the organizer deleted
+	// the participant, it left in another tab, or the cookie is gone. The notice stays after
+	// local storage forgets the name, so it is kept in state during the render that finds it.
+	const lost = oldToken === undefined && remembered !== undefined && joined === null;
+
+	if (lost && !dropped) {
+		setDropped(true);
+		setDraft(null);
+	}
+
+	useEffect(() => {
+		if (lost) {
+			droppedOut();
+		}
+	}, [lost]);
+
+	// The start page lists the events by what local storage remembers, so it follows the server.
+	useEffect(() => {
+		if (viewer === null || remembered === viewer.name) {
+			return;
+		}
+
+		updateLocalEvent(event.id, (current) => ({
+			...current,
+			id: event.id,
+			name: event.name,
+			segment: event.segment,
+			participant: { name: viewer.name },
+		}));
+	}, [event.id, event.name, event.segment, viewer, remembered]);
 
 	const mine =
 		event.participants.find((participant) => participant.name === joined?.name)?.levels ?? nobody;
@@ -151,28 +181,35 @@ export function useParticipation(
 			.toLocaleString(formatLocale, { hour: "numeric", minute: "2-digit" });
 	}
 
-	function joinedAs(name: string, newToken: string, passwordSet: boolean) {
+	function joinedAs(name: string, passwordSet: boolean) {
 		updateLocalEvent(event.id, (current) => ({
 			...current,
 			id: event.id,
 			name: event.name,
 			segment: event.segment,
-			participant: { name, token: newToken, hasPassword: passwordSet },
+			participant: { name },
 		}));
+		setAnswered({ joined: { name, hasPassword: passwordSet }, basis: event });
 		setDropped(false);
 		setDraft(null);
 		onJoined?.();
 		router.refresh();
 	}
 
-	function forget(left: boolean) {
+	function forget() {
 		updateLocalEvent(event.id, withoutParticipant);
+		setAnswered({ joined: null, basis: event });
 		setDraft(null);
 		onLeft?.();
+		router.refresh();
+	}
 
-		if (left) {
-			router.refresh();
+	function passwordChanged(hasPassword: boolean) {
+		if (joined !== null) {
+			setAnswered({ joined: { ...joined, hasPassword }, basis: event });
 		}
+
+		router.refresh();
 	}
 
 	function edit(next: Levels | null) {
@@ -189,12 +226,7 @@ export function useParticipation(
 		setDraft(edits);
 		startSaving(async () => {
 			try {
-				const saved = await saveAction(
-					event.id,
-					joined.token,
-					Object.keys(edits),
-					slotsAt(edits, "if_need_be"),
-				);
+				const saved = await saveAction(event.id, Object.keys(edits), slotsAt(edits, "if_need_be"));
 
 				if (saved.ok) {
 					setSaveMessage("saved");
@@ -212,8 +244,8 @@ export function useParticipation(
 					return;
 				}
 
-				forget(false);
 				setSaveMessage("failed");
+				router.refresh();
 			} catch {
 				setSaveMessage("failed");
 			}
@@ -238,8 +270,7 @@ export function useParticipation(
 			joined,
 			onJoined: joinedAs,
 			onForget: forget,
-			onPasswordChange: (hasPassword: boolean) =>
-				updateLocalEvent(event.id, withPassword(hasPassword)),
+			onPasswordChange: passwordChanged,
 			formatTime,
 		},
 	};
