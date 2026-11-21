@@ -86,6 +86,22 @@ url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-macos-arm64"
 url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012783"
 provenance = "github-attestations"
 
+[[tools.mailpit]]
+version = "1.34.0"
+backend = "aqua:axllent/mailpit"
+specifiers = ["1.34.0"]
+
+[tools.mailpit."platforms.linux-x64"]
+checksum = "sha256:af236b42f171b1c74f0ac5ff444f44d36f2f2ecc0134f5a2f1d4e307e56a0d2c"
+checksum_source = "mise-versions"
+url = "https://github.com/axllent/mailpit/releases/download/v1.34.0/mailpit-linux-amd64.tar.gz"
+url_api = "https://api.github.com/repos/axllent/mailpit/releases/assets/757996005"
+
+[tools.mailpit."platforms.macos-arm64"]
+checksum = "sha256:32933e0bd17e9738f19ab2eb5ec4d50e183448c9f29ba97e762d418a0f72e854"
+url = "https://github.com/axllent/mailpit/releases/download/v1.34.0/mailpit-darwin-arm64.tar.gz"
+url_api = "https://api.github.com/repos/axllent/mailpit/releases/assets/757996025"
+
 [[tools.node]]
 version = "26.13.1"
 backend = "core:node"

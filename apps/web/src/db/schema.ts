@@ -2,9 +2,11 @@
 import { sql } from "drizzle-orm";
 import {
 	bigint,
+	boolean,
 	check,
 	date,
 	foreignKey,
+	index,
 	integer,
 	pgTable,
 	primaryKey,
@@ -265,4 +267,128 @@ export const usageCounts = pgTable(
 		primaryKey({ columns: [table.day, table.metric, table.bucket] }),
 		check("usage_counts_bucket", sql`${table.bucket} between 0 and 100`),
 	],
+);
+
+// Accounts (ADR 0009). Better Auth's adapter writes these five tables and our code only reads
+// them. They keep the shape Better Auth asks for, so their times are `Date` values.
+const moment = () => timestamp({ withTimezone: true, mode: "date" });
+
+/** An account: one email address and no name; Better Auth's required `name` stays empty. */
+export const authUsers = pgTable("auth_users", {
+	id: text().primaryKey(),
+	name: text().notNull().default(""),
+	email: text().notNull().unique(),
+	emailVerified: boolean().notNull().default(false),
+	image: text(),
+	createdAt: moment().notNull().defaultNow(),
+	updatedAt: moment().notNull().defaultNow(),
+});
+
+/**
+ * A signed-in browser. The cookie carries the token with a signature made with `AUTH_SECRET`,
+ * so the stored token alone does not open a session. `userAgent` holds the browser family
+ * only and `ipAddress` stays empty.
+ */
+export const authSessions = pgTable(
+	"auth_sessions",
+	{
+		id: text().primaryKey(),
+		expiresAt: moment().notNull(),
+		token: text().notNull().unique(),
+		createdAt: moment().notNull().defaultNow(),
+		updatedAt: moment().notNull().defaultNow(),
+		ipAddress: text(),
+		userAgent: text(),
+		userId: text()
+			.notNull()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+	},
+	(table) => [index("auth_sessions_user").on(table.userId)],
+);
+
+/** Sign-in methods of an account; the email link needs none, OAuth providers later add rows. */
+export const authAccounts = pgTable(
+	"auth_accounts",
+	{
+		id: text().primaryKey(),
+		accountId: text().notNull(),
+		providerId: text().notNull(),
+		userId: text()
+			.notNull()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		accessToken: text(),
+		refreshToken: text(),
+		idToken: text(),
+		accessTokenExpiresAt: moment(),
+		refreshTokenExpiresAt: moment(),
+		scope: text(),
+		password: text(),
+		createdAt: moment().notNull().defaultNow(),
+		updatedAt: moment().notNull().defaultNow(),
+	},
+	(table) => [index("auth_accounts_user").on(table.userId)],
+);
+
+/** Sign-in links and other one-time values, stored as hashes. */
+export const authVerifications = pgTable(
+	"auth_verifications",
+	{
+		id: text().primaryKey(),
+		identifier: text().notNull(),
+		value: text().notNull(),
+		expiresAt: moment().notNull(),
+		createdAt: moment().notNull().defaultNow(),
+		updatedAt: moment().notNull().defaultNow(),
+	},
+	(table) => [index("auth_verifications_identifier").on(table.identifier)],
+);
+
+export const authPasskeys = pgTable(
+	"auth_passkeys",
+	{
+		id: text().primaryKey(),
+		name: text(),
+		publicKey: text().notNull(),
+		userId: text()
+			.notNull()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		credentialID: text().notNull(),
+		counter: integer().notNull(),
+		deviceType: text().notNull(),
+		backedUp: boolean().notNull(),
+		transports: text(),
+		createdAt: moment(),
+		aaguid: text(),
+	},
+	(table) => [
+		index("auth_passkeys_user").on(table.userId),
+		index("auth_passkeys_credential").on(table.credentialID),
+	],
+);
+
+/** What an account chose that Better Auth does not keep: the language of its emails. */
+export const accountSettings = pgTable(
+	"account_settings",
+	{
+		accountId: text()
+			.primaryKey()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		locale: text({ enum: ["cs", "en"] }).notNull(),
+	},
+	(table) => [check("account_settings_locale", sql`${table.locale} in ('cs', 'en')`)],
+);
+
+/**
+ * Emails sent per hour, to limit them. `key` is the HMAC of an address under `AUTH_SECRET`,
+ * or `all` for the instance's total, so no address is stored for a person who never signs in.
+ */
+export const emailCounts = pgTable(
+	"email_counts",
+	{
+		key: text().notNull(),
+		/** The start of the hour in UTC. */
+		hour: instant().notNull(),
+		count: integer().notNull().default(0),
+	},
+	(table) => [primaryKey({ columns: [table.key, table.hour] })],
 );

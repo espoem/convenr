@@ -35,6 +35,15 @@
 		"typescript/consistent-return": "off",
 		// Flags zod's `.catch()` as a promise chain; top-level await would also delay every importer.
 		"unicorn/prefer-top-level-await": "off",
+		// Times are Temporal values (ADR 0002). Better Auth hands out `Date` values, which only
+		// `instantOf` in the session module turns into instants; no code makes a `Date` itself.
+		"eslint/no-restricted-globals": [
+			"error",
+			{
+				"name": "Date",
+				"message": "Use Temporal (ADR 0002); convert a Better Auth time with instantOf."
+			}
+		],
 		"oxc/no-accumulating-spread": "error",
 		"anti-slop/no-array-filter-map": "error",
 		"anti-slop/no-reduce-accumulator-copy": "error",

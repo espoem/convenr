@@ -5,3 +5,11 @@ export const BASE_URL = `http://127.0.0.1:${PORT}`;
 export const POLL_PORT = PORT + 1;
 export const POLL_BASE_URL = `http://127.0.0.1:${POLL_PORT}`;
 export const POLL_SECONDS = 15;
+
+// Mailpit receives the main server's email; tests read it through Mailpit's API.
+export const SMTP_PORT = PORT + 2;
+export const MAILPIT_URL = `http://127.0.0.1:${PORT + 3}`;
+
+// The main server has accounts on. A passkey needs a host name, not an address, so signed-in
+// tests open the main server as `localhost`, the address its links point to.
+export const ACCOUNTS_BASE_URL = `http://localhost:${PORT}`;

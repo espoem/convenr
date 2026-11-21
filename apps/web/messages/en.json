@@ -297,6 +297,107 @@
 		"hint": "The link may be incomplete, or the event was deleted or has expired.",
 		"back": "Go to the start page"
 	},
+	"AccountLink": {
+		"signIn": "Sign in",
+		"account": "Your account"
+	},
+	"SignIn": {
+		"title": "Sign in",
+		"heading": "Sign in to convenr",
+		"intro": "An account keeps your events on every device and can email you about them. You never need one to create an event or to respond.",
+		"email": "Email address",
+		"send": "Email me a sign-in link",
+		"sent": "If the address is right, a link is on its way. It works once, for 15 minutes, in any browser.",
+		"passkey": "Sign in with a passkey",
+		"passkeyFailed": "The passkey was not accepted. Try again or use the email link.",
+		"problem": {
+			"invalid_email": "Enter an email address such as name@example.org.",
+			"too_many_emails": "Too many links were asked for. Try again in an hour.",
+			"email_not_sent": "The email could not be sent. Try again in a while.",
+			"sign_in_link_invalid": "This sign-in link is used, expired or incomplete. Ask for a new one.",
+			"failed": "Something went wrong. Try again."
+		}
+	},
+	"Account": {
+		"title": "Your account",
+		"heading": "Your account",
+		"signedInAs": "Signed in as <strong>{email}</strong>",
+		"signOut": "Sign out",
+		"address": {
+			"heading": "Email address",
+			"new": "New email address",
+			"change": "Send a confirmation link",
+			"hint": "The change takes effect when you open the link sent to the new address within 15 minutes."
+		},
+		"language": {
+			"heading": "Language of emails",
+			"label": "Language",
+			"save": "Save language"
+		},
+		"passkeys": {
+			"heading": "Passkeys",
+			"none": "No passkeys yet. The email link always works.",
+			"add": "Add a passkey",
+			"addFailed": "The passkey was not added.",
+			"name": "Name",
+			"unnamed": "Passkey",
+			"created": "Added {date}",
+			"rename": "Rename",
+			"remove": "Remove"
+		},
+		"sessions": {
+			"heading": "Signed-in browsers",
+			"started": "Signed in {date}",
+			"unknown": "Unknown browser",
+			"current": "This browser",
+			"end": "Sign out there",
+			"endOthers": "Sign out every other browser"
+		},
+		"delete": {
+			"heading": "Delete account",
+			"warning": "Your events stay and keep working through their links. An event kept without a time limit gets a deletion date again.",
+			"confirm": "I want to delete my account",
+			"submit": "Delete account"
+		},
+		"done": {
+			"language": "The language is saved.",
+			"email_sent": "A confirmation link is on its way to the new address.",
+			"email": "Your email address is changed.",
+			"session": "That browser is signed out.",
+			"sessions": "Every other browser is signed out.",
+			"passkey": "The passkey is saved.",
+			"passkey_removed": "The passkey is removed."
+		},
+		"problem": {
+			"invalid_email": "Enter an email address such as name@example.org.",
+			"too_many_emails": "Too many links were asked for. Try again in an hour.",
+			"email_not_sent": "The email could not be sent. Try again in a while.",
+			"confirmation_link_invalid": "This confirmation link is used, expired or incomplete.",
+			"sign_in_again": "To delete the account, sign out, sign in again with a new email link, and delete it within a day.",
+			"failed": "Something went wrong. Try again."
+		}
+	},
+	"Email": {
+		"signIn": {
+			"subject": "Your sign-in link for convenr",
+			"intro": "Open this link to sign in to convenr.",
+			"link": "Sign in",
+			"expiry": "The link works once, for 15 minutes.",
+			"ignore": "If you did not ask for it, ignore this email; nobody can sign in without the link."
+		},
+		"changeEmail": {
+			"subject": "Confirm your new email address for convenr",
+			"intro": "Open this link to make this the email address of your convenr account.",
+			"link": "Confirm the address",
+			"expiry": "The link works once, for 15 minutes.",
+			"ignore": "If you did not ask for it, ignore this email and nothing changes."
+		},
+		"changeNotice": {
+			"subject": "A change of your email address on convenr",
+			"intro": "Someone signed in to your convenr account asked to change its email address to {email}. It changes only when the link sent there is opened.",
+			"notYou": "If this was not you, sign in and sign out every other browser."
+		}
+	},
 	"ApiReference": {
 		"title": "convenr API",
 		"description": "Everything a person can do on the convenr pages, as JSON over HTTP. Creating an event returns an admin secret, and joining one returns a participant token; each is sent as `Authorization: Bearer <secret>`. A refused request gets an RFC 9457 problem with a stable `code`. Within version 1 a response may gain fields, problem codes and enum values, so a client ignores what it does not know. A request holds only the fields its schema names.",

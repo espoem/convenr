@@ -57,6 +57,13 @@
       "when": 1795167125747,
       "tag": "0007_live_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795259205377,
+      "tag": "0008_accounts",
+      "breakpoints": true
     }
   ]
 }

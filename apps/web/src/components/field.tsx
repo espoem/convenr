@@ -1,4 +1,4 @@
-import { LockSimpleIcon } from "@phosphor-icons/react";
+import { LockSimpleIcon } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
 
 /**

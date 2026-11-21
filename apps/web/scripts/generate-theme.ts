@@ -1,7 +1,7 @@
-// Generates apps/web/src/app/tokens.css from the token block in DESIGN.md and measures every
-// contrast that DESIGN.md states, for the light and the dark theme.
+// Generates apps/web/src/app/tokens.css and the email tokens from the token block in DESIGN.md
+// and measures every contrast that DESIGN.md states, for the light and the dark theme.
 // Usage: nub apps/web/scripts/generate-theme.ts [--check | --contrast]
-//   --check     fail when tokens.css is out of date
+//   --check     fail when a generated file is out of date
 //   --contrast  print the measured contrasts, to copy into DESIGN.md after a palette change
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -38,6 +38,41 @@ type Contrast = z.infer<typeof contrastSchema>[number];
 const repositoryRoot = join(import.meta.dirname, "..", "..", "..");
 const designPath = join(repositoryRoot, "DESIGN.md");
 const outputPath = join(repositoryRoot, "apps/web/src/app/tokens.css");
+const emailOutputPath = join(repositoryRoot, "apps/web/src/server/email/tokens.ts");
+
+/** A length in rem as pixels, which every email client reads. */
+function pixels(length: string): string {
+	const rem = /^(\d*\.?\d+)rem$/u.exec(length)?.[1];
+
+	if (rem === undefined) {
+		throw new Error(`Expected a length in rem, got "${length}"`);
+	}
+
+	return `${Number(rem) * 16}px`;
+}
+
+/**
+ * The tokens an email needs, as literal values: email clients read no CSS variables. Emails use
+ * the light theme, and the font stacks as they are, since an email loads no font from elsewhere.
+ */
+function renderEmail(tokens: Tokens): string {
+	const colors = Object.fromEntries(
+		Object.keys(tokens.color).map((name) => [name, hex(tokens.color, name)]),
+	);
+
+	const value = {
+		color: colors,
+		font: { display: tokens.font.display, body: tokens.font.body },
+		radius: pixels(tokens.radius.base),
+	};
+
+	return [
+		"// Generated from DESIGN.md by apps/web/scripts/generate-theme.ts. Do not edit.",
+		"",
+		`export const emailTokens = ${JSON.stringify(value, null, "\t")} as const;`,
+		"",
+	].join("\n");
+}
 
 // Which convenr color token feeds each variable the shadcn components read.
 const shadcnColors = {
@@ -235,13 +270,20 @@ if (found.length > 0) {
 	process.exit(1);
 }
 
-const css = render(tokens);
+const outputs = [
+	{ path: outputPath, content: render(tokens) },
+	{ path: emailOutputPath, content: renderEmail(tokens) },
+];
 
 if (process.argv.includes("--check")) {
-	if (readFileSync(outputPath, "utf8") !== css) {
-		console.error("apps/web/src/app/tokens.css is out of date. Run: mise run theme");
+	const stale = outputs.filter(({ path, content }) => readFileSync(path, "utf8") !== content);
+
+	if (stale.length > 0) {
+		console.error(`${stale.map(({ path }) => path).join(", ")} out of date. Run: mise run theme`);
 		process.exit(1);
 	}
 } else {
-	writeFileSync(outputPath, css);
+	for (const { path, content } of outputs) {
+		writeFileSync(path, content);
+	}
 }

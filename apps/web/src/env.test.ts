@@ -56,4 +56,38 @@ describe("parseEnv", () => {
 			/DATABASE_URL/u,
 		);
 	});
+
+	describe("accounts", () => {
+		const url = "postgres://user@localhost/convenr";
+
+		const all = {
+			DATABASE_URL: url,
+			SMTP_URL: "smtp://mail.example.org:587",
+			MAIL_FROM: "convenr <hello@example.org>",
+			AUTH_SECRET: "s".repeat(32),
+			PUBLIC_URL: "https://convenr.example.org",
+		};
+
+		it("are off without their settings", () => {
+			expect(parseEnv({ DATABASE_URL: url }).accounts).toEqual({ kind: "off" });
+		});
+
+		it("are on with all of their settings", () => {
+			expect(parseEnv(all).accounts).toMatchObject({
+				kind: "on",
+				mailFrom: "convenr <hello@example.org>",
+				publicUrl: new URL("https://convenr.example.org"),
+			});
+		});
+
+		it("refuse to start with only some of their settings, naming the missing ones", () => {
+			const { AUTH_SECRET: _secret, PUBLIC_URL: _url, ...some } = all;
+
+			expect(() => parseEnv(some)).toThrow(/AUTH_SECRET, PUBLIC_URL/u);
+		});
+
+		it("refuse a short secret", () => {
+			expect(() => parseEnv({ ...all, AUTH_SECRET: "short" })).toThrow(/AUTH_SECRET/u);
+		});
+	});
 });

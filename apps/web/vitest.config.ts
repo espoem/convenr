@@ -24,7 +24,15 @@ export default defineConfig({
 					name: "db",
 					include: ["src/**/*.db.test.ts"],
 					globalSetup: ["src/db/test-setup.ts"],
-					env: { DATABASE_URL: testDatabaseUrl },
+					// Accounts are on, so their tables and limits can be tested; nothing sends email.
+					env: {
+						DATABASE_URL: testDatabaseUrl,
+						SMTP_URL: "smtp://127.0.0.1:9",
+						MAIL_FROM: "convenr <convenr@localhost>",
+						AUTH_SECRET: "test-secret-that-is-long-enough-for-accounts",
+						PUBLIC_URL: "http://localhost:3000",
+						MAIL_HOURLY_LIMIT: "5",
+					},
 					fileParallelism: false,
 				},
 			},

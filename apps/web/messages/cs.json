@@ -297,6 +297,107 @@
 		"hint": "Odkaz může být neúplný, nebo byla událost smazána či už vypršela.",
 		"back": "Přejít na úvodní stránku"
 	},
+	"AccountLink": {
+		"signIn": "Přihlásit se",
+		"account": "Váš účet"
+	},
+	"SignIn": {
+		"title": "Přihlášení",
+		"heading": "Přihlášení do convenr",
+		"intro": "Účet drží vaše události na všech zařízeních a může vám o nich posílat e-maily. K vytvoření události ani k odpovědi ho nikdy nepotřebujete.",
+		"email": "E-mailová adresa",
+		"send": "Poslat přihlašovací odkaz",
+		"sent": "Pokud je adresa správná, odkaz je na cestě. Funguje jednou, 15 minut, v jakémkoli prohlížeči.",
+		"passkey": "Přihlásit se přístupovým klíčem",
+		"passkeyFailed": "Přístupový klíč nebyl přijat. Zkuste to znovu, nebo použijte odkaz e-mailem.",
+		"problem": {
+			"invalid_email": "Zadejte e-mailovou adresu, například jmeno@example.org.",
+			"too_many_emails": "Odkazů bylo vyžádáno příliš mnoho. Zkuste to znovu za hodinu.",
+			"email_not_sent": "E-mail se nepodařilo odeslat. Zkuste to za chvíli znovu.",
+			"sign_in_link_invalid": "Tento přihlašovací odkaz je použitý, prošlý nebo neúplný. Vyžádejte si nový.",
+			"failed": "Něco se nepovedlo. Zkuste to znovu."
+		}
+	},
+	"Account": {
+		"title": "Váš účet",
+		"heading": "Váš účet",
+		"signedInAs": "Přihlášeni jako <strong>{email}</strong>",
+		"signOut": "Odhlásit se",
+		"address": {
+			"heading": "E-mailová adresa",
+			"new": "Nová e-mailová adresa",
+			"change": "Poslat potvrzovací odkaz",
+			"hint": "Změna platí, až do 15 minut otevřete odkaz poslaný na novou adresu."
+		},
+		"language": {
+			"heading": "Jazyk e-mailů",
+			"label": "Jazyk",
+			"save": "Uložit jazyk"
+		},
+		"passkeys": {
+			"heading": "Přístupové klíče",
+			"none": "Zatím žádné přístupové klíče. Odkaz e-mailem funguje vždy.",
+			"add": "Přidat přístupový klíč",
+			"addFailed": "Přístupový klíč se nepřidal.",
+			"name": "Název",
+			"unnamed": "Přístupový klíč",
+			"created": "Přidán {date}",
+			"rename": "Přejmenovat",
+			"remove": "Odebrat"
+		},
+		"sessions": {
+			"heading": "Přihlášené prohlížeče",
+			"started": "Přihlášen {date}",
+			"unknown": "Neznámý prohlížeč",
+			"current": "Tento prohlížeč",
+			"end": "Odhlásit tam",
+			"endOthers": "Odhlásit všechny ostatní prohlížeče"
+		},
+		"delete": {
+			"heading": "Smazat účet",
+			"warning": "Vaše události zůstanou a dál fungují přes své odkazy. Událost uchovaná bez časového omezení znovu dostane datum smazání.",
+			"confirm": "Chci smazat svůj účet",
+			"submit": "Smazat účet"
+		},
+		"done": {
+			"language": "Jazyk je uložený.",
+			"email_sent": "Potvrzovací odkaz je na cestě na novou adresu.",
+			"email": "Vaše e-mailová adresa je změněná.",
+			"session": "Ten prohlížeč je odhlášený.",
+			"sessions": "Všechny ostatní prohlížeče jsou odhlášené.",
+			"passkey": "Přístupový klíč je uložený.",
+			"passkey_removed": "Přístupový klíč je odebraný."
+		},
+		"problem": {
+			"invalid_email": "Zadejte e-mailovou adresu, například jmeno@example.org.",
+			"too_many_emails": "Odkazů bylo vyžádáno příliš mnoho. Zkuste to znovu za hodinu.",
+			"email_not_sent": "E-mail se nepodařilo odeslat. Zkuste to za chvíli znovu.",
+			"confirmation_link_invalid": "Tento potvrzovací odkaz je použitý, prošlý nebo neúplný.",
+			"sign_in_again": "Chcete-li účet smazat, odhlaste se, přihlaste se znovu novým odkazem e-mailem a smažte ho do jednoho dne.",
+			"failed": "Něco se nepovedlo. Zkuste to znovu."
+		}
+	},
+	"Email": {
+		"signIn": {
+			"subject": "Váš přihlašovací odkaz do convenr",
+			"intro": "Otevřete tento odkaz a přihlásíte se do convenr.",
+			"link": "Přihlásit se",
+			"expiry": "Odkaz funguje jednou, 15 minut.",
+			"ignore": "Pokud jste o něj nežádali, e-mail ignorujte; bez odkazu se nikdo nepřihlásí."
+		},
+		"changeEmail": {
+			"subject": "Potvrďte novou e-mailovou adresu pro convenr",
+			"intro": "Otevřete tento odkaz a tato adresa se stane e-mailem vašeho účtu convenr.",
+			"link": "Potvrdit adresu",
+			"expiry": "Odkaz funguje jednou, 15 minut.",
+			"ignore": "Pokud jste o něj nežádali, e-mail ignorujte a nic se nezmění."
+		},
+		"changeNotice": {
+			"subject": "Změna vaší e-mailové adresy v convenr",
+			"intro": "Někdo přihlášený k vašemu účtu convenr požádal o změnu jeho e-mailové adresy na {email}. Změní se, až někdo otevře odkaz poslaný tam.",
+			"notYou": "Pokud jste to nebyli vy, přihlaste se a odhlaste všechny ostatní prohlížeče."
+		}
+	},
 	"ApiReference": {
 		"title": "API convenr",
 		"description": "Všechno, co člověk může udělat na stránkách convenr, jako JSON přes HTTP. Vytvoření události vrátí tajný klíč organizátora a připojení k ní vrátí token účastníka; oba se posílají jako `Authorization: Bearer <secret>`. Odmítnutý požadavek dostane problém podle RFC 9457 se stálým kódem `code`. V rámci verze 1 může odpověď získat nová pole, kódy problémů a hodnoty výčtů, takže klient ignoruje, co nezná. Požadavek obsahuje jen pole, která jmenuje jeho schéma.",

@@ -1,7 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
 
 import { DATABASE_URL } from "./e2e/database";
-import { BASE_URL, PORT, POLL_BASE_URL, POLL_PORT, POLL_SECONDS } from "./e2e/servers";
+import {
+	ACCOUNTS_BASE_URL,
+	BASE_URL,
+	MAILPIT_URL,
+	PORT,
+	POLL_BASE_URL,
+	POLL_PORT,
+	POLL_SECONDS,
+	SMTP_PORT,
+} from "./e2e/servers";
 
 const ci = (process.env["CI"] ?? "") !== "";
 
@@ -30,10 +39,26 @@ export default defineConfig({
 	// Both serve the production build. Run `mise run build` first.
 	webServer: [
 		{
+			command: `mailpit --smtp 127.0.0.1:${SMTP_PORT} --listen ${new URL(MAILPIT_URL).host} --max 1000`,
+			url: `${MAILPIT_URL}/api/v1/info`,
+			reuseExistingServer: !ci,
+			timeout: 30_000,
+		},
+		{
 			command: "node scripts/start-standalone.mts",
 			url: `${BASE_URL}/en`,
 			reuseExistingServer: !ci,
-			env: { PORT: String(PORT), HOSTNAME: "127.0.0.1", DATABASE_URL },
+			env: {
+				PORT: String(PORT),
+				HOSTNAME: "127.0.0.1",
+				DATABASE_URL,
+				SMTP_URL: `smtp://127.0.0.1:${SMTP_PORT}`,
+				MAIL_FROM: "convenr <convenr@localhost>",
+				AUTH_SECRET: "e2e-secret-that-is-long-enough-for-accounts",
+				PUBLIC_URL: ACCOUNTS_BASE_URL,
+				// Every test signs in under its own address; a higher limit keeps parallel runs apart.
+				MAIL_HOURLY_LIMIT: "10000",
+			},
 			timeout: 60_000,
 		},
 		{

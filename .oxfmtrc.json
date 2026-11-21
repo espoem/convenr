@@ -20,6 +20,7 @@
 		".mise/**",
 		"**/drizzle/**",
 		"**/tokens.css",
+		"apps/web/src/server/email/tokens.ts",
 		"apps/web/openapi.json",
 		"packages/sdk-ts/src/generated/**",
 		"**/components/ui/**",

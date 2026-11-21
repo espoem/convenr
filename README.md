@@ -92,17 +92,24 @@ services:
       RETENTION_DAYS: "30"
 ```
 
-| Variable              | Required | Meaning                                                                                                                         |
-| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`        | yes      | `postgres://user:password@host:5432/database`                                                                                   |
-| `PORT`                | no       | Port to listen on. Default `3000`.                                                                                              |
-| `HOSTNAME`            | no       | Address to bind. Default `0.0.0.0`.                                                                                             |
-| `RETENTION_DAYS`      | no       | Days after an event's last date (or last change, for days of the week) until it is deleted. Default `90`; `never` keeps events. |
-| `LIVE_UPDATES`        | no       | How open pages learn of changes: `push` (default) streams them from the server, `poll` checks at an interval.                   |
-| `LIVE_POLL_SECONDS`   | no       | Seconds between checks with `poll`, or after a stream failed. Default `15`.                                                     |
-| `LIVE_STREAM_SECONDS` | no       | Seconds after which the server closes a stream and the page opens a new one. Default `300`.                                     |
-| `LIVE_IDLE_MINUTES`   | no       | Minutes without input after which a page stops its updates until the next input. Default `30`.                                  |
-| `DATABASE_LISTEN_URL` | no       | A direct database address for `push` when `DATABASE_URL` goes through a transaction pooler. Default `DATABASE_URL`.             |
+| Variable              | Required      | Meaning                                                                                                                         |
+| --------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`        | yes           | `postgres://user:password@host:5432/database`                                                                                   |
+| `PORT`                | no            | Port to listen on. Default `3000`.                                                                                              |
+| `HOSTNAME`            | no            | Address to bind. Default `0.0.0.0`.                                                                                             |
+| `RETENTION_DAYS`      | no            | Days after an event's last date (or last change, for days of the week) until it is deleted. Default `90`; `never` keeps events. |
+| `LIVE_UPDATES`        | no            | How open pages learn of changes: `push` (default) streams them from the server, `poll` checks at an interval.                   |
+| `LIVE_POLL_SECONDS`   | no            | Seconds between checks with `poll`, or after a stream failed. Default `15`.                                                     |
+| `LIVE_STREAM_SECONDS` | no            | Seconds after which the server closes a stream and the page opens a new one. Default `300`.                                     |
+| `LIVE_IDLE_MINUTES`   | no            | Minutes without input after which a page stops its updates until the next input. Default `30`.                                  |
+| `DATABASE_LISTEN_URL` | no            | A direct database address for `push` when `DATABASE_URL` goes through a transaction pooler. Default `DATABASE_URL`.             |
+| `SMTP_URL`            | no            | The mail server, `smtps://user:password@host:465` or `smtp://user:password@host:587`. Accounts are off until it is set.         |
+| `MAIL_FROM`           | with accounts | The sender of the emails, such as `convenr <hello@example.org>`.                                                                |
+| `AUTH_SECRET`         | with accounts | At least 32 random characters that sign session cookies and key the email limits. Keep it secret and stable.                    |
+| `PUBLIC_URL`          | with accounts | The address visitors reach the instance at, such as `https://convenr.example.org`. Links in emails and passkeys use it.         |
+| `MAIL_HOURLY_LIMIT`   | no            | Emails the instance sends per hour at most. Default `300`.                                                                      |
+
+Accounts are optional. Set `SMTP_URL`, `MAIL_FROM`, `AUTH_SECRET` and `PUBLIC_URL` together to turn them on; with only some of them, the server does not start. Passkeys need `PUBLIC_URL` to name a host, not an IP address.
 
 ### Back up and restore
 
