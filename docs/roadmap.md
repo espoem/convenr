@@ -97,14 +97,21 @@ Each phase ships on its own and is usable by real people.
 
 *Exit criterion:* an end-to-end test finalizes an event and a participant downloads an `.ics` file whose start and end match the chosen slot.
 
-### F5: Optional accounts
+### F5: Browser identity and optional accounts
 
-- Passwordless sign-in by email link or passkey.
-- Claim the events created in this browser into the account.
-- Dashboard of my events and events I responded to.
-- A signed-in organizer can keep an event without a time limit.
-- Opt-in email notifications for new responses, finalization and reminders.
-- The event page renders for the visitor it is for. Until F5 the server does not know who has joined, so a joined browser first gets the join form and then swaps in the joined line and the participant's own grid once its script reads local storage. The page visibly changes while it loads. With cookies reconsidered here (ADR 0003 item 10), the server can render the joined state on the first response.
+The rules are in the [Phase 5 specification](spec/phase-5.md). F5 ships in three steps.
+
+1. **Browser identity.** One HttpOnly cookie holds a browser key, and each participant token is derived from it per event ([ADR 0008](adr/0008-browser-identity-cookie.md)). The server renders the joined state on the first response, so the event page no longer swaps the join form for the joined line while it loads.
+2. **Accounts** with Better Auth ([ADR 0009](adr/0009-accounts-with-better-auth.md)):
+   - Passwordless sign-in by email link or passkey.
+   - Claim the events created in this browser into the account.
+   - Dashboard of my events and events I responded to.
+   - A signed-in organizer can keep an event without a time limit.
+   - Opt-in email notifications for new responses, finalization and reminders, with their timing set per instance.
+   - Accounts stay off on the public instance until the privacy policy exists.
+3. **Sign-in with Google, Facebook, Seznam and GitHub.** A provider's sign-in joins an existing account only from inside a signed-in session, because a provider's email can be missing or unverified (Seznam's can be missing). Planned in detail after step 2.
+
+*Exit criterion:* the end-to-end test in the [Phase 5 specification](spec/phase-5.md#12-acceptance-test) passes: a reload without JavaScript shows a joined participant, an organizer signs in by email link, claims and keeps an event, and a signed-in participant receives the final time by email with a matching `.ics` file.
 
 ### F6: Calendar awareness
 
@@ -124,7 +131,7 @@ Each phase ships on its own and is usable by real people.
 - An embeddable widget, installation as an app on a phone, and responding while offline.
 - More languages, Slovak and German first.
 
-F5 to F8 get an exit criterion when each is planned in detail.
+F6 to F8 get an exit criterion when each is planned in detail.
 
 Each of F5 to F8 ends with a UI and UX review of what it added and of the pages it changed: layout and widths, flow, copy, accessibility and behavior on a phone. Its defects are listed in the phase, as in F4, and fixed before the phase is done.
 

@@ -1,6 +1,6 @@
 # Problem codes
 
-The service names every refusal with a stable snake_case code. The code says what went wrong and does not change when the specification is renumbered. The code is also the key of the visitor message in `apps/web/messages/*.json`. This table is the only place that links a code to the rules of [phase 1](phase-1.md), [phase 2](phase-2.md) and [phase 4](phase-4.md).
+The service names every refusal with a stable snake_case code. The code says what went wrong and does not change when the specification is renumbered. The code is also the key of the visitor message in `apps/web/messages/*.json`. This table is the only place that links a code to the rules of [phase 1](phase-1.md), [phase 2](phase-2.md), [phase 4](phase-4.md) and [phase 5](phase-5.md).
 
 ## Event schedule
 
@@ -56,6 +56,20 @@ Returned as `problem` in a failed result.
 | `if_need_be_not_available` | A saved response marks a slot as if need be that its availability leaves out. The API sends it as the code of a field error of `invalid_request`, at the slot's pointer in `ifNeedBe`. | L7, A19 |
 
 The display name parser also reports `empty`, `too_long` and `control_character` for its own result; the join maps all three to `invalid_name`.
+
+## Accounts
+
+Shown on the web pages only; the API has no account endpoints.
+
+| Code | Meaning | Rules |
+|---|---|---|
+| `sign_in_link_invalid` | A sign-in link is unknown, used or older than 15 minutes. | AU3 |
+| `confirmation_link_invalid` | A link that confirms an address change or an account deletion is unknown, used or expired. | AU5, AU10 |
+| `too_many_emails` | Sending would pass the limit per address or per instance. | AU6 |
+| `email_not_sent` | The mail server refused or did not answer while the visitor waited. | NT3 |
+| `passkey_not_recognized` | The browser offered a passkey that belongs to no account, or its check failed. | AU4 |
+| `event_has_owner` | An event added to an account already belongs to another one. | OW2 |
+| `wrong_admin_secret` | The admin secret sent to add an event does not match it. | OW1 |
 
 ## API
 
