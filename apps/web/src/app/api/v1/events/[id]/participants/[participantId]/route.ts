@@ -1,10 +1,10 @@
 import { noContent, problem, routeMethods, securedEndpoint, unauthorized } from "@/server/api/http";
-import { removeParticipant } from "@/server/manage";
+import { bySecret, removeParticipant } from "@/server/manage";
 
 export const DELETE = securedEndpoint<{ id: string; participantId: string }>(
 	"admin",
 	async (_request, { id, participantId }, secret) => {
-		const result = await removeParticipant(id, secret, participantId);
+		const result = await removeParticipant(id, bySecret(secret), participantId);
 
 		switch (result.status) {
 			case "removed":

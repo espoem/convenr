@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import type { GridView } from "@/domain/grid-labels";
 import { useRouter } from "@/i18n/navigation";
 import type { EventVersion } from "@/lib/event-version";
-import { updateLocalEvent, useLocalEvents } from "@/lib/local-events";
+import { type LocalEvent, updateLocalEvent, useLocalEvents } from "@/lib/local-events";
+import type { ManageCredential } from "@/lib/manage-credential";
 import {
 	loadManageAction,
 	removeEventAction,
@@ -39,9 +40,13 @@ type ManageEventProps = {
 	formatLocale: string;
 };
 
+const AS_OWNER: ManageCredential = { kind: "owner" };
+
 /**
  * The manage page. The admin secret comes from the address fragment,
  * which never reaches the server in an address (ADR 0003 item 2), or from local storage.
+ * Without a secret that fits, the page asks as the owner, which works where the account that
+ * owns the event is signed in.
  */
 export function ManageEvent({
 	id,
@@ -54,8 +59,13 @@ export function ManageEvent({
 	const t = useTranslations("Manage");
 	const router = useRouter();
 	const storedSecret = useLocalEvents().get(id)?.adminSecret;
-	// `null` until the first answer; then the secret used and the event, or `null` if refused.
-	const [loaded, setLoaded] = useState<{ secret: string; event: ManagedEvent | null } | null>(null);
+
+	// `null` until the first answer; then the credential used and the event, or `null` if refused.
+	const [loaded, setLoaded] = useState<{
+		credential: ManageCredential;
+		event: ManagedEvent | null;
+	} | null>(null);
+
 	// The version the loaded fields belong to.
 	const loadedAt = useRef(version);
 	const [saved, setSaved] = useState(0);
@@ -65,29 +75,43 @@ export function ManageEvent({
 	const [pending, startTransition] = useTransition();
 
 	const load = useCallback(
-		async (held: string) => {
-			const found = await loadManageAction(id, held);
+		async (credential: ManageCredential) => {
+			const found = await loadManageAction(id, credential);
 
 			if (found !== null) {
-				updateLocalEvent(id, (current) => ({
-					...current,
-					id,
-					name: found.name,
-					segment: found.segment,
-					adminSecret: held,
-				}));
+				updateLocalEvent(id, (current) => {
+					const remembered: LocalEvent = {
+						...current,
+						id,
+						name: found.name,
+						segment: found.segment,
+					};
+
+					// The owner's browser remembers the event, but learns no secret it did not have.
+					if (credential.kind === "secret") {
+						remembered.adminSecret = credential.secret;
+					}
+
+					return remembered;
+				});
 			}
 
-			return { secret: held, event: found };
+			return { credential, event: found };
 		},
 		[id],
 	);
 
 	useEffect(() => {
-		const fromLink = window.location.hash.slice(1);
+		const secret = window.location.hash.slice(1) || storedSecret;
 		let current = true;
 
-		void load(fromLink === "" ? (storedSecret ?? "") : fromLink).then((answer) => {
+		const first = async () => {
+			const bySecret = secret === undefined ? undefined : await load({ kind: "secret", secret });
+
+			return bySecret?.event ? bySecret : load(AS_OWNER);
+		};
+
+		void first().then((answer) => {
 			if (current) {
 				setLoaded(answer);
 			}
@@ -107,7 +131,7 @@ export function ManageEvent({
 		let current = true;
 
 		loadedAt.current = version;
-		void load(loaded.secret).then((answer) => {
+		void load(loaded.credential).then((answer) => {
 			if (current) {
 				setLoaded(answer);
 			}
@@ -122,7 +146,7 @@ export function ManageEvent({
 		return <p aria-live="polite">{t("checking")}</p>;
 	}
 
-	const { secret, event } = loaded;
+	const { credential, event } = loaded;
 
 	if (event === null) {
 		return (
@@ -134,18 +158,18 @@ export function ManageEvent({
 
 	async function save(input: NewEvent, confirmation: Confirmation): Promise<FormOutcome> {
 		try {
-			const result = await updateEventAction(id, secret, input, confirmation);
+			const result = await updateEventAction(id, credential, input, confirmation);
 
 			switch (result.status) {
 				case "saved":
-					setLoaded(await load(secret));
+					setLoaded(await load(credential));
 					setSaved((count) => count + 1);
 					router.replace(`/e/${result.segment}/manage`);
 					router.refresh();
 
 					return { status: "done" };
 				case "denied":
-					setLoaded({ secret, event: null });
+					setLoaded({ credential, event: null });
 
 					return { status: "done" };
 				case "invalid":
@@ -176,17 +200,17 @@ export function ManageEvent({
 
 	function removeParticipant(participantId: string) {
 		act(
-			() => removeParticipantAction(id, secret, participantId),
+			() => removeParticipantAction(id, credential, participantId),
 			async () => {
 				setRemoving(null);
-				setLoaded(await load(secret));
+				setLoaded(await load(credential));
 			},
 		);
 	}
 
 	function deleteEvent() {
 		act(
-			() => removeEventAction(id, secret),
+			() => removeEventAction(id, credential),
 			() => {
 				// Returning nothing removes the record from this browser.
 				updateLocalEvent(id, () => {});
@@ -202,15 +226,15 @@ export function ManageEvent({
 					event={board.board}
 					weekdayView={board.weekdayView}
 					formatLocale={formatLocale}
-					secret={secret}
-					onDenied={() => setLoaded({ secret, event: null })}
+					credential={credential}
+					onDenied={() => setLoaded({ credential, event: null })}
 				/>
 			) : (
 				<PollFinalPicker
 					event={board.board}
 					formatLocale={formatLocale}
-					secret={secret}
-					onDenied={() => setLoaded({ secret, event: null })}
+					credential={credential}
+					onDenied={() => setLoaded({ credential, event: null })}
 				/>
 			)}
 

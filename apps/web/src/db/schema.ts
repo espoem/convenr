@@ -72,8 +72,14 @@ export const events = pgTable(
 		finalSequence: integer().notNull().default(0),
 		/** When the event entered the time-to-final counts, so that it counts once. */
 		finalCountedAt: instant(),
+		/**
+		 * The account that added the event with its admin secret. An event belongs to one account
+		 * or none, and deleting the account leaves the event without an owner.
+		 */
+		ownerId: text().references(() => authUsers.id, { onDelete: "set null" }),
 	},
 	(table) => [
+		index("events_owner").on(table.ownerId),
 		check(
 			"events_schedule_matches_kind",
 			sql`case ${table.kind}

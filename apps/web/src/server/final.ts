@@ -1,5 +1,5 @@
-// Picking and clearing the final time behind the admin link. Each change locks the event row,
-// like every other change of the event.
+// Picking and clearing the final time, by the admin secret or the owner. Each change locks the
+// event row, like every other change of the event.
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
@@ -14,7 +14,7 @@ import type { EventVersion } from "@/lib/event-version";
 
 import { changeStamp, type EventRow, finalOf, OPEN_FINAL, scheduleOf } from "./event-rows";
 import { type EventView, eventViewOf } from "./events";
-import { adminRow, type Precondition } from "./manage";
+import { type AdminAccess, adminRow, type Precondition } from "./manage";
 import { countTimeToFinal } from "./usage";
 
 export type FinalResult =
@@ -69,13 +69,13 @@ function columnsOf(
 
 async function changeFinal(
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	change: Change,
 	precondition: Precondition,
 	now: Temporal.Instant,
 ): Promise<FinalResult> {
 	return db().transaction(async (tx): Promise<FinalResult> => {
-		const row = await adminRow(tx, id, secret, "lock", now);
+		const row = await adminRow(tx, id, access, "lock", now);
 
 		if (row === undefined) {
 			return { status: "denied" };
@@ -117,20 +117,20 @@ async function changeFinal(
 /** Picks `request` as the final time of event `id`, or changes it to that window. */
 export async function pickFinal(
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	request: FinalRequest,
 	precondition: Precondition = ANY_VERSION,
 	now = Temporal.Now.instant(),
 ): Promise<FinalResult> {
-	return changeFinal(id, secret, { kind: "pick", request }, precondition, now);
+	return changeFinal(id, access, { kind: "pick", request }, precondition, now);
 }
 
 /** Clears the final time of event `id`; responses stay as they are. */
 export async function clearFinal(
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	precondition: Precondition = ANY_VERSION,
 	now = Temporal.Now.instant(),
 ): Promise<FinalResult> {
-	return changeFinal(id, secret, { kind: "clear" }, precondition, now);
+	return changeFinal(id, access, { kind: "clear" }, precondition, now);
 }

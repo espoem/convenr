@@ -152,6 +152,7 @@
 		"referenceZone": "Časy v pásmu {zone}",
 		"deletion": "událost se smaže {date}",
 		"kept": "událost se nemaže",
+		"manage": "Spravovat událost",
 		"shareLink": "Odkaz pro účastníky",
 		"shownInZone": "Mřížka ukazuje časy ve vašem pásmu, {zone}.",
 		"weekdaysNotConverted": "Časy jsou v pásmu {zone} a nepřevádějí se na váš čas.",
@@ -322,6 +323,26 @@
 		"title": "Váš účet",
 		"heading": "Váš účet",
 		"signedInAs": "Přihlášeni jako <strong>{email}</strong>",
+		"events": {
+			"heading": "Události, které pořádám",
+			"none": "V účtu zatím nemáte žádné události. Události, které sem přidáte, můžete spravovat v každém prohlížeči, kde jste přihlášeni.",
+			"manage": "Spravovat",
+			"open": "Termín zatím není vybraný",
+			"final": "Termín {when}",
+			"deletion": "smaže se {date}",
+			"kept": "nemaže se"
+		},
+		"claim": {
+			"heading": "Události v tomto prohlížeči",
+			"intro": "Tyto události v tomto prohlížeči pořádáte, ale nejsou ve vašem účtu. Přidejte je a budete je moci spravovat v každém prohlížeči, kde jste přihlášeni.",
+			"add": "Přidat do účtu",
+			"addAll": "Přidat vše do účtu",
+			"problem": {
+				"event_has_owner": "Tuto událost už má jiný účet.",
+				"wrong_admin_secret": "Událost už neexistuje, nebo k ní odkaz pro správu už nepatří.",
+				"signed_out": "Jste odhlášeni. Přihlaste se znovu a událost přidejte."
+			}
+		},
 		"signOut": "Odhlásit se",
 		"address": {
 			"heading": "E-mailová adresa",

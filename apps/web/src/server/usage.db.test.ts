@@ -7,7 +7,7 @@ import { events, usageCounts } from "@/db/schema";
 import { createEvent, type NewEvent } from "./events";
 import { pickFinal } from "./final";
 import { runMaintenance } from "./maintenance";
-import { removeEvent } from "./manage";
+import { bySecret, removeEvent } from "./manage";
 import { join } from "./participants";
 import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
 
@@ -20,7 +20,7 @@ async function created(input: NewEvent = pragueEvenings) {
 		throw new Error("The test event is invalid.");
 	}
 
-	return { id: result.event.id, adminSecret: result.adminSecret };
+	return { id: result.event.id, admin: bySecret(result.adminSecret) };
 }
 
 async function joinAll(id: string, names: string[], at: Temporal.Instant) {
@@ -93,9 +93,9 @@ describe("usage counts", () => {
 		await joinAll(later.id, ["Jana", "Petr", "Klára"], after(1));
 		await db().delete(usageCounts);
 
-		await removeEvent(early.id, early.adminSecret, after(24));
+		await removeEvent(early.id, early.admin, after(24));
 		await maintain(after(7 * 24));
-		await removeEvent(later.id, later.adminSecret, after(10 * 24));
+		await removeEvent(later.id, later.admin, after(10 * 24));
 
 		expect(await counts()).toEqual([
 			"2027-03-02 activation_evaluated 0 1",
@@ -138,23 +138,17 @@ describe("usage counts", () => {
 		// A third event without a final time counts for group size only.
 		await created();
 
-		await pickFinal(
-			aged.id,
-			aged.adminSecret,
-			{ slots: ["2027-04-05T15:00:00Z"] },
-			undefined,
-			after(1),
-		);
+		await pickFinal(aged.id, aged.admin, { slots: ["2027-04-05T15:00:00Z"] }, undefined, after(1));
 		await pickFinal(
 			deleted.id,
-			deleted.adminSecret,
+			deleted.admin,
 			{ slots: ["2027-04-05T15:00:00Z"] },
 			undefined,
 			after(30),
 		);
 		await db().delete(usageCounts);
 
-		await removeEvent(deleted.id, deleted.adminSecret, after(48));
+		await removeEvent(deleted.id, deleted.admin, after(48));
 		await maintain(after(30 * 24));
 
 		expect((await counts()).filter((line) => !line.includes("activat"))).toEqual([

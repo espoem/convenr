@@ -296,10 +296,16 @@ export function optionRows(eventId: string, options: readonly PollOption[]) {
 	}));
 }
 
+/** Who owns a new event: nobody, or the signed-in account that creates it. */
+export type NewOwner = { kind: "none" } | { kind: "account"; accountId: string };
+
+const NO_OWNER: NewOwner = { kind: "none" };
+
 /** Creates an event. */
 export async function createEvent(
 	input: NewEvent,
 	now = Temporal.Now.instant(),
+	owner: NewOwner = NO_OWNER,
 ): Promise<CreateEventResult> {
 	const parsed = newEventSchema.safeParse(input, { reportInput: true });
 
@@ -334,6 +340,7 @@ export async function createEvent(
 				description: parsed.data.description,
 				...scheduleColumns(schedule),
 				adminSecretHash: hashSecret(adminSecret),
+				ownerId: owner.kind === "account" ? owner.accountId : null,
 				createdAt: now.toString(),
 				changedAt: now.toString(),
 			})
@@ -430,6 +437,16 @@ export async function eventViewOf(queries: Queries, row: EventRow): Promise<Even
 	);
 }
 
+/** The last day the event exists, or `null` when the instance keeps events permanently. */
+export function deletionDateOf(row: EventRow): Temporal.PlainDate | null {
+	return deletionDate(
+		scheduleOf(row),
+		Temporal.Instant.from(row.changedAt),
+		env().RETENTION_DAYS,
+		finalOf(row),
+	);
+}
+
 function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 	const schedule = scheduleOf(row);
 	const final = finalOf(row);
@@ -441,12 +458,7 @@ function viewOf(row: EventRow, people: ParticipantView[]): EventView {
 		segment: eventSegment(row.id, row.name),
 		version: row.version,
 		schedule,
-		deletionDate: deletionDate(
-			schedule,
-			Temporal.Instant.from(row.changedAt),
-			env().RETENTION_DAYS,
-			final,
-		),
+		deletionDate: deletionDateOf(row),
 		final,
 		finalSlots: finalSlotKeys(final, schedule),
 		slots: scheduleSlots(schedule).map((slot) => slotKey(slot)),

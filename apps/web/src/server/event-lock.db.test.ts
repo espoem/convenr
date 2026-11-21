@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
-import { removeEvent, removeParticipant, updateEvent } from "./manage";
+import { bySecret, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, join, leave } from "./participants";
 import { saveResponse } from "./responses";
 import { creationTime, freshEvent } from "./test-events";
@@ -55,17 +55,23 @@ describe("the event lock", () => {
 	it("is neither taken nor waited for by a wrong admin secret", async () => {
 		expect(
 			await answerWhileLocked(() =>
-				updateEvent(eventId, "cva_wrong", { name: "Jiná" }, { kind: "any" }, creationTime),
+				updateEvent(
+					eventId,
+					bySecret("cva_wrong"),
+					{ name: "Jiná" },
+					{ kind: "any" },
+					creationTime,
+				),
 			),
 		).toEqual({ status: "denied" });
 		expect(
 			await answerWhileLocked(() =>
-				removeParticipant(eventId, "cva_wrong", "abcdefghijkm", creationTime),
+				removeParticipant(eventId, bySecret("cva_wrong"), "abcdefghijkm", creationTime),
 			),
 		).toEqual({ status: "denied" });
-		expect(await answerWhileLocked(() => removeEvent(eventId, "cva_wrong", creationTime))).toBe(
-			false,
-		);
+		expect(
+			await answerWhileLocked(() => removeEvent(eventId, bySecret("cva_wrong"), creationTime)),
+		).toBe(false);
 	});
 
 	it("is neither taken nor waited for by a wrong participant token", async () => {

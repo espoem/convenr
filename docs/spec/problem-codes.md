@@ -69,7 +69,7 @@ Shown on the web pages only; the API has no account endpoints.
 | `email_not_sent` | The mail server refused or did not answer while the visitor waited. | NT3 |
 | `passkey_not_recognized` | The browser offered a passkey that belongs to no account, or its check failed. | AU4 |
 | `event_has_owner` | An event added to an account already belongs to another one. | OW2 |
-| `wrong_admin_secret` | The admin secret sent to add an event does not match it. | OW1 |
+| `wrong_admin_secret` | The admin secret sent to add an event does not match it, or the event is gone. | OW1 |
 
 ## API
 

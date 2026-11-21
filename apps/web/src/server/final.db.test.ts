@@ -7,7 +7,7 @@ import { asEventVersion } from "@/lib/event-version";
 
 import { createEvent, type NewEvent, readEvent } from "./events";
 import { clearFinal, pickFinal } from "./final";
-import { type Precondition, updateEvent } from "./manage";
+import { bySecret, type Precondition, updateEvent } from "./manage";
 import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
 
 const later = Temporal.Instant.from("2027-03-02T12:00:00Z");
@@ -23,7 +23,7 @@ async function managedEvent(input: NewEvent = pragueEvenings) {
 		throw new Error("The test event is invalid.");
 	}
 
-	return { id: created.event.id, secret: created.adminSecret };
+	return { id: created.event.id, secret: bySecret(created.adminSecret) };
 }
 
 async function versionOf(id: string) {
@@ -79,9 +79,11 @@ describe("pickFinal and clearFinal", () => {
 	it("refuses a wrong secret and a window that is not the event's", async () => {
 		const { id, secret } = await managedEvent();
 
-		expect(await pickFinal(id, "cva_wrong", { slots: [FIVE] }, undefined, later)).toEqual({
-			status: "denied",
-		});
+		expect(await pickFinal(id, bySecret("cva_wrong"), { slots: [FIVE] }, undefined, later)).toEqual(
+			{
+				status: "denied",
+			},
+		);
 		expect(
 			await pickFinal(id, secret, { slots: [FIVE, "2027-04-05T17:00:00Z"] }, undefined, later),
 		).toEqual({ status: "invalid", problem: "final_not_in_event" });

@@ -17,6 +17,7 @@ import { cellLevel, type Tally } from "@/domain/levels";
 import type { Weekday } from "@/domain/schedule";
 import { useRouter } from "@/i18n/navigation";
 import { useViewerZone } from "@/lib/browser-time";
+import type { ManageCredential } from "@/lib/manage-credential";
 import { clearFinalAction, type FinalChange, pickFinalAction } from "@/server/event-actions";
 
 /** Rows `first` to `last` of one column. */
@@ -27,8 +28,8 @@ type FinalPickerProps = {
 	/** A weekday event's grid, laid out by the server. */
 	weekdayView: GridView | null;
 	formatLocale: string;
-	secret: string;
-	/** The admin secret stopped fitting. */
+	credential: ManageCredential;
+	/** The credential stopped fitting. */
 	onDenied: () => void;
 };
 
@@ -90,7 +91,7 @@ export function FinalPicker({
 	event,
 	weekdayView,
 	formatLocale,
-	secret,
+	credential,
 	onDenied,
 }: FinalPickerProps) {
 	const t = useTranslations("Manage");
@@ -155,7 +156,7 @@ export function FinalPicker({
 	function pick(run: Run) {
 		const keys = columns[run.column]?.cells.slice(run.first, run.last + 1).flat() ?? [];
 
-		send(() => pickFinalAction(event.id, secret, keys, weekday === null ? null : date));
+		send(() => pickFinalAction(event.id, credential, keys, weekday === null ? null : date));
 	}
 
 	const time = (run: Run) =>
@@ -176,7 +177,7 @@ export function FinalPicker({
 						type="button"
 						variant="outline"
 						disabled={pending}
-						onClick={() => send(() => clearFinalAction(event.id, secret))}
+						onClick={() => send(() => clearFinalAction(event.id, credential))}
 					>
 						{t("finalClear")}
 					</Button>

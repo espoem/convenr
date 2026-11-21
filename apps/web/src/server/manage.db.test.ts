@@ -8,6 +8,7 @@ import { asEventVersion, type EventVersion } from "@/lib/event-version";
 
 import { createEvent, type NewEvent, readEvent } from "./events";
 import {
+	bySecret,
 	type Confirmation,
 	type Precondition,
 	readManagedEvent,
@@ -32,7 +33,11 @@ async function managedEvent() {
 		throw new Error("The test event is invalid.");
 	}
 
-	return { id: created.event.id, secret: created.adminSecret };
+	return {
+		id: created.event.id,
+		secret: bySecret(created.adminSecret),
+		adminSecret: created.adminSecret,
+	};
 }
 
 async function respond(id: string, name: string, keys: string[]) {
@@ -75,9 +80,9 @@ beforeEach(async () => {
 
 describe("readManagedEvent", () => {
 	it("returns the editable fields only for the event's admin secret", async () => {
-		const { id, secret } = await managedEvent();
+		const { id, secret, adminSecret } = await managedEvent();
 
-		expect(await readManagedEvent(id, `${secret}x`)).toBeUndefined();
+		expect(await readManagedEvent(id, bySecret(`${adminSecret}x`))).toBeUndefined();
 		expect(await readManagedEvent(id, secret)).toMatchObject({
 			name: pragueEvenings.name,
 			days: pragueEvenings.days,
@@ -92,7 +97,13 @@ describe("updateEvent", () => {
 		const { id } = await managedEvent();
 
 		expect(
-			await updateEvent(id, "wrong", { ...pragueEvenings, name: "Jiné" }, anyVersion, later),
+			await updateEvent(
+				id,
+				bySecret("wrong"),
+				{ ...pragueEvenings, name: "Jiné" },
+				anyVersion,
+				later,
+			),
 		).toEqual({
 			status: "denied",
 		});
@@ -287,7 +298,7 @@ describe("removeParticipant", () => {
 
 		// The page names a participant by the public id; the database key stays on the server.
 		expect(isPublicId(jana?.id ?? "")).toBe(true);
-		expect(await removeParticipant(id, "wrong", jana?.id ?? "", later)).toEqual({
+		expect(await removeParticipant(id, bySecret("wrong"), jana?.id ?? "", later)).toEqual({
 			status: "denied",
 		});
 		expect(await removeParticipant(id, secret, jana?.id ?? "", later)).toEqual({
@@ -315,7 +326,7 @@ describe("removeEvent", () => {
 
 		await respond(id, "Jana", [FIVE]);
 
-		expect(await removeEvent(id, "wrong")).toBe(false);
+		expect(await removeEvent(id, bySecret("wrong"))).toBe(false);
 		expect(await removeEvent(id, secret)).toBe(true);
 		expect(await readEvent(id)).toBeUndefined();
 

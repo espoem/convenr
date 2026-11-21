@@ -18,7 +18,7 @@ import {
 } from "@/server/api/mapping";
 import { updateEventRequestSchema } from "@/server/api/schemas";
 import { eventVersion, readEvent } from "@/server/events";
-import { removeEvent, updateEvent } from "@/server/manage";
+import { bySecret, removeEvent, updateEvent } from "@/server/manage";
 
 type Params = { id: string };
 
@@ -49,7 +49,7 @@ export const PATCH = securedEndpoint<Params>("admin", async (request, { id }, se
 
 	const result = await updateEvent(
 		id,
-		secret,
+		bySecret(secret),
 		eventChangeOf(body.value),
 		ifMatchPrecondition(request),
 		undefined,
@@ -74,7 +74,7 @@ export const PATCH = securedEndpoint<Params>("admin", async (request, { id }, se
 });
 
 export const DELETE = securedEndpoint<Params>("admin", async (_request, { id }, secret) =>
-	(await removeEvent(id, secret)) ? noContent() : unauthorized(),
+	(await removeEvent(id, bySecret(secret))) ? noContent() : unauthorized(),
 );
 
 const methods = routeMethods(["GET", "PATCH", "DELETE"]);

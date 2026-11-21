@@ -5,7 +5,7 @@ import { events } from "@/db/schema";
 
 import { createEvent } from "./events";
 import { type LiveChange, stopListening, watchEvent } from "./live";
-import { removeEvent, updateEvent } from "./manage";
+import { bySecret, removeEvent, updateEvent } from "./manage";
 import { join } from "./participants";
 import { creationTime, pragueEvenings } from "./test-events";
 
@@ -25,7 +25,7 @@ async function created() {
 		throw new Error("The test event is invalid.");
 	}
 
-	return result;
+	return { event: result.event, admin: bySecret(result.adminSecret) };
 }
 
 beforeEach(async () => {
@@ -48,14 +48,14 @@ describe("watchEvent", () => {
 	});
 
 	it("hands over the version of an organizer's change and nothing of another event", async () => {
-		const { event, adminSecret } = await created();
+		const { event, admin } = await created();
 		const other = await created();
 		const { arrived, unwatch } = await nextChange(event.id);
 
 		await join(other.event.id, "Petr", undefined, creationTime.add({ minutes: 1 }));
 		await updateEvent(
 			event.id,
-			adminSecret,
+			admin,
 			{ ...pragueEvenings, name: "Renamed" },
 			{ kind: "any" },
 			creationTime.add({ minutes: 2 }),
@@ -66,10 +66,10 @@ describe("watchEvent", () => {
 	});
 
 	it("says that the event is gone once it is deleted", async () => {
-		const { event, adminSecret } = await created();
+		const { event, admin } = await created();
 		const { arrived, unwatch } = await nextChange(event.id);
 
-		await removeEvent(event.id, adminSecret, creationTime.add({ minutes: 1 }));
+		await removeEvent(event.id, admin, creationTime.add({ minutes: 1 }));
 
 		expect(await arrived).toEqual({ kind: "gone" });
 		unwatch();

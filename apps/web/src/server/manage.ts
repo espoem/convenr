@@ -82,26 +82,42 @@ export type UpdateEventResult =
 	 */
 	| { status: "confirm"; losing: number; clearsFinal: boolean; version: EventVersion };
 
-/** `not_found` when the secret fits but the event has no such participant. */
+/** `not_found` when the access fits but the event has no such participant. */
 export type RemoveParticipantResult =
 	| { status: "removed" }
 	| { status: "denied" }
 	| { status: "not_found" };
 
 /**
- * The live event `id` when `secret` is its admin secret. With `lock`, the row is locked for a
- * change, and only after the secret fits: a wrong secret never waits for or holds the lock. The
+ * Who may manage an event: whoever holds its admin secret, or the account that owns it, from
+ * any browser where it is signed in.
+ */
+export type AdminAccess = { kind: "secret"; secret: string } | { kind: "owner"; accountId: string };
+
+export function bySecret(secret: string): AdminAccess {
+	return { kind: "secret", secret };
+}
+
+function allows(row: EventRow, access: AdminAccess): boolean {
+	return access.kind === "secret"
+		? matchesSecret(row.adminSecretHash, access.secret)
+		: row.ownerId === access.accountId;
+}
+
+/**
+ * The live event `id` when `access` may manage it. With `lock`, the row is locked for a
+ * change, and only after the access fits: a wrong secret never waits for or holds the lock. The
  * row is read again under the lock, since it may have changed or expired in between.
  */
 export async function adminRow(
 	queries: Queries,
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	lock: "lock" | "read",
 	now: Temporal.Instant,
 ): Promise<EventRow | undefined> {
 	const fits = (row: EventRow | undefined) =>
-		row !== undefined && matchesSecret(row.adminSecretHash, secret) ? row : undefined;
+		row !== undefined && allows(row, access) ? row : undefined;
 
 	const read = fits(await liveEvent(queries, id, now, "read"));
 
@@ -157,13 +173,13 @@ function inputOf(row: EventRow): NewEvent {
 	};
 }
 
-/** The event as the manage page edits it, or `undefined` without a valid secret. */
+/** The event as the manage page edits it, or `undefined` when `access` does not fit. */
 export async function readManagedEvent(
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	now = Temporal.Now.instant(),
 ): Promise<ManagedEvent | undefined> {
-	const row = await adminRow(db(), id, secret, "read", now);
+	const row = await adminRow(db(), id, access, "read", now);
 
 	if (row === undefined) {
 		return undefined;
@@ -301,14 +317,14 @@ async function deleteAvailability(queries: Queries, eventId: string, removed: Sl
  */
 export async function updateEvent(
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	change: EventChange,
 	precondition: Precondition,
 	now = Temporal.Now.instant(),
 	confirmation: Confirmation = NO_CONFIRMATION,
 ): Promise<UpdateEventResult> {
 	return db().transaction(async (tx): Promise<UpdateEventResult> => {
-		const row = await adminRow(tx, id, secret, "lock", now);
+		const row = await adminRow(tx, id, access, "lock", now);
 
 		if (row === undefined) {
 			return { status: "denied" };
@@ -418,12 +434,12 @@ function addedOptions(before: Schedule, after: Schedule): PollOption[] {
  */
 export async function removeParticipant(
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	participantId: string,
 	now = Temporal.Now.instant(),
 ): Promise<RemoveParticipantResult> {
 	return db().transaction(async (tx): Promise<RemoveParticipantResult> => {
-		const row = await adminRow(tx, id, secret, "lock", now);
+		const row = await adminRow(tx, id, access, "lock", now);
 
 		if (row === undefined) {
 			return { status: "denied" };
@@ -447,11 +463,11 @@ export async function removeParticipant(
 /** Deletes the event with its participants and responses at once and for good. */
 export async function removeEvent(
 	id: string,
-	secret: string,
+	access: AdminAccess,
 	now = Temporal.Now.instant(),
 ): Promise<boolean> {
 	return db().transaction(async (tx) => {
-		const row = await adminRow(tx, id, secret, "lock", now);
+		const row = await adminRow(tx, id, access, "lock", now);
 
 		if (row === undefined) {
 			return false;

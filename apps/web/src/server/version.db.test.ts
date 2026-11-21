@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
 import { createEvent, eventVersion, readEvent } from "./events";
-import { readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
+import { bySecret, readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, join, leave } from "./participants";
 import { saveResponse } from "./responses";
 import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
@@ -38,7 +38,7 @@ describe("eventVersion", () => {
 			throw new Error("The test event is invalid.");
 		}
 
-		const { adminSecret } = created;
+		const admin = bySecret(created.adminSecret);
 		const { id } = created.event;
 
 		expect(await eventVersion(id)).toBe(1n);
@@ -61,21 +61,15 @@ describe("eventVersion", () => {
 		await leave(id, jana.token, minute(5));
 		expect(await eventVersion(id)).toBe(6n);
 
-		await updateEvent(
-			id,
-			adminSecret,
-			{ ...pragueEvenings, name: "Jiná" },
-			{ kind: "any" },
-			minute(6),
-		);
+		await updateEvent(id, admin, { ...pragueEvenings, name: "Jiná" }, { kind: "any" }, minute(6));
 		expect(await eventVersion(id)).toBe(7n);
 
-		const petrId = (await readManagedEvent(id, adminSecret))?.participants[0]?.id ?? "";
+		const petrId = (await readManagedEvent(id, admin))?.participants[0]?.id ?? "";
 
-		await removeParticipant(id, adminSecret, petrId, minute(7));
+		await removeParticipant(id, admin, petrId, minute(7));
 		expect(await eventVersion(id)).toBe(8n);
 
-		await removeEvent(id, adminSecret);
+		await removeEvent(id, admin);
 		expect(await eventVersion(id)).toBeNull();
 	});
 
@@ -149,8 +143,10 @@ describe("eventVersion", () => {
 
 		const { id } = created.event;
 
-		await updateEvent(id, created.adminSecret, { name: "Jiná" }, { kind: "any" }, minute(5));
-		await updateEvent(id, created.adminSecret, { name: "Třetí" }, { kind: "any" }, minute(1));
+		const admin = bySecret(created.adminSecret);
+
+		await updateEvent(id, admin, { name: "Jiná" }, { kind: "any" }, minute(5));
+		await updateEvent(id, admin, { name: "Třetí" }, { kind: "any" }, minute(1));
 
 		expect((await stored(id)).version).toBe(3n);
 	});

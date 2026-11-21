@@ -1,6 +1,6 @@
 import { type Browser, type Page, test } from "@playwright/test";
 
-import { expect } from "./helpers";
+import { createEvent, expect } from "./helpers";
 import { emailTo, linkIn, uniqueAddress } from "./mail";
 import { ACCOUNTS_BASE_URL, POLL_BASE_URL } from "./servers";
 
@@ -79,6 +79,46 @@ test("a passkey added after the email link signs in alone", async ({ browser }) 
 	await expect(page.getByRole("heading", { name: "Your account", level: 1 })).toBeVisible();
 
 	await page.context().close();
+});
+
+test("an organizer adds an event to the account and manages it from another browser", async ({
+	browser,
+}) => {
+	const address = uniqueAddress("organizer");
+	const here = await accountsPage(browser);
+	const first = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 14 });
+
+	// Created before signing in, so the account learns of it only when it is added.
+	await createEvent(here, "Porada", first);
+	await signIn(here, address);
+
+	const inBrowser = here.getByRole("region", { name: "Events in this browser" });
+
+	await inBrowser.getByRole("button", { name: "Add to account" }).click();
+	await expect(inBrowser).toHaveCount(0);
+	await expect(
+		here.getByRole("region", { name: "Events I organize" }).getByRole("link", { name: "Porada" }),
+	).toBeVisible();
+
+	// Another browser, signed in to the same account, has neither the admin link nor the secret.
+	const there = await accountsPage(browser);
+
+	await signIn(there, address);
+	await there.getByRole("link", { name: "Porada" }).click();
+	await there.getByRole("link", { name: "Manage the event" }).click();
+	await expect(there.getByRole("heading", { name: /Porada/u, level: 1 })).toBeVisible();
+	await expect(there.getByRole("button", { name: "Save changes" })).toBeVisible();
+
+	// An event created while signed in belongs to the account at once.
+	await createEvent(there, "Oběd", first);
+	await there.goto("/en/account");
+	await expect(
+		there.getByRole("region", { name: "Events I organize" }).getByRole("link", { name: "Oběd" }),
+	).toBeVisible();
+	await expect(there.getByRole("region", { name: "Events in this browser" })).toHaveCount(0);
+
+	await here.context().close();
+	await there.context().close();
 });
 
 test("an instance without accounts shows no sign-in", async ({ page }) => {

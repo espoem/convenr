@@ -152,6 +152,7 @@
 		"referenceZone": "Times in {zone}",
 		"deletion": "the event will be deleted on {date}",
 		"kept": "the event is kept",
+		"manage": "Manage the event",
 		"shareLink": "Link for participants",
 		"shownInZone": "The grid shows times in your zone, {zone}.",
 		"weekdaysNotConverted": "Times are in {zone} and are not converted to your time.",
@@ -322,6 +323,26 @@
 		"title": "Your account",
 		"heading": "Your account",
 		"signedInAs": "Signed in as <strong>{email}</strong>",
+		"events": {
+			"heading": "Events I organize",
+			"none": "No events in your account yet. Events you add here can be managed from any browser where you are signed in.",
+			"manage": "Manage",
+			"open": "No final time yet",
+			"final": "Final time {when}",
+			"deletion": "deleted on {date}",
+			"kept": "kept"
+		},
+		"claim": {
+			"heading": "Events in this browser",
+			"intro": "You organize these events in this browser, but they are not in your account. Add them to manage them from any browser where you are signed in.",
+			"add": "Add to account",
+			"addAll": "Add all to account",
+			"problem": {
+				"event_has_owner": "Another account already has this event.",
+				"wrong_admin_secret": "This event is gone, or its admin link no longer fits.",
+				"signed_out": "You are signed out. Sign in again and add the event."
+			}
+		},
 		"signOut": "Sign out",
 		"address": {
 			"heading": "Email address",

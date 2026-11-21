@@ -8,7 +8,7 @@ import { env } from "@/env";
 import { createEvent, eventVersion, type NewEvent, readEvent } from "./events";
 import { pickFinal } from "./final";
 import { runMaintenance } from "./maintenance";
-import { readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
+import { bySecret, readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, identify, join, leave, readParticipant } from "./participants";
 import { saveResponse } from "./responses";
 import { creationTime, mondayEvenings, pragueEvenings, pragueOptions } from "./test-events";
@@ -27,7 +27,7 @@ async function created(input: NewEvent) {
 		throw new Error("The test event is invalid.");
 	}
 
-	return { id: result.event.id, adminSecret: result.adminSecret };
+	return { id: result.event.id, admin: bySecret(result.adminSecret) };
 }
 
 async function purge(now: Temporal.Instant) {
@@ -52,11 +52,11 @@ beforeEach(async () => {
 
 describe("expiry", () => {
 	it("answers a change made just before expiry with the event it wrote", async () => {
-		const { id, adminSecret } = await created(pragueEvenings);
+		const { id, admin } = await created(pragueEvenings);
 
 		const result = await updateEvent(
 			id,
-			adminSecret,
+			admin,
 			{ name: "Jiná" },
 			{ kind: "any" },
 			justBefore(datedExpiry),
@@ -68,7 +68,7 @@ describe("expiry", () => {
 	});
 
 	it("makes the event unknown to pages, actions and the version check at once", async () => {
-		const { id, adminSecret } = await created(pragueEvenings);
+		const { id, admin } = await created(pragueEvenings);
 		const jana = await join(id, "Jana", undefined, creationTime);
 
 		if (!jana.ok) {
@@ -82,7 +82,7 @@ describe("expiry", () => {
 
 		expect(await readEvent(id, datedExpiry)).toBeUndefined();
 		expect(await eventVersion(id, datedExpiry)).toBeNull();
-		expect(await readManagedEvent(id, adminSecret, datedExpiry)).toBeUndefined();
+		expect(await readManagedEvent(id, admin, datedExpiry)).toBeUndefined();
 		expect(await identify(id, jana.token, datedExpiry)).toBeUndefined();
 		expect(await join(id, "Petr", undefined, datedExpiry)).toEqual({
 			ok: false,
@@ -91,7 +91,7 @@ describe("expiry", () => {
 	});
 
 	it("refuses every action on an expired event before it reads a name, a token or a secret", async () => {
-		const { id, adminSecret } = await created(pragueEvenings);
+		const { id, admin } = await created(pragueEvenings);
 		const jana = await join(id, "Jana", { kind: "new", password: "heslo-1234" }, creationTime);
 
 		if (!jana.ok) {
@@ -120,16 +120,14 @@ describe("expiry", () => {
 			),
 		).toEqual(notJoined);
 		expect(await leave(id, jana.token, datedExpiry)).toEqual(notJoined);
-		expect(
-			await updateEvent(id, adminSecret, { name: "Jiná" }, { kind: "any" }, datedExpiry),
-		).toEqual({
+		expect(await updateEvent(id, admin, { name: "Jiná" }, { kind: "any" }, datedExpiry)).toEqual({
 			status: "denied",
 		});
-		expect(await removeEvent(id, adminSecret, datedExpiry)).toBe(false);
+		expect(await removeEvent(id, admin, datedExpiry)).toBe(false);
 
-		const janaId = (await readManagedEvent(id, adminSecret, creationTime))?.participants[0]?.id;
+		const janaId = (await readManagedEvent(id, admin, creationTime))?.participants[0]?.id;
 
-		expect(await removeParticipant(id, adminSecret, janaId ?? "", datedExpiry)).toEqual({
+		expect(await removeParticipant(id, admin, janaId ?? "", datedExpiry)).toEqual({
 			status: "denied",
 		});
 
@@ -200,11 +198,11 @@ describe("the purge", () => {
 	});
 
 	it("keeps a weekday event until the retention after a final date beyond its deletion date", async () => {
-		const { id, adminSecret } = await created(mondayEvenings);
+		const { id, admin } = await created(mondayEvenings);
 
 		await pickFinal(
 			id,
-			adminSecret,
+			admin,
 			{ slots: ["w3-1020"], date: Temporal.PlainDate.from("2027-08-04") },
 			{ kind: "any" },
 			creationTime,

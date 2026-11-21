@@ -13,12 +13,14 @@ import { ShareLink } from "@/components/share-link";
 import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
-import { getPathname } from "@/i18n/navigation";
+import { getPathname, Link } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/server/board";
 import { heldToken } from "@/server/browser-key";
 import { readEvent } from "@/server/events";
 import { liveSettings } from "@/server/live";
+import { owns } from "@/server/ownership";
 import { identify } from "@/server/participants";
+import { currentVisitor } from "@/server/session";
 
 // One database read per request, shared by the metadata and the page.
 const eventOf = cache(async (segment: string) => {
@@ -53,6 +55,8 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 	// The participant the browser's key names, so the page arrives already joined (ADR 0008).
 	const held = await heldToken(event.id);
 	const viewer = held === undefined ? null : ((await identify(event.id, held)) ?? null);
+	const visitor = await currentVisitor();
+	const isOwner = visitor.kind === "signed_in" && (await owns(visitor.accountId, event.id));
 
 	const board =
 		kind.kind === "grid" ? (
@@ -102,6 +106,14 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 									}),
 								})}
 					</p>
+					{isOwner ? (
+						<Link
+							href={`/e/${event.segment}/manage`}
+							className="flex min-h-11 w-fit items-center text-action underline underline-offset-4"
+						>
+							{t("manage")}
+						</Link>
+					) : null}
 					<div className="max-w-(--cv-form)">
 						<ShareLink
 							label={t("shareLink")}

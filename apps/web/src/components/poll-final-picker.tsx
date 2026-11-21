@@ -9,18 +9,24 @@ import { BestOptions, PollTable, useOptionWhen } from "@/components/event/poll-t
 import { useFinalChange } from "@/components/final-picker";
 import { Button } from "@/components/ui/button";
 import { useViewerZone } from "@/lib/browser-time";
+import type { ManageCredential } from "@/lib/manage-credential";
 import { clearFinalAction, pickFinalAction } from "@/server/event-actions";
 
 type PollFinalPickerProps = {
 	event: PollBoardEvent;
 	formatLocale: string;
-	secret: string;
-	/** The admin secret stopped fitting. */
+	credential: ManageCredential;
+	/** The credential stopped fitting. */
 	onDenied: () => void;
 };
 
 /** Picking and clearing the final time of a poll on the manage page: one of its options. */
-export function PollFinalPicker({ event, formatLocale, secret, onDenied }: PollFinalPickerProps) {
+export function PollFinalPicker({
+	event,
+	formatLocale,
+	credential,
+	onDenied,
+}: PollFinalPickerProps) {
 	const t = useTranslations("Manage");
 	const tEvent = useTranslations("Event");
 	const id = useId();
@@ -47,7 +53,7 @@ export function PollFinalPicker({ event, formatLocale, secret, onDenied }: PollF
 						type="button"
 						variant="outline"
 						disabled={pending}
-						onClick={() => send(() => clearFinalAction(event.id, secret))}
+						onClick={() => send(() => clearFinalAction(event.id, credential))}
 					>
 						{t("finalClear")}
 					</Button>
@@ -75,7 +81,9 @@ export function PollFinalPicker({ event, formatLocale, secret, onDenied }: PollF
 								variant="outline"
 								disabled={pending}
 								aria-label={t("pollPickLabel", { when })}
-								onClick={() => send(() => pickFinalAction(event.id, secret, [option.key], null))}
+								onClick={() =>
+									send(() => pickFinalAction(event.id, credential, [option.key], null))
+								}
 							>
 								{t("finalPick")}
 							</Button>

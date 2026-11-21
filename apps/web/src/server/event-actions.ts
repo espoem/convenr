@@ -1,17 +1,20 @@
 "use server";
 // Server Actions for creating and managing an event (ADR 0001). A browser can send anything,
 // so each action checks the shape of its arguments; the data access layer applies the rules.
-// The admin secret travels in the request body, never in an address (ADR 0003 item 2).
+// The admin secret travels in the request body, never in an address (ADR 0003 item 2); the owner
+// sends no secret, and the session names the account.
 
 import { z } from "zod";
 
 import type { FinalProblem, FinalRequest } from "@/domain/final-time";
 import { isPublicId } from "@/domain/public-id";
 import { type EventVersion, eventVersionSchema } from "@/lib/event-version";
+import { type ManageCredential, manageCredentialSchema } from "@/lib/manage-credential";
 
 import { createEvent, type EventProblem, eventVersion, type NewEvent } from "./events";
 import { clearFinal, type FinalResult, pickFinal } from "./final";
 import {
+	type AdminAccess,
 	type ManagedEvent,
 	readManagedEvent,
 	removeEvent,
@@ -19,17 +22,46 @@ import {
 	removeParticipant,
 	updateEvent,
 } from "./manage";
+import { currentVisitor } from "./session";
 
 const eventId = z.string().max(64);
-const adminSecret = z.string().max(128);
+
+/** The access a credential gives, or `undefined` for an owner credential without a session. */
+async function accessOf(credential: ManageCredential): Promise<AdminAccess | undefined> {
+	if (credential.kind === "secret") {
+		return credential;
+	}
+
+	const visitor = await currentVisitor();
+
+	return visitor.kind === "signed_in" ? { kind: "owner", accountId: visitor.accountId } : undefined;
+}
+
+/** The event id and the access of a manage action's first two arguments, or `undefined`. */
+async function parsed(
+	id: string,
+	credential: ManageCredential,
+): Promise<{ event: string; access: AdminAccess } | undefined> {
+	const args = z.tuple([eventId, manageCredentialSchema]).safeParse([id, credential]);
+	const access = args.success ? await accessOf(args.data[1]) : undefined;
+
+	return args.success && access !== undefined ? { event: args.data[0], access } : undefined;
+}
 
 /** A created event as the page needs it: the view holds Temporal values, which do not serialize. */
 export type CreatedEvent =
 	| { ok: true; id: string; segment: string; adminSecret: string }
 	| { ok: false; problems: EventProblem[] };
 
+/** A signed-in organizer's event belongs to the account from the start. */
 export async function createEventAction(input: NewEvent): Promise<CreatedEvent> {
-	const created = await createEvent(input);
+	const visitor = await currentVisitor();
+
+	const created = await createEvent(
+		input,
+		undefined,
+		visitor.kind === "signed_in" ? { kind: "account", accountId: visitor.accountId } : undefined,
+	);
 
 	return created.ok
 		? {
@@ -48,11 +80,14 @@ export async function eventVersionAction(id: string): Promise<EventVersion | nul
 	return args.success ? eventVersion(args.data) : null;
 }
 
-/** The event for its manage page, or `null` when the secret does not fit. */
-export async function loadManageAction(id: string, secret: string): Promise<ManagedEvent | null> {
-	const args = z.tuple([eventId, adminSecret]).safeParse([id, secret]);
+/** The event for its manage page, or `null` when the credential does not fit. */
+export async function loadManageAction(
+	id: string,
+	credential: ManageCredential,
+): Promise<ManagedEvent | null> {
+	const args = await parsed(id, credential);
 
-	return args.success ? ((await readManagedEvent(...args.data)) ?? null) : null;
+	return args === undefined ? null : ((await readManagedEvent(args.event, args.access)) ?? null);
 }
 
 /** What the manage page learns from a change; the event itself holds values that do not serialize. */
@@ -71,18 +106,25 @@ const confirmation = z.discriminatedUnion("kind", [
 /** A confirmation for a version that is not current asks again, with the loss as it is now. */
 export async function updateEventAction(
 	id: string,
-	secret: string,
+	credential: ManageCredential,
 	input: NewEvent,
 	confirmed: Confirmation,
 ): Promise<UpdatedEvent> {
-	const args = z.tuple([eventId, adminSecret, confirmation]).safeParse([id, secret, confirmed]);
+	const args = await parsed(id, credential);
+	const confirms = confirmation.safeParse(confirmed);
 
-	if (!args.success) {
+	if (args === undefined || !confirms.success) {
 		return { status: "denied" };
 	}
 
-	const [event, held, confirms] = args.data;
-	const result = await updateEvent(event, held, input, { kind: "any" }, undefined, confirms);
+	const result = await updateEvent(
+		args.event,
+		args.access,
+		input,
+		{ kind: "any" },
+		undefined,
+		confirms.data,
+	);
 
 	switch (result.status) {
 		case "saved":
@@ -119,48 +161,61 @@ function finalChangeOf(result: FinalResult): FinalChange {
 /** Picks the run of `slots` as the final time; a weekday event also sends the `date`. */
 export async function pickFinalAction(
 	id: string,
-	secret: string,
+	credential: ManageCredential,
 	slots: string[],
 	date: string | null,
 ): Promise<FinalChange> {
-	const args = z
-		.tuple([eventId, adminSecret, z.array(z.string().max(64)).max(1000), z.iso.date().nullable()])
-		.safeParse([id, secret, slots, date]);
+	const args = await parsed(id, credential);
 
-	if (!args.success) {
+	const window = z
+		.tuple([z.array(z.string().max(64)).max(1000), z.iso.date().nullable()])
+		.safeParse([slots, date]);
+
+	if (args === undefined || !window.success) {
 		return { status: "denied" };
 	}
 
-	const [event, held, keys, day] = args.data;
+	const [keys, day] = window.data;
 	const request: FinalRequest = { slots: keys };
 
 	if (day !== null) {
 		request.date = Temporal.PlainDate.from(day);
 	}
 
-	return finalChangeOf(await pickFinal(event, held, request));
+	return finalChangeOf(await pickFinal(args.event, args.access, request));
 }
 
-export async function clearFinalAction(id: string, secret: string): Promise<FinalChange> {
-	const args = z.tuple([eventId, adminSecret]).safeParse([id, secret]);
+export async function clearFinalAction(
+	id: string,
+	credential: ManageCredential,
+): Promise<FinalChange> {
+	const args = await parsed(id, credential);
 
-	return args.success ? finalChangeOf(await clearFinal(...args.data)) : { status: "denied" };
+	return args === undefined
+		? { status: "denied" }
+		: finalChangeOf(await clearFinal(args.event, args.access));
 }
 
 export async function removeParticipantAction(
 	id: string,
-	secret: string,
+	credential: ManageCredential,
 	participantId: string,
 ): Promise<boolean> {
-	const args = z
-		.tuple([eventId, adminSecret, z.string().refine(isPublicId)])
-		.safeParse([id, secret, participantId]);
+	const args = await parsed(id, credential);
+	const participant = z.string().refine(isPublicId).safeParse(participantId);
 
-	return args.success && (await removeParticipant(...args.data)).status === "removed";
+	return (
+		args !== undefined &&
+		participant.success &&
+		(await removeParticipant(args.event, args.access, participant.data)).status === "removed"
+	);
 }
 
-export async function removeEventAction(id: string, secret: string): Promise<boolean> {
-	const args = z.tuple([eventId, adminSecret]).safeParse([id, secret]);
+export async function removeEventAction(
+	id: string,
+	credential: ManageCredential,
+): Promise<boolean> {
+	const args = await parsed(id, credential);
 
-	return args.success && (await removeEvent(...args.data));
+	return args !== undefined && (await removeEvent(args.event, args.access));
 }

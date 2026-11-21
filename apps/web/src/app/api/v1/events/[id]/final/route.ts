@@ -10,6 +10,7 @@ import {
 import { eventResponse, finalProblemResponse, finalRequestOf } from "@/server/api/mapping";
 import { finalRequestSchema } from "@/server/api/schemas";
 import { clearFinal, type FinalResult, pickFinal } from "@/server/final";
+import { bySecret } from "@/server/manage";
 
 type Params = { id: string };
 
@@ -34,12 +35,12 @@ export const PUT = securedEndpoint<Params>("admin", async (request, { id }, secr
 	}
 
 	return answer(
-		await pickFinal(id, secret, finalRequestOf(body.value), ifMatchPrecondition(request)),
+		await pickFinal(id, bySecret(secret), finalRequestOf(body.value), ifMatchPrecondition(request)),
 	);
 });
 
 export const DELETE = securedEndpoint<Params>("admin", async (request, { id }, secret) =>
-	answer(await clearFinal(id, secret, ifMatchPrecondition(request))),
+	answer(await clearFinal(id, bySecret(secret), ifMatchPrecondition(request))),
 );
 
 const methods = routeMethods(["PUT", "DELETE"]);
