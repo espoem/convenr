@@ -1010,7 +1010,7 @@
 						}
 					},
 					"409": {
-						"description": "`event_full`: The event already has 100 participants.\n\n`name_exists`: A participant already uses this name.\n\n`name_unknown`: No participant uses this name.\n\n`no_password`: The participant has no password.",
+						"description": "`event_full`: The event already has 100 participants.\n\n`name_exists`: A participant already uses this name.\n\n`name_in_account`: The participant under this name is linked to an account, which alone opens it.\n\n`name_unknown`: No participant uses this name.\n\n`no_password`: The participant has no password.",
 						"content": {
 							"application/problem+json": {
 								"schema": {

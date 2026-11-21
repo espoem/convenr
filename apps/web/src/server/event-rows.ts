@@ -1,5 +1,5 @@
 // Conversions between stored event rows and domain values, shared by the data access layer.
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import type { Database } from "@/db/client";
 import {
@@ -304,19 +304,54 @@ export async function liveEvent(
 	return isLive(row, now) ? row : undefined;
 }
 
-/** The participant of a live event `eventId` that holds `token`, with its event, or `undefined`. */
-export async function participantByToken(
-	queries: Queries,
-	eventId: string,
-	token: string,
-	now: Temporal.Instant,
-) {
+/**
+ * Whom a request speaks for in an event: the holder of a participant token, or a signed-in
+ * account, which stands for the participant linked to it.
+ */
+export type Holder = { kind: "token"; token: string } | { kind: "account"; accountId: string };
+
+export function byToken(token: string): Holder {
+	return { kind: "token", token };
+}
+
+async function heldRow(queries: Queries, eventId: string, holder: Holder) {
+	const columns = { participant: participants, event: events };
+
+	if (holder.kind === "account") {
+		const [linked] = await queries
+			.select(columns)
+			.from(participants)
+			.innerJoin(events, eq(events.id, participants.eventId))
+			.where(and(eq(participants.eventId, eventId), eq(participants.accountId, holder.accountId)));
+
+		return linked;
+	}
+
 	const [found] = await queries
-		.select({ participant: participants, event: events })
+		.select(columns)
 		.from(participantTokens)
 		.innerJoin(participants, eq(participants.id, participantTokens.participantId))
 		.innerJoin(events, eq(events.id, participants.eventId))
-		.where(and(eq(participantTokens.tokenHash, hashSecret(token)), eq(events.id, eventId)));
+		.where(
+			and(
+				eq(participantTokens.tokenHash, hashSecret(holder.token)),
+				eq(events.id, eventId),
+				// Linking retires a participant's tokens; this keeps a stray one from reaching it.
+				isNull(participants.accountId),
+			),
+		);
+
+	return found;
+}
+
+/** The participant of a live event `eventId` that `holder` stands for, with its event, or `undefined`. */
+export async function participantOf(
+	queries: Queries,
+	eventId: string,
+	holder: Holder,
+	now: Temporal.Instant,
+) {
+	const found = await heldRow(queries, eventId, holder);
 
 	if (found === undefined) {
 		return;
@@ -328,21 +363,21 @@ export async function participantByToken(
 }
 
 /**
- * The participant that holds `token`, as `participantByToken` finds them, with the event row
- * locked for a change. The token is checked before the lock, so a wrong token never waits for
- * or holds it, and again under the lock, since the participant may have left in between.
+ * The participant of `holder`, as `participantOf` finds them, with the event row locked for a
+ * change. The holder is checked before the lock, so a wrong token never waits for or holds it,
+ * and again under the lock, since the participant may have left in between.
  */
 export async function participantForChange(
 	queries: Queries,
 	eventId: string,
-	token: string,
+	holder: Holder,
 	now: Temporal.Instant,
 ) {
-	if ((await participantByToken(queries, eventId, token, now)) === undefined) {
+	if ((await participantOf(queries, eventId, holder, now)) === undefined) {
 		return;
 	}
 
 	await queries.select({ id: events.id }).from(events).where(eq(events.id, eventId)).for("update");
 
-	return participantByToken(queries, eventId, token, now);
+	return participantOf(queries, eventId, holder, now);
 }

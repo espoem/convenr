@@ -1,9 +1,10 @@
-// Events an account owns. An account adds an event with its admin secret; from then on it
-// manages the event from any browser where it is signed in, and the admin link keeps working.
+// Events an account owns, and the account's lists of events. An account adds an event with its
+// admin secret; from then on it manages the event from any browser where it is signed in, and
+// the admin link keeps working.
 import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { events } from "@/db/schema";
+import { events, participants } from "@/db/schema";
 import { eventSegment } from "@/domain/event-address";
 import type { FinalTime } from "@/domain/final-time";
 
@@ -59,35 +60,71 @@ export async function owns(accountId: string, id: string): Promise<boolean> {
 	return row !== undefined;
 }
 
-/** An event in the account's list. */
-export type OwnedEvent = {
+/** What the account is in an event of its lists: the owner, or a participant under a name. */
+export type AccountRole = { kind: "organizer" } | { kind: "participant"; name: string };
+
+/** An event in one of the account's lists. */
+export type AccountEvent = {
 	id: string;
 	name: string;
 	segment: string;
 	deletionDate: Temporal.PlainDate | null;
 	final: FinalTime;
+	role: AccountRole;
 };
+
+/** The live events of `rows`, in their order, with the account's role in each. */
+async function listed(
+	rows: { event: typeof events.$inferSelect; role: AccountRole }[],
+	now: Temporal.Instant,
+): Promise<AccountEvent[]> {
+	const read = await Promise.all(
+		rows.map(async ({ event, role }) => ({ row: await withOptions(db(), event), role })),
+	);
+
+	return read
+		.filter(({ row }) => isLive(row, now))
+		.map(({ row, role }) => ({
+			id: row.id,
+			name: row.name,
+			segment: eventSegment(row.id, row.name),
+			deletionDate: deletionDateOf(row),
+			final: finalOf(row),
+			role,
+		}));
+}
 
 /** The live events `accountId` owns, the most recently created first. */
 export async function ownedEvents(
 	accountId: string,
 	now = Temporal.Now.instant(),
-): Promise<OwnedEvent[]> {
+): Promise<AccountEvent[]> {
 	const rows = await db()
 		.select()
 		.from(events)
 		.where(eq(events.ownerId, accountId))
 		.orderBy(desc(events.createdAt));
 
-	const live = (await Promise.all(rows.map(async (row) => withOptions(db(), row)))).filter((row) =>
-		isLive(row, now),
+	return listed(
+		rows.map((event) => ({ event, role: { kind: "organizer" } })),
+		now,
 	);
+}
 
-	return live.map((row) => ({
-		id: row.id,
-		name: row.name,
-		segment: eventSegment(row.id, row.name),
-		deletionDate: deletionDateOf(row),
-		final: finalOf(row),
-	}));
+/** The live events where `accountId` has a linked participant, the most recently joined first. */
+export async function joinedEvents(
+	accountId: string,
+	now = Temporal.Now.instant(),
+): Promise<AccountEvent[]> {
+	const rows = await db()
+		.select({ event: events, name: participants.displayName })
+		.from(participants)
+		.innerJoin(events, eq(events.id, participants.eventId))
+		.where(eq(participants.accountId, accountId))
+		.orderBy(desc(participants.createdAt));
+
+	return listed(
+		rows.map(({ event, name }) => ({ event, role: { kind: "participant", name } })),
+		now,
+	);
 }

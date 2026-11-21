@@ -1,6 +1,6 @@
 // Shared input for the data access layer tests.
 import { db } from "@/db/client";
-import { events } from "@/db/schema";
+import { authUsers, events } from "@/db/schema";
 
 import { createEvent, type GridEventInput, type NewEvent, type PollEventInput } from "./events";
 
@@ -48,4 +48,15 @@ export async function freshEvent(input: NewEvent = pragueEvenings): Promise<stri
 	}
 
 	return created.event.id;
+}
+
+/** A new account, as signing in creates one; its id is unique, so tests need not clean up. */
+export async function freshAccount(name: string): Promise<string> {
+	const id = `${name}-${crypto.randomUUID()}`;
+
+	await db()
+		.insert(authUsers)
+		.values({ id, email: `${id}@example.org` });
+
+	return id;
 }

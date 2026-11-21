@@ -267,6 +267,7 @@
 		"problem": {
 			"invalid_name": "Zadejte jméno, nejvýš 40 znaků.",
 			"event_full": "Tato událost už má 100 účastníků.",
+			"name_in_account": "Toto jméno patří účastníkovi, který se připojil s účtem, a otevře ho jen tento účet. Přihlaste se k němu, nebo zvolte jiné jméno.",
 			"password_required": "Toto jméno už je v události obsazené a má heslo. Zadejte heslo.",
 			"wrong_password": "Heslo nesouhlasí.",
 			"too_many_attempts": "Příliš mnoho špatných hesel. Zkuste to znovu v {time}.",
@@ -324,9 +325,14 @@
 		"heading": "Váš účet",
 		"signedInAs": "Přihlášeni jako <strong>{email}</strong>",
 		"events": {
-			"heading": "Události, které pořádám",
-			"none": "V účtu zatím nemáte žádné události. Události, které sem přidáte, můžete spravovat v každém prohlížeči, kde jste přihlášeni.",
+			"organized": "Události, které pořádám",
+			"joined": "Události, kterých se účastním",
+			"noneOrganized": "V účtu zatím nemáte žádné události, které pořádáte. Události, které vytvoříte přihlášeni nebo sem přidáte, můžete spravovat v každém prohlížeči, kde jste přihlášeni.",
+			"noneJoined": "Účtem jste se zatím k žádné události nepřipojili. Události, ke kterým se připojíte přihlášeni, se otevřou s vaším jménem v každém prohlížeči, kde jste přihlášeni.",
 			"manage": "Spravovat",
+			"unlink": "Odebrat z účtu",
+			"unlinkFailed": "Událost se nepodařilo odebrat. Načtěte stránku znovu a zkuste to ještě jednou.",
+			"as": "jako {name}",
 			"open": "Termín zatím není vybraný",
 			"final": "Termín {when}",
 			"deletion": "smaže se {date}",
@@ -334,13 +340,15 @@
 		},
 		"claim": {
 			"heading": "Události v tomto prohlížeči",
-			"intro": "Tyto události v tomto prohlížeči pořádáte, ale nejsou ve vašem účtu. Přidejte je a budete je moci spravovat v každém prohlížeči, kde jste přihlášeni.",
+			"intro": "Tyto události v tomto prohlížeči pořádáte nebo jste se k nim připojili, ale nejsou ve vašem účtu. Přidejte je a otevřete je v každém prohlížeči, kde jste přihlášeni.",
 			"add": "Přidat do účtu",
 			"addAll": "Přidat vše do účtu",
 			"problem": {
 				"event_has_owner": "Tuto událost už má jiný účet.",
 				"wrong_admin_secret": "Událost už neexistuje, nebo k ní odkaz pro správu už nepatří.",
-				"signed_out": "Jste odhlášeni. Přihlaste se znovu a událost přidejte."
+				"signed_out": "Jste odhlášeni. Přihlaste se znovu a událost přidejte.",
+				"not_joined": "Tento prohlížeč už k události připojený není.",
+				"account_already_joined": "Váš účet už je v této události pod jiným jménem."
 			}
 		},
 		"signOut": "Odhlásit se",
@@ -713,6 +721,7 @@
 			"no_password": "Účastník nemá heslo.",
 			"name_exists": "Toto jméno už některý účastník používá.",
 			"name_unknown": "Toto jméno žádný účastník nepoužívá.",
+			"name_in_account": "Účastník s tímto jménem je propojený s účtem a otevře ho jen tento účet.",
 			"confirmation_required": "Změna by účastníkům odebrala dostupnost.",
 			"event_changed": "Událost má jinou verzi, než jakou jmenuje hlavička `If-Match`.",
 			"payload_too_large": "Tělo je větší než 64 KB.",

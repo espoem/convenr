@@ -267,6 +267,7 @@
 		"problem": {
 			"invalid_name": "Enter a name of at most 40 characters.",
 			"event_full": "This event already has 100 participants.",
+			"name_in_account": "This name belongs to a participant who joined with an account, and only that account opens it. Sign in to it, or choose another name.",
 			"password_required": "This name is already used in this event and has a password. Enter the password.",
 			"wrong_password": "The password does not match.",
 			"too_many_attempts": "Too many wrong passwords. Try again at {time}.",
@@ -324,9 +325,14 @@
 		"heading": "Your account",
 		"signedInAs": "Signed in as <strong>{email}</strong>",
 		"events": {
-			"heading": "Events I organize",
-			"none": "No events in your account yet. Events you add here can be managed from any browser where you are signed in.",
+			"organized": "Events I organize",
+			"joined": "Events I joined",
+			"noneOrganized": "No events you organize are in your account yet. Events you create while signed in, or add here, can be managed from any browser where you are signed in.",
+			"noneJoined": "You have not joined any event with your account yet. Events you join while signed in open joined in any browser where you are signed in.",
 			"manage": "Manage",
+			"unlink": "Remove from account",
+			"unlinkFailed": "The event could not be removed. Reload the page and try again.",
+			"as": "as {name}",
 			"open": "No final time yet",
 			"final": "Final time {when}",
 			"deletion": "deleted on {date}",
@@ -334,13 +340,15 @@
 		},
 		"claim": {
 			"heading": "Events in this browser",
-			"intro": "You organize these events in this browser, but they are not in your account. Add them to manage them from any browser where you are signed in.",
+			"intro": "You organize or joined these events in this browser, but they are not in your account. Add them to open them from any browser where you are signed in.",
 			"add": "Add to account",
 			"addAll": "Add all to account",
 			"problem": {
 				"event_has_owner": "Another account already has this event.",
 				"wrong_admin_secret": "This event is gone, or its admin link no longer fits.",
-				"signed_out": "You are signed out. Sign in again and add the event."
+				"signed_out": "You are signed out. Sign in again and add the event.",
+				"not_joined": "This browser is no longer joined to the event.",
+				"account_already_joined": "Your account is already in this event under another name."
 			}
 		},
 		"signOut": "Sign out",
@@ -713,6 +721,7 @@
 			"no_password": "The participant has no password.",
 			"name_exists": "A participant already uses this name.",
 			"name_unknown": "No participant uses this name.",
+			"name_in_account": "The participant under this name is linked to an account, which alone opens it.",
 			"confirmation_required": "The change would remove availability from participants.",
 			"event_changed": "The event has another version than the `If-Match` header names.",
 			"payload_too_large": "The body is larger than 64 KB.",

@@ -50,6 +50,7 @@ Returned as `problem` in a failed result.
 | `no_password` | A password change or removal was asked for a participant who has none, or a current password was given for one. | P6 |
 | `name_exists` | A new password was given for a name another participant already uses. Only the API sends a new password apart from a current one. | P2, P4 |
 | `name_unknown` | A current password was given for a name nobody in the event uses. Only the API sends a current password apart from a new one. | P4 |
+| `name_in_account` | The name belongs to a participant linked to an account, and the join does not come from that account. Refused before any password is tried. | AU8 |
 | `not_joined` | The browser's participant token is unknown, so the participant left or was deleted. | P8, P9 |
 | `not_found` | The event no longer exists. | E9, X3 |
 | `unknown_slot` | A saved response holds a slot the event does not have. | R4 |
@@ -70,6 +71,8 @@ Shown on the web pages only; the API has no account endpoints.
 | `passkey_not_recognized` | The browser offered a passkey that belongs to no account, or its check failed. | AU4 |
 | `event_has_owner` | An event added to an account already belongs to another one. | OW2 |
 | `wrong_admin_secret` | The admin secret sent to add an event does not match it, or the event is gone. | OW1 |
+| `account_already_joined` | The browser's participant is added to an account that already has another participant in the event. | OW1 |
+| `signed_out` | An account action arrives after the session ended. | AU7 |
 
 ## API
 
@@ -123,7 +126,7 @@ The API sends every code with one status.
 | `403 Forbidden` | `wrong_secret_kind`, `password_required`, `wrong_password` |
 | `404 Not Found` | `not_found`, `not_finalized` |
 | `405 Method Not Allowed` | `method_not_allowed`, with `Allow` |
-| `409 Conflict` | `event_full`, `field_locked`, `no_password`, `name_exists`, `name_unknown`, `confirmation_required`, with `ETag` |
+| `409 Conflict` | `event_full`, `field_locked`, `no_password`, `name_exists`, `name_unknown`, `name_in_account`, `confirmation_required`, with `ETag` |
 | `412 Precondition Failed` | `event_changed`, with `ETag` |
 | `413 Content Too Large` | `payload_too_large` |
 | `415 Unsupported Media Type` | `unsupported_media_type` |

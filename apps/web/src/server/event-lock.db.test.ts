@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
+import { byToken } from "./event-rows";
 import { bySecret, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, join, leave } from "./participants";
 import { saveResponse } from "./responses";
@@ -81,17 +82,17 @@ describe("the event lock", () => {
 
 		expect(
 			await answerWhileLocked(() =>
-				saveResponse(eventId, "cvp_wrong", { available: [] }, creationTime),
+				saveResponse(eventId, byToken("cvp_wrong"), { available: [] }, creationTime),
 			),
 		).toEqual(notJoined);
 		expect(
 			await answerWhileLocked(() =>
-				changePassword(eventId, "cvp_wrong", { kind: "none" }, "heslo", creationTime),
+				changePassword(eventId, byToken("cvp_wrong"), { kind: "none" }, "heslo", creationTime),
 			),
 		).toEqual(notJoined);
-		expect(await answerWhileLocked(() => leave(eventId, "cvp_wrong", creationTime))).toEqual(
-			notJoined,
-		);
+		expect(
+			await answerWhileLocked(() => leave(eventId, byToken("cvp_wrong"), creationTime)),
+		).toEqual(notJoined);
 	});
 
 	it(
@@ -106,7 +107,7 @@ describe("the event lock", () => {
 			const change = (next: string) =>
 				changePassword(
 					eventId,
-					joined.token,
+					byToken(joined.token),
 					{ kind: "given", password: "tajne" },
 					next,
 					creationTime,

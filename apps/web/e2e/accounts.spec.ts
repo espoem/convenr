@@ -1,6 +1,6 @@
 import { type Browser, type Page, test } from "@playwright/test";
 
-import { createEvent, expect } from "./helpers";
+import { createEvent, expect, joinIn } from "./helpers";
 import { emailTo, linkIn, uniqueAddress } from "./mail";
 import { ACCOUNTS_BASE_URL, POLL_BASE_URL } from "./servers";
 
@@ -117,6 +117,50 @@ test("an organizer adds an event to the account and manages it from another brow
 	).toBeVisible();
 	await expect(there.getByRole("region", { name: "Events in this browser" })).toHaveCount(0);
 
+	await here.context().close();
+	await there.context().close();
+});
+
+test("a signed-in participant is joined in every signed-in browser until it is removed", async ({
+	browser,
+}) => {
+	const address = uniqueAddress("participant");
+	const first = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 14 });
+	const organizer = await accountsPage(browser);
+	const { share } = await createEvent(organizer, "Výlet", first);
+	const here = await accountsPage(browser);
+
+	await signIn(here, address);
+	await joinIn(here, share, "Eva");
+	// The account's participant is not this browser's, so "Not you?" does not apply.
+	await expect(here.getByRole("button", { name: "Nejste Eva?" })).toHaveCount(0);
+
+	const there = await accountsPage(browser);
+
+	await signIn(there, address);
+	await there.goto(share);
+	await expect(there.getByText("Vyplňujete jako Eva")).toBeVisible();
+
+	// Removing it from the account keeps this browser joined, now by its own token.
+	await here.goto("/en/account");
+
+	const joined = here.getByRole("region", { name: "Events I joined" });
+
+	await expect(joined.getByText("as Eva")).toBeVisible();
+	await joined.getByRole("button", { name: "Remove from account" }).click();
+	await expect(joined.getByText("You have not joined any event")).toBeVisible();
+	await here.goto(share);
+	await expect(here.getByRole("button", { name: "Nejste Eva?" })).toBeVisible();
+
+	// The browser's own participant is added back from the account page.
+	await here.goto("/en/account");
+	await here
+		.getByRole("region", { name: "Events in this browser" })
+		.getByRole("button", { name: "Add to account" })
+		.click();
+	await expect(joined.getByText("as Eva")).toBeVisible();
+
+	await organizer.context().close();
 	await here.context().close();
 	await there.context().close();
 });

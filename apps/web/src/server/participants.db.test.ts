@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { participants, participantTokens } from "@/db/schema";
 import { isPublicId, newPublicId } from "@/domain/public-id";
 
+import { byToken } from "./event-rows";
 import { createEvent, readEvent } from "./events";
 import {
 	ATTEMPTS_KEPT,
@@ -25,6 +26,8 @@ let eventId = "";
 beforeEach(async () => {
 	eventId = await freshEvent();
 });
+
+const janaUnlinked = { name: "Jana", hasPassword: false, linked: false };
 
 /** The password of a name that already has one. */
 function current(password: string) {
@@ -64,7 +67,12 @@ describe("joining", () => {
 	it("answers a join under a used name with that participant's saved availability", async () => {
 		const token = await tokenOf("Jana");
 
-		await saveResponse(eventId, token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
+		await saveResponse(
+			eventId,
+			byToken(token),
+			{ available: ["2027-04-05T15:00:00Z"] },
+			creationTime,
+		);
 
 		const again = await join(eventId, "jana", undefined, creationTime);
 
@@ -73,18 +81,23 @@ describe("joining", () => {
 			participant: { name: "Jana", levels: { "2027-04-05T15:00:00Z": "available" } },
 		});
 		expect(again.ok && again.participant).toEqual(
-			(await readParticipant(eventId, token, creationTime))?.participant,
+			(await readParticipant(eventId, byToken(token), creationTime))?.participant,
 		);
 	});
 
 	it("reads the token's participant by public id with their response", async () => {
 		const token = await tokenOf("Jana");
 
-		await saveResponse(eventId, token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
+		await saveResponse(
+			eventId,
+			byToken(token),
+			{ available: ["2027-04-05T15:00:00Z"] },
+			creationTime,
+		);
 
 		const [row] = await db().select().from(participants);
 
-		expect(await readParticipant(eventId, token)).toMatchObject({
+		expect(await readParticipant(eventId, byToken(token))).toMatchObject({
 			participant: {
 				id: row?.publicId,
 				name: "Jana",
@@ -92,8 +105,8 @@ describe("joining", () => {
 			},
 			schedule: { referenceZone: "Europe/Prague", slotLength: 60 },
 		});
-		expect(await readParticipant(eventId, `${token}x`)).toBeUndefined();
-		expect(await readParticipant("abcdefghijkm", token)).toBeUndefined();
+		expect(await readParticipant(eventId, byToken(`${token}x`))).toBeUndefined();
+		expect(await readParticipant("abcdefghijkm", byToken(token))).toBeUndefined();
 	});
 
 	it("gives another token to the same participant for a used name without a password", async () => {
@@ -101,8 +114,8 @@ describe("joining", () => {
 		const second = await tokenOf(" JANA ");
 
 		expect(second).not.toBe(first);
-		expect(await identify(eventId, first)).toEqual({ name: "Jana", hasPassword: false });
-		expect(await identify(eventId, second)).toEqual({ name: "Jana", hasPassword: false });
+		expect(await identify(eventId, byToken(first))).toEqual(janaUnlinked);
+		expect(await identify(eventId, byToken(second))).toEqual(janaUnlinked);
 		expect(await db().select().from(participants)).toHaveLength(1);
 	});
 
@@ -273,32 +286,38 @@ describe("passwords", () => {
 	it("sets a password with the token alone, then needs it to change or remove it", async () => {
 		const token = await tokenOf("Jana");
 
-		expect(await changePassword(eventId, token, none, "prvni", creationTime)).toEqual({
+		expect(await changePassword(eventId, byToken(token), none, "prvni", creationTime)).toEqual({
 			ok: true,
 		});
-		expect(await changePassword(eventId, token, none, "druhe", creationTime)).toEqual({
+		expect(await changePassword(eventId, byToken(token), none, "druhe", creationTime)).toEqual({
 			ok: false,
 			problem: "password_required",
 		});
-		expect(await changePassword(eventId, token, given("prvni"), null, creationTime)).toEqual({
+		expect(
+			await changePassword(eventId, byToken(token), given("prvni"), null, creationTime),
+		).toEqual({
 			ok: true,
 		});
-		expect(await identify(eventId, token)).toEqual({ name: "Jana", hasPassword: false });
+		expect(await identify(eventId, byToken(token))).toEqual(janaUnlinked);
 	});
 
 	it("refuses a token of another event and removing a password that does not exist", async () => {
 		const token = await tokenOf("Jana");
 
-		expect(await changePassword("abcdefghijkm", token, none, "heslo", creationTime)).toEqual({
+		expect(
+			await changePassword("abcdefghijkm", byToken(token), none, "heslo", creationTime),
+		).toEqual({
 			ok: false,
 			problem: "not_joined",
 		});
-		expect(await changePassword(eventId, token, none, null, creationTime)).toEqual({
+		expect(await changePassword(eventId, byToken(token), none, null, creationTime)).toEqual({
 			ok: false,
 			problem: "no_password",
 		});
 		// A current password names one that must exist, even when setting a first one.
-		expect(await changePassword(eventId, token, given("tajne"), "heslo", creationTime)).toEqual({
+		expect(
+			await changePassword(eventId, byToken(token), given("tajne"), "heslo", creationTime),
+		).toEqual({
 			ok: false,
 			problem: "no_password",
 		});
@@ -313,18 +332,18 @@ describe("passwords", () => {
 		}
 
 		// The panel was opened while the password was set, so it still sends the old one.
-		await changePassword(eventId, other.token, given("tajne"), null, creationTime);
+		await changePassword(eventId, byToken(other.token), given("tajne"), null, creationTime);
 
 		expect(
 			await changePassword(
 				eventId,
-				token,
+				byToken(token),
 				{ kind: "if_set", password: "tajne" },
 				"nove-heslo",
 				creationTime,
 			),
 		).toEqual({ ok: true });
-		expect(await identify(eventId, token)).toEqual({ name: "Jana", hasPassword: true });
+		expect(await identify(eventId, byToken(token))).toEqual({ ...janaUnlinked, hasPassword: true });
 	});
 
 	it("still checks the web panel's current password while one is set", async () => {
@@ -333,7 +352,7 @@ describe("passwords", () => {
 		expect(
 			await changePassword(
 				eventId,
-				token,
+				byToken(token),
 				{ kind: "if_set", password: "spatne" },
 				"nove-heslo",
 				creationTime,
@@ -347,11 +366,16 @@ describe("leaving", () => {
 		const token = await tokenOf("Jana", "tajne");
 		const other = await join(eventId, "Jana", current("tajne"), creationTime);
 
-		await saveResponse(eventId, token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
+		await saveResponse(
+			eventId,
+			byToken(token),
+			{ available: ["2027-04-05T15:00:00Z"] },
+			creationTime,
+		);
 
-		expect(await leave(eventId, token, creationTime)).toEqual({ ok: true });
+		expect(await leave(eventId, byToken(token), creationTime)).toEqual({ ok: true });
 		expect(await db().select().from(participantTokens)).toEqual([]);
-		expect(other.ok && (await identify(eventId, other.token))).toBeFalsy();
+		expect(other.ok && (await identify(eventId, byToken(other.token)))).toBeFalsy();
 		expect(await join(eventId, "Jana", undefined, creationTime)).toMatchObject({ ok: true });
 
 		const [row] = await db().select().from(participants).where(eq(participants.nameKey, "jana"));
@@ -372,17 +396,14 @@ describe("a browser's token", () => {
 		const joined = await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
 
 		expect(joined).toMatchObject({ ok: true, token: mine });
-		expect(await identify(eventId, mine, creationTime)).toEqual({
-			name: "Jana",
-			hasPassword: false,
-		});
+		expect(await identify(eventId, byToken(mine), creationTime)).toEqual(janaUnlinked);
 	});
 
 	it("moves to the name the browser joins under next", async () => {
 		await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
 		await join(eventId, "Petr", undefined, creationTime, undefined, browser(mine));
 
-		expect(await identify(eventId, mine, creationTime)).toMatchObject({ name: "Petr" });
+		expect(await identify(eventId, byToken(mine), creationTime)).toMatchObject({ name: "Petr" });
 		expect(await db().select().from(participantTokens)).toHaveLength(1);
 	});
 
@@ -390,11 +411,11 @@ describe("a browser's token", () => {
 		const old = await tokenOf("Jana", "tajne");
 
 		expect(await moveToken(eventId, old, mine, creationTime)).toEqual({
-			name: "Jana",
+			...janaUnlinked,
 			hasPassword: true,
 		});
-		expect(await identify(eventId, mine, creationTime)).toMatchObject({ name: "Jana" });
-		expect(await identify(eventId, old, creationTime)).toBeUndefined();
+		expect(await identify(eventId, byToken(mine), creationTime)).toMatchObject({ name: "Jana" });
+		expect(await identify(eventId, byToken(old), creationTime)).toBeUndefined();
 	});
 
 	it("moves nothing for a token the event does not know", async () => {
@@ -408,8 +429,8 @@ describe("a browser's token", () => {
 		await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
 		await forgetToken(eventId, mine, creationTime);
 
-		expect(await identify(eventId, mine, creationTime)).toBeUndefined();
-		expect(await identify(eventId, other, creationTime)).toMatchObject({ name: "Jana" });
+		expect(await identify(eventId, byToken(mine), creationTime)).toBeUndefined();
+		expect(await identify(eventId, byToken(other), creationTime)).toMatchObject({ name: "Jana" });
 	});
 
 	it("is not forgotten through another event", async () => {
@@ -418,6 +439,6 @@ describe("a browser's token", () => {
 		await join(eventId, "Jana", undefined, creationTime, undefined, browser(mine));
 		await forgetToken(other.ok ? other.event.id : "", mine, creationTime);
 
-		expect(await identify(eventId, mine, creationTime)).toMatchObject({ name: "Jana" });
+		expect(await identify(eventId, byToken(mine), creationTime)).toMatchObject({ name: "Jana" });
 	});
 });

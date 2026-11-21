@@ -33,6 +33,7 @@ export const PROBLEM_STATUS = {
 	no_password: 409,
 	name_exists: 409,
 	name_unknown: 409,
+	name_in_account: 409,
 	confirmation_required: 409,
 	event_changed: 412,
 	payload_too_large: 413,

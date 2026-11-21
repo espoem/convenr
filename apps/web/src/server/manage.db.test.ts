@@ -6,6 +6,7 @@ import { events } from "@/db/schema";
 import { isPublicId } from "@/domain/public-id";
 import { asEventVersion, type EventVersion } from "@/lib/event-version";
 
+import { byToken } from "./event-rows";
 import { createEvent, type NewEvent, readEvent } from "./events";
 import {
 	bySecret,
@@ -47,9 +48,11 @@ async function respond(id: string, name: string, keys: string[]) {
 		throw new Error(`${name} could not join.`);
 	}
 
-	await saveResponse(id, joined.token, { available: keys }, creationTime);
+	const holder = byToken(joined.token);
 
-	return joined.token;
+	await saveResponse(id, holder, { available: keys }, creationTime);
+
+	return holder;
 }
 
 const narrowed: NewEvent = { ...pragueEvenings, dailyEnd: 18 * 60 };

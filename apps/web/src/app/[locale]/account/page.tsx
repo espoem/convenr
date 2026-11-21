@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { z } from "zod";
 
+import { type AccountEventItem, AccountEvents } from "@/components/account/account-events";
 import { ClaimEvents } from "@/components/account/claim-events";
-import { type OwnedEventItem, OwnedEvents } from "@/components/account/owned-events";
 import { AddPasskey } from "@/components/add-passkey";
 import { controlClass, Field } from "@/components/field";
 import { PageShell } from "@/components/page-shell";
@@ -26,7 +26,7 @@ import {
 	signOutAction,
 } from "@/server/account-actions";
 import { accountLocaleOrSet, auth } from "@/server/auth";
-import { type OwnedEvent, ownedEvents } from "@/server/ownership";
+import { type AccountEvent, joinedEvents, ownedEvents } from "@/server/ownership";
 import { currentVisitor, instantOf } from "@/server/session";
 
 /** What the last action on the page did, or why it failed, as its redirect names it. */
@@ -67,8 +67,8 @@ function Section({ id, heading, children }: { id: string; heading: string; child
 	);
 }
 
-/** An owned event as the client list takes it: Temporal values do not serialize. */
-function ownedItem(event: OwnedEvent): OwnedEventItem {
+/** An event of the account's lists as the client list takes it: Temporal values do not serialize. */
+function listItem(event: AccountEvent): AccountEventItem {
 	return {
 		id: event.id,
 		name: event.name,
@@ -78,6 +78,7 @@ function ownedItem(event: OwnedEvent): OwnedEventItem {
 			event.final.kind === "open"
 				? { kind: "open" }
 				: { kind: "chosen", start: event.final.start.toString(), end: event.final.end.toString() },
+		role: event.role,
 	};
 }
 
@@ -110,11 +111,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 		status = t(`done.${done}`);
 	}
 
-	const [emailLocale, sessions, passkeys, owned] = await Promise.all([
+	const [emailLocale, sessions, passkeys, owned, joined] = await Promise.all([
 		accountLocaleOrSet(visitor.accountId, locale),
 		instance.api.listSessions({ headers: requestHeaders }),
 		instance.api.listPasskeys({ headers: requestHeaders }),
 		ownedEvents(visitor.accountId),
+		joinedEvents(visitor.accountId),
 	]);
 
 	const day = (date: Date) =>
@@ -145,11 +147,26 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					</output>
 				</header>
 
-				<Section id="account-organize" heading={t("events.heading")}>
-					<OwnedEvents events={owned.map((event) => ownedItem(event))} formatLocale={format} />
+				<Section id="account-organize" heading={t("events.organized")}>
+					<AccountEvents
+						events={owned.map((event) => listItem(event))}
+						empty={t("events.noneOrganized")}
+						formatLocale={format}
+					/>
 				</Section>
 
-				<ClaimEvents ownedIds={owned.map((event) => event.id)} />
+				<Section id="account-joined" heading={t("events.joined")}>
+					<AccountEvents
+						events={joined.map((event) => listItem(event))}
+						empty={t("events.noneJoined")}
+						formatLocale={format}
+					/>
+				</Section>
+
+				<ClaimEvents
+					ownedIds={owned.map((event) => event.id)}
+					joinedIds={joined.map((event) => event.id)}
+				/>
 
 				<Section id="account-address" heading={t("address.heading")}>
 					<form action={changeEmailAction} className="flex flex-col gap-3">

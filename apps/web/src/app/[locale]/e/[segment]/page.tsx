@@ -15,8 +15,8 @@ import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
 import { getPathname, Link } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/server/board";
-import { heldToken } from "@/server/browser-key";
 import { readEvent } from "@/server/events";
+import { currentHolder } from "@/server/holder";
 import { liveSettings } from "@/server/live";
 import { owns } from "@/server/ownership";
 import { identify } from "@/server/participants";
@@ -52,9 +52,10 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 	const { schedule } = event;
 	const final = shownFinal(event);
 	const kind = byKind(event);
-	// The participant the browser's key names, so the page arrives already joined (ADR 0008).
-	const held = await heldToken(event.id);
-	const viewer = held === undefined ? null : ((await identify(event.id, held)) ?? null);
+	// The account's participant, or the one the browser's key names, so the page arrives already
+	// joined (ADR 0008).
+	const holder = await currentHolder(event.id);
+	const viewer = holder === undefined ? null : ((await identify(event.id, holder)) ?? null);
 	const visitor = await currentVisitor();
 	const isOwner = visitor.kind === "signed_in" && (await owns(visitor.accountId, event.id));
 

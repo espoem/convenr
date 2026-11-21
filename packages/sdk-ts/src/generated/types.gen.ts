@@ -1260,6 +1260,8 @@ export type JoinErrors = {
      *
      * `name_exists`: A participant already uses this name.
      *
+     * `name_in_account`: The participant under this name is linked to an account, which alone opens it.
+     *
      * `name_unknown`: No participant uses this name.
      *
      * `no_password`: The participant has no password.

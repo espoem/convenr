@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
+import { byToken } from "./event-rows";
 import { createEvent, eventVersion, readEvent } from "./events";
 import { bySecret, readManagedEvent, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, join, leave } from "./participants";
@@ -52,13 +53,13 @@ describe("eventVersion", () => {
 
 		expect(await eventVersion(id)).toBe(3n);
 
-		await saveResponse(id, jana.token, { available: ["2027-04-05T15:00:00Z"] }, minute(3));
+		await saveResponse(id, byToken(jana.token), { available: ["2027-04-05T15:00:00Z"] }, minute(3));
 		expect(await eventVersion(id)).toBe(4n);
 
-		await changePassword(id, jana.token, { kind: "none" }, "heslo-1234", minute(4));
+		await changePassword(id, byToken(jana.token), { kind: "none" }, "heslo-1234", minute(4));
 		expect(await eventVersion(id)).toBe(5n);
 
-		await leave(id, jana.token, minute(5));
+		await leave(id, byToken(jana.token), minute(5));
 		expect(await eventVersion(id)).toBe(6n);
 
 		await updateEvent(id, admin, { ...pragueEvenings, name: "Jiná" }, { kind: "any" }, minute(6));
@@ -89,7 +90,9 @@ describe("eventVersion", () => {
 
 		const slots = ["2027-04-05T15:00:00Z", "2027-04-05T16:00:00Z"];
 
-		expect(await saveResponse(id, jana.token, { available: slots }, minute(2))).toMatchObject({
+		expect(
+			await saveResponse(id, byToken(jana.token), { available: slots }, minute(2)),
+		).toMatchObject({
 			ok: true,
 		});
 
@@ -99,14 +102,14 @@ describe("eventVersion", () => {
 		expect(
 			await saveResponse(
 				id,
-				jana.token,
+				byToken(jana.token),
 				{ available: [...slots.toReversed(), ...slots] },
 				minute(3),
 			),
 		).toMatchObject({ ok: true });
 		expect(await stored(id)).toEqual(saved);
 
-		await saveResponse(id, jana.token, { available: slots.slice(1) }, minute(4));
+		await saveResponse(id, byToken(jana.token), { available: slots.slice(1) }, minute(4));
 		expect(await stored(id)).toEqual({ version: 4n, changedAt: minute(4) });
 	});
 
@@ -126,7 +129,12 @@ describe("eventVersion", () => {
 
 		const first = await stored(id);
 
-		await saveResponse(id, jana.token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
+		await saveResponse(
+			id,
+			byToken(jana.token),
+			{ available: ["2027-04-05T15:00:00Z"] },
+			creationTime,
+		);
 
 		const second = await stored(id);
 
@@ -176,8 +184,18 @@ describe("changed_at", () => {
 		});
 		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-06-09");
 
-		await saveResponse(id, jana.token, { available: [] }, creationTime.add({ hours: 24 * 20 }));
-		await saveResponse(id, jana.token, { available: [] }, creationTime.add({ hours: 24 * 30 }));
+		await saveResponse(
+			id,
+			byToken(jana.token),
+			{ available: [] },
+			creationTime.add({ hours: 24 * 20 }),
+		);
+		await saveResponse(
+			id,
+			byToken(jana.token),
+			{ available: [] },
+			creationTime.add({ hours: 24 * 30 }),
+		);
 		expect((await readEvent(id))?.deletionDate?.toString()).toBe("2027-06-09");
 	});
 });

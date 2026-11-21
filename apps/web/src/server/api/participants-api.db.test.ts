@@ -13,6 +13,8 @@ import { db } from "@/db/client";
 import { events, participants } from "@/db/schema";
 import { isPublicId } from "@/domain/public-id";
 
+import { joinLinked } from "../participants";
+import { freshAccount } from "../test-events";
 import {
 	type AvailabilityRequest,
 	eventSchema,
@@ -94,6 +96,21 @@ type SentBody = Record<string, string>;
 function joinWith(id: string, body: SentBody) {
 	return call(join, { id }, { method: "POST", path: `/events/${id}/participants`, body });
 }
+
+describe("a join under a name linked to an account", () => {
+	it("is refused at the name, whatever password it sends", async () => {
+		const { id } = await createdEvent();
+		const jana = await freshAccount("jana");
+
+		await joinLinked(id, "Jana", { kind: "new", password: "tajne" }, jana);
+
+		expect(await refusalOf(await joinWith(id, { name: "jana", password: "tajne" }))).toMatchObject({
+			status: 409,
+			code: "name_in_account",
+			errors: [{ pointer: "/name", code: "name_in_account" }],
+		});
+	});
+});
 
 describe("the password of a join", () => {
 	it(

@@ -1,21 +1,25 @@
 "use server";
 // Server Actions for joining, responding and leaving (ADR 0001). A browser can send anything,
 // so each action checks the shape of its arguments; the data access layer applies the rules.
-// The participant is the one the browser's key names (ADR 0008), so no token reaches the page.
-// Results carry strings, because Temporal values do not serialize.
+// The participant is the signed-in account's, or the one the browser's key names (ADR 0008),
+// so no token reaches the page. Results carry strings, because Temporal values do not serialize.
 
 import { z } from "zod";
 
 import { ensureToken, heldToken } from "./browser-key";
+import { currentHolder } from "./holder";
 import {
 	changePassword,
 	forgetToken,
 	join,
+	type JoinPassword,
+	joinLinked,
 	leave,
 	moveToken,
 	type PasswordRefusal,
 } from "./participants";
 import { saveResponse } from "./responses";
+import { currentVisitor } from "./session";
 
 const eventId = z.string().max(64);
 const token = z.string().max(128);
@@ -26,6 +30,10 @@ function serializable<Result extends { ok: boolean }>(result: Result | PasswordR
 	return "retryAt" in result ? { ...result, retryAt: result.retryAt.toString() } : result;
 }
 
+/**
+ * A signed-in visitor joins as the account (ADR 0009): the browser gets no token, and a token
+ * it held for the event is retired, so signing out leaves no access behind.
+ */
 export async function joinAction(id: string, name: string, pass: string | null) {
 	const args = z.tuple([eventId, z.string().max(400), password]).safeParse([id, name, pass]);
 
@@ -36,17 +44,33 @@ export async function joinAction(id: string, name: string, pass: string | null) 
 	const [event, displayName, given] = args.data;
 
 	// The form has one password field, which checks a used name's password or sets a new name's.
-	const joined = await join(
-		event,
-		displayName,
-		given === null ? { kind: "none" } : { kind: "current_or_new", password: given },
-		undefined,
-		undefined,
-		{ kind: "browser", token: await ensureToken(event) },
-	);
+	const asked: JoinPassword =
+		given === null ? { kind: "none" } : { kind: "current_or_new", password: given };
+
+	const visitor = await currentVisitor();
+
+	if (visitor.kind === "signed_in") {
+		const joined = await joinLinked(event, displayName, asked, visitor.accountId);
+		const held = joined.ok ? await heldToken(event) : undefined;
+
+		if (held !== undefined) {
+			await forgetToken(event, held);
+		}
+
+		return joined.ok
+			? ({ ok: true, name: joined.participant.name, linked: true } as const)
+			: serializable(joined);
+	}
+
+	const joined = await join(event, displayName, asked, undefined, undefined, {
+		kind: "browser",
+		token: await ensureToken(event),
+	});
 
 	// The schedule holds Temporal values, which do not serialize, and the token stays on the server.
-	return joined.ok ? ({ ok: true, name: joined.participant.name } as const) : serializable(joined);
+	return joined.ok
+		? ({ ok: true, name: joined.participant.name, linked: false } as const)
+		: serializable(joined);
 }
 
 /**
@@ -86,13 +110,13 @@ export async function saveAction(id: string, available: string[], ifNeedBe: stri
 	}
 
 	const [event, marked, maybe] = args.data;
-	const held = await heldToken(event);
+	const holder = await currentHolder(event);
 
-	if (held === undefined) {
+	if (holder === undefined) {
 		return { ok: false, problem: "not_joined" } as const;
 	}
 
-	const saved = await saveResponse(event, held, { available: marked, ifNeedBe: maybe });
+	const saved = await saveResponse(event, holder, { available: marked, ifNeedBe: maybe });
 
 	// The page already shows what it saved; the schedule holds Temporal values, which do not serialize.
 	return saved.ok ? ({ ok: true } as const) : saved;
@@ -110,16 +134,16 @@ export async function changePasswordAction(
 	}
 
 	const [event, given, wanted] = args.data;
-	const held = await heldToken(event);
+	const holder = await currentHolder(event);
 
-	if (held === undefined) {
+	if (holder === undefined) {
 		return { ok: false, problem: "not_joined" } as const;
 	}
 
 	return serializable(
 		await changePassword(
 			event,
-			held,
+			holder,
 			given === null ? { kind: "none" } : { kind: "if_set", password: given },
 			wanted,
 		),
@@ -128,9 +152,9 @@ export async function changePasswordAction(
 
 export async function leaveAction(id: string) {
 	const args = eventId.safeParse(id);
-	const held = args.success ? await heldToken(args.data) : undefined;
+	const holder = args.success ? await currentHolder(args.data) : undefined;
 
-	return args.success && held !== undefined
-		? leave(args.data, held)
+	return args.success && holder !== undefined
+		? leave(args.data, holder)
 		: ({ ok: false, problem: "not_joined" } as const);
 }

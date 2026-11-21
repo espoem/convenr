@@ -141,9 +141,17 @@ export const participants = pgTable(
 		lastAttemptAt: instant(),
 		lockedUntil: instant(),
 		createdAt: instant().notNull().defaultNow(),
+		/**
+		 * The account the participant is linked to, which recognizes it wherever it is signed in
+		 * without a token. Deleting the account leaves an ordinary participant.
+		 */
+		accountId: text().references(() => authUsers.id, { onDelete: "set null" }),
 	},
 	(table) => [
 		unique("participants_event_name").on(table.eventId, table.nameKey),
+		// An account is one participant of an event at most.
+		unique("participants_event_account").on(table.eventId, table.accountId),
+		index("participants_account").on(table.accountId),
 		unique("participants_public_id").on(table.publicId),
 		// The target of a poll answer's key, which ties the participant to the option's event.
 		unique("participants_id_event").on(table.id, table.eventId),

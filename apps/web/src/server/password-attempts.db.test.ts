@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { participants } from "@/db/schema";
 
+import { byToken } from "./event-rows";
 import { changePassword, join, MAX_FAILED_ATTEMPTS } from "./participants";
 import { verifyPassword } from "./password";
 import { creationTime, freshEvent } from "./test-events";
@@ -219,7 +220,7 @@ describe("a participant deleted during a password attempt", () => {
 				await answerAfterDeletion(() =>
 					changePassword(
 						eventId,
-						token,
+						byToken(token),
 						{ kind: "given", password: "tajne" },
 						"nove-heslo",
 						creationTime,

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { participants } from "@/db/schema";
 
+import { byToken, type Holder } from "./event-rows";
 import { readEvent } from "./events";
 import { join } from "./participants";
 import { saveResponse } from "./responses";
@@ -12,14 +13,14 @@ import { creationTime, freshEvent, mondayEvenings } from "./test-events";
 const FIVE = "2027-04-05T15:00:00Z";
 const SIX = "2027-04-05T16:00:00Z";
 
-async function joined(eventId: string): Promise<string> {
+async function joined(eventId: string): Promise<Holder> {
 	const result = await join(eventId, "Jana", undefined, creationTime);
 
 	if (!result.ok) {
 		throw new Error(`Jana could not join: ${result.problem}`);
 	}
 
-	return result.token;
+	return byToken(result.token);
 }
 
 async function levels(eventId: string) {
@@ -120,7 +121,7 @@ describe("saveResponse", () => {
 	it("refuses a token that does not belong to the event", async () => {
 		const eventId = await freshEvent();
 
-		expect(await saveResponse(eventId, "not-a-token", { available: [] })).toEqual({
+		expect(await saveResponse(eventId, byToken("not-a-token"), { available: [] })).toEqual({
 			ok: false,
 			problem: "not_joined",
 		});

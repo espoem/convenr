@@ -207,7 +207,8 @@ export type Refusal =
 				| "event_full"
 				| "no_password"
 				| "name_exists"
-				| "name_unknown";
+				| "name_unknown"
+				| "name_in_account";
 	  };
 
 /**
@@ -234,7 +235,8 @@ export function refusalResponse(
 		case "not_joined":
 			return unauthorized();
 		case "invalid_name":
-			return at("/name", "invalid_name");
+		case "name_in_account":
+			return at("/name", refusal.problem);
 		case "invalid_password":
 		case "name_exists":
 			return at(fields.new, refusal.problem);

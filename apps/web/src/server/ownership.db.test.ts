@@ -7,19 +7,9 @@ import { authUsers, events } from "@/db/schema";
 import { createEvent, readEvent } from "./events";
 import { type AdminAccess, bySecret, readManagedEvent, updateEvent } from "./manage";
 import { claimEvent, ownedEvents, owns } from "./ownership";
-import { creationTime, pragueEvenings } from "./test-events";
+import { creationTime, freshAccount, pragueEvenings } from "./test-events";
 
 const later = Temporal.Instant.from("2027-03-02T12:00:00Z");
-
-async function account(name: string): Promise<string> {
-	const id = `${name}-${crypto.randomUUID()}`;
-
-	await db()
-		.insert(authUsers)
-		.values({ id, email: `${id}@example.org` });
-
-	return id;
-}
 
 async function organized(name = pragueEvenings.name) {
 	const created = await createEvent({ ...pragueEvenings, name }, creationTime);
@@ -41,7 +31,7 @@ beforeEach(async () => {
 
 describe("an account that adds an event with its admin secret", () => {
 	it("owns it and manages it without the secret, which keeps working", async () => {
-		const jana = await account("jana");
+		const jana = await freshAccount("jana");
 		const { id, secret } = await organized();
 		const version = (await readEvent(id, later))?.version;
 
@@ -57,8 +47,8 @@ describe("an account that adds an event with its admin secret", () => {
 	});
 
 	it("is the only owner: a second account is refused and nothing changes", async () => {
-		const jana = await account("jana");
-		const petr = await account("petr");
+		const jana = await freshAccount("jana");
+		const petr = await freshAccount("petr");
 		const { id, secret } = await organized();
 
 		await claimEvent(id, secret, jana, later);
@@ -70,7 +60,7 @@ describe("an account that adds an event with its admin secret", () => {
 	});
 
 	it("needs the right secret", async () => {
-		const jana = await account("jana");
+		const jana = await freshAccount("jana");
 		const { id, secret } = await organized();
 
 		expect(await claimEvent(id, `${secret}x`, jana, later)).toEqual({
@@ -85,7 +75,7 @@ describe("an account that adds an event with its admin secret", () => {
 
 describe("an event created by a signed-in organizer", () => {
 	it("belongs to the account from the start", async () => {
-		const jana = await account("jana");
+		const jana = await freshAccount("jana");
 
 		const created = await createEvent(pragueEvenings, creationTime, {
 			kind: "account",
@@ -98,8 +88,8 @@ describe("an event created by a signed-in organizer", () => {
 
 describe("the account's list", () => {
 	it("holds its own live events, the newest first", async () => {
-		const jana = await account("jana");
-		const petr = await account("petr");
+		const jana = await freshAccount("jana");
+		const petr = await freshAccount("petr");
 		const first = await organized("První");
 		const second = await organized("Druhá");
 		const other = await organized("Cizí");
@@ -120,7 +110,7 @@ describe("the account's list", () => {
 
 describe("deleting the account", () => {
 	it("leaves its events without an owner, managed by their admin link", async () => {
-		const jana = await account("jana");
+		const jana = await freshAccount("jana");
 		const { id, secret } = await organized();
 
 		await claimEvent(id, secret, jana, later);

@@ -7,9 +7,11 @@ import { parseDisplayName } from "@/domain/display-name";
 import { newPublicId } from "@/domain/public-id";
 
 import {
+	byToken,
+	type Holder,
 	liveEvent,
-	participantByToken,
 	participantForChange,
+	participantOf,
 	type ParticipantRead,
 	participantRead,
 	type Queries,
@@ -48,9 +50,7 @@ const NO_PASSWORD: JoinPassword = { kind: "none" };
 
 export type PasswordVerifier = typeof verifyPassword;
 
-export type JoinResult =
-	/** The participant as the write left them, so an answer needs no second read. */
-	| ({ ok: true; token: string } & ParticipantRead)
+export type JoinRefusal =
 	| PasswordRefusal
 	| {
 			ok: false;
@@ -61,8 +61,17 @@ export type JoinResult =
 				| "event_full"
 				| "name_exists"
 				| "name_unknown"
-				| "no_password";
+				| "no_password"
+				/** The name's participant is linked to an account, which alone opens it. */
+				| "name_in_account";
 	  };
+
+export type JoinResult =
+	/** The participant as the write left them, so an answer needs no second read. */
+	({ ok: true; token: string } & ParticipantRead) | JoinRefusal;
+
+/** A signed-in join: the participant is linked to the account and gets no token. */
+export type LinkedJoinResult = ({ ok: true; linked: true } & ParticipantRead) | JoinRefusal;
 
 function isPasswordLength(password: string): boolean {
 	return password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH;
@@ -75,6 +84,55 @@ function isPasswordLength(password: string): boolean {
 export type TokenSource = { kind: "random" } | { kind: "browser"; token: string };
 
 const RANDOM_TOKEN: TokenSource = { kind: "random" };
+
+/**
+ * What a join gives once the name and the password fit. `admits` tells whether the join may enter
+ * a used name's participant, checked before the password is tried and again under the event
+ * lock; `give` hands out the access under that lock.
+ */
+type Grant<Access extends object> = {
+	admits: (participant: { accountId: string | null }) => boolean;
+	give: (tx: Queries, eventId: string, participantId: string) => Promise<Access>;
+};
+
+/** A linked participant is reached through its account only, so no token is issued for it. */
+function tokenGrant(source: TokenSource): Grant<{ token: string }> {
+	return {
+		admits: (participant) => participant.accountId === null,
+		give: async (tx, _eventId, participantId) => ({
+			token: await issueToken(tx, participantId, source),
+		}),
+	};
+}
+
+/**
+ * Links the participant to the account and retires every token it has, so that from then on
+ * only the account reaches it. An account is one participant of an event at most, so a
+ * participant it was linked to before in the event is unlinked first and stays as it is.
+ */
+async function linkTo(queries: Queries, eventId: string, participantId: string, accountId: string) {
+	await queries
+		.update(participants)
+		.set({ accountId: null })
+		.where(and(eq(participants.eventId, eventId), eq(participants.accountId, accountId)));
+	await queries.update(participants).set({ accountId }).where(eq(participants.id, participantId));
+	await queries.delete(participantTokens).where(eq(participantTokens.participantId, participantId));
+}
+
+function accountGrant(accountId: string): Grant<{ linked: true }> {
+	return {
+		admits: (participant) => participant.accountId === null || participant.accountId === accountId,
+		give: async (tx, eventId, participantId) => {
+			await linkTo(tx, eventId, participantId, accountId);
+
+			return { linked: true };
+		},
+	};
+}
+
+const NAME_IN_ACCOUNT = { ok: false, problem: "name_in_account" } as const;
+
+type Entered<Access> = ({ ok: true } & Access & ParticipantRead) | JoinRefusal;
 
 /**
  * Stores the token's hash for the participant. A browser's token for an event points at one
@@ -283,6 +341,33 @@ export async function join(
 	verify: PasswordVerifier = verifyPassword,
 	source: TokenSource = RANDOM_TOKEN,
 ): Promise<JoinResult> {
+	return enter(eventId, rawName, password, now, verify, tokenGrant(source));
+}
+
+/**
+ * Joins as the signed-in account: the participant is linked to it and gets no token, so a
+ * shared browser keeps no access once the account signs out. A used name's other tokens are
+ * retired. A name linked to another account is refused, as any join outside the account is.
+ */
+export async function joinLinked(
+	eventId: string,
+	rawName: string,
+	password: JoinPassword,
+	accountId: string,
+	now = Temporal.Now.instant(),
+	verify: PasswordVerifier = verifyPassword,
+): Promise<LinkedJoinResult> {
+	return enter(eventId, rawName, password, now, verify, accountGrant(accountId));
+}
+
+async function enter<Access extends object>(
+	eventId: string,
+	rawName: string,
+	password: JoinPassword,
+	now: Temporal.Instant,
+	verify: PasswordVerifier,
+	grant: Grant<Access>,
+): Promise<Entered<Access>> {
 	const name = parseDisplayName(rawName);
 
 	if (!name.ok) {
@@ -298,12 +383,12 @@ export async function join(
 
 	const joined =
 		existing === undefined
-			? await joinNew(eventId, name, password, now, source)
-			: await joinExisting(eventId, existing, password, now, verify, source);
+			? await joinNew(eventId, name, password, now, grant)
+			: await joinExisting(eventId, existing, password, now, verify, grant);
 
 	// Another browser took or freed the name between the lookup and the lock.
-	if (!joined.ok && joined.problem === "name_taken") {
-		return join(eventId, rawName, password, now, verify, source);
+	if (isNameTaken(joined)) {
+		return enter(eventId, rawName, password, now, verify, grant);
 	}
 
 	return joined;
@@ -311,15 +396,27 @@ export async function join(
 
 type NameTaken = { ok: false; problem: "name_taken" };
 
-/** A token for a used name, issued under the event lock once the password fits. */
-async function joinExisting(
+/** Any answer of a join step. */
+type StepResult = { ok: boolean };
+
+function isNameTaken(result: StepResult): result is NameTaken {
+	return !result.ok && "problem" in result && result.problem === "name_taken";
+}
+
+/** Access to a used name, given under the event lock once the password fits. */
+async function joinExisting<Access extends object>(
 	eventId: string,
 	existing: ParticipantRow,
 	password: JoinPassword,
 	now: Temporal.Instant,
 	verify: PasswordVerifier,
-	source: TokenSource,
-): Promise<JoinResult | NameTaken> {
+	grant: Grant<Access>,
+): Promise<Entered<Access> | NameTaken> {
+	// First, so that a linked name tells nothing about its password.
+	if (!grant.admits(existing)) {
+		return NAME_IN_ACCOUNT;
+	}
+
 	if (password.kind === "new") {
 		return { ok: false, problem: "name_exists" };
 	}
@@ -336,9 +433,9 @@ async function joinExisting(
 		return checked.problem === "participant_gone" ? { ok: false, problem: "name_taken" } : checked;
 	}
 
-	return db().transaction(async (tx): Promise<JoinResult | NameTaken> => {
-		// The event may have expired or been deleted, or the participant left, while the
-		// password was checked.
+	return db().transaction(async (tx): Promise<Entered<Access> | NameTaken> => {
+		// The event may have expired or been deleted, or the participant left or was linked,
+		// while the password was checked.
 		const event = await liveEvent(tx, eventId, now, "lock");
 
 		if (event === undefined) {
@@ -346,7 +443,7 @@ async function joinExisting(
 		}
 
 		const [still] = await tx
-			.select({ id: participants.id })
+			.select({ accountId: participants.accountId })
 			.from(participants)
 			.where(eq(participants.id, existing.id));
 
@@ -354,22 +451,26 @@ async function joinExisting(
 			return { ok: false, problem: "name_taken" };
 		}
 
+		if (!grant.admits(still)) {
+			return NAME_IN_ACCOUNT;
+		}
+
 		return {
 			ok: true,
-			token: await issueToken(tx, existing.id, source),
+			...(await grant.give(tx, eventId, existing.id)),
 			...(await participantRead(tx, event, existing)),
 		};
 	});
 }
 
 /** A new participant under a name nobody in the event uses. */
-async function joinNew(
+async function joinNew<Access extends object>(
 	eventId: string,
 	name: { name: string; key: string },
 	password: JoinPassword,
 	now: Temporal.Instant,
-	source: TokenSource,
-): Promise<JoinResult | NameTaken> {
+	grant: Grant<Access>,
+): Promise<Entered<Access> | NameTaken> {
 	if (password.kind === "current") {
 		return { ok: false, problem: "name_unknown" };
 	}
@@ -383,12 +484,12 @@ async function joinNew(
 	// Hashing takes a while, so it happens before the event row is locked.
 	const passwordHash = chosen === undefined ? null : await hashPassword(chosen);
 
-	return db().transaction(async (tx) => {
+	return db().transaction(async (tx): Promise<Entered<Access> | NameTaken> => {
 		// The lock orders joins of one event, so the participant limit and the name check hold.
 		const event = await liveEvent(tx, eventId, now, "lock");
 
 		if (event === undefined) {
-			return { ok: false, problem: "not_found" } as const;
+			return { ok: false, problem: "not_found" };
 		}
 
 		const [taken] = await tx
@@ -397,7 +498,7 @@ async function joinNew(
 			.where(and(eq(participants.eventId, eventId), eq(participants.nameKey, name.key)));
 
 		if (taken !== undefined) {
-			return { ok: false, problem: "name_taken" } as const;
+			return { ok: false, problem: "name_taken" };
 		}
 
 		const [total] = await tx
@@ -406,7 +507,7 @@ async function joinNew(
 			.where(eq(participants.eventId, eventId));
 
 		if ((total?.value ?? 0) >= MAX_PARTICIPANTS) {
-			return { ok: false, problem: "event_full" } as const;
+			return { ok: false, problem: "event_full" };
 		}
 
 		const [row] = await tx
@@ -431,20 +532,103 @@ async function joinNew(
 
 		return {
 			ok: true,
-			token: await issueToken(tx, row.id, source),
+			...(await grant.give(tx, eventId, row.id)),
 			participant: { id: row.publicId, name: name.name, levels: {} },
 			schedule: scheduleOf(event),
-		} as const;
+		};
 	});
 }
 
-/** The name the holder of `token` joined `eventId` under, so a stored token reopens the event already joined. */
-export async function identify(eventId: string, token: string, now = Temporal.Now.instant()) {
-	const found = await participantByToken(db(), eventId, token, now);
+/** The participant a page shows as the visitor; `linked` when the signed-in account names it. */
+export type Identified = { name: string; hasPassword: boolean; linked: boolean };
+
+/** Whom `holder` joined `eventId` as, so a browser reopens the event already joined. */
+export async function identify(
+	eventId: string,
+	holder: Holder,
+	now = Temporal.Now.instant(),
+): Promise<Identified | undefined> {
+	const found = await participantOf(db(), eventId, holder, now);
 
 	return found === undefined
 		? undefined
-		: { name: found.participant.displayName, hasPassword: found.participant.passwordHash !== null };
+		: {
+				name: found.participant.displayName,
+				hasPassword: found.participant.passwordHash !== null,
+				linked: holder.kind === "account",
+			};
+}
+
+/** Whether the account has a participant in `eventId`. */
+export async function isLinkedIn(
+	eventId: string,
+	accountId: string,
+	queries: Queries = db(),
+): Promise<boolean> {
+	const [row] = await queries
+		.select({ id: participants.id })
+		.from(participants)
+		.where(and(eq(participants.eventId, eventId), eq(participants.accountId, accountId)));
+
+	return row !== undefined;
+}
+
+export type LinkResult = { status: "linked" } | { status: "not_joined" | "account_already_joined" };
+
+/**
+ * Links the participant whose token a browser holds to the account and retires its tokens, so
+ * the browser keeps no access of its own once the account signs out. An account that already
+ * has another participant in the event is refused. A token never names a linked participant.
+ */
+export async function linkHeld(
+	eventId: string,
+	token: string,
+	accountId: string,
+	now = Temporal.Now.instant(),
+): Promise<LinkResult> {
+	return db().transaction(async (tx): Promise<LinkResult> => {
+		const found = await participantForChange(tx, eventId, byToken(token), now);
+
+		if (found === undefined) {
+			return { status: "not_joined" };
+		}
+
+		if (await isLinkedIn(eventId, accountId, tx)) {
+			return { status: "account_already_joined" };
+		}
+
+		await linkTo(tx, eventId, found.participant.id, accountId);
+
+		return { status: "linked" };
+	});
+}
+
+/**
+ * Unlinks the account's participant in `eventId`, which stays as an ordinary participant, and
+ * gives the browser that asked a token for it, so the browser stays joined. Answers whether the
+ * account had a participant there.
+ */
+export async function unlink(
+	eventId: string,
+	accountId: string,
+	browserToken: string,
+	now = Temporal.Now.instant(),
+): Promise<boolean> {
+	return db().transaction(async (tx) => {
+		const found = await participantForChange(tx, eventId, { kind: "account", accountId }, now);
+
+		if (found === undefined) {
+			return false;
+		}
+
+		await tx
+			.update(participants)
+			.set({ accountId: null })
+			.where(eq(participants.id, found.participant.id));
+		await issueToken(tx, found.participant.id, { kind: "browser", token: browserToken });
+
+		return true;
+	});
 }
 
 /**
@@ -457,9 +641,9 @@ export async function moveToken(
 	oldToken: string,
 	browserToken: string,
 	now = Temporal.Now.instant(),
-): Promise<{ name: string; hasPassword: boolean } | undefined> {
+): Promise<Identified | undefined> {
 	return db().transaction(async (tx) => {
-		const found = await participantByToken(tx, eventId, oldToken, now);
+		const found = await participantOf(tx, eventId, byToken(oldToken), now);
 
 		if (found === undefined) {
 			return;
@@ -476,13 +660,14 @@ export async function moveToken(
 		return {
 			name: found.participant.displayName,
 			hasPassword: found.participant.passwordHash !== null,
+			linked: false,
 		};
 	});
 }
 
 /** Removes one token, so its browser no longer opens the event joined; the participant stays. */
 export async function forgetToken(eventId: string, token: string, now = Temporal.Now.instant()) {
-	const found = await participantByToken(db(), eventId, token, now);
+	const found = await participantOf(db(), eventId, byToken(token), now);
 
 	if (found !== undefined) {
 		await db()
@@ -491,13 +676,13 @@ export async function forgetToken(eventId: string, token: string, now = Temporal
 	}
 }
 
-/** The participant that holds `token` in `eventId` as the event shows them, or `undefined`. */
+/** The participant of `holder` in `eventId` as the event shows them, or `undefined`. */
 export async function readParticipant(
 	eventId: string,
-	token: string,
+	holder: Holder,
 	now = Temporal.Now.instant(),
 ): Promise<ParticipantRead | undefined> {
-	const found = await participantByToken(db(), eventId, token, now);
+	const found = await participantOf(db(), eventId, holder, now);
 
 	return found === undefined ? undefined : participantRead(db(), found.event, found.participant);
 }
@@ -520,17 +705,17 @@ export type CurrentPassword =
 	| { kind: "if_set"; password: string };
 
 /**
- * Sets, changes or removes (`next` is `null`) the password of the token's participant.
+ * Sets, changes or removes (`next` is `null`) the password of the holder's participant.
  * Changing or removing a stored password needs the current one.
  */
 export async function changePassword(
 	eventId: string,
-	token: string,
+	holder: Holder,
 	current: CurrentPassword,
 	next: string | null,
 	now = Temporal.Now.instant(),
 ): Promise<PasswordChangeResult> {
-	const found = await participantByToken(db(), eventId, token, now);
+	const found = await participantOf(db(), eventId, holder, now);
 
 	if (found === undefined) {
 		return { ok: false, problem: "not_joined" };
@@ -559,7 +744,7 @@ export async function changePassword(
 	const written = await db().transaction(
 		async (tx): Promise<PasswordChangeResult | { ok: false; problem: "password_replaced" }> => {
 			// The participant may have left, or the event expired, while the password was hashed.
-			const locked = await participantForChange(tx, eventId, token, now);
+			const locked = await participantForChange(tx, eventId, holder, now);
 
 			if (locked === undefined) {
 				return { ok: false, problem: "not_joined" };
@@ -588,14 +773,14 @@ export async function changePassword(
 
 	// Another change replaced the password after this one checked it: check against the new one.
 	return !written.ok && written.problem === "password_replaced"
-		? changePassword(eventId, token, current, next, now)
+		? changePassword(eventId, holder, current, next, now)
 		: written;
 }
 
-/** Deletes the token's participant with its response, password and tokens. */
-export async function leave(eventId: string, token: string, now = Temporal.Now.instant()) {
+/** Deletes the holder's participant with its response, password and tokens. */
+export async function leave(eventId: string, holder: Holder, now = Temporal.Now.instant()) {
 	return db().transaction(async (tx) => {
-		const found = await participantForChange(tx, eventId, token, now);
+		const found = await participantForChange(tx, eventId, holder, now);
 
 		if (found === undefined) {
 			return { ok: false, problem: "not_joined" } as const;

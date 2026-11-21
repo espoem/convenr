@@ -1,6 +1,7 @@
 import { noContent, readJson, routeMethods, securedEndpoint } from "@/server/api/http";
 import { type PasswordFields, refusalResponse } from "@/server/api/mapping";
 import { removePasswordRequestSchema, setPasswordRequestSchema } from "@/server/api/schemas";
+import { byToken } from "@/server/event-rows";
 import { changePassword, type CurrentPassword } from "@/server/participants";
 
 type Params = { id: string };
@@ -19,7 +20,7 @@ export const PUT = securedEndpoint<Params>("participant", async (request, { id }
 	const current: CurrentPassword =
 		currentPassword === undefined ? { kind: "none" } : { kind: "given", password: currentPassword };
 
-	const changed = await changePassword(id, token, current, newPassword);
+	const changed = await changePassword(id, byToken(token), current, newPassword);
 
 	return changed.ok ? noContent() : refusalResponse(changed, fields);
 });
@@ -33,7 +34,7 @@ export const DELETE = securedEndpoint<Params>("participant", async (request, { i
 
 	const changed = await changePassword(
 		id,
-		token,
+		byToken(token),
 		{ kind: "given", password: body.value.currentPassword },
 		null,
 	);

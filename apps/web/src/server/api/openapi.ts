@@ -467,6 +467,7 @@ const OPERATIONS: Operation[] = [
 			"no_password",
 			"name_exists",
 			"name_unknown",
+			"name_in_account",
 			"too_many_attempts",
 		],
 	},

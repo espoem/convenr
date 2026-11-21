@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { events, participants } from "@/db/schema";
 import { env } from "@/env";
 
+import { byToken } from "./event-rows";
 import { createEvent, eventVersion, type NewEvent, readEvent } from "./events";
 import { pickFinal } from "./final";
 import { runMaintenance } from "./maintenance";
@@ -83,7 +84,7 @@ describe("expiry", () => {
 		expect(await readEvent(id, datedExpiry)).toBeUndefined();
 		expect(await eventVersion(id, datedExpiry)).toBeNull();
 		expect(await readManagedEvent(id, admin, datedExpiry)).toBeUndefined();
-		expect(await identify(id, jana.token, datedExpiry)).toBeUndefined();
+		expect(await identify(id, byToken(jana.token), datedExpiry)).toBeUndefined();
 		expect(await join(id, "Petr", undefined, datedExpiry)).toEqual({
 			ok: false,
 			problem: "not_found",
@@ -108,18 +109,20 @@ describe("expiry", () => {
 		expect(
 			await join(id, "Jana", { kind: "current", password: "heslo-1234" }, datedExpiry),
 		).toEqual(notFound);
-		expect(await readParticipant(id, jana.token, datedExpiry)).toBeUndefined();
-		expect(await saveResponse(id, jana.token, { available: [] }, datedExpiry)).toEqual(notJoined);
+		expect(await readParticipant(id, byToken(jana.token), datedExpiry)).toBeUndefined();
+		expect(await saveResponse(id, byToken(jana.token), { available: [] }, datedExpiry)).toEqual(
+			notJoined,
+		);
 		expect(
 			await changePassword(
 				id,
-				jana.token,
+				byToken(jana.token),
 				{ kind: "given", password: "heslo-1234" },
 				null,
 				datedExpiry,
 			),
 		).toEqual(notJoined);
-		expect(await leave(id, jana.token, datedExpiry)).toEqual(notJoined);
+		expect(await leave(id, byToken(jana.token), datedExpiry)).toEqual(notJoined);
 		expect(await updateEvent(id, admin, { name: "Jiná" }, { kind: "any" }, datedExpiry)).toEqual({
 			status: "denied",
 		});

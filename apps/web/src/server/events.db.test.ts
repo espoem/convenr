@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
+import { byToken } from "./event-rows";
 import { createEvent, readEvent } from "./events";
 import { join } from "./participants";
 import { saveResponse } from "./responses";
@@ -86,7 +87,12 @@ describe("readEvent", () => {
 			throw new Error("Jana could not join.");
 		}
 
-		await saveResponse(id, jana.token, { available: ["2027-04-05T15:00:00Z"] }, creationTime);
+		await saveResponse(
+			id,
+			byToken(jana.token),
+			{ available: ["2027-04-05T15:00:00Z"] },
+			creationTime,
+		);
 
 		const view = await readEvent(id);
 

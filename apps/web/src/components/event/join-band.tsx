@@ -14,13 +14,16 @@ import {
 	leaveAction,
 } from "@/server/participant-actions";
 
-/** The participant the browser joined as, as the server knows it. */
-export type Joined = { name: string; hasPassword: boolean };
+/**
+ * The participant the visitor joined as, as the server knows it; `linked` when the signed-in
+ * account names it rather than the browser.
+ */
+export type Joined = { name: string; hasPassword: boolean; linked: boolean };
 
 type JoinBandProps = {
 	eventId: string;
 	joined: Joined | null;
-	onJoined: (name: string, hasPassword: boolean) => void;
+	onJoined: (joined: Joined) => void;
 	/** The browser no longer opens the event as the participant, who may also have left. */
 	onForget: () => void;
 	onPasswordChange: (hasPassword: boolean) => void;
@@ -70,7 +73,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 
 				if (joined.ok) {
 					setProblem(null);
-					onJoined(joined.name, given !== "");
+					onJoined({ name: joined.name, hasPassword: given !== "", linked: joined.linked });
 
 					return;
 				}
@@ -90,7 +93,11 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 		});
 	}
 
-	const nameProblem = problem?.key === "invalid_name" || problem?.key === "event_full";
+	const nameProblem =
+		problem?.key === "invalid_name" ||
+		problem?.key === "event_full" ||
+		problem?.key === "name_in_account";
+
 	const passwordProblem = problem !== null && !nameProblem && problem.key !== "failed";
 
 	return (
@@ -213,14 +220,17 @@ function JoinedLine({
 					{t.rich("joinedAs", { name: joined.name, strong })}
 				</h2>
 				<div className="flex flex-wrap gap-x-4">
-					<button
-						type="button"
-						disabled={pending}
-						onClick={notMe}
-						className="min-h-11 text-action underline underline-offset-4"
-					>
-						{t("notYou", { name: joined.name })}
-					</button>
+					{/* The account's participant is unlinked from the account page instead. */}
+					{joined.linked ? null : (
+						<button
+							type="button"
+							disabled={pending}
+							onClick={notMe}
+							className="min-h-11 text-action underline underline-offset-4"
+						>
+							{t("notYou", { name: joined.name })}
+						</button>
+					)}
 					<button
 						type="button"
 						aria-expanded={panel === "password"}

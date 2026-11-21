@@ -181,15 +181,15 @@ export function useParticipation(
 			.toLocaleString(formatLocale, { hour: "numeric", minute: "2-digit" });
 	}
 
-	function joinedAs(name: string, passwordSet: boolean) {
+	function joinedAs(found: Joined) {
 		updateLocalEvent(event.id, (current) => ({
 			...current,
 			id: event.id,
 			name: event.name,
 			segment: event.segment,
-			participant: { name },
+			participant: { name: found.name },
 		}));
-		setAnswered({ joined: { name, hasPassword: passwordSet }, basis: event });
+		setAnswered({ joined: found, basis: event });
 		setDropped(false);
 		setDraft(null);
 		onJoined?.();
