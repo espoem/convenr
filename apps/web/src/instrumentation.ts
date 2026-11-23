@@ -20,14 +20,13 @@ export async function register() {
 
 	await applyMigrations(db());
 
-	const { env } = await import("@/env");
-	const { runMaintenance } = await import("@/server/maintenance");
+	const { maintain } = await import("@/server/maintain");
 
-	// Usage counts by age and the purge of expired events run at
-	// start and then every hour. Several servers on one database may run them side by side.
+	// The maintenance pass runs at start and then every hour. Several servers on one database may
+	// run it side by side.
 	async function purge() {
 		try {
-			await runMaintenance(db().$client, env().RETENTION_DAYS, Temporal.Now.instant().toString());
+			await maintain();
 		} catch (error) {
 			console.error("The maintenance pass failed; it runs again in an hour.", error);
 		}

@@ -108,6 +108,7 @@ services:
 | `AUTH_SECRET`         | with accounts | At least 32 random characters that sign session cookies and key the email limits. Keep it secret and stable.                    |
 | `PUBLIC_URL`          | with accounts | The address visitors reach the instance at, such as `https://convenr.example.org`. Links in emails and passkeys use it.         |
 | `MAIL_HOURLY_LIMIT`   | no            | Emails the instance sends per hour at most. Default `300`.                                                                      |
+| `MAINTENANCE_SECRET`  | no            | At least 32 random characters. When set, `POST /api/maintenance` with this bearer token runs the maintenance pass.              |
 
 Accounts are optional. Set `SMTP_URL`, `MAIL_FROM`, `AUTH_SECRET` and `PUBLIC_URL` together to turn them on; with only some of them, the server does not start. Passkeys need `PUBLIC_URL` to name a host, not an IP address.
 
@@ -145,7 +146,7 @@ Build the image with `docker build -f Containerfile -t convenr .` (or `podman bu
 
 The server deletes expired events every hour. To delete them from outside, for example from a scheduler, run `node apps/web/scripts/purge.mts` in the image with the same settings, or `mise run purge` in a checkout. The server also keeps daily usage counts without names, contents or identifiers: `node apps/web/scripts/usage.mts` in the image (or `mise run usage`) prints them for the last 30 days; add a first and a last day, such as `2027-03-01 2027-03-31`, for another range.
 
-On Vercel, where no server process lasts, the server neither migrates nor purges. CI applies migrations with `node apps/web/scripts/migrate.mts` before it deploys, and the scheduled `Maintenance` workflow runs the purge every six hours ([ADR 0005](docs/adr/0005-vercel-deployment.md)). The Vercel project sets `LIVE_UPDATES=poll`, `LIVE_POLL_SECONDS=15` and `LIVE_IDLE_MINUTES=10`, because a function cannot hold a stream cheaply ([ADR 0006](docs/adr/0006-live-updates.md)).
+On Vercel, where no server process lasts, the server neither migrates nor purges. CI applies migrations with `node apps/web/scripts/migrate.mts` before it deploys, and the scheduled `Maintenance` workflow calls `POST /api/maintenance` every hour with `MAINTENANCE_SECRET`, set both in the Vercel project and as a secret of the GitHub environment `production` ([ADR 0005](docs/adr/0005-vercel-deployment.md), [ADR 0010](docs/adr/0010-maintenance-route.md)). The Vercel project sets `LIVE_UPDATES=poll`, `LIVE_POLL_SECONDS=15` and `LIVE_IDLE_MINUTES=10`, because a function cannot hold a stream cheaply ([ADR 0006](docs/adr/0006-live-updates.md)).
 
 ## Local API test
 

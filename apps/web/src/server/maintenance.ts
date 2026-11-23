@@ -106,10 +106,18 @@ added as (
 )
 select count(*)::integer as deleted from gone`;
 
+// Sign-in data that is no longer needed. Better Auth deletes a sign-in link when it is used, so
+// only the expired ones remain here. An email count limits one hour, so a day keeps every count
+// the limits read.
+const CLEAN_SIGN_IN = `
+with sessions as (delete from auth_sessions where expires_at <= $1::timestamptz),
+links as (delete from auth_verifications where expires_at <= $1::timestamptz)
+delete from email_counts where hour < $1::timestamptz - interval '1 day'`;
+
 /**
- * Counts the events that reached 7 or 30 days by `now`, then deletes every event that expired
- * by `now` and returns how many it deleted. A second run at the same `now` changes nothing.
- * With retention `never`, nothing expires.
+ * Counts the events that reached 7 or 30 days by `now`, deletes expired sign-in data, then
+ * deletes every event that expired by `now` and returns how many it deleted. A second run at
+ * the same `now` changes nothing. With retention `never`, no event expires.
  */
 export async function runMaintenance(
 	client: MaintenanceClient,
@@ -123,6 +131,7 @@ export async function runMaintenance(
 		ACTIVATED_AT,
 		MAX_GROUP_BUCKET,
 	]);
+	await client.query(CLEAN_SIGN_IN, [now]);
 
 	if (retention === "never") {
 		return 0;

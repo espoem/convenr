@@ -32,6 +32,7 @@ export default defineConfig({
 						AUTH_SECRET: "test-secret-that-is-long-enough-for-accounts",
 						PUBLIC_URL: "http://localhost:3000",
 						MAIL_HOURLY_LIMIT: "5",
+						MAINTENANCE_SECRET: "test-maintenance-secret-long-enough",
 					},
 					fileParallelism: false,
 				},

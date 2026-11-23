@@ -1,14 +1,14 @@
 name: Maintenance
 
-# The production instance on Vercel runs no long-lived process, so this schedule runs the
-# maintenance pass (usage counts by age, then the purge) in its place (ADR 0005).
+# The production instance on Vercel runs no long-lived process, so this schedule asks it to run
+# the maintenance pass every hour (ADR 0010). The runner holds only the route's secret: no
+# database address and no mail settings, and it sees no data.
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: maintenance
@@ -19,22 +19,18 @@ defaults:
     shell: bash
 
 jobs:
-  purge:
-    name: Count usage and delete expired events
+  maintain:
+    name: Run the maintenance pass on the instance
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     environment: production
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
-        with:
-          install_args: node npm:@nubjs/nub
-      - name: Install dependencies
-        run: nub ci
-      - name: Run the maintenance pass
-        run: node apps/web/scripts/purge.mts
+      - name: Call the maintenance route
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
-          RETENTION_DAYS: ${{ vars.RETENTION_DAYS }}
+          MAINTENANCE_SECRET: ${{ secrets.MAINTENANCE_SECRET }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        # The header comes from standard input, so the secret is not in the process list.
+        run: |
+          printf 'Authorization: Bearer %s\n' "$MAINTENANCE_SECRET" |
+            curl --fail-with-body --silent --show-error --max-time 120 --retry 2 \
+              --request POST --header @- "$PRODUCTION_URL/api/maintenance"

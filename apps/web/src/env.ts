@@ -24,6 +24,11 @@ const schema = z.object({
 	AUTH_SECRET: z.string().min(32).optional(),
 	/** The address the instance is reached at, for links in emails and for passkeys. */
 	PUBLIC_URL: z.url({ protocol: /^https?$/u }).optional(),
+	/**
+	 * The bearer token of `POST /api/maintenance`, for an instance whose maintenance pass a
+	 * schedule starts from outside; 32 characters or more. Without it the route does not exist.
+	 */
+	MAINTENANCE_SECRET: z.string().min(32).optional(),
 	/** Emails of all kinds the instance sends per hour at most. */
 	MAIL_HOURLY_LIMIT: z.coerce.number().int().min(1).max(100_000).default(300),
 });
