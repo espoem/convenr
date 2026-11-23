@@ -29,17 +29,17 @@ Phase 5 does not include:
 
 These rules replace Phase 1 rules B1 and B2 and ADR 0003 item 10. B3 and B4 still hold.
 
-**Y1. Cookie.** The first time a browser joins an event or proves a password, the server sets the cookie `__Host-convenr-key`: 32 random bytes in base64url, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, with a lifetime of 400 days. A response renews the lifetime when the cookie is more than a day older than its last renewal. A browser that only reads events gets no cookie.
+**Y1. Cookie.** The first time a browser joins an event or proves a password, the server sets the cookie `__Host-convenr-key`: 32 random bytes in base64url, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, with a lifetime of 400 days. A response renews the lifetime when the cookie is more than a day older than its last renewal. A browser that only reads events gets no cookie. An instance served over plain HTTP, where a browser refuses the `__Host-` prefix, uses the cookie `convenr-key` without the prefix and without `Secure`; over HTTPS only the prefixed cookie is read.
 
 **Y2. Browser token.** A browser's token for an event is the HMAC-SHA-256 of the event id under the browser key. The server stores only the SHA-256 hash of the token, in the same place as every other participant token (P8). It stores neither the key nor anything that links two events of one browser.
 
 **Y3. Recognizing.** On every request for an event, the server derives the browser token from the cookie and looks up the participant it belongs to. The event page is rendered for that participant on the first response, with the joined line and the participant's own grid or poll answers, also without JavaScript. Saving, setting a password and leaving read the cookie in the action; the page holds no participant token.
 
-**Y4. Moving old tokens.** A browser that still holds participant tokens in local storage sends each one once to the server, which adds the browser token of that event to the same participant and answers whether it did. The page then deletes the token from local storage. A token the server does not know is deleted as well.
+**Y4. Moving old tokens.** A browser that still holds participant tokens in local storage sends each one once to the server, which adds the browser token of that event to the same participant, retires the old token and answers whether it did. The old token then exists nowhere else, so an API client that copied it loses access. The page then deletes the token from local storage. A token the server does not know is deleted as well.
 
 **Y5. Local storage.** Local storage keeps, per event, the event id, the event name, the admin secret if the browser has it, and the participant's name if it joined. It keeps no participant token. The start page list (B3) reads it as before.
 
-**Y6. Losing the cookie.** A browser without the cookie, or with a key that matches no participant, gets the join form. Joining under the same name with the password, when one is set, adds a new browser token (P4). A participant without a password cannot be taken back from another browser except by joining under the name, as before (ADR 0003, consequences).
+**Y6. Losing the cookie.** A browser without the cookie, or with a key that matches no participant, gets the join form. Joining under the same name with the password, when one is set, adds a new browser token (P4). A participant without a password cannot be taken back from another browser except by joining under the name, as before (ADR 0003, consequences). A browser holds one token per event: joining under a second name moves it to the new participant, and the first one stays and can be joined again under its name, as above. "Not you?" deletes the browser's token for the event on the server and keeps the participant.
 
 **Y7. No banner.** The cookie is needed for joining to work, so the application asks for no consent. The privacy policy names the cookie, as it names the theme cookie and the session cookie (AU7).
 
@@ -53,7 +53,7 @@ These rules replace Phase 1 rules B1 and B2 and ADR 0003 item 10. B3 and B4 stil
 
 **AU4. Passkeys.** A signed-in account can add passkeys from the account page, name them and remove them. The sign-in page offers sign-in with a passkey next to the email field, and offers passkeys in the browser's autofill where the browser supports it, detected at run time. Removing the last passkey is allowed, because the email link always works.
 
-**AU5. Changing the address.** A signed-in account can change its address. The new address gets a link, and the change takes effect only when that link is followed within 15 minutes. The old address gets a notice of the change.
+**AU5. Changing the address.** A signed-in account can change its address. The new address gets a link, and the change takes effect only when that link is followed within 15 minutes. The old address gets a notice when the change is asked for, not when it takes effect, so a session in the wrong hands cannot change the address unnoticed.
 
 **AU6. Email limits.** The server sends at most 3 sign-in or address-change emails per address per hour, and at most `MAIL_HOURLY_LIMIT` emails of all kinds per hour in total (default 300). It counts an address by its HMAC under `AUTH_SECRET`, so it stores no address that never signs in, and it deletes the counts after a day. A request over a limit is refused with `too_many_emails`. The server stores no visitor address for these limits (ADR 0003 item 8).
 
@@ -63,7 +63,7 @@ These rules replace Phase 1 rules B1 and B2 and ADR 0003 item 10. B3 and B4 stil
 
 **AU9. Unlinking.** From the account page, a linked participant can be unlinked. It then stays in its event like any participant; the browser that unlinks it gets a browser token for it, so it stays joined there.
 
-**AU10. Deleting the account.** The account page deletes the account after a confirmation. When the session is more than a day old, the confirmation is a link sent by email. Deleting removes the account, its sessions, passkeys and settings and every email of it in the outbox. Its owned events lose their owner (OW5) and its linked participants become ordinary participants; nothing else of the events changes. The admin links and the browser tokens keep working.
+**AU10. Deleting the account.** The account page deletes the account after a confirmation. When the session is more than a day old, the page asks the visitor to sign out, sign in again with a new email link and delete the account within a day. Deleting removes the account, its sessions, passkeys and settings and every email of it in the outbox. Its owned events lose their owner (OW5) and its linked participants become ordinary participants; nothing else of the events changes. The admin links and the browser tokens keep working.
 
 ## 5. Ownership rules
 
@@ -148,6 +148,10 @@ The review of 23 November 2026 found these defects, all fixed:
 8. The manage page put keeping and the visitor's emails above the final time and the event form. They now stand after the participants, before deletion, and appear only once the page has opened the event.
 9. The list of signed-in browsers read "Signed in 23 November 2026", and the Czech "Přihlášen" assumed a gender. It now reads "signed in on …" ("přihlášeno …"), and the Czech account page calls keeping "ponechat" throughout.
 
+The revision with the operator found one more, also fixed:
+
+10. Deleting an account led to the start page with no word that it happened. The start page now says that the account is deleted and that its events keep working through their links.
+
 The review kept two choices on purpose. A returning participant opens on their own grid (Y3), because they come back to change it; the group grid is one tab away. The per-event email settings stay at the end of the event page, after the participants, because they are a setting a visitor changes rarely, and their selects change nothing else on the page.
 
 ## 12. Acceptance test
@@ -164,8 +168,8 @@ Phase 5 is done when this end-to-end test passes on a clean clone in CI, with Ma
 The tests name no rule numbers. This list is the only link from rules to tests. Each branch of the phase adds its files here.
 
 - Unit tests of the domain cover Y2 (the derivation), OW5 (the deletion date after keeping), NT4 (the notification emails), NT5 (the signed value) and U12.
-- Database tests cover Y3, Y4, AU6, AU8 to AU10, OW1 to OW6, NT1 to NT3, NT5, X5, X6 and U11 to U13 in the server functions.
-- End-to-end tests cover Y1, Y3 and Y4 (a browser that held a token in local storage before the change), AU3 to AU5 and AU7 with Mailpit, AU4 with a virtual authenticator, OW3, NT1 and NT5.
+- Database tests cover Y3, Y4, AU6, AU8 to AU10, OW1 to OW6, NT1 to NT3, NT5, X5, X6 and U11 to U13 in the server functions; for AU7 and AU10 they go through Better Auth (`auth.db.test.ts`): signing out one or every other browser, and deleting with a fresh session but not with one older than a day.
+- End-to-end tests cover Y1, Y3 and Y4 (a browser that held a token in local storage before the change), AU3 to AU5, AU7 and AU10 with Mailpit, AU4 with a virtual authenticator, OW3, NT1 and NT5.
 
 Files so far:
 

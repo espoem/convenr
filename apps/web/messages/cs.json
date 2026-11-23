@@ -7,7 +7,8 @@
 		"heading": "Najděte čas, který vyhovuje všem",
 		"lead": "Vytvořte událost, pošlete odkaz a uvidíte, kdy se skupina překrývá. Účet není potřeba.",
 		"create": "Nová událost",
-		"midnight": "půlnoc"
+		"midnight": "půlnoc",
+		"accountDeleted": "Váš účet je smazaný. Vaše události zůstanou a dál fungují přes své odkazy."
 	},
 	"Create": {
 		"name": "Název",

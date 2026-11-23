@@ -7,7 +7,8 @@
 		"heading": "Find a time that works for everyone",
 		"lead": "Create an event, share the link, and see when the group overlaps. No account needed.",
 		"create": "New event",
-		"midnight": "midnight"
+		"midnight": "midnight",
+		"accountDeleted": "Your account is deleted. Your events stay and keep working through their links."
 	},
 	"Create": {
 		"name": "Name",

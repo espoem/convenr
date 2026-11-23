@@ -13,6 +13,7 @@ import {
 	MjmlSection,
 	MjmlText,
 	MjmlTitle,
+	MjmlWrapper,
 } from "@faire/mjml-react";
 import { render } from "@faire/mjml-react/utils/render";
 import type { ReactNode } from "react";
@@ -86,26 +87,29 @@ function EmailLayout({ locale, subject, preview, children }: LayoutProps) {
 				</MjmlAttributes>
 			</MjmlHead>
 			<MjmlBody backgroundColor={color.background} width={600}>
-				<MjmlSection padding="24px 0 8px">
-					<MjmlColumn>
-						<MjmlText
-							fontFamily={font.display}
-							fontSize="20px"
-							fontWeight="600"
-							color={color.action}
-						>
-							convenr
-						</MjmlText>
-					</MjmlColumn>
-				</MjmlSection>
-				<MjmlSection
-					backgroundColor={color.surface}
-					border={`1px solid ${color.line}`}
-					borderRadius={radius}
-					padding="16px 0"
-				>
-					<MjmlColumn>{children}</MjmlColumn>
-				</MjmlSection>
+				{/* The side padding keeps the card off the screen's edge on a phone. */}
+				<MjmlWrapper padding="0 12px">
+					<MjmlSection padding="24px 0 8px">
+						<MjmlColumn>
+							<MjmlText
+								fontFamily={font.display}
+								fontSize="20px"
+								fontWeight="600"
+								color={color.action}
+							>
+								convenr
+							</MjmlText>
+						</MjmlColumn>
+					</MjmlSection>
+					<MjmlSection
+						backgroundColor={color.surface}
+						border={`1px solid ${color.line}`}
+						borderRadius={radius}
+						padding="16px 0"
+					>
+						<MjmlColumn>{children}</MjmlColumn>
+					</MjmlSection>
+				</MjmlWrapper>
 			</MjmlBody>
 		</Mjml>
 	);
