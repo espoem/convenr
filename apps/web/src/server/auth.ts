@@ -7,6 +7,7 @@ import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { db } from "@/db/client";
 import {
@@ -19,7 +20,7 @@ import {
 } from "@/db/schema";
 import { browserFamily } from "@/domain/browser-family";
 import { env } from "@/env";
-import { type Locale, localeSchema } from "@/i18n/routing";
+import { type Locale, localeSchema, routing } from "@/i18n/routing";
 
 import { changeEmailEmail, emailChangeNotice, signInEmail } from "./email/emails";
 import { type Email, sendEmail, takeEmailSlot } from "./mail";
@@ -35,18 +36,36 @@ async function accountLocale(accountId: string): Promise<Locale> {
 		.from(accountSettings)
 		.where(eq(accountSettings.accountId, accountId));
 
-	return localeSchema.parse(row?.locale);
+	// An account created outside a sign-in link, as in tests, has no row until its account page.
+	return localeSchema.catch(routing.defaultLocale).parse(row?.locale);
+}
+
+/** Gives the account the language `locale` unless it already has one. */
+async function keepFirstLocale(accountId: string, locale: Locale): Promise<void> {
+	await db()
+		.insert(accountSettings)
+		.values({ accountId, locale })
+		.onConflictDoNothing({ target: accountSettings.accountId });
+}
+
+const linkQuerySchema = z.object({ callbackURL: z.string() });
+
+/**
+ * The language of the page that asked for a sign-in link: the link returns to that language's
+ * account page, `/{locale}/account`.
+ */
+function linkLocale(callbackURL: string): Locale | undefined {
+	const locale = localeSchema.safeParse(callbackURL.split("/")[1]);
+
+	return locale.success ? locale.data : undefined;
 }
 
 /**
- * The language of the account's emails. The first time an account is seen, it takes the
- * language of the page, which is the page that asked for its sign-in link.
+ * The language of the account's emails. An account takes the language of the page that asked
+ * for its sign-in link when it is created; an account without one takes the page's language.
  */
 export async function accountLocaleOrSet(accountId: string, pageLocale: Locale): Promise<Locale> {
-	await db()
-		.insert(accountSettings)
-		.values({ accountId, locale: pageLocale })
-		.onConflictDoNothing({ target: accountSettings.accountId });
+	await keepFirstLocale(accountId, pageLocale);
 
 	return accountLocale(accountId);
 }
@@ -120,7 +139,17 @@ function configure(settings: Extract<ReturnType<typeof env>["accounts"], { kind:
 		},
 		databaseHooks: {
 			user: {
-				create: { before: (user) => Promise.resolve({ data: { ...user, name: "" } }) },
+				create: {
+					before: (user) => Promise.resolve({ data: { ...user, name: "" } }),
+					after: async (user, context) => {
+						const query = linkQuerySchema.safeParse(context?.query);
+						const locale = query.success ? linkLocale(query.data.callbackURL) : undefined;
+
+						if (locale !== undefined) {
+							await keepFirstLocale(user.id, locale);
+						}
+					},
+				},
 			},
 			session: {
 				create: {

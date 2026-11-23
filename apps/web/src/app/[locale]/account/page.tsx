@@ -10,6 +10,7 @@ import { ClaimEvents } from "@/components/account/claim-events";
 import { AddPasskey } from "@/components/add-passkey";
 import { controlClass, Field } from "@/components/field";
 import { PageShell } from "@/components/page-shell";
+import { RemovePasskey } from "@/components/remove-passkey";
 import { Button } from "@/components/ui/button";
 import { NOTIFICATION_KINDS } from "@/domain/notifications";
 import { env } from "@/env";
@@ -22,7 +23,6 @@ import {
 	deleteAccountAction,
 	endOtherSessionsAction,
 	endSessionAction,
-	removePasskeyAction,
 	renamePasskeyAction,
 	setLanguageAction,
 	setNotificationsAction,
@@ -286,13 +286,15 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 										{t("passkeys.rename")}
 									</Button>
 								</form>
-								<form action={removePasskeyAction}>
-									{hidden}
-									<input type="hidden" name="passkey" value={key.id} />
-									<Button type="submit" variant="destructive">
-										{t("passkeys.remove")}
-									</Button>
-								</form>
+								<RemovePasskey
+									name={key.name ?? t("passkeys.unnamed")}
+									fields={
+										<>
+											{hidden}
+											<input type="hidden" name="passkey" value={key.id} />
+										</>
+									}
+								/>
 							</li>
 						))}
 					</ul>

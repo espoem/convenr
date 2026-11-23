@@ -152,6 +152,11 @@ The revision with the operator found one more, also fixed:
 
 10. Deleting an account led to the start page with no word that it happened. The start page now says that the account is deleted and that its events keep working through their links.
 
+The code review that followed found two more, also fixed:
+
+11. Removing a passkey happened at once. It now asks inside the page first and says that the email link keeps working.
+12. A new account got its language only when its account page first opened, not when it was created (AU3). Creating the account from a sign-in link now stores the language of the page that asked for the link, which the link's return address names.
+
 The review kept two choices on purpose. A returning participant opens on their own grid (Y3), because they come back to change it; the group grid is one tab away. The per-event email settings stay at the end of the event page, after the participants, because they are a setting a visitor changes rarely, and their selects change nothing else on the page.
 
 ## 12. Acceptance test

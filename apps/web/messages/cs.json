@@ -397,7 +397,10 @@
 			"unnamed": "Přístupový klíč",
 			"created": "Přidán {date}",
 			"rename": "Přejmenovat",
-			"remove": "Odebrat"
+			"remove": "Odebrat",
+			"removeConfirm": "Odebrat přístupový klíč {name}? Tímto klíčem se už nepřihlásíte; odkaz e-mailem funguje dál.",
+			"removeYes": "Odebrat klíč",
+			"removeNo": "Zrušit"
 		},
 		"sessions": {
 			"heading": "Přihlášené prohlížeče",

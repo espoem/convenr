@@ -78,6 +78,12 @@ test("a passkey added after the email link signs in alone", async ({ browser }) 
 	await page.getByRole("button", { name: "Sign in with a passkey" }).click();
 	await expect(page.getByRole("heading", { name: "Your account", level: 1 })).toBeVisible();
 
+	// Removing it asks first.
+	await page.getByRole("button", { name: "Remove", exact: true }).click();
+	await page.getByRole("button", { name: "Remove passkey" }).click();
+	await expect(page.getByText("The passkey is removed.")).toBeVisible();
+	await expect(page.getByText("No passkeys yet.")).toBeVisible();
+
 	await page.context().close();
 });
 

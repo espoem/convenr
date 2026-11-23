@@ -397,7 +397,10 @@
 			"unnamed": "Passkey",
 			"created": "Added {date}",
 			"rename": "Rename",
-			"remove": "Remove"
+			"remove": "Remove",
+			"removeConfirm": "Remove the passkey {name}? It no longer signs you in; the email link keeps working.",
+			"removeYes": "Remove passkey",
+			"removeNo": "Cancel"
 		},
 		"sessions": {
 			"heading": "Signed-in browsers",
