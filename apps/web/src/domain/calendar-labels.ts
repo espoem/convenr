@@ -11,15 +11,16 @@ declare global {
 	}
 }
 
-/** 2024-01-01 was a Monday, so day `n` of that week has ISO day of week `n`. */
-const REFERENCE_MONDAY = Temporal.PlainDate.from("2024-01-01");
-
 export type DayName = { short: string; long: string };
 
 /** Names of the days of the week, indexed by ISO day of week minus one. */
 export function weekdayNames(locale: string): DayName[] {
+	// 2024-01-01 was a Monday, so day `n` of that week has ISO day of week `n`. It is read here and
+	// not at module load, because a browser without Temporal loads this module before its polyfill.
+	const monday = Temporal.PlainDate.from("2024-01-01");
+
 	return WEEKDAYS.map((weekday: Weekday) => {
-		const date = REFERENCE_MONDAY.add({ days: weekday - 1 });
+		const date = monday.add({ days: weekday - 1 });
 
 		return {
 			short: date.toLocaleString(locale, { weekday: "short" }),
