@@ -56,16 +56,19 @@ describe("usageReport", () => {
 				{ day: "2027-03-02", metric: "group_size", bucket: 5, count: 2 },
 				{ day: "2027-03-02", metric: "finalized", bucket: 0, count: 1 },
 				{ day: "2027-03-02", metric: "time_to_final", bucket: 2, count: 1 },
+				{ day: "2027-03-01", metric: "accounts_created", bucket: 0, count: 2 },
+				{ day: "2027-03-02", metric: "organizers_evaluated", bucket: 0, count: 4 },
+				{ day: "2027-03-02", metric: "organizers_returned", bucket: 0, count: 3 },
 			],
 			Temporal.PlainDate.from("2027-03-01"),
 			Temporal.PlainDate.from("2027-03-03"),
 		);
 
 		expect(report.split("\n")).toEqual([
-			"day         created  activation  median group  median first response  finalized  median time to final",
-			"2027-03-01  3        -           -             under 7 days           -          -",
-			"2027-03-02  0        25 %        5             -                      33 %       under 1 day",
-			"2027-03-03  0        -           -             -                      -          -",
+			"day         created  activation  median group  median first response  finalized  median time to final  accounts  returning",
+			"2027-03-01  3        -           -             under 7 days           -          -                     2         -",
+			"2027-03-02  0        25 %        5             -                      33 %       under 1 day           0         75 %",
+			"2027-03-03  0        -           -             -                      -          -                     0         -",
 		]);
 	});
 });

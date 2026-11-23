@@ -289,6 +289,9 @@ export const usageCounts = pgTable(
 				"first_response",
 				"finalized",
 				"time_to_final",
+				"accounts_created",
+				"organizers_evaluated",
+				"organizers_returned",
 			],
 		}).notNull(),
 		bucket: smallint().notNull().default(0),
@@ -511,6 +514,37 @@ export const outboxEmails = pgTable(
 		check(
 			"outbox_emails_attempts",
 			sql`${table.attempts} between 0 and ${sql.raw(String(MAX_ATTEMPTS - 1))}`,
+		),
+	],
+);
+
+/**
+ * The first events of each account that ever owned one, for the count of returning organizers.
+ * A trigger on `events` writes it whenever an account gains an event, so it outlives the events,
+ * and it goes with the account. The maintenance pass counts each account once, when its first
+ * event is old enough.
+ */
+export const organizers = pgTable(
+	"organizers",
+	{
+		accountId: text()
+			.primaryKey()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		/** The earliest created event the account owned; an event that is deleted keeps its id here. */
+		firstEventId: text().notNull(),
+		firstCreatedAt: instant().notNull(),
+		/** When the next earliest event the account owned was created; null while it owned one. */
+		secondCreatedAt: instant(),
+		/** When the maintenance pass counted the account; it changes no more after. */
+		countedAt: instant(),
+	},
+	(table) => [
+		index("organizers_due")
+			.on(table.firstCreatedAt)
+			.where(sql`${table.countedAt} is null`),
+		check(
+			"organizers_second_after_first",
+			sql`${table.secondCreatedAt} is null or ${table.secondCreatedAt} >= ${table.firstCreatedAt}`,
 		),
 	],
 );

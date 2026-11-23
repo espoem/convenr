@@ -1,15 +1,16 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
-import { events, usageCounts } from "@/db/schema";
+import { authUsers, events, organizers, usageCounts } from "@/db/schema";
 
 import { createEvent, type NewEvent } from "./events";
 import { pickFinal } from "./final";
 import { runMaintenance } from "./maintenance";
 import { bySecret, removeEvent } from "./manage";
+import { claimEvent } from "./ownership";
 import { join } from "./participants";
-import { creationTime, mondayEvenings, pragueEvenings } from "./test-events";
+import { creationTime, freshAccount, mondayEvenings, pragueEvenings } from "./test-events";
 
 const after = (hours: number) => creationTime.add({ hours });
 
@@ -44,6 +45,8 @@ async function counts(): Promise<string[]> {
 beforeEach(async () => {
 	await db().delete(events);
 	await db().delete(usageCounts);
+	// Accounts of other test files stay, and their organizer rows would count here.
+	await db().delete(organizers);
 });
 
 describe("usage counts", () => {
@@ -156,6 +159,80 @@ describe("usage counts", () => {
 			"2027-03-03 group_size 0 1",
 			"2027-03-31 finalized 0 1",
 			"2027-03-31 group_size 0 2",
+		]);
+	});
+});
+
+const days = (count: number) => creationTime.add({ hours: count * 24 });
+
+/** An event that account `accountId` creates at `at`. */
+async function owned(accountId: string, at: Temporal.Instant) {
+	// Days of the week, so that an event created months later is still valid.
+	const result = await createEvent(mondayEvenings, at, { kind: "account", accountId });
+
+	if (!result.ok) {
+		throw new Error("The test event is invalid.");
+	}
+
+	return result.event.id;
+}
+
+async function organizerCounts() {
+	return (await counts()).filter((line) => line.includes("organizers_"));
+}
+
+describe("account counts", () => {
+	it("count each account on the day it was created", async () => {
+		// Better Auth writes `created_at`; the global `Date` is not used in this code base.
+		await db().execute(sql`insert into auth_users (id, email, created_at) values
+			('first', 'first@example.org', ${creationTime.toString()}),
+			('second', 'second@example.org', '2027-03-01T23:59:59Z')`);
+
+		expect(await counts()).toEqual(["2027-03-01 accounts_created 0 2"]);
+		await db()
+			.delete(authUsers)
+			.where(inArray(authUsers.id, ["first", "second"]));
+	});
+
+	it("count returning organizers once, 90 days after their first event was created", async () => {
+		const returning = await freshAccount("returning");
+		const once = await freshAccount("once");
+		const claiming = await freshAccount("claiming");
+		const gone = await freshAccount("gone");
+
+		await owned(returning, creationTime);
+		await owned(returning, days(30));
+		await owned(once, creationTime);
+		await owned(gone, creationTime);
+		await owned(gone, days(1));
+
+		// A claimed event counts from its creation, so it becomes the first event.
+		await owned(claiming, days(40));
+
+		const older = await createEvent(pragueEvenings, creationTime);
+
+		if (!older.ok) {
+			throw new Error("The test event is invalid.");
+		}
+
+		await claimEvent(older.event.id, older.adminSecret, claiming, days(41));
+		await db().delete(authUsers).where(eq(authUsers.id, gone));
+
+		await maintain(days(90).subtract({ seconds: 1 }));
+		expect(await organizerCounts()).toEqual([]);
+
+		await maintain(days(90));
+		expect(await organizerCounts()).toEqual([
+			"2027-05-30 organizers_evaluated 0 3",
+			"2027-05-30 organizers_returned 0 2",
+		]);
+
+		// An event after the 90 days changes nothing, and nor does a later pass.
+		await owned(once, days(100));
+		await maintain(days(100));
+		expect(await organizerCounts()).toEqual([
+			"2027-05-30 organizers_evaluated 0 3",
+			"2027-05-30 organizers_returned 0 2",
 		]);
 	});
 });

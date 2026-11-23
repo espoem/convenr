@@ -7,6 +7,7 @@ import {
 	ACTIVATION_AGE_DAYS,
 	GROUP_SIZE_AGE_DAYS,
 	MAX_GROUP_BUCKET,
+	RETURN_AGE_DAYS,
 } from "../domain/usage.ts";
 
 /** The part of a `pg` client or pool the pass needs. */
@@ -54,6 +55,26 @@ counts as (
 )
 insert into usage_counts (day, metric, bucket, count)
 select reached::date, metric, bucket, count(*) from counts group by reached::date, metric, bucket
+on conflict (day, metric, bucket) do update set count = usage_counts.count + excluded.count`;
+
+// Accounts whose first event reached the return age, counted once on the UTC day it did; such
+// an account returned when its next event was created before that day. An account deleted
+// earlier took its row with it and adds nothing.
+const COUNT_ORGANIZERS = `
+with counted as (
+  update organizers set counted_at = $2
+  where counted_at is null and first_created_at + make_interval(hours => $1 * 24) <= $2
+  returning
+    (first_created_at + make_interval(hours => $1 * 24)) at time zone 'UTC' as reached,
+    second_created_at < first_created_at + make_interval(hours => $1 * 24) as returned
+),
+counts as (
+  select reached, 'organizers_evaluated' as metric from counted
+  union all
+  select reached, 'organizers_returned' from counted where returned
+)
+insert into usage_counts (day, metric, bucket, count)
+select reached::date, metric, 0, count(*) from counts group by reached::date, metric
 on conflict (day, metric, bucket) do update set count = usage_counts.count + excluded.count`;
 
 // The expiry is the SQL form of `expiresAt` in `src/domain/retention.ts`: the end of the
@@ -115,7 +136,8 @@ links as (delete from auth_verifications where expires_at <= $1::timestamptz)
 delete from email_counts where hour < $1::timestamptz - interval '1 day'`;
 
 /**
- * Counts the events that reached 7 or 30 days by `now`, deletes expired sign-in data, then
+ * Counts the events that reached 7 or 30 days by `now` and the accounts whose first event
+ * reached the return age, deletes expired sign-in data, then
  * deletes every event that expired by `now` and returns how many it deleted. A second run at
  * the same `now` changes nothing. With retention `never`, no event expires.
  */
@@ -131,6 +153,7 @@ export async function runMaintenance(
 		ACTIVATED_AT,
 		MAX_GROUP_BUCKET,
 	]);
+	await client.query(COUNT_ORGANIZERS, [RETURN_AGE_DAYS, now]);
 	await client.query(CLEAN_SIGN_IN, [now]);
 
 	if (retention === "never") {

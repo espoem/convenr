@@ -7,6 +7,12 @@ export const ACTIVATION_AGE_DAYS = 7;
 /** Age in days at which an event enters the group size histogram. */
 export const GROUP_SIZE_AGE_DAYS = 30;
 
+/**
+ * Age in days of an account's first event at which the account enters the returning organizer
+ * counts; it returned when it created or claimed a second event created before that age.
+ */
+export const RETURN_AGE_DAYS = 90;
+
 /** Participants an event needs to count as activated. */
 export const ACTIVATED_AT = 2;
 
@@ -85,6 +91,8 @@ const HEADER = [
 	"median first response",
 	"finalized",
 	"median time to final",
+	"accounts",
+	"returning",
 ];
 
 /** A share as a whole percentage, or a dash without a base. */
@@ -101,7 +109,8 @@ function bucketLabel(bucket: number | null): string {
  * The usage table: per day from `from` to `to`, the events created, the activation rate, the
  * median group size, the bucket that holds the median time to first response, the share of the
  * events counted for group size that had a final time, and the bucket that holds the median
- * time to a first final time. A day without data shows a dash.
+ * time to a first final time, the accounts created, and the share of the organizers counted
+ * that day who returned. A day without data shows a dash.
  */
 export function usageReport(
 	counts: readonly UsageCount[],
@@ -136,6 +145,8 @@ export function usageReport(
 			bucketLabel(medianBucket(histogram("first_response"))),
 			percent(shareOf(sized, total("finalized"))),
 			bucketLabel(medianBucket(histogram("time_to_final"))),
+			String(total("accounts_created")),
+			percent(shareOf(total("organizers_evaluated"), total("organizers_returned"))),
 		];
 	});
 
