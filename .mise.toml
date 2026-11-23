@@ -82,6 +82,14 @@ run = "nub apps/web/scripts/generate-theme.ts"
 description = "Fail when tokens.css does not match DESIGN.md"
 run = "nub apps/web/scripts/generate-theme.ts --check"
 
+[tasks.polyfills]
+description = "Generate polyfills.generated.ts from the browserslist of apps/web"
+run = "nub apps/web/scripts/generate-polyfills.ts"
+
+[tasks."polyfills:check"]
+description = "Fail when polyfills.generated.ts does not match the browserslist"
+run = "nub apps/web/scripts/generate-polyfills.ts --check"
+
 [tasks.openapi]
 description = "Write apps/web/openapi.json from the API's schemas and operations"
 dir = "apps/web"
@@ -157,6 +165,7 @@ run = [
   "mise run lint",
   "mise run workflows:lint",
   "mise run theme:check",
+  "mise run polyfills:check",
   "mise run typecheck",
   "mise run test",
   "mise run openapi:lint",

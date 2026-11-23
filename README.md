@@ -12,6 +12,10 @@ The four guides below run on a clone of this repository: [local development](#lo
 - Docker or Podman, for the database and for running the container image.
 - `git` and `curl`.
 
+### Browser support
+
+The app supports the last four versions of Chrome (desktop and Android), Edge and Firefox, and Safari (macOS and iOS) from 16.3 on, as the `browserslist` of `apps/web/package.json` says. Tailwind CSS 4 styles Safari 16.3 only partly; its own floor is Safari 16.4. When a browserslist data update changes the list, `mise run check` fails until `mise run polyfills` rewrites the file. `core-js` supplies the standardized JavaScript features that these browsers lack, such as `Map.groupBy`, and a browser without `Temporal` loads `temporal-polyfill`. `apps/web/e2e/older-browser.spec.ts` loads the pages with `Temporal` and `Map.groupBy` removed.
+
 ## Local development
 
 ```sh
@@ -60,6 +64,7 @@ The end-to-end tests need the test browser once: run `nubx playwright install ch
 | After you change                | Run                    | It rewrites                                                           |
 | ------------------------------- | ---------------------- | --------------------------------------------------------------------- |
 | the tokens in `DESIGN.md`       | `mise run theme`       | `apps/web/src/app/tokens.css`                                         |
+| the `browserslist`              | `mise run polyfills`   | `apps/web/src/polyfills.generated.ts`                                 |
 | the API's schemas or operations | `mise run openapi`     | `apps/web/openapi.json`                                               |
 | `apps/web/openapi.json`         | `mise run sdk`         | `packages/sdk-ts/src/generated` and `packages/sdk-python/src/convenr` |
 | the Drizzle schema              | `mise run db:generate` | a new SQL migration in `apps/web/drizzle`                             |

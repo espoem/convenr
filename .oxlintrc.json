@@ -69,6 +69,13 @@
 		{ "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" },
 		{ "name": "convenr", "specifier": "./tools/oxlint/convenr/index.ts" }
 	],
+	"overrides": [
+		{
+			// A polyfill is imported for its side effect.
+			"files": ["apps/web/src/instrumentation-client.ts", "apps/web/src/polyfills.generated.ts"],
+			"rules": { "import/no-unassigned-import": "off" }
+		}
+	],
 	"ignorePatterns": [
 		"tools/oxlint/anti-slop/**",
 		"**/.next/**",

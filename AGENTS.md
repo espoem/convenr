@@ -14,22 +14,23 @@ convenr is a free group scheduling web app that works without an account. This f
 
 Run every command through mise from the repository root.
 
-| Task                                               | Command                               |
-| -------------------------------------------------- | ------------------------------------- |
-| Install dependencies                               | `mise run install`                    |
-| Format                                             | `mise run format`                     |
-| Lint                                               | `mise run lint`                       |
-| Type check                                         | `mise run typecheck`                  |
-| Lint the GitHub workflows                          | `mise run workflows:lint`             |
-| Unit and database tests (starts PostgreSQL)        | `mise run test`                       |
-| Regenerate the theme after a `DESIGN.md` change    | `mise run theme`                      |
-| Rewrite the OpenAPI copy after an API change       | `mise run openapi`                    |
-| Regenerate both SDKs after an OpenAPI change       | `mise run sdk`                        |
-| SDK acceptance tests and API guide (needs a build) | `mise run sdk:acceptance`             |
-| Everything CI checks except end-to-end tests       | `mise run check`                      |
-| End-to-end tests (needs a build)                   | `mise run e2e`                        |
-| Development server                                 | `mise run db:up`, then `mise run dev` |
-| Application and database in containers             | `mise run up`, `mise run down`        |
+| Task                                                   | Command                               |
+| ------------------------------------------------------ | ------------------------------------- |
+| Install dependencies                                   | `mise run install`                    |
+| Format                                                 | `mise run format`                     |
+| Lint                                                   | `mise run lint`                       |
+| Type check                                             | `mise run typecheck`                  |
+| Lint the GitHub workflows                              | `mise run workflows:lint`             |
+| Unit and database tests (starts PostgreSQL)            | `mise run test`                       |
+| Regenerate the theme after a `DESIGN.md` change        | `mise run theme`                      |
+| Regenerate the polyfills after a `browserslist` change | `mise run polyfills`                  |
+| Rewrite the OpenAPI copy after an API change           | `mise run openapi`                    |
+| Regenerate both SDKs after an OpenAPI change           | `mise run sdk`                        |
+| SDK acceptance tests and API guide (needs a build)     | `mise run sdk:acceptance`             |
+| Everything CI checks except end-to-end tests           | `mise run check`                      |
+| End-to-end tests (needs a build)                       | `mise run e2e`                        |
+| Development server                                     | `mise run db:up`, then `mise run dev` |
+| Application and database in containers                 | `mise run up`, `mise run down`        |
 
 A change is done when `mise run check`, `mise run e2e` and `mise run sdk:acceptance` exit with code 0.
 
@@ -46,7 +47,7 @@ A change is done when `mise run check`, `mise run e2e` and `mise run sdk:accepta
 9. **Private folders.** Folders listed in `.git/info/exclude` are local only. Never stage them, name them or link to them in a committed file.
 10. **Git.** Until the operator says otherwise, work happens in local stacked branches: no pull requests or issues, and the only branch pushed is `main`, fast-forwarded to finished branches. Each branch is one reviewable step on top of the previous one, and each commit passes `mise run check`. Rewrite a branch's history before handing it over so that it holds no fix-up or work-in-progress commits. Commits carry the operator's identity and no co-author trailers.
 11. **Editing files.** Change source files with an editor tool, not with scripts that rewrite them by string replacement.
-12. **Browser support.** Use Baseline Widely available features without a fallback. Use a Newly available feature only behind feature detection, with a fallback of at most 20 lines and no added dependency.
+12. **Browser support.** The browsers are the `browserslist` of `apps/web/package.json`. `core-js` polyfills every standardized JavaScript feature they lack, through `apps/web/src/polyfills.generated.ts`: use such a feature without a fallback, and run `mise run polyfills` after changing the `browserslist`. For a feature `core-js` does not cover, use Baseline Widely available ones without a fallback, and a Newly available one only behind feature detection, with a fallback of at most 20 lines and no added dependency. `Temporal` keeps its own polyfill (ADR 0002).
 13. **Icons.** Use Phosphor icons (`@phosphor-icons/react`) where an icon is needed. Do not add another icon set.
 14. **No doc numbers in code.** Code, comments, identifiers, problem codes and test titles do not name spec rules, phases or sections, or numbered rules of `DESIGN.md` and `AGENTS.md`. An ADR may be cited, because an accepted ADR does not change. A comment says why the code exists. The spec maps its rules to code and tests, and `docs/spec/problem-codes.md` maps rules to problem codes. `mise run lint` enforces this with `convenr/no-spec-references`.
 15. **Design stance.** Design for forward compatibility. Keep backward compatibility only where a change would break a released public API. Model data so that impossible states cannot be written, and keep state explicit in a named field or a tagged union, not implied by nulls or by a combination of fields. A problem code is a snake_case name a reader understands without the docs.
