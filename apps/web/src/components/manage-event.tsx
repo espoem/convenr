@@ -4,13 +4,13 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import { EventForm, type EventFormOptions, type FormOutcome } from "@/components/event-form";
+import type { ServerGrid } from "@/components/event/board-view";
 import type { BoardEvent } from "@/components/event/event-board";
 import type { PollBoardEvent } from "@/components/event/poll-board";
 import { FinalPicker } from "@/components/final-picker";
 import { PollFinalPicker } from "@/components/poll-final-picker";
 import type { StoredOption } from "@/components/poll-options-editor";
 import { Button } from "@/components/ui/button";
-import type { GridView } from "@/domain/grid-labels";
 import { useRouter } from "@/i18n/navigation";
 import type { EventVersion } from "@/lib/event-version";
 import { type LocalEvent, updateLocalEvent, useLocalEvents } from "@/lib/local-events";
@@ -26,7 +26,7 @@ import type { Confirmation, ManagedEvent } from "@/server/manage";
 
 /** What the final time is picked from: a grid, or a poll's options. */
 export type ManagedBoard =
-	| { kind: "grid"; board: BoardEvent; weekdayView: GridView | null }
+	| { kind: "grid"; board: BoardEvent; serverGrid: ServerGrid }
 	| { kind: "poll"; board: PollBoardEvent };
 
 type ManageEventProps = {
@@ -224,7 +224,7 @@ export function ManageEvent({
 			{board.kind === "grid" ? (
 				<FinalPicker
 					event={board.board}
-					weekdayView={board.weekdayView}
+					serverGrid={board.serverGrid}
 					formatLocale={formatLocale}
 					credential={credential}
 					onDenied={() => setLoaded({ credential, event: null })}

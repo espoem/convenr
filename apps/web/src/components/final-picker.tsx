@@ -5,13 +5,12 @@ import { useId, useState, useTransition } from "react";
 
 import { AvailabilityGrid, type CellRef } from "@/components/event/availability-grid";
 import { BestWindows } from "@/components/event/best-windows";
-import { useBoardView } from "@/components/event/board-view";
+import { type ServerGrid, useBoardView } from "@/components/event/board-view";
 import { useCount } from "@/components/event/count";
 import type { BoardEvent } from "@/components/event/event-board";
 import { FinalLegend, useFinalWhen } from "@/components/event/final-time";
 import { controlClass, Field } from "@/components/field";
 import { Button } from "@/components/ui/button";
-import type { GridView } from "@/domain/grid-labels";
 import { heatStep } from "@/domain/heat";
 import { cellLevel, type Tally } from "@/domain/levels";
 import type { Weekday } from "@/domain/schedule";
@@ -25,8 +24,7 @@ type Run = { column: number; first: number; last: number };
 
 type FinalPickerProps = {
 	event: BoardEvent;
-	/** A weekday event's grid, laid out by the server. */
-	weekdayView: GridView | null;
+	serverGrid: ServerGrid;
 	formatLocale: string;
 	credential: ManageCredential;
 	/** The credential stopped fitting. */
@@ -89,7 +87,7 @@ export function useFinalChange(onDenied: () => void, onSaved: () => void = () =>
 /** Picking and clearing the final time on the manage page: a best window or a run in the grid. */
 export function FinalPicker({
 	event,
-	weekdayView,
+	serverGrid,
 	formatLocale,
 	credential,
 	onDenied,
@@ -110,9 +108,10 @@ export function FinalPicker({
 		setAnchor(null);
 	});
 
-	const { view, windows } = useBoardView(event, weekdayView, viewerZone, formatLocale);
+	const { view, windows } = useBoardView(event, serverGrid, viewerZone, formatLocale);
 
-	if (view === null || viewerZone === null) {
+	// Picking needs the viewer's zone, which the browser knows only once it runs.
+	if (viewerZone === null) {
 		return <div aria-hidden style={{ height: `${(event.rowCount + 2) * 1.75}rem` }} />;
 	}
 

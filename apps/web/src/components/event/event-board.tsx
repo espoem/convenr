@@ -6,7 +6,6 @@ import { useId, useRef, useState } from "react";
 import { SteadyLabel } from "@/components/steady-label";
 import { Button } from "@/components/ui/button";
 import { sameWindow, type Window } from "@/domain/best-windows";
-import type { GridView } from "@/domain/grid-labels";
 import { heatStep } from "@/domain/heat";
 import {
 	type Brush,
@@ -22,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 import { AvailabilityGrid, type CellFill, type CellRef } from "./availability-grid";
 import { BestWindows } from "./best-windows";
-import { useBoardView } from "./board-view";
+import { type ServerGrid, useBoardView } from "./board-view";
 import { useCount } from "./count";
 import { FinalLegend } from "./final-time";
 import { JoinBand, type Joined } from "./join-band";
@@ -57,8 +56,7 @@ type EventBoardProps = {
 	event: BoardEvent;
 	/** The participant the server recognized from the browser's key. */
 	viewer: Joined | null;
-	/** A weekday event's grid, laid out by the server (ADR 0002 item 9). */
-	weekdayView: GridView | null;
+	serverGrid: ServerGrid;
 	formatLocale: string;
 };
 
@@ -74,14 +72,15 @@ function ownFill(level: Level | null): CellFill {
 }
 
 /** The event page below its header: join band, tabs, grid and participants (spec 6 and 8). */
-export function EventBoard({ event, viewer, weekdayView, formatLocale }: EventBoardProps) {
+export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoardProps) {
 	const t = useTranslations("Event");
 	const tJoin = useTranslations("Join");
 	const count = useCount();
 	const id = useId();
 	const viewerZone = useViewerZone();
 	const wrapper = useRef<HTMLDivElement>(null);
-	const [tab, setTab] = useState<"group" | "me">("group");
+	// A participant the server recognized starts at their own grid.
+	const [tab, setTab] = useState<"group" | "me">(viewer === null ? "group" : "me");
 	const [brush, setBrush] = useState<Brush>("available");
 	const [confirmDiscard, setConfirmDiscard] = useState(false);
 	const [inspected, setInspected] = useState<{ cell: CellRef; x: number; y: number } | null>(null);
@@ -98,7 +97,7 @@ export function EventBoard({ event, viewer, weekdayView, formatLocale }: EventBo
 	const { joined, selection, dirty, edit } = participation;
 	const shownZone = inReferenceZone ? event.referenceZone : viewerZone;
 
-	const { view, windows } = useBoardView(event, weekdayView, shownZone, formatLocale);
+	const { view, windows } = useBoardView(event, serverGrid, shownZone, formatLocale);
 
 	// A window from before a reload or a zone switch may no longer exist.
 	const highlight = windows.find((window) => sameWindow(chosenWindow, window)) ?? null;
@@ -161,20 +160,15 @@ export function EventBoard({ event, viewer, weekdayView, formatLocale }: EventBo
 	}
 
 	const detailKeys =
-		inspected === null || view === null
+		inspected === null
 			? []
 			: (view.layout.blocks.flat()[inspected.cell.column]?.cells[inspected.cell.row] ?? []);
 
 	const detailNames = namesIn(detailKeys);
 	const myLevel = (keys: readonly string[]) => cellLevel(selection, keys);
-	const detailTime = inspected === null ? undefined : view?.rows[inspected.cell.row];
+	const detailTime = inspected === null ? undefined : view.rows[inspected.cell.row];
 
 	function renderGrid() {
-		if (view === null) {
-			// ADR 0002 item 9: the space is reserved until the browser lays out the dated grid.
-			return <div aria-hidden style={{ height: `${(event.rowCount + 2) * 1.75}rem` }} />;
-		}
-
 		if (tab === "group") {
 			return (
 				<AvailabilityGrid
@@ -354,7 +348,7 @@ export function EventBoard({ event, viewer, weekdayView, formatLocale }: EventBo
 							</div>
 							{tab === "group" && inspected !== null && detailTime !== undefined ? (
 								<SlotDetail
-									day={view?.columns[inspected.cell.column]?.long ?? ""}
+									day={view.columns[inspected.cell.column]?.long ?? ""}
 									time={`${detailTime.start}–${detailTime.end}`}
 									available={detailNames.available}
 									ifNeedBe={detailNames.ifNeedBe}
@@ -379,24 +373,18 @@ export function EventBoard({ event, viewer, weekdayView, formatLocale }: EventBo
 				/>
 			) : null}
 
-			{view === null ? (
-				// Room for the heading, the filters and one window, so the list below does not
-				// jump when the browser has laid out a dated grid.
-				<div aria-hidden style={{ minHeight: "12.5rem" }} />
-			) : (
-				<BestWindows
-					view={view}
-					windows={windows}
-					names={event.participants.map((participant) => participant.name)}
-					slotLength={event.slotLength}
-					formatLocale={formatLocale}
-					selected={highlight}
-					onSelect={(window) => {
-						setChosenWindow(window);
-						showTab("group");
-					}}
-				/>
-			)}
+			<BestWindows
+				view={view}
+				windows={windows}
+				names={event.participants.map((participant) => participant.name)}
+				slotLength={event.slotLength}
+				formatLocale={formatLocale}
+				selected={highlight}
+				onSelect={(window) => {
+					setChosenWindow(window);
+					showTab("group");
+				}}
+			/>
 
 			<section aria-labelledby={`${id}-people`} className="flex flex-col gap-3">
 				<h2 id={`${id}-people`} className="text-xl">

@@ -15,7 +15,7 @@ import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
 import { getPathname, Link } from "@/i18n/navigation";
-import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/server/board";
+import { boardOf, byKind, pollBoardOf, serverGridOf, shownFinal } from "@/server/board";
 import { readEvent } from "@/server/events";
 import { currentHolder } from "@/server/holder";
 import { liveSettings } from "@/server/live";
@@ -69,7 +69,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 			<EventBoard
 				event={boardOf(kind.event)}
 				viewer={viewer}
-				weekdayView={weekdayViewOf(kind.event, format)}
+				serverGrid={serverGridOf(kind.event, format)}
 				formatLocale={format}
 			/>
 		) : (

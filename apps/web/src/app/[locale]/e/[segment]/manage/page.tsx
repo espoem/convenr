@@ -13,7 +13,7 @@ import { currentLocale } from "@/i18n/current-locale";
 import { eventFormOptions } from "@/i18n/event-form-options";
 import { formatLocale } from "@/i18n/format-locale";
 import { Link } from "@/i18n/navigation";
-import { boardOf, byKind, pollBoardOf, weekdayViewOf } from "@/server/board";
+import { boardOf, byKind, pollBoardOf, serverGridOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 import { liveSettings } from "@/server/live";
 import { eventChoices } from "@/server/notifications";
@@ -53,7 +53,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 			? {
 					kind: "grid",
 					board: boardOf(kind.event),
-					weekdayView: weekdayViewOf(kind.event, format),
+					serverGrid: serverGridOf(kind.event, format),
 				}
 			: { kind: "poll", board: pollBoardOf(kind.event) };
 

@@ -1,9 +1,10 @@
 // What the event page and the manage page send to the grid in the browser: plain values only,
 // because Temporal values do not cross from a server component to a client component.
+import type { ServerGrid } from "@/components/event/board-view";
 import type { BoardEvent, ShownFinal } from "@/components/event/event-board";
 import type { PollBoardEvent } from "@/components/event/poll-board";
-import { gridView, type GridView } from "@/domain/grid-labels";
-import { weekdayLayout } from "@/domain/grid-layout";
+import { gridView } from "@/domain/grid-labels";
+import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
 import { bestOptions, inTimeOrder, optionKey } from "@/domain/poll";
 import type { GridSchedule, PollSchedule } from "@/domain/schedule";
 
@@ -81,15 +82,27 @@ export function pollBoardOf(event: PollEventView): PollBoardEvent {
 	};
 }
 
-/** A weekday event's grid, laid out by the server (ADR 0002 item 9); `null` for a dated event. */
-export function weekdayViewOf(event: GridEventView, formatLocale: string): GridView | null {
+/** The grid of `event` as the server lays it out, for the first response. */
+export function serverGridOf(event: GridEventView, formatLocale: string): ServerGrid {
 	const { schedule } = event;
 
-	return schedule.days.mode === "weekdays"
-		? gridView(
+	if (schedule.days.mode === "weekdays") {
+		return {
+			kind: "weekday",
+			view: gridView(
 				weekdayLayout(event.slots, schedule.firstDayOfWeek),
 				schedule.slotLength,
 				formatLocale,
-			)
-		: null;
+			),
+		};
+	}
+
+	return {
+		kind: "dated",
+		inReferenceZone: gridView(
+			datedLayout(event.slots, schedule.referenceZone, schedule.firstDayOfWeek),
+			schedule.slotLength,
+			formatLocale,
+		),
+	};
 }

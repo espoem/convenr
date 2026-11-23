@@ -9,24 +9,33 @@ import { useTemporalReady } from "@/lib/browser-time";
 
 import type { BoardEvent } from "./event-board";
 
-/** The grid, `null` until the browser can lay out a dated one, and its maximal windows. */
-export type BoardView = { view: GridView | null; windows: Window[] };
+/**
+ * The grid the server lays out. A weekday event's grid is the same in every zone (ADR 0002
+ * item 9). A dated event's grid is laid out in its reference zone, which the page shows until
+ * the browser knows the viewer's zone, and for good without JavaScript.
+ */
+export type ServerGrid =
+	| { kind: "weekday"; view: GridView }
+	| { kind: "dated"; inReferenceZone: GridView };
+
+/** The grid and its maximal windows. */
+export type BoardView = { view: GridView; windows: Window[] };
 
 /**
- * The grid of `event` in `zone` and its maximal windows. A weekday event's grid comes laid out
- * from the server (ADR 0002 item 9).
+ * The grid of `event` in `zone` and its maximal windows. A dated event is laid out in `zone`
+ * once the browser can; before that, and while `zone` is unknown, the server's layout is shown.
  */
 export function useBoardView(
 	event: BoardEvent,
-	weekdayView: GridView | null,
+	serverGrid: ServerGrid,
 	zone: string | null,
 	formatLocale: string,
 ): BoardView {
 	const temporalReady = useTemporalReady();
 
 	const view = useMemo(() => {
-		if (weekdayView !== null) {
-			return weekdayView;
+		if (serverGrid.kind === "weekday") {
+			return serverGrid.view;
 		}
 
 		return temporalReady && zone !== null
@@ -35,11 +44,11 @@ export function useBoardView(
 					event.slotLength,
 					formatLocale,
 				)
-			: null;
-	}, [weekdayView, temporalReady, zone, event, formatLocale]);
+			: serverGrid.inReferenceZone;
+	}, [serverGrid, temporalReady, zone, event, formatLocale]);
 
 	const windows = useMemo(
-		() => (view === null ? [] : maximalWindows(view.layout, event.slotLength, event.participants)),
+		() => maximalWindows(view.layout, event.slotLength, event.participants),
 		[view, event.slotLength, event.participants],
 	);
 

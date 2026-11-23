@@ -7,7 +7,19 @@ const searchSchema = z.object({
 	messages: z.array(z.object({ ID: z.string(), Subject: z.string() })),
 });
 
-const messageSchema = z.object({ Text: z.string(), HTML: z.string() });
+const messageSchema = z.object({
+	ID: z.string(),
+	Text: z.string(),
+	HTML: z.string(),
+	Attachments: z.array(z.object({ PartID: z.string(), FileName: z.string() })),
+});
+
+/** The text of an attachment of the email with Mailpit id `id`. */
+export async function attachmentText(id: string, partId: string): Promise<string> {
+	const response = await fetch(`${MAILPIT_URL}/api/v1/message/${id}/part/${partId}`);
+
+	return response.text();
+}
 
 /** An address no other test uses, so tests that run at once read only their own mail. */
 export function uniqueAddress(name: string): string {
