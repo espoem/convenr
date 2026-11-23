@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { EventNotifications } from "@/components/event-notifications";
 import { EventBoard } from "@/components/event/event-board";
 import { FinalBanner } from "@/components/event/final-time";
 import { PollBoard } from "@/components/event/poll-board";
@@ -18,6 +19,7 @@ import { boardOf, byKind, pollBoardOf, shownFinal, weekdayViewOf } from "@/serve
 import { readEvent } from "@/server/events";
 import { currentHolder } from "@/server/holder";
 import { liveSettings } from "@/server/live";
+import { eventChoices } from "@/server/notifications";
 import { ownerView } from "@/server/ownership";
 import { identify } from "@/server/participants";
 import { currentVisitor } from "@/server/session";
@@ -56,7 +58,11 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 	// joined (ADR 0008).
 	const holder = await currentHolder(event.id);
 	const viewer = holder === undefined ? null : ((await identify(event.id, holder)) ?? null);
-	const owner = await ownerView(await currentVisitor(), event);
+	const visitor = await currentVisitor();
+	const owner = await ownerView(visitor, event);
+
+	const choices =
+		visitor.kind === "signed_in" ? await eventChoices(visitor.accountId, event.id) : [];
 
 	const board =
 		kind.kind === "grid" ? (
@@ -122,6 +128,7 @@ export default async function EventPage({ params }: PageProps<"/[locale]/e/[segm
 					</div>
 				</header>
 				{board}
+				<EventNotifications eventId={event.id} choices={choices} />
 			</main>
 		</PageShell>
 	);

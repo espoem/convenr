@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { ensureToken, heldToken } from "./browser-key";
 import { currentHolder } from "./holder";
+import { sendSoon } from "./outbox";
 import {
 	changePassword,
 	forgetToken,
@@ -51,6 +52,9 @@ export async function joinAction(id: string, name: string, pass: string | null) 
 
 	if (visitor.kind === "signed_in") {
 		const joined = await joinLinked(event, displayName, asked, visitor.accountId);
+
+		sendSoon();
+
 		const held = joined.ok ? await heldToken(event) : undefined;
 
 		if (held !== undefined) {
@@ -66,6 +70,8 @@ export async function joinAction(id: string, name: string, pass: string | null) 
 		kind: "browser",
 		token: await ensureToken(event),
 	});
+
+	sendSoon();
 
 	// The schedule holds Temporal values, which do not serialize, and the token stays on the server.
 	return joined.ok
@@ -117,6 +123,8 @@ export async function saveAction(id: string, available: string[], ifNeedBe: stri
 	}
 
 	const saved = await saveResponse(event, holder, { available: marked, ifNeedBe: maybe });
+
+	sendSoon();
 
 	// The page already shows what it saved; the schedule holds Temporal values, which do not serialize.
 	return saved.ok ? ({ ok: true } as const) : saved;

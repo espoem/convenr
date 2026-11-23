@@ -80,7 +80,7 @@ describe("POST /api/maintenance", () => {
 
 		expect(response.status).toBe(200);
 		// The test event lies in 2027, so nothing expired yet.
-		expect(await response.json()).toEqual({ deleted: 0 });
+		expect(await response.json()).toEqual({ deleted: 0, sent: 0 });
 	});
 
 	it("refuses a missing or wrong secret without running the pass", async () => {

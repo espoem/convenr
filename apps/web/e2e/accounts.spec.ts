@@ -192,6 +192,44 @@ test("a signed-in participant is joined in every signed-in browser until it is r
 	await there.context().close();
 });
 
+test("an organizer gets an email about a new response and turns it off for the event from it", async ({
+	browser,
+}) => {
+	const address = uniqueAddress("notified");
+	const first = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 14 });
+	const organizer = await accountsPage(browser);
+
+	await signIn(organizer, address);
+	await organizer.getByLabel(/New responses to the events I organize/u).check();
+	await organizer.getByRole("button", { name: "Save emails" }).click();
+	await expect(organizer.getByText("Your choice of emails is saved.")).toBeVisible();
+
+	// Created while signed in, so the account owns it.
+	const { share } = await createEvent(organizer, "Porada", first);
+	const participant = await accountsPage(browser);
+
+	await joinIn(participant, share, "Jana");
+
+	const email = await emailTo(address, "New responses in Porada");
+
+	expect(email.Text).toContain("Jana");
+
+	const unsubscribe = /https?:\/\/\S+\/unsubscribe\?\S+/u.exec(email.Text)?.[0] ?? "";
+
+	// Opening the link changes nothing; the button does.
+	await organizer.goto(unsubscribe);
+	await organizer.getByRole("button", { name: "Turn off" }).click();
+	await expect(
+		organizer.getByText("The emails about new responses are off for this event."),
+	).toBeVisible();
+
+	await organizer.goto(share.replace("/cs/", "/en/"));
+	await expect(organizer.getByLabel("New responses")).toHaveValue("off");
+
+	await organizer.context().close();
+	await participant.context().close();
+});
+
 test("an instance without accounts shows no sign-in", async ({ page }) => {
 	// The second server has no mail settings, so accounts are off there.
 	await page.goto(`${POLL_BASE_URL}/en`);

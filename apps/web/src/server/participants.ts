@@ -18,6 +18,7 @@ import {
 	scheduleOf,
 	touchEvent,
 } from "./event-rows";
+import { noteResponse } from "./notifications";
 import { hashPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, verifyPassword } from "./password";
 import { hashSecret, newSecret } from "./secrets";
 import { countFirstResponse } from "./usage";
@@ -530,9 +531,14 @@ async function joinNew<Access extends object>(
 		await touchEvent(tx, event, now);
 		await countFirstResponse(tx, event, now);
 
+		// Linking comes first, so the owner's own participant is known as the owner's.
+		const access = await grant.give(tx, eventId, row.id);
+
+		await noteResponse(tx, event, row.id, name.name, now);
+
 		return {
 			ok: true,
-			...(await grant.give(tx, eventId, row.id)),
+			...access,
 			participant: { id: row.publicId, name: name.name, levels: {} },
 			schedule: scheduleOf(event),
 		};

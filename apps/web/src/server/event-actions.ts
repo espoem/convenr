@@ -22,6 +22,7 @@ import {
 	removeParticipant,
 	updateEvent,
 } from "./manage";
+import { sendSoon } from "./outbox";
 import { currentVisitor } from "./session";
 
 const eventId = z.string().max(64);
@@ -182,7 +183,11 @@ export async function pickFinalAction(
 		request.date = Temporal.PlainDate.from(day);
 	}
 
-	return finalChangeOf(await pickFinal(args.event, args.access, request));
+	const picked = await pickFinal(args.event, args.access, request);
+
+	sendSoon();
+
+	return finalChangeOf(picked);
 }
 
 export async function clearFinalAction(
@@ -191,9 +196,15 @@ export async function clearFinalAction(
 ): Promise<FinalChange> {
 	const args = await parsed(id, credential);
 
-	return args === undefined
-		? { status: "denied" }
-		: finalChangeOf(await clearFinal(args.event, args.access));
+	if (args === undefined) {
+		return { status: "denied" };
+	}
+
+	const cleared = await clearFinal(args.event, args.access);
+
+	sendSoon();
+
+	return finalChangeOf(cleared);
 }
 
 export async function removeParticipantAction(

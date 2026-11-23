@@ -28,6 +28,26 @@ export function EmailText({ children }: { children: ReactNode }) {
 	return <MjmlText>{children}</MjmlText>;
 }
 
+/** The small print at the end of an email: why it came, and a link such as the one that stops it. */
+export function EmailFootnote({
+	reason,
+	label,
+	url,
+}: {
+	reason: string;
+	label: string;
+	url: string;
+}) {
+	return (
+		<MjmlText color={color["ink-muted"]} fontSize="14px" padding="16px 24px 8px">
+			{reason}{" "}
+			<a href={url} style={{ color: color.action }}>
+				{label}
+			</a>
+		</MjmlText>
+	);
+}
+
 /** The one action of an email, as a button that is also a plain link. */
 export function EmailButton({ href, children }: { href: string; children: ReactNode }) {
 	return (

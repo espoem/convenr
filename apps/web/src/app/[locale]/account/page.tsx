@@ -11,6 +11,8 @@ import { AddPasskey } from "@/components/add-passkey";
 import { controlClass, Field } from "@/components/field";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
+import { NOTIFICATION_KINDS } from "@/domain/notifications";
+import { env } from "@/env";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
 import { redirect } from "@/i18n/navigation";
@@ -23,16 +25,27 @@ import {
 	removePasskeyAction,
 	renamePasskeyAction,
 	setLanguageAction,
+	setNotificationsAction,
 	signOutAction,
 } from "@/server/account-actions";
 import { accountLocaleOrSet, auth } from "@/server/auth";
+import { accountChoices } from "@/server/notifications";
 import { type AccountEvent, joinedEvents, ownedEvents } from "@/server/ownership";
 import { currentVisitor, instantOf } from "@/server/session";
 
 /** What the last action on the page did, or why it failed, as its redirect names it. */
 const statusSchema = z.object({
 	done: z
-		.enum(["language", "email_sent", "email", "session", "sessions", "passkey", "passkey_removed"])
+		.enum([
+			"language",
+			"notifications",
+			"email_sent",
+			"email",
+			"session",
+			"sessions",
+			"passkey",
+			"passkey_removed",
+		])
 		.optional(),
 	problem: z
 		.enum([
@@ -114,13 +127,16 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 		status = t(`done.${done}`);
 	}
 
-	const [emailLocale, sessions, passkeys, owned, joined] = await Promise.all([
+	const [emailLocale, sessions, passkeys, owned, joined, notifications] = await Promise.all([
 		accountLocaleOrSet(visitor.accountId, locale),
 		instance.api.listSessions({ headers: requestHeaders }),
 		instance.api.listPasskeys({ headers: requestHeaders }),
 		ownedEvents(visitor.accountId),
 		joinedEvents(visitor.accountId),
+		accountChoices(visitor.accountId),
 	]);
+
+	const { NOTIFY_DIGEST_MINUTES: minutes, REMINDER_HOURS: hours } = env();
 
 	const day = (date: Date) =>
 		instantOf(date).toLocaleString(format, {
@@ -214,6 +230,27 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 						</Field>
 						<Button type="submit" variant="outline">
 							{t("language.save")}
+						</Button>
+					</form>
+				</Section>
+
+				<Section id="account-notifications" heading={t("notifications.heading")}>
+					<form action={setNotificationsAction} className="flex flex-col gap-3">
+						{hidden}
+						<p className="max-w-(--cv-measure)">{t("notifications.intro")}</p>
+						{NOTIFICATION_KINDS.map((kind) => (
+							<label key={kind} className="flex min-h-11 items-center gap-2">
+								<input
+									type="checkbox"
+									name={kind}
+									defaultChecked={notifications[kind]}
+									className="size-5 shrink-0"
+								/>
+								{t(`notifications.${kind}`, { minutes, hours })}
+							</label>
+						))}
+						<Button type="submit" variant="outline" className="w-fit">
+							{t("notifications.save")}
 						</Button>
 					</form>
 				</Section>

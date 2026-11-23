@@ -1,6 +1,7 @@
 import { endpoint, json, problem, readJson, routeMethods } from "@/server/api/http";
 import { joinPasswordOf, participantBody, refusalResponse } from "@/server/api/mapping";
 import { joinedSchema, joinRequestSchema } from "@/server/api/schemas";
+import { sendSoon } from "@/server/outbox";
 import { join } from "@/server/participants";
 
 export const POST = endpoint<{ id: string }>(async (request, { id }) => {
@@ -19,6 +20,8 @@ export const POST = endpoint<{ id: string }>(async (request, { id }) => {
 	}
 
 	const joined = await join(id, body.value.name, password);
+
+	sendSoon();
 
 	if (!joined.ok) {
 		return refusalResponse(joined, { current: "/password", new: "/newPassword" });

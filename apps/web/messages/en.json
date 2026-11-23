@@ -373,6 +373,14 @@
 			"label": "Language",
 			"save": "Save language"
 		},
+		"notifications": {
+			"heading": "Emails about events",
+			"intro": "These apply to all your events; an event page can change them for that event.",
+			"responses": "New responses to the events I organize, at most once per {minutes} minutes",
+			"final": "The final time of the events I joined, with a calendar file",
+			"reminder": "A reminder {hours} hours before the final time",
+			"save": "Save emails"
+		},
 		"passkeys": {
 			"heading": "Passkeys",
 			"none": "No passkeys yet. The email link always works.",
@@ -400,6 +408,7 @@
 		},
 		"done": {
 			"language": "The language is saved.",
+			"notifications": "Your choice of emails is saved.",
 			"email_sent": "A confirmation link is on its way to the new address.",
 			"email": "Your email address is changed.",
 			"session": "That browser is signed out.",
@@ -435,7 +444,64 @@
 			"subject": "A change of your email address on convenr",
 			"intro": "Someone signed in to your convenr account asked to change its email address to {email}. It changes only when the link sent there is opened.",
 			"notYou": "If this was not you, sign in and sign out every other browser."
+		},
+		"notify": {
+			"open": "Open the event",
+			"unsubscribe": "Turn these emails off for this event",
+			"reason": {
+				"responses": "You get this email because you turned on emails about new responses.",
+				"final": "You get this email because you turned on emails about the final time.",
+				"reminder": "You get this email because you turned on reminders."
+			},
+			"responses": {
+				"subject": "New responses in {name}",
+				"intro": "New or changed responses in {name} since the last email: {names}."
+			},
+			"final": {
+				"subject": "The final time of {name}",
+				"intro": "The organizer picked the final time of {name}: {when}.",
+				"calendar": "The calendar file is attached; opening it adds the event to your calendar or updates it there."
+			},
+			"cleared": {
+				"subject": "The final time of {name} is cleared",
+				"intro": "The organizer cleared the final time of {name}. You will get an email if a new one is picked."
+			},
+			"reminder": {
+				"subject": "Reminder: {name}",
+				"intro": "{name} starts {when}."
+			}
 		}
+	},
+	"EventNotifications": {
+		"heading": "My emails about this event",
+		"kind": {
+			"responses": "New responses",
+			"final": "The final time",
+			"reminder": "A reminder before the final time"
+		},
+		"account": {
+			"on": "As on my account page (on)",
+			"off": "As on my account page (off)"
+		},
+		"on": "On for this event",
+		"off": "Off for this event",
+		"failed": "That did not work. Please try again."
+	},
+	"Unsubscribe": {
+		"title": "Turn off emails",
+		"heading": "Turn off emails",
+		"intro": {
+			"responses": "This turns off the emails about new responses for this event. Your other events stay as they are.",
+			"final": "This turns off the emails about the final time for this event. Your other events stay as they are.",
+			"reminder": "This turns off the reminders for this event. Your other events stay as they are."
+		},
+		"submit": "Turn off",
+		"done": {
+			"responses": "The emails about new responses are off for this event. Signed in, you can turn them on again on the event page.",
+			"final": "The emails about the final time are off for this event. Signed in, you can turn them on again on the event page.",
+			"reminder": "The reminders are off for this event. Signed in, you can turn them on again on the event page."
+		},
+		"invalid": "This link is not valid. Check that you opened all of it, or change your emails on the account page."
 	},
 	"ApiReference": {
 		"title": "convenr API",

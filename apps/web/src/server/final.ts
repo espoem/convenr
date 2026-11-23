@@ -15,6 +15,7 @@ import type { EventVersion } from "@/lib/event-version";
 import { changeStamp, type EventRow, finalOf, OPEN_FINAL, scheduleOf } from "./event-rows";
 import { type EventView, eventViewOf } from "./events";
 import { type AdminAccess, adminRow, type Precondition } from "./manage";
+import { noteFinal } from "./notifications";
 import { countTimeToFinal } from "./usage";
 
 export type FinalResult =
@@ -110,7 +111,11 @@ async function changeFinal(
 		}
 
 		// Picking a final time leaves the options as they are.
-		return { status: "saved", event: await eventViewOf(tx, { ...written, options: row.options }) };
+		const changed = { ...written, options: row.options };
+
+		await noteFinal(tx, changed, now);
+
+		return { status: "saved", event: await eventViewOf(tx, changed) };
 	});
 }
 

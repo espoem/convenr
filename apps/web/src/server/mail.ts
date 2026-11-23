@@ -20,6 +20,7 @@ export type Email = {
 	text: string;
 	html: string;
 	headers?: Record<string, string>;
+	attachments?: { filename: string; content: string; contentType: string }[];
 };
 
 declare global {

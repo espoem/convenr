@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { EventNotifications } from "@/components/event-notifications";
 import { KeepEvent } from "@/components/keep-event";
 import { LiveUpdates } from "@/components/live-updates";
 import { ManageEvent, type ManagedBoard } from "@/components/manage-event";
@@ -15,6 +16,7 @@ import { Link } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, weekdayViewOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 import { liveSettings } from "@/server/live";
+import { eventChoices } from "@/server/notifications";
 import { ownerView } from "@/server/ownership";
 import { currentVisitor } from "@/server/session";
 
@@ -40,7 +42,11 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 	const t = await getTranslations("Manage");
 	const format = formatLocale(await currentLocale(), (await headers()).get("accept-language"));
 	const kind = byKind(event);
-	const owner = await ownerView(await currentVisitor(), event);
+	const visitor = await currentVisitor();
+	const owner = await ownerView(visitor, event);
+
+	const choices =
+		visitor.kind === "signed_in" ? await eventChoices(visitor.accountId, event.id) : [];
 
 	const board: ManagedBoard =
 		kind.kind === "grid"
@@ -78,6 +84,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 				{owner.kind === "owner" && owner.keeping.kind === "shown" ? (
 					<KeepEvent eventId={event.id} kept={owner.keeping.kept} />
 				) : null}
+				<EventNotifications eventId={event.id} choices={choices} />
 				<ManageEvent
 					id={event.id}
 					options={await eventFormOptions()}

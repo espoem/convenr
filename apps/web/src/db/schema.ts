@@ -8,6 +8,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	primaryKey,
 	smallint,
@@ -18,6 +19,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { LEVELS } from "@/domain/levels";
+import { MAX_ATTEMPTS, NOTIFICATION_KINDS, type OutboxMessage } from "@/domain/notifications";
 import type { EventVersion } from "@/lib/event-version";
 
 // Column names come from the property names in snake_case; see `casing` in the client.
@@ -72,6 +74,11 @@ export const events = pgTable(
 		finalSequence: integer().notNull().default(0),
 		/** When the event entered the time-to-final counts, so that it counts once. */
 		finalCountedAt: instant(),
+		/**
+		 * The final sequence whose reminder is settled: sent, or not due because the final time
+		 * was picked too close to its start. A reminder is due only while it differs.
+		 */
+		remindedSequence: integer().notNull().default(0),
 		/**
 		 * The account that added the event with its admin secret. An event belongs to one account
 		 * or none, and deleting the account leaves the event without an owner.
@@ -415,4 +422,95 @@ export const emailCounts = pgTable(
 		count: integer().notNull().default(0),
 	},
 	(table) => [primaryKey({ columns: [table.key, table.hour] })],
+);
+
+/** What an account chose on the account page; a kind without a row is off. */
+export const accountNotifications = pgTable(
+	"account_notifications",
+	{
+		accountId: text()
+			.notNull()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		kind: text({ enum: NOTIFICATION_KINDS }).notNull(),
+		enabled: boolean().notNull(),
+	},
+	(table) => [
+		primaryKey({ columns: [table.accountId, table.kind] }),
+		check("account_notifications_kind", sql`${table.kind} in ('responses', 'final', 'reminder')`),
+	],
+);
+
+/** What an account chose for one event; a kind without a row follows the account's choice. */
+export const eventNotifications = pgTable(
+	"event_notifications",
+	{
+		accountId: text()
+			.notNull()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		eventId: text()
+			.notNull()
+			.references(() => events.id, { onDelete: "cascade" }),
+		kind: text({ enum: NOTIFICATION_KINDS }).notNull(),
+		enabled: boolean().notNull(),
+	},
+	(table) => [
+		primaryKey({ columns: [table.accountId, table.eventId, table.kind] }),
+		index("event_notifications_event").on(table.eventId),
+		check("event_notifications_kind", sql`${table.kind} in ('responses', 'final', 'reminder')`),
+	],
+);
+
+/**
+ * The new-responses email of one account and event once one was sent: when, and the names that
+ * joined or changed since, which wait for the interval to pass.
+ */
+export const responseDigests = pgTable(
+	"response_digests",
+	{
+		accountId: text()
+			.notNull()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		eventId: text()
+			.notNull()
+			.references(() => events.id, { onDelete: "cascade" }),
+		sentAt: instant().notNull(),
+		waiting: text()
+			.array()
+			.notNull()
+			.default(sql`'{}'::text[]`),
+	},
+	(table) => [
+		primaryKey({ columns: [table.accountId, table.eventId] }),
+		index("response_digests_event").on(table.eventId),
+	],
+);
+
+/**
+ * Notification emails waiting to be sent. The address and the language are read when the email
+ * goes out, so the outbox stores no address, and an email goes with its account or event.
+ */
+export const outboxEmails = pgTable(
+	"outbox_emails",
+	{
+		id: bigint({ mode: "bigint" }).primaryKey().generatedAlwaysAsIdentity(),
+		accountId: text()
+			.notNull()
+			.references(() => authUsers.id, { onDelete: "cascade" }),
+		eventId: text()
+			.notNull()
+			.references(() => events.id, { onDelete: "cascade" }),
+		message: jsonb().$type<OutboxMessage>().notNull(),
+		/** Failed attempts so far. */
+		attempts: smallint().notNull().default(0),
+		nextAttemptAt: instant().notNull(),
+	},
+	(table) => [
+		index("outbox_emails_due").on(table.nextAttemptAt),
+		index("outbox_emails_account").on(table.accountId),
+		index("outbox_emails_event").on(table.eventId),
+		check(
+			"outbox_emails_attempts",
+			sql`${table.attempts} between 0 and ${sql.raw(String(MAX_ATTEMPTS - 1))}`,
+		),
+	],
 );

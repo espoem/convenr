@@ -9,6 +9,7 @@ import {
 import { participantBody, slotKeyOf } from "@/server/api/mapping";
 import { availabilityRequestSchema, participantSchema } from "@/server/api/schemas";
 import { byToken } from "@/server/event-rows";
+import { sendSoon } from "@/server/outbox";
 import { saveResponse } from "@/server/responses";
 
 /** The refusal of a save, pointing at each slot the event does not have by its index. */
@@ -43,6 +44,8 @@ export const PUT = securedEndpoint<{ id: string }>(
 			available: availability.map((slot) => slotKeyOf(slot)),
 			ifNeedBe: ifNeedBe?.map((slot) => slotKeyOf(slot)),
 		});
+
+		sendSoon();
 
 		if (!saved.ok) {
 			switch (saved.problem) {

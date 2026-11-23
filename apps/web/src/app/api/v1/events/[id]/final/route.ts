@@ -11,6 +11,7 @@ import { eventResponse, finalProblemResponse, finalRequestOf } from "@/server/ap
 import { finalRequestSchema } from "@/server/api/schemas";
 import { clearFinal, type FinalResult, pickFinal } from "@/server/final";
 import { bySecret } from "@/server/manage";
+import { sendSoon } from "@/server/outbox";
 
 type Params = { id: string };
 
@@ -34,14 +35,25 @@ export const PUT = securedEndpoint<Params>("admin", async (request, { id }, secr
 		return body.response;
 	}
 
-	return answer(
-		await pickFinal(id, bySecret(secret), finalRequestOf(body.value), ifMatchPrecondition(request)),
+	const picked = await pickFinal(
+		id,
+		bySecret(secret),
+		finalRequestOf(body.value),
+		ifMatchPrecondition(request),
 	);
+
+	sendSoon();
+
+	return answer(picked);
 });
 
-export const DELETE = securedEndpoint<Params>("admin", async (request, { id }, secret) =>
-	answer(await clearFinal(id, bySecret(secret), ifMatchPrecondition(request))),
-);
+export const DELETE = securedEndpoint<Params>("admin", async (request, { id }, secret) => {
+	const cleared = await clearFinal(id, bySecret(secret), ifMatchPrecondition(request));
+
+	sendSoon();
+
+	return answer(cleared);
+});
 
 const methods = routeMethods(["PUT", "DELETE"]);
 

@@ -373,6 +373,14 @@
 			"label": "Jazyk",
 			"save": "Uložit jazyk"
 		},
+		"notifications": {
+			"heading": "E-maily o událostech",
+			"intro": "Platí pro všechny vaše události; stránka události je může pro danou událost změnit.",
+			"responses": "Nové odpovědi v událostech, které organizuji, nejvýš jednou za {minutes} minut",
+			"final": "Vybraný termín událostí, kterých se účastním, se souborem kalendáře",
+			"reminder": "Připomínka {hours} hodin před termínem",
+			"save": "Uložit e-maily"
+		},
 		"passkeys": {
 			"heading": "Přístupové klíče",
 			"none": "Zatím žádné přístupové klíče. Odkaz e-mailem funguje vždy.",
@@ -400,6 +408,7 @@
 		},
 		"done": {
 			"language": "Jazyk je uložený.",
+			"notifications": "Výběr e-mailů je uložený.",
 			"email_sent": "Potvrzovací odkaz je na cestě na novou adresu.",
 			"email": "Vaše e-mailová adresa je změněná.",
 			"session": "Ten prohlížeč je odhlášený.",
@@ -435,7 +444,64 @@
 			"subject": "Změna vaší e-mailové adresy v convenr",
 			"intro": "Někdo přihlášený k vašemu účtu convenr požádal o změnu jeho e-mailové adresy na {email}. Změní se, až někdo otevře odkaz poslaný tam.",
 			"notYou": "Pokud jste to nebyli vy, přihlaste se a odhlaste všechny ostatní prohlížeče."
+		},
+		"notify": {
+			"open": "Otevřít událost",
+			"unsubscribe": "Vypnout tyto e-maily pro tuto událost",
+			"reason": {
+				"responses": "Tento e-mail dostáváte, protože jste si zapnuli e-maily o nových odpovědích.",
+				"final": "Tento e-mail dostáváte, protože jste si zapnuli e-maily o vybraném termínu.",
+				"reminder": "Tento e-mail dostáváte, protože jste si zapnuli připomínky."
+			},
+			"responses": {
+				"subject": "Nové odpovědi v události {name}",
+				"intro": "Nové nebo změněné odpovědi v události {name} od posledního e-mailu: {names}."
+			},
+			"final": {
+				"subject": "Termín události {name}",
+				"intro": "Organizátor vybral termín události {name}: {when}.",
+				"calendar": "V příloze je soubor kalendáře; když ho otevřete, událost se přidá do vašeho kalendáře nebo se v něm aktualizuje."
+			},
+			"cleared": {
+				"subject": "Termín události {name} je zrušený",
+				"intro": "Organizátor zrušil vybraný termín události {name}. Až vybere nový, přijde vám e-mail."
+			},
+			"reminder": {
+				"subject": "Připomínka: {name}",
+				"intro": "Událost {name} začíná {when}."
+			}
 		}
+	},
+	"EventNotifications": {
+		"heading": "Moje e-maily o této události",
+		"kind": {
+			"responses": "Nové odpovědi",
+			"final": "Vybraný termín",
+			"reminder": "Připomínka před termínem"
+		},
+		"account": {
+			"on": "Podle stránky účtu (zapnuto)",
+			"off": "Podle stránky účtu (vypnuto)"
+		},
+		"on": "Zapnuto pro tuto událost",
+		"off": "Vypnuto pro tuto událost",
+		"failed": "Nepovedlo se to. Zkuste to prosím znovu."
+	},
+	"Unsubscribe": {
+		"title": "Vypnout e-maily",
+		"heading": "Vypnout e-maily",
+		"intro": {
+			"responses": "Tím vypnete e-maily o nových odpovědích pro tuto událost. Ostatní vaše události zůstanou, jak jsou.",
+			"final": "Tím vypnete e-maily o vybraném termínu pro tuto událost. Ostatní vaše události zůstanou, jak jsou.",
+			"reminder": "Tím vypnete připomínky pro tuto událost. Ostatní vaše události zůstanou, jak jsou."
+		},
+		"submit": "Vypnout",
+		"done": {
+			"responses": "E-maily o nových odpovědích jsou pro tuto událost vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
+			"final": "E-maily o vybraném termínu jsou pro tuto událost vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
+			"reminder": "Připomínky jsou pro tuto událost vypnuté. Po přihlášení je můžete znovu zapnout na stránce události."
+		},
+		"invalid": "Tento odkaz není platný. Zkontrolujte, že jste otevřeli celý, nebo si e-maily nastavte na stránce účtu."
 	},
 	"ApiReference": {
 		"title": "API convenr",

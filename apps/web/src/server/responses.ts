@@ -14,6 +14,7 @@ import {
 	scheduleOf,
 	touchEvent,
 } from "./event-rows";
+import { noteResponse } from "./notifications";
 
 export type SaveResult =
 	/** The participant as the save left them, so an answer needs no second read. */
@@ -117,6 +118,7 @@ export async function saveResponse(
 		}
 
 		await touchEvent(tx, found.event, now);
+		await noteResponse(tx, found.event, participantId, participant.displayName, now);
 
 		return saved;
 	});

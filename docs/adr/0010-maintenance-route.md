@@ -11,7 +11,7 @@ Phase 5 adds work to the maintenance pass that is not SQL alone. It sends what w
 ## Decision
 
 1. **The application runs the pass.** `maintain` in `apps/web/src/server/maintain.ts` is the pass as the server runs it. The server's hourly timer calls it in a container, and the route `POST /api/maintenance` calls it on request.
-2. **A secret guards the route.** The route exists only when `MAINTENANCE_SECRET` is set, at least 32 characters. Every other instance answers `not_found`. The caller sends the secret as `Authorization: Bearer`, compared in constant time. A missing or wrong secret gets `unauthorized`. The answer holds only the number of deleted events.
+2. **A secret guards the route.** The route exists only when `MAINTENANCE_SECRET` is set, at least 32 characters. Every other instance answers `not_found`. The caller sends the secret as `Authorization: Bearer`, compared in constant time. A missing or wrong secret gets `unauthorized`. The answer holds only two counts: deleted events and sent emails.
 3. **The workflow only calls the route.** `maintenance.yml` posts to `PRODUCTION_URL` every hour and on demand. It holds `MAINTENANCE_SECRET` and nothing else: no database address and no mail settings. It passes the header on standard input, so the secret is not in the runner's process list.
 4. **The command stays.** `purge.mts` keeps running the SQL part of the pass for an operator who schedules it from outside. It sends no email; the server's timer does that.
 

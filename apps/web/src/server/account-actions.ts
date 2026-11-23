@@ -12,6 +12,7 @@ import { type Locale, localeSchema, routing } from "@/i18n/routing";
 import { formText as text } from "@/lib/form-text";
 
 import { type Auth, auth } from "./auth";
+import { setAccountChoices } from "./notifications";
 import { currentVisitor } from "./session";
 
 const DAY = Temporal.Duration.from({ hours: 24 });
@@ -93,6 +94,20 @@ export async function setLanguageAction(form: FormData): Promise<void> {
 	}
 
 	backToAccount(locale, { done: "language" });
+}
+
+/** Saves which notifications the account gets for all its events; an unchecked kind is off. */
+export async function setNotificationsAction(form: FormData): Promise<void> {
+	const locale = localeOf(form);
+	const visitor = await signedIn(locale);
+
+	await setAccountChoices(visitor.accountId, {
+		responses: text(form, "responses") === "on",
+		final: text(form, "final") === "on",
+		reminder: text(form, "reminder") === "on",
+	});
+
+	backToAccount(locale, { done: "notifications" });
 }
 
 export async function changeEmailAction(form: FormData): Promise<void> {

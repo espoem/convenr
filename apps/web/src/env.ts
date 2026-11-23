@@ -29,6 +29,10 @@ const schema = z.object({
 	 * schedule starts from outside; 32 characters or more. Without it the route does not exist.
 	 */
 	MAINTENANCE_SECRET: z.string().min(32).optional(),
+	/** The least minutes between two new-responses emails for one account and event. */
+	NOTIFY_DIGEST_MINUTES: z.coerce.number().int().min(1).max(10_080).default(60),
+	/** Hours before the final time that its reminder is due. */
+	REMINDER_HOURS: z.coerce.number().int().min(1).max(720).default(24),
 	/** Emails of all kinds the instance sends per hour at most. */
 	MAIL_HOURLY_LIMIT: z.coerce.number().int().min(1).max(100_000).default(300),
 });
