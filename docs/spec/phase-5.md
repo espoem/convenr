@@ -136,6 +136,20 @@ Phase 1 section 12 and Phase 2 section 9 apply. The new codes are listed in [pro
 
 As the roadmap requires, the phase ends with a UI and UX review of the new pages and of the event, manage and start pages it changed: layout and widths, flow, copy, accessibility and behavior on a phone. Its defects are listed here and fixed before the phase is done.
 
+The review of 23 November 2026 found these defects, all fixed:
+
+1. On a phone the header's account link wrapped onto two lines and shrank its icon. The link now reads "Account" ("Účet") and never wraps; on a screen narrower than 26rem it shows its icon alone and keeps its words for screen readers, since "Přihlásit se" beside the two menus would push the page sideways.
+2. "Remove from account" released an owned event at once, although the owner may then have no way left to manage it. Removing an event now asks inside the page first, as `DESIGN.md` asks of a destructive action. The question says that only the admin link manages a released event and that a kept event gets a deletion date again; for a joined event, it says that the participant stays joined in this browser only.
+3. In the account's lists the event name, "Manage" and "Remove from account" were three links of one weight in a row. The name and its details now stand on the left, as in the list of events in this browser, and removing is an outlined destructive button.
+4. Checked boxes showed the browser's own blue. Check boxes and radio buttons now take the `ink` color.
+5. The page after creating an event told a signed-in creator that the admin link cannot be recovered, although the account owns the event. It now says that the account manages the event from any browser where it is signed in.
+6. The joined line offered a linked participant a password, which nothing ever asks for (AU8). The line no longer offers it.
+7. The unsubscribe page did not name the event, and its confirmation led nowhere. Both now name the event, and the confirmation links to it. A link to an event that no longer exists says so instead of calling the link invalid.
+8. The manage page put keeping and the visitor's emails above the final time and the event form. They now stand after the participants, before deletion, and appear only once the page has opened the event.
+9. The list of signed-in browsers read "Signed in 23 November 2026", and the Czech "Přihlášen" assumed a gender. It now reads "signed in on …" ("přihlášeno …"), and the Czech account page calls keeping "ponechat" throughout.
+
+The review kept two choices on purpose. A returning participant opens on their own grid (Y3), because they come back to change it; the group grid is one tab away. The per-event email settings stay at the end of the event page, after the participants, because they are a setting a visitor changes rarely, and their selects change nothing else on the page.
+
 ## 12. Acceptance test
 
 Phase 5 is done when this end-to-end test passes on a clean clone in CI, with Mailpit as the mail server:

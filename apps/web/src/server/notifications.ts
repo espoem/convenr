@@ -11,6 +11,7 @@ import {
 	participants,
 	responseDigests,
 } from "@/db/schema";
+import { eventSegment } from "@/domain/event-address";
 import type { FinalTime } from "@/domain/final-time";
 import {
 	type EventChoice,
@@ -21,7 +22,7 @@ import {
 } from "@/domain/notifications";
 import { env } from "@/env";
 
-import { type EventRow, finalOf, type Queries } from "./event-rows";
+import { type EventRow, finalOf, liveEvent, type Queries } from "./event-rows";
 import { readUnsubscribeValue } from "./unsubscribe-value";
 
 /** Who a kind is for: the owner, the accounts with a linked participant, or both. */
@@ -361,9 +362,33 @@ function readValue(value: string) {
 	return accounts.kind === "on" ? readUnsubscribeValue(value, accounts.secret) : undefined;
 }
 
-/** The kind a signed unsubscribe value would turn off, or `undefined` for an invalid value. */
-export function unsubscribeKind(value: string): NotificationKind | undefined {
-	return readValue(value)?.kind;
+/** What a signed unsubscribe value turns off, and the event it names while that event lives. */
+export type UnsubscribeTarget =
+	| { status: "invalid" }
+	| { status: "event_gone"; kind: NotificationKind }
+	| { status: "event"; kind: NotificationKind; name: string; segment: string };
+
+/** What the unsubscribe page says a value turns off, so a reader knows which event it is. */
+export async function unsubscribeTarget(
+	value: string,
+	now = Temporal.Now.instant(),
+): Promise<UnsubscribeTarget> {
+	const named = readValue(value);
+
+	if (named === undefined) {
+		return { status: "invalid" };
+	}
+
+	const row = await liveEvent(db(), named.eventId, now, "read");
+
+	return row === undefined
+		? { status: "event_gone", kind: named.kind }
+		: {
+				status: "event",
+				kind: named.kind,
+				name: row.name,
+				segment: eventSegment(row.id, row.name),
+			};
 }
 
 /**

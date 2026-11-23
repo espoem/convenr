@@ -104,6 +104,7 @@
 		"shareLink": "Link for participants",
 		"adminLink": "Admin link",
 		"adminWarning": "The admin link cannot be recovered. Save it before you close this page.",
+		"adminInAccount": "The event is in your account, so you can manage it from any browser where you are signed in. The admin link manages it without signing in.",
 		"open": "Open the event",
 		"missing": "The admin link is shown only in the browser that created the event. Here is the link for participants."
 	},
@@ -310,7 +311,7 @@
 	},
 	"AccountLink": {
 		"signIn": "Sign in",
-		"account": "Your account"
+		"account": "Account"
 	},
 	"SignIn": {
 		"title": "Sign in",
@@ -340,6 +341,11 @@
 			"noneJoined": "You have not joined any event with your account yet. Events you join while signed in open joined in any browser where you are signed in.",
 			"manage": "Manage",
 			"unlink": "Remove from account",
+			"releaseConfirm": "Remove {name} from your account? Then only its admin link manages it; without that link, nobody can change or delete it.",
+			"releaseKept": "It also stops being kept and gets a deletion date again.",
+			"unlinkConfirm": "Remove {name} from your account? You stay joined as {participant} in this browser only.",
+			"unlinkYes": "Remove",
+			"unlinkNo": "Cancel",
 			"unlinkFailed": "The event could not be removed. Reload the page and try again.",
 			"as": "as {name}",
 			"open": "No final time yet",
@@ -394,7 +400,7 @@
 		},
 		"sessions": {
 			"heading": "Signed-in browsers",
-			"started": "Signed in {date}",
+			"started": "signed in on {date}",
 			"unknown": "Unknown browser",
 			"current": "This browser",
 			"end": "Sign out there",
@@ -491,16 +497,18 @@
 		"title": "Turn off emails",
 		"heading": "Turn off emails",
 		"intro": {
-			"responses": "This turns off the emails about new responses for this event. Your other events stay as they are.",
-			"final": "This turns off the emails about the final time for this event. Your other events stay as they are.",
-			"reminder": "This turns off the reminders for this event. Your other events stay as they are."
+			"responses": "This turns off the emails about new responses to <strong>{name}</strong>. Your other events stay as they are.",
+			"final": "This turns off the emails about the final time of <strong>{name}</strong>. Your other events stay as they are.",
+			"reminder": "This turns off the reminders of <strong>{name}</strong>. Your other events stay as they are."
 		},
 		"submit": "Turn off",
 		"done": {
-			"responses": "The emails about new responses are off for this event. Signed in, you can turn them on again on the event page.",
-			"final": "The emails about the final time are off for this event. Signed in, you can turn them on again on the event page.",
-			"reminder": "The reminders are off for this event. Signed in, you can turn them on again on the event page."
+			"responses": "The emails about new responses to <strong>{name}</strong> are off. Signed in, you can turn them on again on the event page.",
+			"final": "The emails about the final time of <strong>{name}</strong> are off. Signed in, you can turn them on again on the event page.",
+			"reminder": "The reminders of <strong>{name}</strong> are off. Signed in, you can turn them on again on the event page."
 		},
+		"open": "Open the event",
+		"gone": "This event no longer exists, so it sends no more emails.",
 		"invalid": "This link is not valid. Check that you opened all of it, or change your emails on the account page."
 	},
 	"ApiReference": {

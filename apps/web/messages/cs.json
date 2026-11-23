@@ -104,6 +104,7 @@
 		"shareLink": "Odkaz pro účastníky",
 		"adminLink": "Odkaz pro správu",
 		"adminWarning": "Odkaz pro správu nejde obnovit. Uložte si ho, než stránku zavřete.",
+		"adminInAccount": "Událost je ve vašem účtu, takže ji můžete spravovat z každého prohlížeče, kde jste přihlášeni. Odkaz pro správu ji spravuje i bez přihlášení.",
 		"open": "Otevřít událost",
 		"missing": "Odkaz pro správu se ukazuje jen v prohlížeči, ve kterém jste událost vytvořili. Odkaz pro účastníky je tady."
 	},
@@ -310,7 +311,7 @@
 	},
 	"AccountLink": {
 		"signIn": "Přihlásit se",
-		"account": "Váš účet"
+		"account": "Účet"
 	},
 	"SignIn": {
 		"title": "Přihlášení",
@@ -340,6 +341,11 @@
 			"noneJoined": "Účtem jste se zatím k žádné události nepřipojili. Události, ke kterým se připojíte přihlášeni, se otevřou s vaším jménem v každém prohlížeči, kde jste přihlášeni.",
 			"manage": "Spravovat",
 			"unlink": "Odebrat z účtu",
+			"releaseConfirm": "Odebrat událost {name} z účtu? Pak ji spravuje jen její odkaz pro správu; bez něj ji nikdo nezmění ani nesmaže.",
+			"releaseKept": "Zároveň ji přestanete ponechávat a znovu dostane datum smazání.",
+			"unlinkConfirm": "Odebrat událost {name} z účtu? Zůstanete v ní jako {participant} jen v tomto prohlížeči.",
+			"unlinkYes": "Odebrat",
+			"unlinkNo": "Zrušit",
 			"unlinkFailed": "Událost se nepodařilo odebrat. Načtěte stránku znovu a zkuste to ještě jednou.",
 			"as": "jako {name}",
 			"open": "Termín zatím není vybraný",
@@ -394,7 +400,7 @@
 		},
 		"sessions": {
 			"heading": "Přihlášené prohlížeče",
-			"started": "Přihlášen {date}",
+			"started": "přihlášeno {date}",
 			"unknown": "Neznámý prohlížeč",
 			"current": "Tento prohlížeč",
 			"end": "Odhlásit tam",
@@ -402,7 +408,7 @@
 		},
 		"delete": {
 			"heading": "Smazat účet",
-			"warning": "Vaše události zůstanou a dál fungují přes své odkazy. Událost uchovaná bez časového omezení znovu dostane datum smazání.",
+			"warning": "Vaše události zůstanou a dál fungují přes své odkazy. Událost ponechaná bez časového omezení znovu dostane datum smazání.",
 			"confirm": "Chci smazat svůj účet",
 			"submit": "Smazat účet"
 		},
@@ -491,16 +497,18 @@
 		"title": "Vypnout e-maily",
 		"heading": "Vypnout e-maily",
 		"intro": {
-			"responses": "Tím vypnete e-maily o nových odpovědích pro tuto událost. Ostatní vaše události zůstanou, jak jsou.",
-			"final": "Tím vypnete e-maily o vybraném termínu pro tuto událost. Ostatní vaše události zůstanou, jak jsou.",
-			"reminder": "Tím vypnete připomínky pro tuto událost. Ostatní vaše události zůstanou, jak jsou."
+			"responses": "Tím vypnete e-maily o nových odpovědích v události <strong>{name}</strong>. Ostatní vaše události zůstanou, jak jsou.",
+			"final": "Tím vypnete e-maily o vybraném termínu události <strong>{name}</strong>. Ostatní vaše události zůstanou, jak jsou.",
+			"reminder": "Tím vypnete připomínky události <strong>{name}</strong>. Ostatní vaše události zůstanou, jak jsou."
 		},
 		"submit": "Vypnout",
 		"done": {
-			"responses": "E-maily o nových odpovědích jsou pro tuto událost vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
-			"final": "E-maily o vybraném termínu jsou pro tuto událost vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
-			"reminder": "Připomínky jsou pro tuto událost vypnuté. Po přihlášení je můžete znovu zapnout na stránce události."
+			"responses": "E-maily o nových odpovědích v události <strong>{name}</strong> jsou vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
+			"final": "E-maily o vybraném termínu události <strong>{name}</strong> jsou vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
+			"reminder": "Připomínky události <strong>{name}</strong> jsou vypnuté. Po přihlášení je můžete znovu zapnout na stránce události."
 		},
+		"open": "Otevřít událost",
+		"gone": "Tato událost už neexistuje, takže už žádné e-maily neposílá.",
 		"invalid": "Tento odkaz není platný. Zkontrolujte, že jste otevřeli celý, nebo si e-maily nastavte na stránce účtu."
 	},
 	"ApiReference": {

@@ -8,10 +8,16 @@ import type { Locale } from "@/i18n/routing";
 import { useLocalEvents } from "@/lib/local-events";
 import { useOrigin } from "@/lib/use-origin";
 
-type CreatedLinksProps = { id: string; segment: string; locale: Locale };
+type CreatedLinksProps = {
+	id: string;
+	segment: string;
+	locale: Locale;
+	/** The signed-in creator's account owns the event, so losing the admin link loses nothing. */
+	inAccount: boolean;
+};
 
 /** The share link and the admin link. The admin link exists only in this browser's storage. */
-export function CreatedLinks({ id, segment, locale }: CreatedLinksProps) {
+export function CreatedLinks({ id, segment, locale, inAccount }: CreatedLinksProps) {
 	const t = useTranslations("Created");
 	const origin = useOrigin();
 	const stored = useLocalEvents().get(id);
@@ -38,7 +44,11 @@ export function CreatedLinks({ id, segment, locale }: CreatedLinksProps) {
 					label={t("adminLink")}
 					value={`${origin}${eventPath}/manage#${stored.adminSecret}`}
 				/>
-				<p className="max-w-(--cv-measure) font-semibold">{t("adminWarning")}</p>
+				{inAccount ? (
+					<p className="max-w-(--cv-measure)">{t("adminInAccount")}</p>
+				) : (
+					<p className="max-w-(--cv-measure) font-semibold">{t("adminWarning")}</p>
+				)}
 			</div>
 			<Link
 				href={`/e/${segment}`}

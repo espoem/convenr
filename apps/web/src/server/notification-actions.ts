@@ -47,12 +47,14 @@ export async function setEventChoiceAction(
 /** Turns off what the form's signed value names, and shows the page again with the outcome. */
 export async function unsubscribeAction(form: FormData): Promise<void> {
 	const locale = localeSchema.parse(text(form, "locale"));
-	const result = await unsubscribe(text(form, "value"));
+	const value = text(form, "value");
+	const result = await unsubscribe(value);
 
+	// The value stays in the address so the confirmation can name the event.
 	redirect({
 		href: {
 			pathname: "/unsubscribe",
-			query: result.status === "unsubscribed" ? { done: result.kind } : { problem: "invalid" },
+			query: result.status === "unsubscribed" ? { value, done: "1" } : { problem: "invalid" },
 		},
 		locale,
 	});

@@ -58,6 +58,12 @@
 		text-wrap: pretty;
 	}
 
+	/* A checked box takes the ink of the page instead of the browser's own blue. */
+	input[type="checkbox"],
+	input[type="radio"] {
+		accent-color: var(--cv-ink);
+	}
+
 	/* Selects keep the native control, which also keeps the phone's own picker. With a precise
 	   pointer and support for the customizable select, the arrow and the list follow the
 	   tokens. Everywhere else the plain native select is the fallback. */

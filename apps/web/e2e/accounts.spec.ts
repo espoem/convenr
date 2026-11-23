@@ -112,11 +112,12 @@ test("an organizer adds an event to the account and manages it from another brow
 	await expect(organized.getByRole("listitem").filter({ hasText: "Oběd" })).toContainText(
 		"you keep it",
 	);
-	await organized
-		.getByRole("listitem")
-		.filter({ hasText: "Oběd" })
-		.getByRole("button", { name: "Remove from account" })
-		.click();
+	const kept = organized.getByRole("listitem").filter({ hasText: "Oběd" });
+
+	// Releasing asks first, and says the keeping ends with it.
+	await kept.getByRole("button", { name: "Remove from account" }).click();
+	await expect(kept.getByRole("alert")).toContainText("gets a deletion date again");
+	await kept.getByRole("button", { name: "Remove", exact: true }).click();
 	await expect(organized.getByRole("link", { name: "Oběd" })).toHaveCount(0);
 
 	await here.context().close();
@@ -150,6 +151,7 @@ test("a signed-in participant is joined in every signed-in browser until it is r
 
 	await expect(joined.getByText("as Eva")).toBeVisible();
 	await joined.getByRole("button", { name: "Remove from account" }).click();
+	await joined.getByRole("button", { name: "Remove", exact: true }).click();
 	await expect(joined.getByText("You have not joined any event")).toBeVisible();
 	await here.goto(share);
 	await expect(here.getByRole("button", { name: "Nejste Eva?" })).toBeVisible();
@@ -193,10 +195,11 @@ test("an organizer gets an email about a new response and turns it off for the e
 
 	// Opening the link changes nothing; the button does.
 	await organizer.goto(unsubscribe);
+	await expect(organizer.getByText("new responses to Porada")).toBeVisible();
 	await organizer.getByRole("button", { name: "Turn off" }).click();
-	await expect(
-		organizer.getByText("The emails about new responses are off for this event."),
-	).toBeVisible();
+	await expect(organizer.getByRole("status")).toHaveText(
+		"The emails about new responses to Porada are off. Signed in, you can turn them on again on the event page.",
+	);
 
 	await organizer.goto(share.replace("/cs/", "/en/"));
 	await expect(organizer.getByLabel("New responses")).toHaveValue("off");

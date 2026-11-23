@@ -81,10 +81,6 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 						{t("open")}
 					</Link>
 				</div>
-				{owner.kind === "owner" && owner.keeping.kind === "shown" ? (
-					<KeepEvent eventId={event.id} kept={owner.keeping.kept} />
-				) : null}
-				<EventNotifications eventId={event.id} choices={choices} />
 				<ManageEvent
 					id={event.id}
 					options={await eventFormOptions()}
@@ -92,6 +88,14 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 					storedOptions={storedOptions}
 					version={event.version}
 					formatLocale={format}
+					settings={
+						<>
+							{owner.kind === "owner" && owner.keeping.kind === "shown" ? (
+								<KeepEvent eventId={event.id} kept={owner.keeping.kept} />
+							) : null}
+							<EventNotifications eventId={event.id} choices={choices} />
+						</>
+					}
 				/>
 			</main>
 		</PageShell>

@@ -220,26 +220,29 @@ function JoinedLine({
 					{t.rich("joinedAs", { name: joined.name, strong })}
 				</h2>
 				<div className="flex flex-wrap gap-x-4">
-					{/* The account's participant is unlinked from the account page instead. */}
+					{/* The account's participant is unlinked from the account page instead, and no
+					    password is ever asked for it: only its account reaches it. */}
 					{joined.linked ? null : (
-						<button
-							type="button"
-							disabled={pending}
-							onClick={notMe}
-							className="min-h-11 text-action underline underline-offset-4"
-						>
-							{t("notYou", { name: joined.name })}
-						</button>
+						<>
+							<button
+								type="button"
+								disabled={pending}
+								onClick={notMe}
+								className="min-h-11 text-action underline underline-offset-4"
+							>
+								{t("notYou", { name: joined.name })}
+							</button>
+							<button
+								type="button"
+								aria-expanded={panel === "password"}
+								aria-controls={`${id}-panel`}
+								onClick={() => setPanel(panel === "password" ? "none" : "password")}
+								className="min-h-11 text-action underline underline-offset-4"
+							>
+								{joined.hasPassword ? t("changePassword") : t("setPassword")}
+							</button>
+						</>
 					)}
-					<button
-						type="button"
-						aria-expanded={panel === "password"}
-						aria-controls={`${id}-panel`}
-						onClick={() => setPanel(panel === "password" ? "none" : "password")}
-						className="min-h-11 text-action underline underline-offset-4"
-					>
-						{joined.hasPassword ? t("changePassword") : t("setPassword")}
-					</button>
 					<button
 						type="button"
 						aria-expanded={panel === "leave"}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import { EventForm, type EventFormOptions, type FormOutcome } from "@/components/event-form";
 import type { ServerGrid } from "@/components/event/board-view";
@@ -38,6 +38,11 @@ type ManageEventProps = {
 	/** The version the page was rendered at. */
 	version: EventVersion;
 	formatLocale: string;
+	/**
+	 * The visitor's own settings for the event, such as keeping and emails. They follow the
+	 * planning and stand before deletion, which they concern.
+	 */
+	settings: ReactNode;
 };
 
 const AS_OWNER: ManageCredential = { kind: "owner" };
@@ -55,6 +60,7 @@ export function ManageEvent({
 	storedOptions,
 	version,
 	formatLocale,
+	settings,
 }: ManageEventProps) {
 	const t = useTranslations("Manage");
 	const router = useRouter();
@@ -302,6 +308,8 @@ export function ManageEvent({
 					</div>
 				)}
 			</section>
+
+			{settings}
 
 			<section aria-labelledby="delete" className="flex flex-col gap-4">
 				<h2 id="delete" className="text-2xl">

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { useFinalWhen } from "@/components/event/final-time";
+import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import { releaseAction, unlinkAction } from "@/server/ownership-actions";
@@ -21,8 +22,8 @@ export type AccountEventItem = {
 
 /**
  * One of the account's lists, with each event's deletion date and final time. The organizer's
- * events link to their manage page; each event can be removed from the account, which releases
- * an owned event and unlinks a joined one.
+ * events link to their manage page; each event can be removed from the account after a
+ * confirmation, which releases an owned event and unlinks a joined one.
  */
 export function AccountEvents({
 	events,
@@ -40,6 +41,7 @@ export function AccountEvents({
 	const ready = useTemporalReady();
 	const router = useRouter();
 	const [failed, setFailed] = useState<string | null>(null);
+	const [confirming, setConfirming] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	if (events.length === 0) {
@@ -76,42 +78,82 @@ export function AccountEvents({
 					: await unlinkAction(event.id);
 
 			setFailed(removed ? null : event.id);
+			setConfirming(null);
 			router.refresh();
 		});
+	}
+
+	// Releasing an owned event can leave the visitor with no way to manage it, so it is said first.
+	function consequence(event: AccountEventItem): string {
+		if (event.role.kind === "participant") {
+			return t("unlinkConfirm", { name: event.name, participant: event.role.name });
+		}
+
+		const kept = event.deletion.kind === "kept" && event.deletion.by === "organizer";
+
+		return kept
+			? `${t("releaseConfirm", { name: event.name })} ${t("releaseKept")}`
+			: t("releaseConfirm", { name: event.name });
 	}
 
 	return (
 		<ul className="flex flex-col divide-y divide-line border-y border-line">
 			{events.map((event) => (
-				<li key={event.id} className="flex flex-col gap-1 py-3">
-					<span className="flex flex-wrap items-center gap-x-4">
-						<Link
-							href={`/e/${event.segment}`}
-							className="flex min-h-11 items-center font-semibold text-action underline underline-offset-4"
-						>
-							{event.name}
-						</Link>
-						{event.role.kind === "organizer" ? (
+				<li key={event.id} className="flex flex-col gap-2 py-3">
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<div className="flex min-w-0 flex-col">
 							<Link
-								href={`/e/${event.segment}/manage`}
-								className="flex min-h-11 items-center text-action underline underline-offset-4"
+								href={`/e/${event.segment}`}
+								className="w-fit font-semibold break-words text-action underline underline-offset-4"
 							>
-								{t("manage")}
+								{event.name}
 							</Link>
+							{event.role.kind === "participant" ? (
+								<span className="text-sm">{t("as", { name: event.role.name })}</span>
+							) : null}
+							<span className="text-sm text-ink-muted">{details(event)}</span>
+						</div>
+						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+							{event.role.kind === "organizer" ? (
+								<Link
+									href={`/e/${event.segment}/manage`}
+									className="flex min-h-11 items-center text-action underline underline-offset-4"
+								>
+									{t("manage")}
+								</Link>
+							) : null}
+							<Button
+								type="button"
+								variant="destructive"
+								disabled={pending}
+								aria-expanded={confirming === event.id}
+								aria-controls={`unlink-${event.id}`}
+								onClick={() => setConfirming(confirming === event.id ? null : event.id)}
+							>
+								{t("unlink")}
+							</Button>
+						</div>
+					</div>
+					<div id={`unlink-${event.id}`}>
+						{confirming === event.id ? (
+							<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
+								<p>{consequence(event)}</p>
+								<div className="flex flex-wrap gap-2">
+									<Button
+										type="button"
+										variant="destructive"
+										disabled={pending}
+										onClick={() => remove(event)}
+									>
+										{t("unlinkYes")}
+									</Button>
+									<Button type="button" variant="outline" onClick={() => setConfirming(null)}>
+										{t("unlinkNo")}
+									</Button>
+								</div>
+							</div>
 						) : null}
-						<button
-							type="button"
-							disabled={pending}
-							onClick={() => remove(event)}
-							className="min-h-11 text-action underline underline-offset-4"
-						>
-							{t("unlink")}
-						</button>
-					</span>
-					{event.role.kind === "participant" ? (
-						<span className="text-sm">{t("as", { name: event.role.name })}</span>
-					) : null}
-					<span className="text-sm text-ink-muted">{details(event)}</span>
+					</div>
 					{failed === event.id ? (
 						<span className="text-sm font-semibold text-action-active">{t("unlinkFailed")}</span>
 					) : null}

@@ -21,10 +21,11 @@ async function AccountLink() {
 	return (
 		<Link
 			href={signedIn ? "/account" : "/sign-in"}
-			className="inline-flex min-h-11 items-center gap-1.5 px-2 text-action underline-offset-4 hover:underline"
+			className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 whitespace-nowrap text-action underline-offset-4 hover:underline"
 		>
-			<UserCircleIcon aria-hidden className="size-5" />
-			{signedIn ? t("account") : t("signIn")}
+			<UserCircleIcon aria-hidden className="size-5 shrink-0" />
+			{/* A phone has no room for the word beside the menus, so there the icon stands alone. */}
+			<span className="max-[26rem]:sr-only">{signedIn ? t("account") : t("signIn")}</span>
 		</Link>
 	);
 }
