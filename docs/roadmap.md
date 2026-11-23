@@ -88,6 +88,14 @@ Each phase ships on its own and is usable by real people.
   4. Switching the language shifts the layout.
   5. After switching the language, "Change password" and the rest of the line for the joined participant appear noticeably later than the other text. The board learns who has joined only after the browser sends its stored token to the server (`identifyAction` in `event-board.tsx`), so the line waits for that round trip on every page load.
   6. The parts of the event page have no common width. Some stop at about 80 % of the page, others take its full width, and short notes wrap well before the line ends. The layout of the grid page needs one review that sets which parts take the full width and which keep the text measure.
+
+  Defects seen on 2026-11-23:
+
+  7. The hint under the participant filter ("Choose a name and the grid shows only that participant's availability…") wraps in a column that is too narrow. Review the widths of all text columns together with defect 6.
+  8. After a click on a copy button, the "Copied." notice stays on screen. It should hide after a short timeout.
+  9. A chosen best time can't be deselected. When the chosen option disappears from the list, for example after a response changes, the choice should reset.
+  10. The best times list shows on both the "Me" and the "Group" tab. It belongs only on "Group".
+  11. A reload switches the "Me"/"Group" tab back to its default. The page should keep the chosen tab across a reload, for example in the URL or in another way that fits better.
 - Live updates that replace the 15-second reload, using the technique that fits the hosting chosen by then.
 - Guides for people who run convenr or build on it, as sections of the README. A guide that is too long for the README moves to `docs/guides/` and the README links to it. A guide is done when each of its commands runs on a clean clone.
   1. Local deployment: run the application and PostgreSQL in containers, the settings an instance takes, and how to update it and back up its data.
