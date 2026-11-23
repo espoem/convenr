@@ -6,6 +6,9 @@ import "package://github.com/jdx/hk/releases/download/v2.13.0/hk@2.13.0#/Builtin
 // The commands match `mise run format:check` and `mise run lint`, so a commit the
 // hook accepts also passes those CI gates.
 steps {
+	["no-scratch"] {
+		check = "bash -c 'if git diff --cached --name-only | grep -q \"^\\.scratch/\"; then echo \"Error: .scratch/ files must not be committed\" >&2; exit 1; fi'"
+	}
 	["oxfmt"] = Builtins.oxfmt
 	// oxlint type-checks the staged files and reads the generated route types.
 	["typegen"] {

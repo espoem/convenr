@@ -145,9 +145,9 @@ depends = ["db:up"]
 run = ["nub run -r test", "cd packages/sdk-python && uv run --locked pytest"]
 
 [tasks.e2e]
-description = "Run end-to-end tests against the production build (needs `mise run build`); starts PostgreSQL"
-depends = ["db:up"]
-run = "nub run --filter @convenr/web e2e"
+description = "Build, clear stale e2e ports, start PostgreSQL, and run end-to-end tests"
+depends = ["db:up", "build"]
+run = "scripts/e2e-clean.sh"
 
 [tasks.check]
 description = "Everything CI checks except end-to-end tests"
