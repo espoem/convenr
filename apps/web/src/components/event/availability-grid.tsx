@@ -185,6 +185,20 @@ export function AvailabilityGrid({
 
 	const keysOf = (cell: CellRef) => columns[cell.column]?.cells[cell.row] ?? [];
 
+	const firstNonEmpty = (() => {
+		for (let column = 0; column < columns.length; column += 1) {
+			const row = columns[column]?.cells.findIndex((keys) => keys.length > 0) ?? -1;
+
+			if (row !== -1) {
+				return { column, row };
+			}
+		}
+
+		return { column: 0, row: 0 };
+	})();
+
+	const activeFocus = keysOf(focus).length > 0 ? focus : firstNonEmpty;
+
 	const levelOf = (keys: readonly string[]) =>
 		edit === undefined ? null : cellLevel(edit.levels, keys);
 
@@ -243,18 +257,33 @@ export function AvailabilityGrid({
 		onInspect?.(cell, element.getBoundingClientRect());
 	}
 
+	function nextCell(from: CellRef, step: { column: number; row: number }): CellRef {
+		let column = from.column + step.column;
+		let row = from.row + step.row;
+
+		while (column >= 0 && column < columns.length && row >= 0 && row < view.layout.rows.length) {
+			const candidate = { column, row };
+
+			if (keysOf(candidate).length > 0) {
+				return candidate;
+			}
+
+			column += step.column;
+			row += step.row;
+		}
+
+		return from;
+	}
+
 	function keyDown(event: KeyboardEvent<HTMLButtonElement>) {
 		const step = ARROWS.get(event.key);
 
 		if (step !== undefined) {
 			event.preventDefault();
 
-			const next = {
-				column: Math.min(Math.max(focus.column + step.column, 0), columns.length - 1),
-				row: Math.min(Math.max(focus.row + step.row, 0), view.layout.rows.length - 1),
-			};
+			const next = nextCell(activeFocus, step);
 
-			setAnchor(edit !== undefined && event.shiftKey ? (anchor ?? focus) : null);
+			setAnchor(edit !== undefined && event.shiftKey ? (anchor ?? activeFocus) : null);
 			setFocus(next);
 			cells.current.get(cellId(next))?.focus();
 
@@ -271,12 +300,12 @@ export function AvailabilityGrid({
 		if (edit !== undefined && (event.key === " " || event.key === "Enter")) {
 			event.preventDefault();
 
-			const start = anchor ?? focus;
+			const start = anchor ?? activeFocus;
 
 			edit.onChange(
 				withLevel(
 					edit.levels,
-					keysWithin(start, focus),
+					keysWithin(start, activeFocus),
 					pressedLevel(levelOf(keysOf(start)), edit.brush),
 				),
 			);
@@ -375,7 +404,7 @@ export function AvailabilityGrid({
 								const empty = keys.length === 0;
 
 								const marked =
-									(anchor !== null && within(cell, anchor, focus)) ||
+									(anchor !== null && within(cell, anchor, activeFocus)) ||
 									(inspected?.column === index && inspected.row === row);
 
 								const inWindow =
@@ -429,7 +458,9 @@ export function AvailabilityGrid({
 													type="button"
 													data-column={index}
 													data-row={row}
-													tabIndex={focus.column === index && focus.row === row ? 0 : -1}
+													tabIndex={
+														activeFocus.column === index && activeFocus.row === row ? 0 : -1
+													}
 													aria-pressed={edit === undefined ? undefined : levelOf(keys) !== null}
 													aria-label={`${view.columns[index]?.long ?? ""}, ${time?.start ?? ""}–${time?.end ?? ""}, ${describe(keys)}`}
 													onKeyDown={keyDown}

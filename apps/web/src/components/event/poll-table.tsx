@@ -13,7 +13,13 @@ import { useCount } from "./count";
 import { useFinalWhen } from "./final-time";
 
 /** A poll option as the page shows it: its answer key and its ends as RFC 3339 instants. */
-export type ShownOption = { key: string; start: string; end: string };
+export type ShownOption = {
+	key: string;
+	start: string;
+	end: string;
+	/** Formatted in the event's reference zone on the server, for the first response. */
+	initialWhen?: string | undefined;
+};
 
 /** The people who answered an option, by participant index, with their level. */
 export type ShownResult = { key: string; people: { person: number; level: Level }[] };
@@ -40,13 +46,13 @@ type PollTableProps = {
 /** The background of each heat step, from nobody to almost everybody. */
 export const HEAT = ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"] as const;
 
-/** The time of an option in `zone`, or nothing until the browser can format it. */
+/** The time of an option in `zone`, or the server-rendered reference-zone text until hydrated. */
 export function useOptionWhen(zone: string | null, formatLocale: string) {
 	const temporalReady = useTemporalReady();
 	const when = useFinalWhen();
 
 	return (option: ShownOption) =>
-		temporalReady && zone !== null ? when(option, zone, formatLocale) : "";
+		temporalReady && zone !== null ? when(option, zone, formatLocale) : (option.initialWhen ?? "");
 }
 
 /** The names of `people` with "(if need be)" after those at that level. */

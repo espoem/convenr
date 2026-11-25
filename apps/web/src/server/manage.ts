@@ -49,6 +49,8 @@ import { countDeleted } from "./usage";
 export type ManagedEvent = NewEvent & {
 	id: string;
 	segment: string;
+	/** A poll's options as stored, with timestamps, so edits keep them atomically. */
+	storedOptions: { id: string; start: string; end: string }[];
 	/** Slot length, day mode and reference zone are locked because people joined. */
 	locked: boolean;
 	/** Each with their public id. */
@@ -192,10 +194,22 @@ export async function readManagedEvent(
 		.where(eq(participants.eventId, id))
 		.orderBy(asc(participants.createdAt), asc(participants.id));
 
+	const schedule = scheduleOf(row);
+
+	const storedOptions =
+		schedule.kind === "poll"
+			? schedule.options.map((option) => ({
+					id: option.id,
+					start: option.start.toString(),
+					end: option.end.toString(),
+				}))
+			: [];
+
 	return {
 		...inputOf(row),
 		id,
 		segment: eventSegment(id, row.name),
+		storedOptions,
 		locked: people.length > 0,
 		participants: people,
 	};

@@ -7,6 +7,7 @@ import { gridView } from "@/domain/grid-labels";
 import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
 import { bestOptions, inTimeOrder, optionKey } from "@/domain/poll";
 import type { GridSchedule, PollSchedule } from "@/domain/schedule";
+import { type FormatWhen, formatWhen } from "@/lib/final-when";
 
 import type { EventView } from "./events";
 
@@ -58,7 +59,11 @@ export function byKind(
 		: { kind: "poll", event: { ...event, schedule } };
 }
 
-export function pollBoardOf(event: PollEventView): PollBoardEvent {
+export function pollBoardOf(
+	event: PollEventView,
+	locale?: string,
+	translate?: FormatWhen,
+): PollBoardEvent {
 	const { schedule } = event;
 	const levels = event.participants.map((participant) => participant.levels);
 
@@ -67,11 +72,20 @@ export function pollBoardOf(event: PollEventView): PollBoardEvent {
 		name: event.name,
 		segment: event.segment,
 		referenceZone: schedule.referenceZone,
-		options: inTimeOrder(schedule.options).map((option) => ({
-			key: optionKey(option),
-			start: option.start.toString(),
-			end: option.end.toString(),
-		})),
+		options: inTimeOrder(schedule.options).map((option) => {
+			const start = option.start.toString();
+			const end = option.end.toString();
+
+			return {
+				key: optionKey(option),
+				start,
+				end,
+				initialWhen:
+					locale !== undefined && translate !== undefined
+						? formatWhen({ start, end }, schedule.referenceZone, locale, translate)
+						: undefined,
+			};
+		}),
 		best: bestOptions(schedule, levels).map((result) => ({
 			key: optionKey(result.option),
 			people: result.people,

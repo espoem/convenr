@@ -313,12 +313,25 @@ export function EventForm({
 		</Field>
 	);
 
-	const hourOptions = (from: number, to: number) =>
-		options.hours.slice(from, to + 1).map((label, index) => (
-			<option key={label} value={(from + index) * 60}>
-				{label}
-			</option>
-		));
+	const timeOptions = (from: number, to: number, current?: number) => {
+		const minutes = options.hours.slice(from, to + 1).map((_label, index) => (from + index) * 60);
+
+		if (current !== undefined && !minutes.includes(current)) {
+			minutes.push(current);
+			minutes.sort((a, b) => a - b);
+		}
+
+		return minutes.map((minute) => {
+			const hour = String(Math.floor(minute / 60)).padStart(2, "0");
+			const label = `${hour}:${String(minute % 60).padStart(2, "0")}`;
+
+			return (
+				<option key={minute} value={minute}>
+					{label}
+				</option>
+			);
+		});
+	};
 
 	return (
 		<form onSubmit={submit} noValidate className="flex max-w-(--cv-form) flex-col gap-8">
@@ -504,7 +517,7 @@ export function EventForm({
 									defaultValue={grid?.dailyStart ?? 9 * 60}
 									className={controlClass}
 								>
-									{hourOptions(0, 23)}
+									{timeOptions(0, 23, grid?.dailyStart)}
 								</select>
 							</Field>
 							<Field id={`${id}-end`} label={t("dailyEnd")} className="flex-[1_1_8rem]">
@@ -514,7 +527,7 @@ export function EventForm({
 									defaultValue={grid?.dailyEnd ?? 17 * 60}
 									className={controlClass}
 								>
-									{hourOptions(1, 24)}
+									{timeOptions(1, 24, grid?.dailyEnd)}
 								</select>
 							</Field>
 							<Field

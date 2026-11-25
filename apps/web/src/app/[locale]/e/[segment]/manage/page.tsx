@@ -63,15 +63,6 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 				}
 			: { kind: "poll", board: pollBoardOf(kind.event) };
 
-	const storedOptions =
-		kind.kind === "poll"
-			? kind.event.schedule.options.map((option) => ({
-					id: option.id,
-					start: option.start.toString(),
-					end: option.end.toString(),
-				}))
-			: [];
-
 	return (
 		<PageShell>
 			<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
@@ -91,7 +82,6 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 					id={event.id}
 					options={await eventFormOptions()}
 					board={board}
-					storedOptions={storedOptions}
 					version={event.version}
 					formatLocale={format}
 					settings={

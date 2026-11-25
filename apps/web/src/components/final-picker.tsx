@@ -15,7 +15,7 @@ import { heatStep } from "@/domain/heat";
 import { cellLevel, type Tally } from "@/domain/levels";
 import type { Weekday } from "@/domain/schedule";
 import { useRouter } from "@/i18n/navigation";
-import { useViewerZone } from "@/lib/browser-time";
+import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import type { ManageCredential } from "@/lib/manage-credential";
 import { clearFinalAction, type FinalChange, pickFinalAction } from "@/server/event-actions";
 
@@ -96,6 +96,7 @@ export function FinalPicker({
 	const tEvent = useTranslations("Event");
 	const count = useCount();
 	const id = useId();
+	const temporalReady = useTemporalReady();
 	const viewerZone = useViewerZone();
 	const when = useFinalWhen();
 	const [proposal, setProposal] = useState<Run | null>(null);
@@ -110,14 +111,25 @@ export function FinalPicker({
 
 	const { view, windows } = useBoardView(event, serverGrid, viewerZone, formatLocale);
 
-	// Picking needs the viewer's zone, which the browser knows only once it runs.
-	if (viewerZone === null) {
+	// Picking needs Temporal and the viewer's zone, which the browser knows only once it runs.
+	if (!temporalReady || viewerZone === null) {
 		return <div aria-hidden style={{ height: `${(event.rowCount + 2) * 1.75}rem` }} />;
 	}
 
 	const columns = view.layout.blocks.flat();
 	const total = event.participants.length;
-	const column = proposal === null ? undefined : columns[proposal.column];
+
+	const validProposal =
+		proposal !== null &&
+		proposal.column >= 0 &&
+		proposal.column < columns.length &&
+		proposal.first >= 0 &&
+		proposal.last < view.rows.length &&
+		proposal.first <= proposal.last
+			? proposal
+			: null;
+
+	const column = validProposal === null ? undefined : columns[validProposal.column];
 	const weekday = column?.kind === "weekday" ? column.weekday : null;
 	const dates = weekday === null ? [] : occurrences(weekday, event.referenceZone);
 	const date = chosenDate !== null && dates.includes(chosenDate) ? chosenDate : (dates[0] ?? null);
@@ -196,15 +208,15 @@ export function FinalPicker({
 					fill={(keys) => heatStep(tallyIn(keys), total)}
 					describe={(keys) => count(tallyIn(keys), total)}
 					onPick={pickCell}
-					highlight={proposal}
+					highlight={validProposal}
 					final={final}
 				/>
 			</div>
 
-			{proposal === null ? null : (
+			{validProposal === null ? null : (
 				<div className="flex max-w-(--cv-measure) flex-col gap-3">
 					<p aria-live="polite" className="font-semibold">
-						{t("finalProposal", { when: time(proposal) })}
+						{t("finalProposal", { when: time(validProposal) })}
 					</p>
 					{weekday === null ? null : (
 						<Field id={`${id}-date`} label={t("finalDate")} hint={t("finalDateHint")}>
@@ -228,7 +240,12 @@ export function FinalPicker({
 							</select>
 						</Field>
 					)}
-					<Button type="button" className="w-fit" disabled={pending} onClick={() => pick(proposal)}>
+					<Button
+						type="button"
+						className="w-fit"
+						disabled={pending}
+						onClick={() => pick(validProposal)}
+					>
 						{t("finalPick")}
 					</Button>
 				</div>
@@ -247,9 +264,9 @@ export function FinalPicker({
 				selected={
 					windows.find(
 						(window) =>
-							window.column === proposal?.column &&
-							window.first === proposal.first &&
-							window.last === proposal.last,
+							window.column === validProposal?.column &&
+							window.first === validProposal.first &&
+							window.last === validProposal.last,
 					) ?? null
 				}
 				onSelect={(window) => {

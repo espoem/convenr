@@ -381,6 +381,12 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 				formatLocale={formatLocale}
 				selected={highlight}
 				onSelect={(window) => {
+					if (tab === "me" && dirty) {
+						setConfirmDiscard(true);
+
+						return;
+					}
+
 					setChosenWindow(window);
 					showTab("group");
 				}}
@@ -402,6 +408,12 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 										type="button"
 										aria-pressed={person === participant.name}
 										onClick={() => {
+											if (tab === "me" && dirty) {
+												setConfirmDiscard(true);
+
+												return;
+											}
+
 											setPerson(person === participant.name ? null : participant.name);
 											showTab("group");
 										}}

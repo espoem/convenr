@@ -1,7 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { type ReactNode, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useEffectEvent,
+	useRef,
+	useState,
+	useTransition,
+} from "react";
 
 import { EventForm, type EventFormOptions, type FormOutcome } from "@/components/event-form";
 import type { ServerGrid } from "@/components/event/board-view";
@@ -9,7 +17,6 @@ import type { BoardEvent } from "@/components/event/event-board";
 import type { PollBoardEvent } from "@/components/event/poll-board";
 import { FinalPicker } from "@/components/final-picker";
 import { PollFinalPicker } from "@/components/poll-final-picker";
-import type { StoredOption } from "@/components/poll-options-editor";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import type { EventVersion } from "@/lib/event-version";
@@ -33,8 +40,6 @@ type ManageEventProps = {
 	id: string;
 	options: EventFormOptions;
 	board: ManagedBoard;
-	/** A poll's options as stored, so that the form can show the kept ones. */
-	storedOptions: StoredOption[];
 	/** The version the page was rendered at. */
 	version: EventVersion;
 	formatLocale: string;
@@ -57,7 +62,6 @@ export function ManageEvent({
 	id,
 	options,
 	board,
-	storedOptions,
 	version,
 	formatLocale,
 	settings,
@@ -65,6 +69,7 @@ export function ManageEvent({
 	const t = useTranslations("Manage");
 	const router = useRouter();
 	const storedSecret = useLocalEvents().get(id)?.adminSecret;
+	const rememberedSecret = useEffectEvent(() => storedSecret);
 
 	// `null` until the first answer; then the credential used and the event, or `null` if refused.
 	const [loaded, setLoaded] = useState<{
@@ -108,7 +113,7 @@ export function ManageEvent({
 	);
 
 	useEffect(() => {
-		const secret = window.location.hash.slice(1) || storedSecret;
+		const secret = window.location.hash.slice(1) || rememberedSecret();
 		let current = true;
 
 		const first = async () => {
@@ -126,7 +131,7 @@ export function ManageEvent({
 		return () => {
 			current = false;
 		};
-	}, [load, storedSecret]);
+	}, [load]);
 
 	// A new version, after a change anyone made, reloads the participants and the stored fields.
 	useEffect(() => {
@@ -163,6 +168,10 @@ export function ManageEvent({
 	}
 
 	async function save(input: NewEvent, confirmation: Confirmation): Promise<FormOutcome> {
+		if (event === null) {
+			return { status: "failed" };
+		}
+
 		try {
 			const result = await updateEventAction(id, credential, input, confirmation);
 
@@ -170,7 +179,11 @@ export function ManageEvent({
 				case "saved":
 					setLoaded(await load(credential));
 					setSaved((count) => count + 1);
-					router.replace(`/e/${result.segment}/manage`);
+
+					if (result.segment !== event.segment) {
+						router.replace(`/e/${result.segment}/manage${window.location.hash}`);
+					}
+
 					router.refresh();
 
 					return { status: "done" };
@@ -210,6 +223,7 @@ export function ManageEvent({
 			async () => {
 				setRemoving(null);
 				setLoaded(await load(credential));
+				router.refresh();
 			},
 		);
 	}
@@ -252,7 +266,7 @@ export function ManageEvent({
 					key={saved}
 					options={options}
 					initial={event}
-					storedOptions={storedOptions}
+					storedOptions={event.storedOptions}
 					locked={event.locked}
 					submitLabel={t("save")}
 					pendingLabel={t("saving")}

@@ -15,7 +15,8 @@ import { ShareLink } from "@/components/share-link";
 import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
-import { Link, getPathname, redirect } from "@/i18n/navigation";
+import { getPathname, Link, redirect } from "@/i18n/navigation";
+import { type FormatWhen, formatWhen } from "@/lib/final-when";
 import { boardOf, byKind, pollBoardOf, serverGridOf, shownFinal } from "@/server/board";
 import { readEvent } from "@/server/events";
 import { currentHolder } from "@/server/holder";
@@ -84,6 +85,8 @@ export default async function EventPage({
 	const choices =
 		visitor.kind === "signed_in" ? await eventChoices(visitor.accountId, event.id) : [];
 
+	const translateWhen: FormatWhen = (key, values) => t(key, values);
+
 	const board =
 		kind.kind === "grid" ? (
 			<EventBoard
@@ -93,7 +96,11 @@ export default async function EventPage({
 				formatLocale={format}
 			/>
 		) : (
-			<PollBoard event={pollBoardOf(kind.event)} viewer={viewer} formatLocale={format} />
+			<PollBoard
+				event={pollBoardOf(kind.event, format, translateWhen)}
+				viewer={viewer}
+				formatLocale={format}
+			/>
 		);
 
 	return (
@@ -109,6 +116,8 @@ export default async function EventPage({
 							segment: event.segment,
 						}}
 						final={final}
+						referenceZone={schedule.referenceZone}
+						initialWhen={formatWhen(final, schedule.referenceZone, format, translateWhen)}
 						formatLocale={format}
 					/>
 				) : null}

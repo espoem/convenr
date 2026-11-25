@@ -73,7 +73,11 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 
 				if (joined.ok) {
 					setProblem(null);
-					onJoined({ name: joined.name, hasPassword: given !== "", linked: joined.linked });
+					onJoined({
+						name: joined.name,
+						hasPassword: joined.hasPassword,
+						linked: joined.linked,
+					});
 
 					return;
 				}
@@ -168,7 +172,7 @@ function JoinedLine({
 				const changed = await changePasswordAction(
 					eventId,
 					current === "" ? null : current,
-					remove || next === "" ? null : next,
+					remove ? null : next,
 				);
 
 				if (changed.ok) {

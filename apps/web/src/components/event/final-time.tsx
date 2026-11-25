@@ -7,20 +7,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { type CalendarEntry, googleCalendarUrl, outlookCalendarUrl } from "@/domain/calendar";
 import { shareUrl } from "@/domain/event-address";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
+import { formatWhen } from "@/lib/final-when";
 import { cn } from "@/lib/utils";
 
 import type { ShownFinal } from "./event-board";
 
 type Chosen = Extract<ShownFinal, { kind: "chosen" }>;
-
-const DATE: Intl.DateTimeFormatOptions = {
-	weekday: "long",
-	day: "numeric",
-	month: "long",
-	year: "numeric",
-};
-
-const TIME: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" };
 
 /**
  * A final time or a poll option in `zone`: one date with a time range, or two dated ends across
@@ -33,29 +25,14 @@ export function useFinalWhen(): (
 ) => string {
 	const t = useTranslations("Event");
 
-	return (final, zone, locale) => {
-		const start = Temporal.Instant.from(final.start).toZonedDateTimeISO(zone);
-		const end = Temporal.Instant.from(final.end).toZonedDateTimeISO(zone);
-		const date = (at: Temporal.ZonedDateTime) => at.toLocaleString(locale, DATE);
-		const time = (at: Temporal.ZonedDateTime) => at.toLocaleString(locale, TIME);
-
-		// A window that ends at midnight still ends on its own day.
-		const lastDay = end.subtract({ nanoseconds: 1 }).toPlainDate();
-
-		return Temporal.PlainDate.compare(start.toPlainDate(), lastDay) === 0
-			? t("finalWhen", { date: date(start), start: time(start), end: time(end) })
-			: t("finalWhenAcross", {
-					startDate: date(start),
-					start: time(start),
-					endDate: date(end),
-					end: time(end),
-				});
-	};
+	return (final, zone, locale) => formatWhen(final, zone, locale, (key, values) => t(key, values));
 }
 
 type FinalBannerProps = {
 	event: { id: string; name: string; description: string; segment: string };
 	final: Chosen;
+	referenceZone: string;
+	initialWhen?: string | undefined;
 	formatLocale: string;
 };
 
@@ -63,7 +40,13 @@ type FinalBannerProps = {
  * The final time above everything else on the event page, in the viewer's zone, with the
  * calendar file and the links that open a new entry at Google Calendar or Outlook.com.
  */
-export function FinalBanner({ event, final, formatLocale }: FinalBannerProps) {
+export function FinalBanner({
+	event,
+	final,
+	referenceZone,
+	initialWhen,
+	formatLocale,
+}: FinalBannerProps) {
 	const t = useTranslations("Event");
 	const temporalReady = useTemporalReady();
 	const viewerZone = useViewerZone();
@@ -85,6 +68,9 @@ export function FinalBanner({ event, final, formatLocale }: FinalBannerProps) {
 			}
 		: null;
 
+	const shownZone = ready ? viewerZone : referenceZone;
+	const shownWhen = ready ? when(final, viewerZone, formatLocale) : (initialWhen ?? "");
+
 	return (
 		<section
 			aria-label={t("finalTime")}
@@ -94,12 +80,9 @@ export function FinalBanner({ event, final, formatLocale }: FinalBannerProps) {
 				<FlagIcon aria-hidden weight="fill" size={18} />
 				{t("finalTime")}
 			</p>
-			{/* The zone is the browser's, so the text waits for it; the lines keep their height. */}
-			<p className="min-h-[1.75em] text-xl text-balance">
-				{ready ? when(final, viewerZone, formatLocale) : ""}
-			</p>
+			<p className="min-h-[1.75em] text-xl text-balance">{shownWhen}</p>
 			<p className="min-h-[1.5em] text-ink-muted">
-				{ready ? t("finalZone", { zone: viewerZone.replaceAll("_", " ") }) : ""}
+				{t("finalZone", { zone: shownZone.replaceAll("_", " ") })}
 			</p>
 			<div className="flex flex-wrap gap-2 pt-2">
 				<a href={`/api/v1/events/${event.id}/final.ics`} download className={linkClass}>

@@ -39,6 +39,8 @@ type Moves = {
  */
 type Answered = { joined: Joined | null; basis: ParticipationEvent };
 
+type SavedOverlay = { levels: Levels; basis: ParticipationEvent };
+
 const nobody: Levels = {};
 
 function withoutParticipant(stored: LocalEvent | undefined): LocalEvent | undefined {
@@ -63,12 +65,14 @@ export function useParticipation(
 	const stored = useLocalEvents().get(event.id);
 	const [answered, setAnswered] = useState<Answered | null>(null);
 	const [draft, setDraft] = useState<Levels | null>(null);
+	const [savedOverlay, setSavedOverlay] = useState<SavedOverlay | null>(null);
 	const [saveMessage, setSaveMessage] = useState<"saved" | "failed" | null>(null);
 	const [saving, startSaving] = useTransition();
 	// The organizer deleted this browser's participant, or it left in another tab.
 	const [dropped, setDropped] = useState(false);
 	const { onJoined, onLeft } = moves;
 	const moving = useRef(false);
+	const editRevision = useRef(0);
 
 	const droppedOut = useEffectEvent(() => {
 		updateLocalEvent(event.id, withoutParticipant);
@@ -142,6 +146,11 @@ export function useParticipation(
 	const mine =
 		event.participants.find((participant) => participant.name === joined?.name)?.levels ?? nobody;
 
+	const activeSaved =
+		savedOverlay !== null && savedOverlay.basis === event ? savedOverlay.levels : null;
+
+	const baseMine = activeSaved ?? mine;
+
 	// Edits of slots the organizer removed meanwhile drop out, and the page says so.
 	const lostEdits = draft !== null && Object.keys(draft).some((key) => !event.slots.includes(key));
 
@@ -155,8 +164,8 @@ export function useParticipation(
 		return Object.fromEntries(Object.entries(draft).filter(([key]) => slots.has(key)));
 	}, [draft, event.slots]);
 
-	const selection = edits ?? mine;
-	const dirty = edits !== null && !sameLevels(edits, mine);
+	const selection = edits ?? baseMine;
+	const dirty = edits !== null && !sameLevels(edits, baseMine);
 
 	// Warn before the browser leaves the page with unsaved edits; leaving edit mode asks inside the page.
 	useEffect(() => {
@@ -189,8 +198,10 @@ export function useParticipation(
 			segment: event.segment,
 			participant: { name: found.name },
 		}));
+		editRevision.current += 1;
 		setAnswered({ joined: found, basis: event });
 		setDropped(false);
+		setSavedOverlay(null);
 		setDraft(null);
 		onJoined?.();
 		router.refresh();
@@ -198,7 +209,9 @@ export function useParticipation(
 
 	function forget() {
 		updateLocalEvent(event.id, withoutParticipant);
+		editRevision.current += 1;
 		setAnswered({ joined: null, basis: event });
+		setSavedOverlay(null);
 		setDraft(null);
 		onLeft?.();
 		router.refresh();
@@ -213,7 +226,9 @@ export function useParticipation(
 	}
 
 	function edit(next: Levels | null) {
+		editRevision.current += 1;
 		setSaveMessage(null);
+		setSavedOverlay(null);
 		setDraft(next);
 	}
 
@@ -222,14 +237,26 @@ export function useParticipation(
 			return;
 		}
 
+		const revisionAtSave = editRevision.current;
+		const savedLevels = edits;
+
 		// The draft keeps only what is saved, which ends the notice about lost edits.
-		setDraft(edits);
+		setDraft(savedLevels);
 		startSaving(async () => {
 			try {
-				const saved = await saveAction(event.id, Object.keys(edits), slotsAt(edits, "if_need_be"));
+				const saved = await saveAction(
+					event.id,
+					Object.keys(savedLevels),
+					slotsAt(savedLevels, "if_need_be"),
+				);
 
 				if (saved.ok) {
-					setSaveMessage("saved");
+					if (editRevision.current === revisionAtSave) {
+						setSavedOverlay({ levels: savedLevels, basis: event });
+						setDraft(null);
+						setSaveMessage("saved");
+					}
+
 					router.refresh();
 
 					return;
