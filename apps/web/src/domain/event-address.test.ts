@@ -21,8 +21,19 @@ describe("event address", () => {
 	});
 
 	it("selects nothing when the last part is not an event id", () => {
+		expect(eventIdFromSegment("")).toBeUndefined();
+		expect(eventIdFromSegment("-")).toBeUndefined();
+		expect(eventIdFromSegment(`schuzka-${id}-`)).toBeUndefined();
 		expect(eventIdFromSegment("schuzka-vyboru-2027")).toBeUndefined();
 		expect(eventIdFromSegment(`x-${id.slice(1)}0`)).toBeUndefined();
+		expect(eventIdFromSegment(`x-${id.slice(0, -1)}_`)).toBeUndefined();
+		expect(eventIdFromSegment(`x-${id}a`)).toBeUndefined();
+	});
+
+	it("round-trips a segment with multiple hyphens in the title", () => {
+		const segment = eventSegment(id, "Tea — 2nd / Spring-Check");
+
+		expect(eventIdFromSegment(segment)).toBe(id);
 	});
 });
 

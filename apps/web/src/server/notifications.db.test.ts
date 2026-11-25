@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { POST as oneClick } from "@/app/api/unsubscribe/route";
 import { db } from "@/db/client";
-import { authUsers, emailCounts, events, outboxEmails } from "@/db/schema";
+import { authUsers, outboxEmails } from "@/db/schema";
 import { env } from "@/env";
 
 import { byToken } from "./event-rows";
@@ -15,7 +15,7 @@ import { eventChoices, queueDue, setAccountChoices, setEventChoice } from "./not
 import { deliverOutbox, type Send } from "./outbox";
 import { join, joinLinked } from "./participants";
 import { saveResponse } from "./responses";
-import { creationTime, freshAccount, pragueEvenings } from "./test-events";
+import { creationTime, freshAccount, pragueEvenings, resetTestDatabase } from "./test-events";
 
 // The mail server is the one thing replaced: what would go out is collected here.
 const sent: Email[] = [];
@@ -58,8 +58,7 @@ async function waiting() {
 }
 
 beforeEach(async () => {
-	await db().delete(events);
-	await db().delete(emailCounts);
+	await resetTestDatabase();
 	sent.length = 0;
 });
 
@@ -216,6 +215,38 @@ describe("the outbox", () => {
 		}, Promise.resolve());
 
 		expect(tried).toBe(5);
+		expect(await waiting()).toEqual([]);
+	});
+
+	it("holds an exclusive lease during delivery and reclaims it after the lease expires", async () => {
+		const owner = await freshAccount("owner");
+		const { id } = await ownedEvent(owner);
+
+		await setAccountChoices(owner, ALL_ON);
+		await join(id, "Jana", none, minute(1));
+
+		const sending = Promise.withResolvers<void>();
+		const delivered = Promise.withResolvers<void>();
+		let sendCount = 0;
+
+		const firstPass = deliver(minute(1), async () => {
+			sendCount += 1;
+			delivered.resolve();
+			await sending.promise;
+		});
+
+		await delivered.promise;
+		// While the first worker is awaiting SMTP, a concurrent worker skips the leased row.
+		expect(await deliver(minute(1))).toBe(0);
+		expect(sent).toEqual([]);
+
+		// Even if the first worker hung past the two-minute lease, a later pass reclaims and sends it.
+		expect(await deliver(minute(3))).toBe(1);
+		expect(sent).toHaveLength(1);
+
+		sending.resolve();
+		await firstPass;
+		expect(sendCount).toBe(1);
 		expect(await waiting()).toEqual([]);
 	});
 

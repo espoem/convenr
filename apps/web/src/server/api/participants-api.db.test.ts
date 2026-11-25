@@ -10,11 +10,11 @@ import { POST as join } from "@/app/api/v1/events/[id]/participants/route";
 import { GET as readEvent } from "@/app/api/v1/events/[id]/route";
 import { GET as readWindows } from "@/app/api/v1/events/[id]/windows/route";
 import { db } from "@/db/client";
-import { events, participants } from "@/db/schema";
+import { participants } from "@/db/schema";
 import { isPublicId } from "@/domain/public-id";
 
 import { joinLinked } from "../participants";
-import { freshAccount } from "../test-events";
+import { freshAccount, resetTestDatabase } from "../test-events";
 import {
 	type AvailabilityRequest,
 	eventSchema,
@@ -26,9 +26,11 @@ import {
 	bodyOf,
 	call,
 	createdEvent,
+	FIRST_DAY,
 	FIVE,
 	joined,
 	pragueEvenings,
+	pragueSlot,
 	refusalOf,
 	SIX,
 } from "./test-client";
@@ -37,7 +39,7 @@ import {
 const PASSWORD_TIMEOUT = 30_000;
 
 beforeEach(async () => {
-	await db().delete(events);
+	await resetTestDatabase();
 });
 
 describe("joining", () => {
@@ -248,7 +250,16 @@ describe("availability", () => {
 		const { token } = await joined(id, "Jana");
 
 		// Python's isoformat writes UTC as +00:00; another offset names the same instant too.
-		const sent = [{ start: "2027-04-05T15:00:00+00:00" }, { start: "2027-04-05T18:00:00+02:00" }];
+		const fiveUtc =
+			Temporal.Instant.from(FIVE.start).toZonedDateTimeISO("UTC").toString().slice(0, 19) +
+			"+00:00";
+
+		const sixPrague = Temporal.Instant.from(SIX.start)
+			.toZonedDateTimeISO("Europe/Prague")
+			.toString()
+			.replace("[Europe/Prague]", "");
+
+		const sent = [{ start: fiveUtc }, { start: sixPrague }];
 
 		const response = await call(
 			saveAvailability,
@@ -309,7 +320,7 @@ describe("availability", () => {
 				method: "PUT",
 				secret: token,
 				body: {
-					availability: [FIVE, { weekday: 1, minute: 1020 }, { start: "2027-04-05T15:30:00Z" }],
+					availability: [FIVE, { weekday: 1, minute: 1020 }, pragueSlot(FIRST_DAY, "17:30")],
 				},
 			},
 		);
@@ -438,7 +449,7 @@ describe("a whole round", () => {
 			...pragueEvenings,
 			schedule: {
 				mode: "dates",
-				dates: ["2027-04-05"],
+				dates: [FIRST_DAY.toString()],
 				dailyStart: "17:00",
 				dailyEnd: "19:00",
 				slotMinutes: 60,
@@ -456,7 +467,7 @@ describe("a whole round", () => {
 
 		const event = await bodyOf(await call(readEvent, { id }), eventSchema);
 
-		expect(event.schedule).toMatchObject({ mode: "dates", dates: ["2027-04-05"] });
+		expect(event.schedule).toMatchObject({ mode: "dates", dates: [FIRST_DAY.toString()] });
 
 		const [first, second] = event.participants;
 

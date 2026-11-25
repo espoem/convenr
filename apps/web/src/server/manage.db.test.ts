@@ -2,12 +2,12 @@ import { sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
-import { events } from "@/db/schema";
 import { isPublicId } from "@/domain/public-id";
 import { asEventVersion, type EventVersion } from "@/lib/event-version";
 
 import { byToken } from "./event-rows";
 import { createEvent, type NewEvent, readEvent } from "./events";
+import { pickFinal } from "./final";
 import {
 	bySecret,
 	type Confirmation,
@@ -19,7 +19,7 @@ import {
 } from "./manage";
 import { join } from "./participants";
 import { saveResponse } from "./responses";
-import { creationTime, pragueEvenings } from "./test-events";
+import { creationTime, pragueEvenings, resetTestDatabase } from "./test-events";
 
 const later = Temporal.Instant.from("2027-03-02T12:00:00Z");
 
@@ -78,7 +78,7 @@ async function versionOf(id: string): Promise<EventVersion> {
 }
 
 beforeEach(async () => {
-	await db().delete(events);
+	await resetTestDatabase();
 });
 
 describe("readManagedEvent", () => {
@@ -287,6 +287,38 @@ describe("updateEvent", () => {
 		expect(await saveResponse(id, token, { available: [FIVE, SIX] }, later)).toMatchObject({
 			ok: false,
 			problem: "unknown_slot",
+		});
+	});
+
+	it("asks to confirm before clearing the final time and clears it once confirmed", async () => {
+		const { id, secret } = await managedEvent();
+
+		await pickFinal(id, secret, { slots: [SIX] }, undefined, later);
+
+		const asked = await updateEvent(id, secret, narrowed, anyVersion, later);
+
+		expect(asked).toMatchObject({
+			status: "confirm",
+			losing: 0,
+			clearsFinal: true,
+		});
+
+		if (asked.status !== "confirm") {
+			throw new Error("Expected confirmation prompt.");
+		}
+
+		const cleared = await updateEvent(
+			id,
+			secret,
+			narrowed,
+			anyVersion,
+			later,
+			confirmedAt(asked.version),
+		);
+
+		expect(cleared).toMatchObject({
+			status: "saved",
+			event: { final: { kind: "open", sequence: 1 } },
 		});
 	});
 });

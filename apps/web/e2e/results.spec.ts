@@ -2,9 +2,6 @@ import { test } from "@playwright/test";
 
 import { createEvent, expect, freshPage, respond } from "./helpers";
 
-// The best windows and the zone switch.
-test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
-
 test.setTimeout(180_000);
 
 test("the best windows follow the filters and the zone switch shows the event's zone", async ({

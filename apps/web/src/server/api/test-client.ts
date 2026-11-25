@@ -78,23 +78,46 @@ export async function refusalOf(response: Response) {
 	return problem;
 }
 
+const today = Temporal.Now.plainDateISO("Europe/Prague");
+const offsetToMonday = (8 - today.dayOfWeek) % 7;
+
+export const FIRST_DAY = today.add({ days: 14 + offsetToMonday });
+export const SECOND_DAY = FIRST_DAY.add({ days: 1 });
+export const THIRD_DAY = FIRST_DAY.add({ days: 2 });
+export const FIFTH_DAY = FIRST_DAY.add({ days: 4 });
+export const SIXTH_DAY = FIRST_DAY.add({ days: 5 });
+
+export function pragueSlot(date: Temporal.PlainDate, time: string) {
+	return {
+		start: date
+			.toZonedDateTime({ timeZone: "Europe/Prague", plainTime: time })
+			.toInstant()
+			.toString(),
+	};
+}
+
+export function icalUtc(iso: string): string {
+	return `${Temporal.Instant.from(iso).toString().replaceAll(/[-:]/gu, "").slice(0, 15)}Z`;
+}
+
 export const pragueEvenings = {
 	name: "Schůzka výboru",
 	description: "V klubovně.",
 	referenceZone: "Europe/Prague",
 	schedule: {
 		mode: "range",
-		first: "2027-04-05",
-		last: "2027-04-06",
+		first: FIRST_DAY.toString(),
+		last: SECOND_DAY.toString(),
 		dailyStart: "17:00",
 		dailyEnd: "19:00",
 		slotMinutes: 60,
 	},
 } satisfies CreateEventRequest;
 
-/** 17:00 and 18:00 in Prague on 5 April 2027. */
-export const FIVE = { start: "2027-04-05T15:00:00Z" };
-export const SIX = { start: "2027-04-05T16:00:00Z" };
+/** 17:00, 18:00 and 19:00 in Prague on `FIRST_DAY`. */
+export const FIVE = pragueSlot(FIRST_DAY, "17:00");
+export const SIX = pragueSlot(FIRST_DAY, "18:00");
+export const SEVEN = pragueSlot(FIRST_DAY, "19:00");
 
 export async function createdEvent(body: CreateEventRequest = pragueEvenings) {
 	const response = await call(createEvent, {}, { method: "POST", path: "/events", body });

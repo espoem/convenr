@@ -4,6 +4,7 @@ import {
 	expect as baseExpect,
 	type Locator,
 	type Page,
+	test,
 } from "@playwright/test";
 
 import { eventIdFromSegment } from "../src/domain/event-address";
@@ -15,11 +16,13 @@ export const expect = baseExpect.configure({ timeout: 45_000 });
 
 /** A browser of its own, so that local storage and the joined participant stay apart. */
 export async function freshPage(browser: Browser, timezoneId = "Europe/Prague"): Promise<Page> {
+	const { viewport, hasTouch } = test.info().project.use;
+
 	const context = await browser.newContext({
 		locale: "cs-CZ",
 		timezoneId,
-		viewport: { width: 390, height: 844 },
-		hasTouch: true,
+		viewport: viewport ?? { width: 390, height: 844 },
+		hasTouch: hasTouch ?? true,
 	});
 
 	return context.newPage();

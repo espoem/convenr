@@ -17,4 +17,5 @@ for offset in 0 1 2 3; do
 	fi
 done
 
+node apps/web/scripts/prepare-e2e-db.mts
 exec nub run --filter @convenr/web e2e "$@"

@@ -3,15 +3,27 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { GET as readCalendar } from "@/app/api/v1/events/[id]/final.ics/route";
 import { DELETE as clearFinal, PUT as pickFinal } from "@/app/api/v1/events/[id]/final/route";
 import { PATCH as updateEvent } from "@/app/api/v1/events/[id]/route";
-import { db } from "@/db/client";
-import { events } from "@/db/schema";
 import { toWeekday } from "@/domain/schedule";
 
+import { resetTestDatabase } from "../test-events";
 import { eventSchema, type FinalRequestBody } from "./schemas";
-import { bodyOf, call, createdEvent, FIVE, pragueEvenings, refusalOf, SIX } from "./test-client";
+import {
+	bodyOf,
+	call,
+	createdEvent,
+	FIRST_DAY,
+	FIVE,
+	icalUtc,
+	pragueEvenings,
+	pragueSlot,
+	refusalOf,
+	SECOND_DAY,
+	SEVEN,
+	SIX,
+} from "./test-client";
 
 beforeEach(async () => {
-	await db().delete(events);
+	await resetTestDatabase();
 });
 
 function pick(id: string, secret: string, body: FinalRequestBody, headers = {}) {
@@ -27,8 +39,8 @@ describe("the final time", () => {
 		expect(await bodyOf(picked, eventSchema)).toMatchObject({
 			final: {
 				kind: "chosen",
-				start: "2027-04-05T15:00:00Z",
-				end: "2027-04-05T17:00:00Z",
+				start: FIVE.start,
+				end: SEVEN.start,
 				sequence: 1,
 				slots: [FIVE, SIX],
 			},
@@ -55,7 +67,7 @@ describe("the final time", () => {
 		const { id, adminSecret } = await createdEvent();
 
 		const response = await pick(id, adminSecret, {
-			slots: [FIVE, { start: "2027-04-06T15:00:00Z" }],
+			slots: [FIVE, pragueSlot(SECOND_DAY, "17:00")],
 		});
 
 		expect(response.status).toBe(422);
@@ -65,8 +77,8 @@ describe("the final time", () => {
 		});
 	});
 
-	it("needs a weekday event's date on the weekday of its slots", async () => {
-		const date = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 7 });
+	it("needs a weekday event's date on the weekday of its slots and serves its calendar file", async () => {
+		const date = FIRST_DAY;
 		const weekday = toWeekday(date.dayOfWeek);
 
 		if (weekday === undefined) {
@@ -102,6 +114,13 @@ describe("the final time", () => {
 			kind: "chosen",
 			slots: [slot],
 		});
+
+		const calendar = await call(readCalendar, { id });
+		const body = await calendar.text();
+
+		expect(calendar.status).toBe(200);
+		expect(body).toContain(`DTSTART:${icalUtc(FIVE.start)}`);
+		expect(body).toContain(`DTEND:${icalUtc(SIX.start)}`);
 	});
 
 	it("asks to confirm a change that would clear it, also when nobody loses availability", async () => {
@@ -126,10 +145,10 @@ describe("the final time", () => {
 		});
 	});
 
-	it("is downloaded as a calendar file that a later pick replaces", async () => {
+	it("is downloaded as a calendar file with 304 caching and 404 before finalization", async () => {
 		const { id, adminSecret } = await createdEvent();
 
-		const missing = await call(readCalendar, { id });
+		const missing = await call(readCalendar, { id }, { headers: { "If-None-Match": '"v1"' } });
 
 		expect(missing.status).toBe(404);
 		expect(await refusalOf(missing)).toMatchObject({ code: "not_finalized" });
@@ -137,9 +156,11 @@ describe("the final time", () => {
 		await pick(id, adminSecret, { slots: [FIVE, SIX] });
 
 		const first = await call(readCalendar, { id });
+		const etag = first.headers.get("ETag") ?? "";
 		const lines = (await first.text()).replaceAll("\r\n ", "").split("\r\n");
 
 		expect(first.status).toBe(200);
+		expect(etag).not.toBe("");
 		expect(first.headers.get("Content-Type")).toBe("text/calendar; charset=utf-8");
 		expect(first.headers.get("Content-Disposition")).toMatch(
 			/^attachment; filename="schuzka-vyboru-\w+\.ics"$/u,
@@ -148,29 +169,27 @@ describe("the final time", () => {
 			expect.arrayContaining([
 				`UID:${id}@convenr`,
 				"SEQUENCE:1",
-				"DTSTART:20270405T150000Z",
-				"DTEND:20270405T170000Z",
+				`DTSTART:${icalUtc(FIVE.start)}`,
+				`DTEND:${icalUtc(SEVEN.start)}`,
 				"SUMMARY:Schůzka výboru",
 				expect.stringMatching(/^DESCRIPTION:V klubovně\.\\n\\nhttp:\/\/[^/]+\/e\/schuzka-vyboru-/u),
 			]),
 		);
 		expect(lines.join("\n")).not.toContain("cva_");
 
+		const cached = await call(readCalendar, { id }, { headers: { "If-None-Match": etag } });
+
+		expect(cached.status).toBe(304);
+
 		await pick(id, adminSecret, { slots: [SIX] });
 
-		const later = await (await call(readCalendar, { id })).text();
+		const stale = await call(readCalendar, { id }, { headers: { "If-None-Match": etag } });
+		const later = await stale.text();
 
+		expect(stale.status).toBe(200);
 		expect(later).toContain(`UID:${id}@convenr`);
 		expect(later).toContain("SEQUENCE:2");
-		expect(later).toContain("DTSTART:20270405T160000Z");
-
-		const unchanged = await call(
-			readCalendar,
-			{ id },
-			{ headers: { "If-None-Match": first.headers.get("ETag") ?? "" } },
-		);
-
-		expect(unchanged.status).toBe(200);
+		expect(later).toContain(`DTSTART:${icalUtc(SIX.start)}`);
 	});
 
 	it("refuses the participant token and a wrong admin secret", async () => {

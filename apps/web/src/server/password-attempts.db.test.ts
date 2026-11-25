@@ -1,6 +1,5 @@
 import { setTimeout as delay } from "node:timers/promises";
 
-import { sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
@@ -9,7 +8,7 @@ import { participants } from "@/db/schema";
 import { byToken } from "./event-rows";
 import { changePassword, join, MAX_FAILED_ATTEMPTS } from "./participants";
 import { verifyPassword } from "./password";
-import { creationTime, freshEvent } from "./test-events";
+import { creationTime, freshEvent, untilWaitingForLocks } from "./test-events";
 
 // Password hashing is slow on purpose, and slower on a loaded machine.
 const PASSWORD_TIMEOUT = 60_000;
@@ -180,18 +179,6 @@ describe("a right password", () => {
 	);
 });
 
-/** Waits until another connection waits for a row lock. */
-async function untilSomeoneWaitsForALock() {
-	await eventually(async () => {
-		const waiting = await db().execute<{ count: number }>(
-			sql`select count(*)::int as count from pg_stat_activity
-				where datname = current_database() and wait_event_type = 'Lock'`,
-		);
-
-		return (waiting.rows[0]?.count ?? 0) > 0;
-	});
-}
-
 /** What `call` answers when the participant is deleted while its password attempt waits. */
 async function answerAfterDeletion<Answer>(call: () => Promise<Answer>): Promise<Answer> {
 	let answer: Promise<Answer> | undefined;
@@ -199,7 +186,7 @@ async function answerAfterDeletion<Answer>(call: () => Promise<Answer>): Promise
 	await db().transaction(async (tx) => {
 		await tx.select({ id: participants.id }).from(participants).for("update");
 		answer = call();
-		await untilSomeoneWaitsForALock();
+		await untilWaitingForLocks();
 		await tx.delete(participants);
 	});
 

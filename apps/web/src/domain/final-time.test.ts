@@ -90,6 +90,39 @@ describe("finalWindow", () => {
 			),
 		).toEqual({ ok: false, problem: "final_not_in_event" });
 	});
+
+	it("refuses a weekday occurrence falling inside a spring-forward clock gap", () => {
+		const overnight: GridSchedule = {
+			kind: "grid",
+			firstDayOfWeek: 1,
+			dailyStart: 60,
+			dailyEnd: 240,
+			slotLength: 60,
+			referenceZone: "Europe/Prague",
+			days: { mode: "weekdays", weekdays: [7] },
+		};
+
+		// In Prague on Sunday 2027-03-28, clocks jump from 02:00 directly to 03:00.
+		expect(
+			finalWindow(
+				overnight,
+				{ slots: ["w7-120"], date: Temporal.PlainDate.from("2027-03-28") },
+				now,
+			),
+		).toEqual({ ok: false, problem: "final_not_in_event" });
+
+		expect(
+			finalWindow(
+				overnight,
+				{ slots: ["w7-120"], date: Temporal.PlainDate.from("2027-04-04") },
+				now,
+			),
+		).toEqual({
+			ok: true,
+			start: instant("2027-04-04T00:00:00Z"),
+			end: instant("2027-04-04T01:00:00Z"),
+		});
+	});
 });
 
 describe("the final time's slots", () => {

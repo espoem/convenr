@@ -1,6 +1,10 @@
 // Shared input for the data access layer tests.
+import { setTimeout as delay } from "node:timers/promises";
+
+import { sql } from "drizzle-orm";
+
 import { db } from "@/db/client";
-import { authUsers, events } from "@/db/schema";
+import { authUsers, emailCounts, events, organizers, usageCounts } from "@/db/schema";
 import type { Deletion } from "@/domain/retention";
 
 import { createEvent, type GridEventInput, type NewEvent, type PollEventInput } from "./events";
@@ -39,8 +43,7 @@ export const pragueOptions: PollEventInput = {
 
 /** Empties the test database and creates one event from `input`. Returns its id. */
 export async function freshEvent(input: NewEvent = pragueEvenings): Promise<string> {
-	// Deleting the events cascades to every other table.
-	await db().delete(events);
+	await resetTestDatabase();
 
 	const created = await createEvent(input, creationTime);
 
@@ -49,6 +52,33 @@ export async function freshEvent(input: NewEvent = pragueEvenings): Promise<stri
 	}
 
 	return created.event.id;
+}
+
+/** Clears every table that stores event, notification, or usage state between database tests. */
+export async function resetTestDatabase(): Promise<void> {
+	await db().delete(events);
+	await db().delete(emailCounts);
+	await db().delete(usageCounts);
+	await db().delete(organizers);
+}
+
+/** Waits until `count` other connections wait for a lock, checking every 25 ms for up to 30 seconds. */
+export async function untilWaitingForLocks(count = 1, tries = 1200): Promise<void> {
+	const waiting = await db().execute<{ count: number }>(
+		sql`select count(*)::int as count from pg_stat_activity
+			where datname = current_database() and wait_event_type = 'Lock'`,
+	);
+
+	if ((waiting.rows[0]?.count ?? 0) >= count) {
+		return;
+	}
+
+	if (tries === 0) {
+		throw new Error(`Fewer than ${count} connections waited for a lock.`);
+	}
+
+	await delay(25);
+	await untilWaitingForLocks(count, tries - 1);
 }
 
 /** The deletion date of an event view as `YYYY-MM-DD`, or `kept` while it is kept. */

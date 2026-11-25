@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
@@ -10,7 +10,7 @@ import { byToken } from "./event-rows";
 import { bySecret, removeEvent, removeParticipant, updateEvent } from "./manage";
 import { changePassword, join, leave } from "./participants";
 import { saveResponse } from "./responses";
-import { creationTime, freshEvent } from "./test-events";
+import { creationTime, freshEvent, untilWaitingForLocks } from "./test-events";
 
 let eventId = "";
 
@@ -32,25 +32,6 @@ async function answerWhileLocked<Answer>(
 
 // Password hashing is slow on purpose, and slower on a loaded machine.
 const PASSWORD_TIMEOUT = 60_000;
-
-/** Waits until `count` other connections wait for a lock, checking every 25 ms for up to 30 seconds. */
-async function untilWaitingForLocks(count: number, tries = 1200): Promise<void> {
-	const waiting = await db().execute<{ count: number }>(
-		sql`select count(*)::int as count from pg_stat_activity
-			where datname = current_database() and wait_event_type = 'Lock'`,
-	);
-
-	if ((waiting.rows[0]?.count ?? 0) >= count) {
-		return;
-	}
-
-	if (tries === 0) {
-		throw new Error(`Fewer than ${count} connections waited for a lock.`);
-	}
-
-	await delay(25);
-	await untilWaitingForLocks(count, tries - 1);
-}
 
 describe("the event lock", () => {
 	it("is neither taken nor waited for by a wrong admin secret", async () => {

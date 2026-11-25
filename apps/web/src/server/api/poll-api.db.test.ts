@@ -6,9 +6,8 @@ import { PUT as saveAvailability } from "@/app/api/v1/events/[id]/participants/m
 import { GET as readEvent, PATCH as updateEvent } from "@/app/api/v1/events/[id]/route";
 import { GET as readWindows } from "@/app/api/v1/events/[id]/windows/route";
 import { POST as createEvent } from "@/app/api/v1/events/route";
-import { db } from "@/db/client";
-import { events } from "@/db/schema";
 
+import { resetTestDatabase } from "../test-events";
 import {
 	type AvailabilityRequest,
 	type CreateEventRequest,
@@ -16,22 +15,43 @@ import {
 	type UpdateEventRequest,
 	windowsSchema,
 } from "./schemas";
-import { bodyOf, call, createdEvent, joined, pragueEvenings, refusalOf } from "./test-client";
+import {
+	bodyOf,
+	call,
+	createdEvent,
+	FIFTH_DAY,
+	FIRST_DAY,
+	icalUtc,
+	joined,
+	pragueEvenings,
+	pragueSlot,
+	refusalOf,
+	SECOND_DAY,
+	SIXTH_DAY,
+	THIRD_DAY,
+} from "./test-client";
 
 beforeEach(async () => {
-	await db().delete(events);
+	await resetTestDatabase();
 });
 
-/** Three evenings in April 2027, 18:00 to 20:00 in Prague, sent out of time order. */
+function makeOption(date: Temporal.PlainDate, startHour: string, endHour: string) {
+	return {
+		start: pragueSlot(date, startHour).start,
+		end: pragueSlot(date, endHour).start,
+	};
+}
+
+/** Three evenings, 18:00 to 20:00 in Prague, sent out of time order. */
 const evenings = {
 	name: "Výběr večera",
 	referenceZone: "Europe/Prague",
 	schedule: {
 		mode: "poll",
 		options: [
-			{ start: "2027-04-07T16:00:00Z", end: "2027-04-07T18:00:00Z" },
-			{ start: "2027-04-05T16:00:00Z", end: "2027-04-05T18:00:00Z" },
-			{ start: "2027-04-09T16:00:00Z", end: "2027-04-09T18:00:00Z" },
+			makeOption(THIRD_DAY, "18:00", "20:00"),
+			makeOption(FIRST_DAY, "18:00", "20:00"),
+			makeOption(FIFTH_DAY, "18:00", "20:00"),
 		],
 	},
 } satisfies CreateEventRequest;
@@ -70,18 +90,21 @@ describe("a poll", () => {
 	it("is created with its options in time order, one slot each, and no first day of the week", async () => {
 		const { event, options } = await createdPoll();
 
-		expect(options.map((option) => option.start)).toEqual([
-			"2027-04-05T16:00:00Z",
-			"2027-04-07T16:00:00Z",
-			"2027-04-09T16:00:00Z",
+		expect(options.map((item) => item.start)).toEqual([
+			makeOption(FIRST_DAY, "18:00", "20:00").start,
+			makeOption(THIRD_DAY, "18:00", "20:00").start,
+			makeOption(FIFTH_DAY, "18:00", "20:00").start,
 		]);
-		expect(event.schedule.slots).toEqual(options.map((option) => ({ option: option.id })));
+		expect(event.schedule.slots).toEqual(options.map((item) => ({ option: item.id })));
 		expect(event).not.toHaveProperty("firstDayOfWeek");
-		expect(event.retention).toEqual({ kind: "until", date: "2027-07-08" });
+		expect(event.retention).toEqual({
+			kind: "until",
+			date: FIFTH_DAY.add({ days: 90 }).toString(),
+		});
 	});
 
 	it("refuses options that break the limits, at the option at fault", async () => {
-		const one = { start: "2027-04-05T16:00:00Z", end: "2027-04-05T18:00:00Z" };
+		const one = makeOption(FIRST_DAY, "18:00", "20:00");
 
 		expect(await refusedPoll([one])).toMatchObject({
 			code: "too_few_options",
@@ -91,11 +114,17 @@ describe("a poll", () => {
 			code: "duplicate_option",
 			errors: [{ pointer: "/schedule/options/1", code: "duplicate_option" }],
 		});
+		expect(await refusedPoll([one, makeOption(SECOND_DAY, "18:00", "18:00")])).toMatchObject({
+			errors: [{ pointer: "/schedule/options/1/end" }],
+		});
 		expect(
-			await refusedPoll([one, { start: "2027-04-06T16:00:00Z", end: "2027-04-06T16:00:00Z" }]),
-		).toMatchObject({ errors: [{ pointer: "/schedule/options/1/end" }] });
-		expect(
-			await refusedPoll([one, { start: "2027-04-06T20:00:00Z", end: "2027-04-06T23:00:00Z" }]),
+			await refusedPoll([
+				one,
+				{
+					start: pragueSlot(SECOND_DAY, "22:00").start,
+					end: pragueSlot(THIRD_DAY, "01:00").start,
+				},
+			]),
 		).toMatchObject({
 			code: "option_not_one_day",
 			errors: [{ pointer: "/schedule/options/1/end", code: "option_not_one_day" }],
@@ -169,7 +198,7 @@ describe("a poll", () => {
 
 		await save(id, jana.token, { availability: [{ option: friday.id }] });
 
-		const added = { start: "2027-04-10T08:00:00Z", end: "2027-04-10T10:00:00Z" };
+		const added = makeOption(SIXTH_DAY, "10:00", "12:00");
 
 		const change = {
 			schedule: { mode: "poll", options: [{ id: monday.id }, { id: wednesday.id }, added] },
@@ -253,7 +282,7 @@ describe("a poll", () => {
 
 		const calendar = await (await call(readCalendar, { id })).text();
 
-		expect(calendar).toContain("DTSTART:20270407T160000Z");
+		expect(calendar).toContain(`DTSTART:${icalUtc(wednesday.start)}`);
 
 		const change = {
 			schedule: { mode: "poll", options: [{ id: monday.id }, { id: friday.id }] },

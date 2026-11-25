@@ -34,7 +34,14 @@ export default defineConfig({
 			name: "phone",
 			use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, hasTouch: true },
 		},
-		{ name: "desktop", use: { ...devices["Desktop Chrome"] } },
+		{
+			name: "desktop",
+			use: {
+				...devices["Desktop Chrome"],
+				viewport: { width: 1280, height: 800 },
+				hasTouch: false,
+			},
+		},
 	],
 	// Both serve the production build. Run `mise run build` first.
 	webServer: [

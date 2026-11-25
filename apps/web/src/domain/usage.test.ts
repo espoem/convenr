@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { firstResponseBucket, medianBucket, shareOf, usageReport } from "./usage";
+import { firstResponseBucket, medianBucket, usageReport } from "./usage";
 
 const created = Temporal.Instant.from("2027-03-01T12:00:00Z");
 const after = (hours: number) => created.add({ minutes: Math.round(hours * 60) });
@@ -33,13 +33,6 @@ describe("medianBucket", () => {
 		).toBe(2);
 		expect(medianBucket(new Map([[4, 0]]))).toBeNull();
 		expect(medianBucket(new Map())).toBeNull();
-	});
-});
-
-describe("shareOf", () => {
-	it("is the share of a part of the events, and absent without events", () => {
-		expect(shareOf(4, 1)).toBe(0.25);
-		expect(shareOf(0, 0)).toBeNull();
 	});
 });
 

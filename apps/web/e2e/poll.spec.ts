@@ -5,9 +5,6 @@ import { eventIdFromSegment } from "../src/domain/event-address";
 import { joinedSchema, optionSchema } from "../src/server/api/schemas";
 import { expect, expectSteady, freshPage } from "./helpers";
 
-// A poll from the create page to its final time: answering, results and editing the options.
-test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
-
 test.setTimeout(180_000);
 
 const ZONE = "Europe/Prague";

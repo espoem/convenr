@@ -4,9 +4,6 @@ import { test } from "@playwright/test";
 
 import { cell, createEvent, expect, freshPage, respond } from "./helpers";
 
-// Picking, showing, changing and clearing the final time.
-test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
-
 test.setTimeout(180_000);
 
 test("the organizer picks a final time that the event page shows, and narrowing clears it", async ({

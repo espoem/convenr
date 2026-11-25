@@ -15,6 +15,7 @@ import { POST as createEvent } from "@/app/api/v1/events/route";
 import { db } from "@/db/client";
 import { events } from "@/db/schema";
 
+import { resetTestDatabase } from "../test-events";
 import {
 	type AvailabilityRequest,
 	createdEventSchema,
@@ -26,15 +27,18 @@ import {
 	bodyOf,
 	call,
 	createdEvent,
+	FIRST_DAY,
 	FIVE,
 	joined,
 	pragueEvenings,
+	pragueSlot,
 	refusalOf,
+	SECOND_DAY,
 	SIX,
 } from "./test-client";
 
 beforeEach(async () => {
-	await db().delete(events);
+	await resetTestDatabase();
 });
 
 describe("creating an event", () => {
@@ -57,9 +61,9 @@ describe("creating an event", () => {
 			firstDayOfWeek: 1,
 			schedule: {
 				...pragueEvenings.schedule,
-				slots: [FIVE, SIX, { start: "2027-04-06T15:00:00Z" }, { start: "2027-04-06T16:00:00Z" }],
+				slots: [FIVE, SIX, pragueSlot(SECOND_DAY, "17:00"), pragueSlot(SECOND_DAY, "18:00")],
 			},
-			retention: { kind: "until", date: "2027-07-05" },
+			retention: { kind: "until", date: SECOND_DAY.add({ days: 90 }).toString() },
 			final: { kind: "open" },
 			participants: [],
 		});
@@ -92,7 +96,7 @@ describe("creating an event", () => {
 					...pragueEvenings,
 					schedule: {
 						mode: "dates",
-						dates: ["2027-04-05", "2027-04-05", "2020-01-01"],
+						dates: [FIRST_DAY.toString(), FIRST_DAY.toString(), "2020-01-01"],
 						dailyStart: "17:00",
 						dailyEnd: "19:00",
 						slotMinutes: 60,

@@ -38,4 +38,23 @@ describe("a client written for this version", () => {
 		expect(response?.status).toBe(404);
 		expect(error).toStrictEqual(problem);
 	});
+
+	it("keeps an enum value it does not know", async () => {
+		const event = {
+			id: eventId,
+			name: "Retro",
+			participants: [
+				{
+					id: "abcdefghijkm",
+					name: "Jana",
+					availability: [{ start: "2027-04-05T15:00:00Z", level: "preferred" }],
+				},
+			],
+		};
+
+		const client = serving(200, JSON.stringify(event), "application/json");
+		const { data } = await getEvent({ client, path: { id: eventId } });
+
+		expect(data).toStrictEqual(event);
+	});
 });

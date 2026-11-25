@@ -72,6 +72,19 @@ function ownFill(level: Level | null): CellFill {
 	return level === "available" ? 4 : "if_need_be";
 }
 
+function syncTabUrl(next: "group" | "me", isJoined: boolean) {
+	const url = new URL(window.location.href);
+	const effectiveDefault = isJoined ? "me" : "group";
+
+	if (next === effectiveDefault) {
+		url.searchParams.delete("tab");
+	} else {
+		url.searchParams.set("tab", next);
+	}
+
+	window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 /** The event page below its header: join band, tabs, grid and participants. */
 export function EventBoard({
 	event,
@@ -99,30 +112,14 @@ export function EventBoard({
 	const [minSlots, setMinSlots] = useState(1);
 	const [chosenPeople, setChosenPeople] = useState<number | null>(null);
 
-	function syncTabUrl(next: "group" | "me") {
-		const url = new URL(window.location.href);
-
-		if (next === defaultTab) {
-			url.searchParams.delete("tab");
-		} else {
-			url.searchParams.set("tab", next);
-		}
-
-		window.history.replaceState(
-			window.history.state,
-			"",
-			`${url.pathname}${url.search}${url.hash}`,
-		);
-	}
-
 	const participation = useParticipation(event, viewer, formatLocale, {
 		onJoined: () => {
 			setTab("me");
-			syncTabUrl("me");
+			syncTabUrl("me", true);
 		},
 		onLeft: () => {
 			setTab("group");
-			syncTabUrl("group");
+			syncTabUrl("group", false);
 		},
 	});
 
@@ -174,7 +171,7 @@ export function EventBoard({
 		setInspected(null);
 		edit(null);
 		setTab(next);
-		syncTabUrl(next);
+		syncTabUrl(next, joined !== null);
 	}
 
 	function inspect(cell: CellRef | null, box: DOMRect | null) {
@@ -295,7 +292,7 @@ export function EventBoard({
 										edit(null);
 										setConfirmDiscard(false);
 										setTab("group");
-										syncTabUrl("group");
+										syncTabUrl("group", joined !== null);
 									}}
 								>
 									{t("discardAndLeave")}

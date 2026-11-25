@@ -1,12 +1,8 @@
 import { test } from "@playwright/test";
 
-// Ten browsers join at once, each with an Argon2id hash on the server, so this test relies on
-// the longer wait of the shared `expect`.
-import { cell, expect, freshPage } from "./helpers";
-
 // The first acceptance test: an organizer creates an event, ten people respond and one
-// window suits everyone, in the 390 by 844 viewport it is defined for.
-test.skip(({ viewport }) => viewport?.width !== 390, "Defined for the phone viewport.");
+// window suits everyone.
+import { cell, expect, freshPage } from "./helpers";
 
 test.setTimeout(180_000);
 

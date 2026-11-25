@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { bestWindows, maximalWindows, mostPeople, type Window, windowTally } from "./best-windows";
-import { weekdayLayout } from "./grid-layout";
+import { type GridLayout, weekdayLayout } from "./grid-layout";
 import type { Level, Levels } from "./levels";
 
 // Monday and Tuesday from 17:00 to 19:00 in 30-minute slots, as weekday keys.
@@ -54,6 +54,28 @@ describe("maximalWindows", () => {
 		const gap = weekdayLayout(["w1-600", "w1-660"], 1);
 
 		expect(maximalWindows(gap, 30, [available("w1-600", "w1-660")])).toHaveLength(2);
+	});
+
+	it("breaks a window where adjacent rows skip an instant across a clock jump", () => {
+		const jumped: GridLayout = {
+			rows: [60, 120],
+			blocks: [
+				[
+					{
+						kind: "date",
+						date: "2027-03-28",
+						cells: [["2027-03-28T00:00:00Z"], ["2027-03-28T02:00:00Z"]],
+					},
+				],
+			],
+		};
+
+		expect(
+			maximalWindows(jumped, 60, [available("2027-03-28T00:00:00Z", "2027-03-28T02:00:00Z")]),
+		).toEqual([
+			{ column: 0, first: 0, last: 0, people: [at(0)] },
+			{ column: 0, first: 1, last: 1, people: [at(0)] },
+		]);
 	});
 
 	it("finds nothing without participants", () => {

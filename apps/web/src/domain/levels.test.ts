@@ -2,21 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
 	cellLevel,
-	headsOf,
 	pressedLevel,
 	sameLevels,
 	savedLevels,
-	scoreOf,
 	slotsAt,
+	tallyIn,
 	withLevel,
 } from "./levels";
-
-describe("score and heads", () => {
-	it("counts an available person 1 and one at if need be ½", () => {
-		expect(scoreOf({ available: 3, ifNeedBe: 1 })).toBe(3.5);
-		expect(headsOf({ available: 3, ifNeedBe: 1 })).toBe(4);
-	});
-});
 
 describe("cellLevel", () => {
 	const levels = { a: "available", b: "if_need_be" } as const;
@@ -100,5 +92,20 @@ describe("sameLevels", () => {
 		expect(sameLevels({ a: "available" }, { a: "available" })).toBe(true);
 		expect(sameLevels({ a: "available" }, { a: "if_need_be" })).toBe(false);
 		expect(sameLevels({ a: "available" }, { a: "available", b: "available" })).toBe(false);
+	});
+});
+
+describe("tallyIn", () => {
+	it("counts available and if-need-be responses across single- or multi-slot cells", () => {
+		const responses = [
+			{ a: "available", b: "available" },
+			{ a: "available", b: "if_need_be" },
+			{ a: "available" },
+			{ c: "available" },
+		] as const;
+
+		expect(tallyIn(responses, ["a"])).toEqual({ available: 3, ifNeedBe: 0 });
+		expect(tallyIn(responses, ["a", "b"])).toEqual({ available: 1, ifNeedBe: 1 });
+		expect(tallyIn(responses, [])).toEqual({ available: 0, ifNeedBe: 0 });
 	});
 });

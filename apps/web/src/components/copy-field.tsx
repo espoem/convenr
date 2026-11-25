@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -63,8 +64,20 @@ export function CopyField({ label, value }: CopyFieldProps) {
 						className="pointer-events-none absolute inset-y-px right-px w-6 rounded-r-lg bg-linear-to-l from-surface to-transparent"
 					/>
 				</div>
-				<Button type="button" variant="outline" onClick={() => void copy()}>
-					{t("copy")}
+				<Button
+					type="button"
+					variant="outline"
+					aria-label={t("copy")}
+					title={t("copy")}
+					onClick={() => void copy()}
+					className="shrink-0 max-sm:w-11 max-sm:px-0"
+				>
+					{copied ? (
+						<CheckIcon weight="bold" aria-hidden className="size-5 sm:hidden" />
+					) : (
+						<CopyIcon aria-hidden className="size-5 sm:hidden" />
+					)}
+					<span className="max-sm:sr-only">{t("copy")}</span>
 				</Button>
 			</div>
 		</div>
