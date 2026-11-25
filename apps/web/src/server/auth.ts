@@ -92,7 +92,11 @@ async function noticeOldAddress(accountId: string, newEmail: string, locale: Loc
 
 	// The notice is no link and needs no per-address limit, but it counts toward the total.
 	if (current !== undefined && current.email !== newEmail && (await takeEmailSlot(null))) {
-		await sendEmail(await emailChangeNotice(locale, current.email, newEmail));
+		try {
+			await sendEmail(await emailChangeNotice(locale, current.email, newEmail));
+		} catch {
+			// Best-effort notice: the confirmation link to the new address already went out.
+		}
 	}
 }
 
@@ -167,7 +171,11 @@ function configure(settings: Extract<ReturnType<typeof env>["accounts"], { kind:
 				sendMagicLink: async ({ email, url, metadata }) =>
 					sendLinkEmail(
 						email,
-						await signInEmail(localeSchema.parse(metadata?.["locale"]), email, url),
+						await signInEmail(
+							localeSchema.catch(routing.defaultLocale).parse(metadata?.["locale"]),
+							email,
+							url,
+						),
 					),
 			}),
 			passkey({

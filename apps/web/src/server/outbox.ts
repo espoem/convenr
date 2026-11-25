@@ -8,7 +8,7 @@ import { after } from "next/server";
 import { db } from "@/db/client";
 import { accountSettings, authUsers, outboxEmails } from "@/db/schema";
 import { calendarFile } from "@/domain/calendar";
-import { shareUrl } from "@/domain/event-address";
+import { eventSegment, shareUrl } from "@/domain/event-address";
 import type { FinalTime } from "@/domain/final-time";
 import { MAX_ATTEMPTS, type OutboxMessage, RETRY_DELAYS_MINUTES } from "@/domain/notifications";
 import { env } from "@/env";
@@ -16,7 +16,7 @@ import { localeSchema, routing } from "@/i18n/routing";
 
 import { calendarEntryOf } from "./calendar";
 import { notificationEmail } from "./email/emails";
-import { readEvent } from "./events";
+import { finalOf, liveEvent, scheduleOf } from "./event-rows";
 import { type Email, sendEmail, takeEmailSlot } from "./mail";
 import { recipients } from "./notifications";
 import { unsubscribeValue } from "./unsubscribe-value";
@@ -24,7 +24,13 @@ import { unsubscribeValue } from "./unsubscribe-value";
 /** Emails one pass sends at most, so a pass ends within the time a function may run. */
 const PER_PASS = 50;
 
+const LEASE_MINUTES = 2;
+
 type Outcome = "sent" | "dropped" | "failed" | "over_limit" | "none_due";
+
+type Claimed =
+	| { kind: "done"; outcome: Exclude<Outcome, "sent" | "failed"> }
+	| { kind: "send"; id: bigint; attempts: number; message: Email };
 
 /** Whether `message` still says what the event is: a later final time overtakes the earlier email. */
 function isCurrent(message: OutboxMessage, final: FinalTime, now: Temporal.Instant) {
@@ -49,7 +55,7 @@ async function deliverOne(now: Temporal.Instant, send: Send): Promise<Outcome> {
 		return "none_due";
 	}
 
-	return db().transaction(async (tx): Promise<Outcome> => {
+	const claimed = await db().transaction(async (tx): Promise<Claimed> => {
 		const [email] = await tx
 			.select()
 			.from(outboxEmails)
@@ -59,21 +65,21 @@ async function deliverOne(now: Temporal.Instant, send: Send): Promise<Outcome> {
 			.for("update", { skipLocked: true });
 
 		if (email === undefined) {
-			return "none_due";
+			return { kind: "done", outcome: "none_due" };
 		}
 
-		const drop = async (): Promise<Outcome> => {
+		const drop = async (): Promise<Claimed> => {
 			await tx.delete(outboxEmails).where(eq(outboxEmails.id, email.id));
 
-			return "dropped";
+			return { kind: "done", outcome: "dropped" };
 		};
 
-		const event = await readEvent(email.eventId, now);
+		const event = await liveEvent(tx, email.eventId, now, "read");
 		const kind = email.message.kind;
 
 		if (
 			event === undefined ||
-			!isCurrent(email.message, event.final, now) ||
+			!isCurrent(email.message, finalOf(event), now) ||
 			!(await recipients(tx, email.eventId, kind)).includes(email.accountId)
 		) {
 			return drop();
@@ -90,19 +96,33 @@ async function deliverOne(now: Temporal.Instant, send: Send): Promise<Outcome> {
 		}
 
 		// The instance's hourly total counts these emails too; over it, the email waits.
-		if (!(await takeEmailSlot(null, now))) {
-			return "over_limit";
+		if (!(await takeEmailSlot(null, now, tx))) {
+			return { kind: "done", outcome: "over_limit" };
 		}
 
 		const locale = localeSchema.catch(routing.defaultLocale).parse(account.locale);
 		const origin = accounts.publicUrl.origin;
+		const segment = eventSegment(event.id, event.name);
+		const schedule = scheduleOf(event);
 
 		const value = unsubscribeValue(
 			{ accountId: email.accountId, eventId: email.eventId, kind },
 			accounts.secret,
 		);
 
-		const entry = email.message.kind === "final" ? calendarEntryOf(event, origin) : undefined;
+		const entry =
+			email.message.kind === "final"
+				? calendarEntryOf(
+						{
+							id: event.id,
+							name: event.name,
+							description: event.description,
+							segment,
+							final: finalOf(event),
+						},
+						origin,
+					)
+				: undefined;
 
 		const message = await notificationEmail(
 			{
@@ -110,8 +130,8 @@ async function deliverOne(now: Temporal.Instant, send: Send): Promise<Outcome> {
 				to: account.email,
 				event: {
 					name: event.name,
-					referenceZone: event.schedule.referenceZone,
-					shareUrl: shareUrl(origin, event.segment),
+					referenceZone: schedule.referenceZone,
+					shareUrl: shareUrl(origin, segment),
 				},
 				unsubscribe: {
 					page: `${origin}/${locale}/unsubscribe?value=${value}`,
@@ -120,38 +140,49 @@ async function deliverOne(now: Temporal.Instant, send: Send): Promise<Outcome> {
 				calendar:
 					entry === undefined
 						? null
-						: { filename: `${event.segment}.ics`, content: calendarFile(entry, now) },
+						: { filename: `${segment}.ics`, content: calendarFile(entry, now) },
 			},
 			email.message,
 		);
 
-		try {
-			await send(message);
-		} catch {
-			// The error names the mail server's answer, which may quote the address; it is not logged.
-			if (email.attempts + 1 >= MAX_ATTEMPTS) {
-				await drop();
+		await tx
+			.update(outboxEmails)
+			.set({ nextAttemptAt: now.add({ minutes: LEASE_MINUTES }).toString() })
+			.where(eq(outboxEmails.id, email.id));
 
-				return "failed";
-			}
+		return { kind: "send", id: email.id, attempts: email.attempts, message };
+	});
 
-			const delay = RETRY_DELAYS_MINUTES[email.attempts] ?? RETRY_DELAYS_MINUTES.at(-1) ?? 0;
+	if (claimed.kind === "done") {
+		return claimed.outcome;
+	}
 
-			await tx
-				.update(outboxEmails)
-				.set({
-					attempts: email.attempts + 1,
-					nextAttemptAt: now.add({ minutes: delay }).toString(),
-				})
-				.where(eq(outboxEmails.id, email.id));
+	try {
+		await send(claimed.message);
+	} catch {
+		// The error names the mail server's answer, which may quote the address; it is not logged.
+		if (claimed.attempts + 1 >= MAX_ATTEMPTS) {
+			await db().delete(outboxEmails).where(eq(outboxEmails.id, claimed.id));
 
 			return "failed";
 		}
 
-		await tx.delete(outboxEmails).where(eq(outboxEmails.id, email.id));
+		const delay = RETRY_DELAYS_MINUTES[claimed.attempts] ?? RETRY_DELAYS_MINUTES.at(-1) ?? 0;
 
-		return "sent";
-	});
+		await db()
+			.update(outboxEmails)
+			.set({
+				attempts: claimed.attempts + 1,
+				nextAttemptAt: now.add({ minutes: delay }).toString(),
+			})
+			.where(eq(outboxEmails.id, claimed.id));
+
+		return "failed";
+	}
+
+	await db().delete(outboxEmails).where(eq(outboxEmails.id, claimed.id));
+
+	return "sent";
 }
 
 /** How an email leaves the server: over SMTP, or into a test's list. */

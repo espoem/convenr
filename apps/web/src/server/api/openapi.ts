@@ -347,6 +347,12 @@ const SCHEDULE_PROBLEMS: ProblemCode[] = [
 	"out_of_day",
 	"end_not_after_start",
 	"not_on_slot_boundary",
+	"too_few_options",
+	"too_many_options",
+	"option_end_not_after_start",
+	"option_not_one_day",
+	"duplicate_option",
+	"unknown_option",
 ];
 
 type Secret = "adminSecret" | "participantToken";

@@ -101,18 +101,27 @@ async function count(tx: Queries, key: string, hour: string, limit: number) {
 export async function takeEmailSlot(
 	address: string | null,
 	now = Temporal.Now.instant(),
+	queries?: Queries,
 ): Promise<boolean> {
 	const { secret } = settings();
 	const hour = hourOf(now);
 
-	try {
-		await db().transaction(async (tx) => {
-			if (address !== null) {
-				await count(tx, addressKey(address, secret), hour, LINKS_PER_ADDRESS);
-			}
+	const take = async (tx: Queries) => {
+		if (address !== null) {
+			await count(tx, addressKey(address, secret), hour, LINKS_PER_ADDRESS);
+		}
 
-			await count(tx, "all", hour, env().MAIL_HOURLY_LIMIT);
-		});
+		await count(tx, "all", hour, env().MAIL_HOURLY_LIMIT);
+	};
+
+	try {
+		if (queries === undefined) {
+			await db().transaction(take);
+		} else if (address === null) {
+			await take(queries);
+		} else {
+			await queries.transaction(take);
+		}
 
 		return true;
 	} catch (error) {

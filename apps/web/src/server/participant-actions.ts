@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 
-import { ensureToken, heldToken } from "./browser-key";
+import { heldToken, prepareToken } from "./browser-key";
 import { currentHolder } from "./holder";
 import { sendSoon } from "./outbox";
 import {
@@ -53,30 +53,47 @@ export async function joinAction(id: string, name: string, pass: string | null) 
 	if (visitor.kind === "signed_in") {
 		const joined = await joinLinked(event, displayName, asked, visitor.accountId);
 
+		if (!joined.ok) {
+			return serializable(joined);
+		}
+
 		sendSoon();
 
-		const held = joined.ok ? await heldToken(event) : undefined;
+		const held = await heldToken(event);
 
 		if (held !== undefined) {
 			await forgetToken(event, held);
 		}
 
-		return joined.ok
-			? ({ ok: true, name: joined.participant.name, linked: true } as const)
-			: serializable(joined);
+		return {
+			ok: true,
+			name: joined.participant.name,
+			hasPassword: joined.hasPassword,
+			linked: true,
+		} as const;
 	}
+
+	const prepared = await prepareToken(event);
 
 	const joined = await join(event, displayName, asked, undefined, undefined, {
 		kind: "browser",
-		token: await ensureToken(event),
+		token: prepared.token,
 	});
 
+	if (!joined.ok) {
+		return serializable(joined);
+	}
+
+	await prepared.commit();
 	sendSoon();
 
 	// The schedule holds Temporal values, which do not serialize, and the token stays on the server.
-	return joined.ok
-		? ({ ok: true, name: joined.participant.name, linked: false } as const)
-		: serializable(joined);
+	return {
+		ok: true,
+		name: joined.participant.name,
+		hasPassword: joined.hasPassword,
+		linked: false,
+	} as const;
 }
 
 /**
@@ -91,8 +108,16 @@ export async function moveTokenAction(id: string, held: string) {
 	}
 
 	const [event, old] = args.data;
+	const prepared = await prepareToken(event);
+	const moved = await moveToken(event, old, prepared.token);
 
-	return (await moveToken(event, old, await ensureToken(event))) ?? null;
+	if (moved === undefined) {
+		return null;
+	}
+
+	await prepared.commit();
+
+	return moved;
 }
 
 /** "Not you?": the browser stops opening the event as this participant; the participant stays. */
@@ -124,10 +149,14 @@ export async function saveAction(id: string, available: string[], ifNeedBe: stri
 
 	const saved = await saveResponse(event, holder, { available: marked, ifNeedBe: maybe });
 
+	if (!saved.ok) {
+		return saved;
+	}
+
 	sendSoon();
 
 	// The page already shows what it saved; the schedule holds Temporal values, which do not serialize.
-	return saved.ok ? ({ ok: true } as const) : saved;
+	return { ok: true } as const;
 }
 
 export async function changePasswordAction(
@@ -144,7 +173,7 @@ export async function changePasswordAction(
 	const [event, given, wanted] = args.data;
 	const holder = await currentHolder(event);
 
-	if (holder === undefined) {
+	if (holder === undefined || holder.kind === "account") {
 		return { ok: false, problem: "not_joined" } as const;
 	}
 

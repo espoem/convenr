@@ -4,7 +4,10 @@ import { shareUrl } from "@/domain/event-address";
 import type { EventView } from "./events";
 
 /** The calendar entry of an event served at `origin`, `undefined` without a final time. */
-export function calendarEntryOf(event: EventView, origin: string): CalendarEntry | undefined {
+export function calendarEntryOf(
+	event: Pick<EventView, "id" | "name" | "description" | "segment" | "final">,
+	origin: string,
+): CalendarEntry | undefined {
 	const { final } = event;
 
 	if (final.kind === "open") {

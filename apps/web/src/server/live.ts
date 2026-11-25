@@ -62,8 +62,10 @@ function changeOf(payload: string): { id: string; change: LiveChange } | undefin
  * Ends the connection after a failure and tells every watcher, so that their pages fall back to
  * checks. The next watch connects again.
  */
-function fail(failed: Listening) {
-	globalThis.convenrListening = undefined;
+function fail(failed: Listening, started: Promise<Listening>) {
+	if (globalThis.convenrListening === started) {
+		globalThis.convenrListening = undefined;
+	}
 
 	for (const watchers of failed.watchers.values()) {
 		for (const watcher of watchers) {
@@ -77,7 +79,7 @@ function fail(failed: Listening) {
 	void failed.client.end().catch(() => {});
 }
 
-async function listen(): Promise<Listening> {
+async function listen(started: () => Promise<Listening>): Promise<Listening> {
 	const settings = env();
 
 	const client = new Client({
@@ -99,8 +101,8 @@ async function listen(): Promise<Listening> {
 			watcher.onChange(found.change);
 		}
 	});
-	client.on("error", () => fail(state));
-	client.on("end", () => fail(state));
+	client.on("error", () => fail(state, started()));
+	client.on("end", () => fail(state, started()));
 
 	await client.connect();
 	await client.query(`LISTEN ${CHANNEL}`);
@@ -109,7 +111,9 @@ async function listen(): Promise<Listening> {
 }
 
 function startListening(): Promise<Listening> {
-	const started = (globalThis.convenrListening ??= listen());
+	let created: Promise<Listening>;
+
+	const started = (globalThis.convenrListening ??= created = listen(() => created));
 
 	// A connection that cannot be made is tried again by the next watch.
 	started.catch(() => {

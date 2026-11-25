@@ -129,6 +129,8 @@ export async function updateEventAction(
 
 	switch (result.status) {
 		case "saved":
+			sendSoon();
+
 			return { status: "saved", segment: result.event.segment };
 		case "changed":
 			// Unreachable: a change for any version is never refused for its version.
@@ -185,7 +187,9 @@ export async function pickFinalAction(
 
 	const picked = await pickFinal(args.event, args.access, request);
 
-	sendSoon();
+	if (picked.status === "saved") {
+		sendSoon();
+	}
 
 	return finalChangeOf(picked);
 }
@@ -202,7 +206,9 @@ export async function clearFinalAction(
 
 	const cleared = await clearFinal(args.event, args.access);
 
-	sendSoon();
+	if (cleared.status === "saved") {
+		sendSoon();
+	}
 
 	return finalChangeOf(cleared);
 }

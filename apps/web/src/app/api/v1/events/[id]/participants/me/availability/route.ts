@@ -45,8 +45,6 @@ export const PUT = securedEndpoint<{ id: string }>(
 			ifNeedBe: ifNeedBe?.map((slot) => slotKeyOf(slot)),
 		});
 
-		sendSoon();
-
 		if (!saved.ok) {
 			switch (saved.problem) {
 				case "not_joined":
@@ -57,6 +55,8 @@ export const PUT = securedEndpoint<{ id: string }>(
 					return notAvailable(saved.notAvailable);
 			}
 		}
+
+		sendSoon();
 
 		return json(participantSchema, participantBody(saved.participant, saved.schedule));
 	},

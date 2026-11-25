@@ -108,8 +108,14 @@ export type NotificationContext = {
 function finalWhen(locale: Locale, start: string, end: string, zone: string): string {
 	const from = Temporal.Instant.from(start).toZonedDateTimeISO(zone);
 	const to = Temporal.Instant.from(end).toZonedDateTimeISO(zone);
+	const lastDay = Temporal.Instant.from(end).subtract({ nanoseconds: 1 }).toZonedDateTimeISO(zone);
+	const sameDay = from.toPlainDate().equals(lastDay.toPlainDate());
 	const day = from.toLocaleString(locale, { dateStyle: "full", timeStyle: "short" });
-	const until = to.toLocaleString(locale, { timeStyle: "short" });
+
+	const until = to.toLocaleString(
+		locale,
+		sameDay ? { timeStyle: "short" } : { dateStyle: "full", timeStyle: "short" },
+	);
 
 	return `${day}–${until} (${zone.replaceAll("_", " ")})`;
 }

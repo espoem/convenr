@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import { ensureToken, heldToken } from "./browser-key";
+import { heldToken, prepareToken } from "./browser-key";
 import { type ClaimResult, claimEvent, releaseEvent, setKeeping } from "./ownership";
 import { type LinkResult, linkHeld, unlink } from "./participants";
 import { currentVisitor } from "./session";
@@ -80,9 +80,17 @@ export async function unlinkAction(id: string): Promise<boolean> {
 	const args = eventId.safeParse(id);
 	const visitor = await currentVisitor();
 
-	return (
-		args.success &&
-		visitor.kind === "signed_in" &&
-		(await unlink(args.data, visitor.accountId, await ensureToken(args.data)))
-	);
+	if (!args.success || visitor.kind !== "signed_in") {
+		return false;
+	}
+
+	const prepared = await prepareToken(args.data);
+
+	if (!(await unlink(args.data, visitor.accountId, prepared.token))) {
+		return false;
+	}
+
+	await prepared.commit();
+
+	return true;
 }

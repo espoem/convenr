@@ -19,6 +19,7 @@ import {
 import { updateEventRequestSchema } from "@/server/api/schemas";
 import { eventVersion, readEvent } from "@/server/events";
 import { bySecret, removeEvent, updateEvent } from "@/server/manage";
+import { sendSoon } from "@/server/outbox";
 
 type Params = { id: string };
 
@@ -69,6 +70,8 @@ export const PATCH = securedEndpoint<Params>("admin", async (request, { id }, se
 				headers: { ETag: entityTag(result.version) },
 			});
 		case "saved":
+			sendSoon();
+
 			return eventResponse(result.event);
 	}
 });

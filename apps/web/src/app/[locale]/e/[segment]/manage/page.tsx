@@ -12,7 +12,7 @@ import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { eventFormOptions } from "@/i18n/event-form-options";
 import { formatLocale } from "@/i18n/format-locale";
-import { Link } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, serverGridOf } from "@/server/board";
 import { readEvent } from "@/server/events";
 import { liveSettings } from "@/server/live";
@@ -39,8 +39,14 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 		notFound();
 	}
 
+	const locale = await currentLocale();
+
+	if (segment !== event.segment) {
+		redirect({ href: `/e/${event.segment}/manage`, locale });
+	}
+
 	const t = await getTranslations("Manage");
-	const format = formatLocale(await currentLocale(), (await headers()).get("accept-language"));
+	const format = formatLocale(locale, (await headers()).get("accept-language"));
 	const kind = byKind(event);
 	const visitor = await currentVisitor();
 	const owner = await ownerView(visitor, event);

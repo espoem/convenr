@@ -69,10 +69,12 @@ export type JoinRefusal =
 
 export type JoinResult =
 	/** The participant as the write left them, so an answer needs no second read. */
-	({ ok: true; token: string } & ParticipantRead) | JoinRefusal;
+	({ ok: true; token: string; hasPassword: boolean } & ParticipantRead) | JoinRefusal;
 
 /** A signed-in join: the participant is linked to the account and gets no token. */
-export type LinkedJoinResult = ({ ok: true; linked: true } & ParticipantRead) | JoinRefusal;
+export type LinkedJoinResult =
+	| ({ ok: true; linked: true; hasPassword: boolean } & ParticipantRead)
+	| JoinRefusal;
 
 function isPasswordLength(password: string): boolean {
 	return password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH;
@@ -133,7 +135,9 @@ function accountGrant(accountId: string): Grant<{ linked: true }> {
 
 const NAME_IN_ACCOUNT = { ok: false, problem: "name_in_account" } as const;
 
-type Entered<Access> = ({ ok: true } & Access & ParticipantRead) | JoinRefusal;
+type Entered<Access> =
+	| ({ ok: true; hasPassword: boolean } & Access & ParticipantRead)
+	| JoinRefusal;
 
 /**
  * Stores the token's hash for the participant. A browser's token for an event points at one
@@ -178,8 +182,8 @@ function lockedUntil(
  * - `participant_gone`: the participant left or was deleted.
  */
 type Attempt =
-	| { kind: "counted"; lockEnd: string | null }
-	| { kind: "locking"; lockEnd: string; previousLockEnd: string | null }
+	| { kind: "counted"; lockEnd: string | null; cycle: number }
+	| { kind: "locking"; lockEnd: string; previousLockEnd: string | null; cycle: number }
 	| { kind: "locked"; until: Temporal.Instant }
 	| { kind: "participant_gone" };
 
@@ -191,8 +195,10 @@ type Attempt =
  */
 async function takeAttempt(participantId: string, now: Temporal.Instant): Promise<Attempt> {
 	const forgetBefore = now.subtract(ATTEMPTS_KEPT).toString();
-	const kept = sql`case when ${participants.lastAttemptAt} > ${forgetBefore}::timestamptz then ${participants.failedAttempts} else 0 end`;
+	const keeping = sql`${participants.lastAttemptAt} > ${forgetBefore}::timestamptz`;
+	const kept = sql`case when ${keeping} then ${participants.failedAttempts} else 0 end`;
 	const last = sql`${kept} + 1 >= ${MAX_FAILED_ATTEMPTS}`;
+	const nextCycle = sql`case when ${keeping} then ${participants.attemptCycle} else ${participants.attemptCycle} + 1 end`;
 
 	const [taken] = await db()
 		.update(participants)
@@ -200,6 +206,8 @@ async function takeAttempt(participantId: string, now: Temporal.Instant): Promis
 			failedAttempts: sql`case when ${last} then 0 else ${kept} + 1 end`,
 			lastAttemptAt: now.toString(),
 			lockedUntil: sql`case when ${last} then ${now.add(LOCKOUT).toString()}::timestamptz else ${participants.lockedUntil} end`,
+			attemptCycle: nextCycle,
+			attemptRefunds: sql`case when ${keeping} and not (${last}) then ${participants.attemptRefunds} else 0 end`,
 		})
 		.where(
 			and(
@@ -212,12 +220,18 @@ async function takeAttempt(participantId: string, now: Temporal.Instant): Promis
 			// As text, so that the value compares equal when an undo names it again.
 			lockEnd: sql<string | null>`${participants.lockedUntil}::text`,
 			previousLockEnd: sql<string | null>`old.locked_until::text`,
+			cycle: participants.attemptCycle,
 		});
 
 	if (taken !== undefined) {
 		return taken.failedAttempts === 0 && taken.lockEnd !== null
-			? { kind: "locking", lockEnd: taken.lockEnd, previousLockEnd: taken.previousLockEnd }
-			: { kind: "counted", lockEnd: taken.lockEnd };
+			? {
+					kind: "locking",
+					lockEnd: taken.lockEnd,
+					previousLockEnd: taken.previousLockEnd,
+					cycle: taken.cycle,
+				}
+			: { kind: "counted", lockEnd: taken.lockEnd, cycle: taken.cycle };
 	}
 
 	const [current] = await db()
@@ -237,8 +251,9 @@ async function takeAttempt(participantId: string, now: Temporal.Instant): Promis
 
 /**
  * Takes back an attempt whose password proved right, and nothing else: wrong passwords counted
- * alongside it, and a lockout that other attempts set, stay. Each statement changes the row only
- * while no other lockout replaced the one the attempt saw.
+ * alongside it, and a lockout that other attempts set, stay. A refund that arrives while a
+ * concurrent locking attempt holds the lock is recorded so that locking attempt can subtract it
+ * if it also succeeds.
  */
 async function undoAttempt(
 	participantId: string,
@@ -247,22 +262,20 @@ async function undoAttempt(
 	if (attempt.kind === "counted") {
 		await db()
 			.update(participants)
-			.set({ failedAttempts: sql`${participants.failedAttempts} - 1` })
-			.where(
-				and(
-					eq(participants.id, participantId),
-					sql`${participants.lockedUntil} is not distinct from ${attempt.lockEnd}::timestamptz`,
-				),
-			);
+			.set({
+				failedAttempts: sql`case when ${participants.lockedUntil} is not distinct from ${attempt.lockEnd}::timestamptz then greatest(0, ${participants.failedAttempts} - 1) else ${participants.failedAttempts} end`,
+				attemptRefunds: sql`case when ${participants.lockedUntil} is distinct from ${attempt.lockEnd}::timestamptz then ${participants.attemptRefunds} + 1 else ${participants.attemptRefunds} end`,
+			})
+			.where(and(eq(participants.id, participantId), eq(participants.attemptCycle, attempt.cycle)));
 
 		return;
 	}
 
-	// Nobody can take an attempt while the lockout lasts, so the count before it is the limit less one.
 	await db()
 		.update(participants)
 		.set({
-			failedAttempts: MAX_FAILED_ATTEMPTS - 1,
+			failedAttempts: sql`greatest(0, ${MAX_FAILED_ATTEMPTS - 1} - ${participants.attemptRefunds})`,
+			attemptRefunds: 0,
 			lockedUntil: sql`${attempt.previousLockEnd}::timestamptz`,
 		})
 		.where(
@@ -458,6 +471,7 @@ async function joinExisting<Access extends object>(
 
 		return {
 			ok: true,
+			hasPassword: existing.passwordHash !== null,
 			...(await grant.give(tx, eventId, existing.id)),
 			...(await participantRead(tx, event, existing)),
 		};
@@ -538,6 +552,7 @@ async function joinNew<Access extends object>(
 
 		return {
 			ok: true,
+			hasPassword: passwordHash !== null,
 			...access,
 			participant: { id: row.publicId, name: name.name, levels: {} },
 			schedule: scheduleOf(event),
@@ -649,7 +664,7 @@ export async function moveToken(
 	now = Temporal.Now.instant(),
 ): Promise<Identified | undefined> {
 	return db().transaction(async (tx) => {
-		const found = await participantOf(tx, eventId, byToken(oldToken), now);
+		const found = await participantForChange(tx, eventId, byToken(oldToken), now);
 
 		if (found === undefined) {
 			return;

@@ -101,20 +101,25 @@ export async function heldToken(eventId: string): Promise<string | undefined> {
 }
 
 /**
- * The token this browser holds for `eventId`, creating the key first when it has none. Only a
- * Server Action may call it, because only an action can set a cookie.
+ * Prepares the token this browser holds for `eventId`. When the browser has no key yet,
+ * `commit` writes the new cookie and must be called only after the action succeeds.
  */
-export async function ensureToken(eventId: string): Promise<string> {
+export async function prepareToken(
+	eventId: string,
+): Promise<{ token: string; commit: () => Promise<void> }> {
 	const stored = await storedKey();
 
 	if (stored !== undefined) {
-		return browserToken(stored.key, eventId);
+		return { token: browserToken(stored.key, eventId), commit: async () => {} };
 	}
 
 	const secure = await requestIsSecure();
 	const created = { key: randomBytes(KEY_BYTES).toString("base64url"), renewedOn: today() };
 
-	(await cookies()).set(cookieName(secure), formatBrowserKey(created), cookieOptions(secure));
-
-	return browserToken(created.key, eventId);
+	return {
+		token: browserToken(created.key, eventId),
+		commit: async () => {
+			(await cookies()).set(cookieName(secure), formatBrowserKey(created), cookieOptions(secure));
+		},
+	};
 }

@@ -30,6 +30,51 @@ function levelsIn(keys: readonly string[], responses: readonly Levels[]): Map<nu
 	);
 }
 
+/** Whether two adjacent non-empty dated cells form a contiguous run at `slotLength`. */
+function datedFollows(
+	previousKeys: readonly string[],
+	currentKeys: readonly string[],
+	slotLength: number,
+): boolean {
+	const prev = previousKeys.at(-1);
+	const curr = currentKeys[0];
+
+	if (prev === undefined || curr === undefined) {
+		return false;
+	}
+
+	if (prev.startsWith("w") || curr.startsWith("w")) {
+		return true;
+	}
+
+	if (previousKeys.length === 1 && currentKeys.length === 1) {
+		return Temporal.Instant.from(curr).equals(
+			Temporal.Instant.from(prev).add({ minutes: slotLength }),
+		);
+	}
+
+	return true;
+}
+
+/** Whether all collected keys in a candidate window form one contiguous run of slots. */
+function isContiguousWindow(cells: readonly string[][], slotLength: number): boolean {
+	const keys = cells.flat();
+	const firstKey = keys[0];
+
+	if (firstKey === undefined || firstKey.startsWith("w")) {
+		return true;
+	}
+
+	const instants = keys
+		.map((key) => Temporal.Instant.from(key))
+		.toSorted((a, b) => Temporal.Instant.compare(a, b));
+
+	return instants.every(
+		(instant, index) =>
+			index === 0 || instant.equals((instants[index - 1] ?? instant).add({ minutes: slotLength })),
+	);
+}
+
 /** Row ranges of a column in which every row has a slot and follows the previous one directly. */
 function runs(cells: string[][], rows: number[], slotLength: number): [number, number][] {
 	const found: [number, number][] = [];
@@ -37,7 +82,12 @@ function runs(cells: string[][], rows: number[], slotLength: number): [number, n
 
 	for (const [row, keys] of cells.entries()) {
 		const previous = rows[row - 1];
-		const follows = previous !== undefined && rows[row] === previous + slotLength;
+		const previousKeys = cells[row - 1] ?? [];
+
+		const follows =
+			previous !== undefined &&
+			rows[row] === previous + slotLength &&
+			datedFollows(previousKeys, keys, slotLength);
 
 		if (keys.length === 0) {
 			start = null;
@@ -100,7 +150,12 @@ export function maximalWindows(
 					const growsLeft = first > start && isSubset(common, people[first - 1]);
 					const growsRight = last < end && isSubset(common, people[last + 1]);
 
-					if (common.size > 0 && !growsLeft && !growsRight) {
+					if (
+						common.size > 0 &&
+						!growsLeft &&
+						!growsRight &&
+						isContiguousWindow(column.cells.slice(first, last + 1), slotLength)
+					) {
 						found.push({
 							column: columnIndex,
 							first,

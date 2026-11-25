@@ -2,7 +2,9 @@
 // Server Actions of the sign-in and account pages. Each posts a plain form, so it works without
 // JavaScript, and answers with a redirect whose query says what happened.
 
+import { APIError } from "better-auth/api";
 import { headers } from "next/headers";
+import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { db } from "@/db/client";
@@ -36,6 +38,7 @@ const emailSchema = z.email().max(254);
 
 export async function requestSignInLinkAction(form: FormData): Promise<void> {
 	const locale = localeOf(form);
+	const authInstance = instance(locale);
 	const email = emailSchema.safeParse(text(form, "email").trim());
 
 	if (!email.success) {
@@ -47,7 +50,7 @@ export async function requestSignInLinkAction(form: FormData): Promise<void> {
 	let outcome: { sent: "1" } | { problem: string } = { sent: "1" };
 
 	try {
-		await instance(locale).api.signInMagicLink({
+		await authInstance.api.signInMagicLink({
 			body: {
 				email: email.data,
 				callbackURL: `/${locale}/account`,
@@ -57,15 +60,20 @@ export async function requestSignInLinkAction(form: FormData): Promise<void> {
 			headers: await headers(),
 		});
 	} catch (error) {
+		unstable_rethrow(error);
 		outcome = { problem: refusalSchema.parse(error) };
 	}
 
 	redirect({ href: { pathname: "/sign-in", query: outcome }, locale });
 }
 
-/** The signed-in account, or a redirect to the sign-in page. */
+/** The signed-in account, or a redirect to the sign-in page (or start when accounts are off). */
 async function signedIn(locale: Locale) {
 	const visitor = await currentVisitor();
+
+	if (visitor.kind === "accounts_off") {
+		redirect({ href: "/", locale });
+	}
 
 	return visitor.kind === "signed_in" ? visitor : redirect({ href: "/sign-in", locale });
 }
@@ -112,6 +120,7 @@ export async function setNotificationsAction(form: FormData): Promise<void> {
 
 export async function changeEmailAction(form: FormData): Promise<void> {
 	const locale = localeOf(form);
+	const authInstance = instance(locale);
 	const email = emailSchema.safeParse(text(form, "email").trim());
 
 	await signedIn(locale);
@@ -121,11 +130,12 @@ export async function changeEmailAction(form: FormData): Promise<void> {
 	}
 
 	try {
-		await instance(locale).api.changeEmail({
+		await authInstance.api.changeEmail({
 			body: { newEmail: email.data, callbackURL: `/${locale}/account?done=email` },
 			headers: await headers(),
 		});
 	} catch (error) {
+		unstable_rethrow(error);
 		backToAccount(locale, { problem: refusalSchema.parse(error) });
 	}
 
@@ -140,12 +150,22 @@ export async function endSessionAction(form: FormData): Promise<void> {
 
 	await signedIn(locale);
 
-	// The page names a session by its id; its token never leaves the server.
-	const sessions = await api.listSessions({ headers: requestHeaders });
-	const session = sessions.find((each) => each.id === id);
+	try {
+		// The page names a session by its id; its token never leaves the server.
+		const sessions = await api.listSessions({ headers: requestHeaders });
+		const session = sessions.find((each) => each.id === id);
 
-	if (session !== undefined) {
-		await api.revokeSession({ body: { token: session.token }, headers: requestHeaders });
+		if (session !== undefined) {
+			await api.revokeSession({ body: { token: session.token }, headers: requestHeaders });
+		}
+	} catch (error) {
+		unstable_rethrow(error);
+
+		if (error instanceof APIError) {
+			backToAccount(locale, { problem: "failed" });
+		}
+
+		throw error;
 	}
 
 	backToAccount(locale, { done: "session" });
@@ -161,24 +181,50 @@ export async function endOtherSessionsAction(form: FormData): Promise<void> {
 
 export async function renamePasskeyAction(form: FormData): Promise<void> {
 	const locale = localeOf(form);
+	const authInstance = instance(locale);
 	const name = text(form, "name").trim().slice(0, 60);
 
 	await signedIn(locale);
-	await instance(locale).api.updatePasskey({
-		body: { id: text(form, "passkey"), name },
-		headers: await headers(),
-	});
+
+	try {
+		await authInstance.api.updatePasskey({
+			body: { id: text(form, "passkey"), name },
+			headers: await headers(),
+		});
+	} catch (error) {
+		unstable_rethrow(error);
+
+		if (error instanceof APIError) {
+			backToAccount(locale, { problem: "failed" });
+		}
+
+		throw error;
+	}
+
 	backToAccount(locale, { done: "passkey" });
 }
 
 export async function removePasskeyAction(form: FormData): Promise<void> {
 	const locale = localeOf(form);
+	const authInstance = instance(locale);
 
 	await signedIn(locale);
-	await instance(locale).api.deletePasskey({
-		body: { id: text(form, "passkey") },
-		headers: await headers(),
-	});
+
+	try {
+		await authInstance.api.deletePasskey({
+			body: { id: text(form, "passkey") },
+			headers: await headers(),
+		});
+	} catch (error) {
+		unstable_rethrow(error);
+
+		if (error instanceof APIError) {
+			backToAccount(locale, { problem: "failed" });
+		}
+
+		throw error;
+	}
+
 	backToAccount(locale, { done: "passkey_removed" });
 }
 

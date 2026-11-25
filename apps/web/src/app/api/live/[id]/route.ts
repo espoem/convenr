@@ -41,6 +41,7 @@ export async function GET(request: Request, { params }: RouteContext<"/api/live/
 		closed = true;
 		clearInterval(heartbeat);
 		clearTimeout(limit);
+		request.signal.removeEventListener("abort", close);
 		unwatch?.();
 
 		try {
@@ -52,7 +53,11 @@ export async function GET(request: Request, { params }: RouteContext<"/api/live/
 
 	function send(text: string) {
 		if (!closed) {
-			controller?.enqueue(encoder.encode(text));
+			try {
+				controller?.enqueue(encoder.encode(text));
+			} catch {
+				close();
+			}
 		}
 	}
 
@@ -91,9 +96,14 @@ export async function GET(request: Request, { params }: RouteContext<"/api/live/
 	// The page opens a new stream a second after this one ends.
 	send("retry: 1000\n\n");
 	deliver(version === null ? { kind: "gone" } : { kind: "version", version });
-	heartbeat = setInterval(() => send(": still here\n\n"), HEARTBEAT_MS);
-	limit = setTimeout(close, settings.LIVE_STREAM_SECONDS * 1000);
-	request.signal.addEventListener("abort", close);
+
+	if (!closed && !request.signal.aborted) {
+		heartbeat = setInterval(() => send(": still here\n\n"), HEARTBEAT_MS);
+		limit = setTimeout(close, settings.LIVE_STREAM_SECONDS * 1000);
+		request.signal.addEventListener("abort", close);
+	} else {
+		close();
+	}
 
 	return new Response(body, {
 		headers: {

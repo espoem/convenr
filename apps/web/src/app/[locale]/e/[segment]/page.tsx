@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { z } from "zod";
 
 import { EventNotifications } from "@/components/event-notifications";
 import { EventBoard } from "@/components/event/event-board";
@@ -14,7 +15,7 @@ import { ShareLink } from "@/components/share-link";
 import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
-import { getPathname, Link } from "@/i18n/navigation";
+import { Link, getPathname, redirect } from "@/i18n/navigation";
 import { boardOf, byKind, pollBoardOf, serverGridOf, shownFinal } from "@/server/board";
 import { readEvent } from "@/server/events";
 import { currentHolder } from "@/server/holder";
@@ -41,14 +42,33 @@ export async function generateMetadata({
 }
 
 /** The event page; unknown ids show the not-found page. */
-export default async function EventPage({ params }: PageProps<"/[locale]/e/[segment]">) {
-	const event = await eventOf((await params).segment);
+export default async function EventPage({
+	params,
+	searchParams,
+}: PageProps<"/[locale]/e/[segment]">) {
+	const { segment } = await params;
+	const event = await eventOf(segment);
 
 	if (event === undefined) {
 		notFound();
 	}
 
 	const locale = await currentLocale();
+
+	if (segment !== event.segment) {
+		const raw = await searchParams;
+
+		const query = Object.fromEntries(
+			Object.entries(raw).flatMap(([key, value]) => {
+				const parsed = z.string().safeParse(value);
+
+				return parsed.success ? [[key, parsed.data] as const] : [];
+			}),
+		);
+
+		redirect({ href: { pathname: `/e/${event.segment}`, query }, locale });
+	}
+
 	const format = formatLocale(locale, (await headers()).get("accept-language"));
 	const t = await getTranslations("Event");
 	const { schedule } = event;

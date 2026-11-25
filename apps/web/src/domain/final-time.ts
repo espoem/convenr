@@ -28,13 +28,16 @@ export type FinalResult =
 	| { ok: true; start: Temporal.Instant; end: Temporal.Instant }
 	| { ok: false; problem: FinalProblem };
 
-/** The start of a weekday slot on `date`, resolved as the dated slots are (ADR 0002). */
-function occurrence(date: Temporal.PlainDate, minute: number, zone: string): Temporal.Instant {
-	return date
-		.toPlainDateTime()
-		.add({ minutes: minute })
-		.toZonedDateTime(zone, { disambiguation: "earlier" })
-		.toInstant();
+/** The start of a weekday slot on `date`, or `undefined` inside a spring-forward clock gap (ADR 0002). */
+function occurrence(
+	date: Temporal.PlainDate,
+	minute: number,
+	zone: string,
+): Temporal.Instant | undefined {
+	const wallClock = date.toPlainDateTime().add({ minutes: minute });
+	const zoned = wallClock.toZonedDateTime(zone, { disambiguation: "earlier" });
+
+	return zoned.toPlainDateTime().equals(wallClock) ? zoned.toInstant() : undefined;
 }
 
 /** Whether `slots`, in time order, follow each other directly within one day. */
@@ -130,11 +133,24 @@ function gridWindow(
 
 	const zone = schedule.referenceZone;
 
-	return {
-		ok: true,
-		start: occurrence(date, first.minute, zone),
-		end: occurrence(date, last.minute, zone).add(length),
-	};
+	const starts = slots.map((slot) =>
+		slot.kind === "weekday" ? occurrence(date, slot.minute, zone) : undefined,
+	);
+
+	const start = starts[0];
+	const lastStart = starts.at(-1);
+
+	if (start === undefined || lastStart === undefined || starts.some((item) => item === undefined)) {
+		return { ok: false, problem: "final_not_in_event" };
+	}
+
+	const end = lastStart.add(length);
+
+	if (Temporal.Instant.compare(start, end) >= 0) {
+		return { ok: false, problem: "final_not_in_event" };
+	}
+
+	return { ok: true, start, end };
 }
 
 /** The date of the final time in the reference zone, the date a weekday event picked. */
@@ -168,13 +184,57 @@ export function finalSlotKeys(final: FinalTime, schedule: Schedule): string[] {
 
 		const start = occurrence(date, slot.minute, schedule.referenceZone);
 
-		return slot.weekday === date.dayOfWeek && inside(start) ? [slotKey(slot)] : [];
+		return start !== undefined && slot.weekday === date.dayOfWeek && inside(start)
+			? [slotKey(slot)]
+			: [];
 	});
 }
 
-/** Whether removing `removed` from the event takes a slot of its final time. */
-export function clearsFinal(final: FinalTime, schedule: Schedule, removed: readonly Slot[]) {
-	const inside = new Set(finalSlotKeys(final, schedule));
+function scheduleKeepsFinal(final: FinalTime, before: Schedule, after: Schedule): boolean {
+	if (final.kind === "open") {
+		return true;
+	}
+
+	if (after.kind !== before.kind) {
+		return false;
+	}
+
+	if (before.kind === "grid" && after.kind === "grid") {
+		if (after.slotLength !== before.slotLength) {
+			return false;
+		}
+
+		const wasWeekday = before.days.mode === "weekdays";
+		const isWeekday = after.days.mode === "weekdays";
+
+		if (wasWeekday !== isWeekday) {
+			return false;
+		}
+
+		if (isWeekday && after.referenceZone !== before.referenceZone) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/** Whether changing `before` to `after` (removing `removed`) takes away or invalidates the final time. */
+export function clearsFinal(
+	final: FinalTime,
+	before: Schedule,
+	removed: readonly Slot[],
+	after?: Schedule,
+) {
+	if (final.kind === "open") {
+		return false;
+	}
+
+	if (after !== undefined && !scheduleKeepsFinal(final, before, after)) {
+		return true;
+	}
+
+	const inside = new Set(finalSlotKeys(final, before));
 
 	return removed.some((slot) => inside.has(slotKey(slot)));
 }

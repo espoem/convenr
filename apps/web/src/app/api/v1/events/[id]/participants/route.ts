@@ -21,11 +21,11 @@ export const POST = endpoint<{ id: string }>(async (request, { id }) => {
 
 	const joined = await join(id, body.value.name, password);
 
-	sendSoon();
-
 	if (!joined.ok) {
 		return refusalResponse(joined, { current: "/password", new: "/newPassword" });
 	}
+
+	sendSoon();
 
 	return json(
 		joinedSchema,

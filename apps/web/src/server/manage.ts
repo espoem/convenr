@@ -42,6 +42,7 @@ import {
 	scheduleColumns,
 	scheduleOfInput,
 } from "./events";
+import { noteFinal } from "./notifications";
 import { matchesSecret } from "./secrets";
 import { countDeleted } from "./usage";
 
@@ -386,7 +387,7 @@ export async function updateEvent(
 
 		const removed = removedSlots(before, after);
 		const losing = await losingParticipants(tx, id, removed);
-		const clears = clearsFinal(finalOf(row), before, removed);
+		const clears = clearsFinal(finalOf(row), before, removed, after);
 
 		const confirmed = confirmation.kind === "version" && confirmation.version === version;
 
@@ -413,7 +414,13 @@ export async function updateEvent(
 			await tx.insert(pollOptions).values(optionRows(id, added));
 		}
 
-		return { status: "saved", event: await eventViewOf(tx, await withOptions(tx, written)) };
+		const changed = await withOptions(tx, written);
+
+		if (clears) {
+			await noteFinal(tx, changed, now);
+		}
+
+		return { status: "saved", event: await eventViewOf(tx, changed) };
 	});
 }
 

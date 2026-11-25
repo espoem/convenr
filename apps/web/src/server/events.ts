@@ -91,7 +91,7 @@ const common = {
 const wholeMinute = z.iso
 	.datetime({ offset: true })
 	.transform((text) => Temporal.Instant.from(text))
-	.refine((instant) => instant.epochMilliseconds % 60_000 === 0, failsAs("invalid_value"));
+	.refine((instant) => instant.epochNanoseconds % 60_000_000_000n === 0n, failsAs("invalid_value"));
 
 /** An option the event keeps, by id, or a new one, by its times. */
 const optionInput = z.union([
@@ -403,9 +403,14 @@ export async function readEvent(
 	id: string,
 	now = Temporal.Now.instant(),
 ): Promise<EventView | undefined> {
-	const row = await liveEvent(db(), id, now, "read");
+	return db().transaction(
+		async (tx) => {
+			const row = await liveEvent(tx, id, now, "read");
 
-	return row === undefined ? undefined : eventViewOf(db(), row);
+			return row === undefined ? undefined : eventViewOf(tx, row);
+		},
+		{ isolationLevel: "repeatable read", accessMode: "read only" },
+	);
 }
 
 /** The event `row` with its participants and their availability, read through `queries`. */

@@ -213,22 +213,33 @@ export async function queueDue(now: Temporal.Instant): Promise<void> {
 					digest.accountId,
 				);
 
-				await queue(
-					tx,
-					wanted ? [digest.accountId] : [],
-					digest.eventId,
-					{ kind: "responses", names: digest.waiting },
-					now,
-				);
-				await tx
-					.update(responseDigests)
-					.set({ sentAt: now.toString(), waiting: [] })
-					.where(
-						and(
-							eq(responseDigests.accountId, digest.accountId),
-							eq(responseDigests.eventId, digest.eventId),
-						),
+				if (wanted) {
+					await queue(
+						tx,
+						[digest.accountId],
+						digest.eventId,
+						{ kind: "responses", names: digest.waiting },
+						now,
 					);
+					await tx
+						.update(responseDigests)
+						.set({ sentAt: now.toString(), waiting: [] })
+						.where(
+							and(
+								eq(responseDigests.accountId, digest.accountId),
+								eq(responseDigests.eventId, digest.eventId),
+							),
+						);
+				} else {
+					await tx
+						.delete(responseDigests)
+						.where(
+							and(
+								eq(responseDigests.accountId, digest.accountId),
+								eq(responseDigests.eventId, digest.eventId),
+							),
+						);
+				}
 			}),
 		);
 	});
@@ -427,9 +438,12 @@ export async function setEventChoice(
 		return;
 	}
 
-	// An event that is gone takes no choice.
+	// An event or account that is gone takes no choice.
 	await queries.execute(sql`
 		insert into event_notifications (account_id, event_id, kind, enabled)
-		select ${accountId}, id, ${kind}, ${choice === "on"} from events where id = ${eventId}
+		select auth_users.id, events.id, ${kind}, ${choice === "on"}
+		from auth_users
+		join events on events.id = ${eventId}
+		where auth_users.id = ${accountId}
 		on conflict (account_id, event_id, kind) do update set enabled = excluded.enabled`);
 }

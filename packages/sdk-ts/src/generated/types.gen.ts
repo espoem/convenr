@@ -801,17 +801,29 @@ export type CreateEventErrors = {
      *
      * `duplicate_day`: A day is chosen more than once.
      *
+     * `duplicate_option`: Two options have the same start and end.
+     *
      * `end_not_after_start`: The daily end is not after the daily start.
      *
      * `no_days`: The event has no day.
      *
      * `not_on_slot_boundary`: A daily time is not a multiple of the slot length.
      *
+     * `option_end_not_after_start`: An option ends at or before its start.
+     *
+     * `option_not_one_day`: An option ends on a later date than it starts, in the reference zone.
+     *
      * `out_of_day`: A daily time lies outside 00:00 to 24:00.
      *
      * `range_reversed`: The last day is before the first.
      *
+     * `too_few_options`: A poll needs at least 2 options.
+     *
      * `too_many_dates`: The event has more than 31 dates.
+     *
+     * `too_many_options`: A poll has at most 20 options.
+     *
+     * `unknown_option`: The change keeps an option the event does not have.
      */
     422: Problem;
     /**
@@ -973,17 +985,29 @@ export type UpdateEventErrors = {
      *
      * `duplicate_day`: A day is chosen more than once.
      *
+     * `duplicate_option`: Two options have the same start and end.
+     *
      * `end_not_after_start`: The daily end is not after the daily start.
      *
      * `no_days`: The event has no day.
      *
      * `not_on_slot_boundary`: A daily time is not a multiple of the slot length.
      *
+     * `option_end_not_after_start`: An option ends at or before its start.
+     *
+     * `option_not_one_day`: An option ends on a later date than it starts, in the reference zone.
+     *
      * `out_of_day`: A daily time lies outside 00:00 to 24:00.
      *
      * `range_reversed`: The last day is before the first.
      *
+     * `too_few_options`: A poll needs at least 2 options.
+     *
      * `too_many_dates`: The event has more than 31 dates.
+     *
+     * `too_many_options`: A poll has at most 20 options.
+     *
+     * `unknown_option`: The change keeps an option the event does not have.
      */
     422: Problem;
     /**

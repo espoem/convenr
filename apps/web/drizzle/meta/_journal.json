@@ -106,6 +106,13 @@
       "when": 1795428643465,
       "tag": "0014_organizers",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795611927371,
+      "tag": "0015_participant_attempt_guards",
+      "breakpoints": true
     }
   ]
 }

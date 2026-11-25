@@ -42,7 +42,9 @@ export const PUT = securedEndpoint<Params>("admin", async (request, { id }, secr
 		ifMatchPrecondition(request),
 	);
 
-	sendSoon();
+	if (picked.status === "saved") {
+		sendSoon();
+	}
 
 	return answer(picked);
 });
@@ -50,7 +52,9 @@ export const PUT = securedEndpoint<Params>("admin", async (request, { id }, secr
 export const DELETE = securedEndpoint<Params>("admin", async (request, { id }, secret) => {
 	const cleared = await clearFinal(id, bySecret(secret), ifMatchPrecondition(request));
 
-	sendSoon();
+	if (cleared.status === "saved") {
+		sendSoon();
+	}
 
 	return answer(cleared);
 });

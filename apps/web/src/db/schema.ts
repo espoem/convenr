@@ -154,6 +154,8 @@ export const participants = pgTable(
 		/** Argon2id hash in PHC string format. */
 		passwordHash: text(),
 		failedAttempts: smallint().notNull().default(0),
+		attemptCycle: integer().notNull().default(0),
+		attemptRefunds: smallint().notNull().default(0),
 		/** When the last attempt was counted. The count is forgotten 15 minutes after it. */
 		lastAttemptAt: instant(),
 		lockedUntil: instant(),
@@ -172,6 +174,7 @@ export const participants = pgTable(
 		unique("participants_public_id").on(table.publicId),
 		// The target of a poll answer's key, which ties the participant to the option's event.
 		unique("participants_id_event").on(table.id, table.eventId),
+		check("participants_failed_attempts", sql`${table.failedAttempts} >= 0`),
 	],
 );
 
