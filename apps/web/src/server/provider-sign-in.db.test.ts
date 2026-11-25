@@ -391,6 +391,26 @@ describe("adding a provider from a session", () => {
 		expect(await providersOf(account.id)).toMatchObject([{ accountId: first.id }]);
 	});
 
+	it("stores an identity once, and a provider once for an account", async () => {
+		const first = await emailAccount(`${unique()}@example.org`);
+		const second = await emailAccount(`${unique()}@example.org`);
+		const row = { id: unique(), providerId: "github", accountId: githubId(), userId: first.id };
+
+		await db().insert(authAccounts).values(row);
+
+		await expect(
+			db()
+				.insert(authAccounts)
+				.values({ ...row, id: unique(), userId: second.id }),
+		).rejects.toMatchObject({ cause: { constraint: "auth_accounts_identity" } });
+
+		await expect(
+			db()
+				.insert(authAccounts)
+				.values({ ...row, id: unique(), accountId: githubId() }),
+		).rejects.toMatchObject({ cause: { constraint: "auth_accounts_provider" } });
+	});
+
 	it("is refused when the browser is signed in to another account meanwhile", async () => {
 		const first = await emailAccount(`${unique()}@example.org`);
 		const second = await emailAccount(`${unique()}@example.org`);

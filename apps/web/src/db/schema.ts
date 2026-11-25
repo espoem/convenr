@@ -343,7 +343,7 @@ export const authSessions = pgTable(
 	(table) => [index("auth_sessions_user").on(table.userId)],
 );
 
-/** Sign-in methods of an account; the email link needs none, OAuth providers later add rows. */
+/** The providers of an account; the email link needs no row. */
 export const authAccounts = pgTable(
 	"auth_accounts",
 	{
@@ -363,7 +363,11 @@ export const authAccounts = pgTable(
 		createdAt: moment().notNull().defaultNow(),
 		updatedAt: moment().notNull().defaultNow(),
 	},
-	(table) => [index("auth_accounts_user").on(table.userId)],
+	(table) => [
+		// A provider identity is in one account at most, and an account has each provider once.
+		unique("auth_accounts_identity").on(table.providerId, table.accountId),
+		unique("auth_accounts_provider").on(table.userId, table.providerId),
+	],
 );
 
 /** Sign-in links and other one-time values, stored as hashes. */
