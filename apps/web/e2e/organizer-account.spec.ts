@@ -68,10 +68,10 @@ test("an organizer keeps an event and a signed-in participant gets its final tim
 	await cell(organizer, first, "17:00").click();
 	await cell(organizer, first, "17:30").click();
 
-	const picker = organizer.getByRole("region", { name: "Konečný čas" });
+	const picker = organizer.getByRole("region", { name: "Výsledný čas" });
 
-	await picker.getByRole("button", { name: "Vybrat jako konečný čas" }).click();
-	await expect(picker.getByText(/^Konečný čas je .*17:00–18:00\.$/u)).toBeVisible();
+	await picker.getByRole("button", { name: "Vybrat jako výsledný čas" }).click();
+	await expect(picker.getByText(/^Výsledný čas je .*17:00–18:00\.$/u)).toBeVisible();
 
 	// The calendar file of the email holds the window in UTC.
 	const email = await emailTo(address, "The final time of Výroční schůze");

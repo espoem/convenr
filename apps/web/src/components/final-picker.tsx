@@ -102,7 +102,7 @@ export function FinalPicker({
 	const [proposal, setProposal] = useState<Run | null>(null);
 	// The first cell of a run picked in the grid, until a second cell in its column ends it.
 	const [anchor, setAnchor] = useState<CellRef | null>(null);
-	const [chosenDate, setChosenDate] = useState<string | null>(null);
+	const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
 	const { message, setMessage, pending, send } = useFinalChange(onDenied, () => {
 		setProposal(null);
@@ -132,7 +132,9 @@ export function FinalPicker({
 	const column = validProposal === null ? undefined : columns[validProposal.column];
 	const weekday = column?.kind === "weekday" ? column.weekday : null;
 	const dates = weekday === null ? [] : occurrences(weekday, event.referenceZone);
-	const date = chosenDate !== null && dates.includes(chosenDate) ? chosenDate : (dates[0] ?? null);
+
+	const date =
+		selectedDate !== null && dates.includes(selectedDate) ? selectedDate : (dates[0] ?? null);
 
 	const final =
 		event.final.kind === "chosen"
@@ -225,7 +227,7 @@ export function FinalPicker({
 								aria-describedby={`${id}-date-message`}
 								className={controlClass}
 								value={date ?? ""}
-								onChange={(change) => setChosenDate(change.target.value)}
+								onChange={(change) => setSelectedDate(change.target.value)}
 							>
 								{dates.map((option) => (
 									<option key={option} value={option}>

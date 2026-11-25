@@ -140,14 +140,17 @@ export async function saveAction(id: string, available: string[], ifNeedBe: stri
 		return { ok: false, problem: "unknown_slot" } as const;
 	}
 
-	const [event, marked, maybe] = args.data;
+	const [event, markedAvailable, markedIfNeedBe] = args.data;
 	const holder = await currentHolder(event);
 
 	if (holder === undefined) {
 		return { ok: false, problem: "not_joined" } as const;
 	}
 
-	const saved = await saveResponse(event, holder, { available: marked, ifNeedBe: maybe });
+	const saved = await saveResponse(event, holder, {
+		available: markedAvailable,
+		ifNeedBe: markedIfNeedBe,
+	});
 
 	if (!saved.ok) {
 		return saved;

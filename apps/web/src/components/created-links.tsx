@@ -12,7 +12,7 @@ type CreatedLinksProps = {
 	id: string;
 	segment: string;
 	locale: Locale;
-	/** The signed-in creator's account owns the event, so losing the admin link loses nothing. */
+	/** The signed-in organizer's account owns the event, so losing the admin link loses nothing. */
 	inAccount: boolean;
 };
 

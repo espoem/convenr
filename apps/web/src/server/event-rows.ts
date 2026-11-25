@@ -14,7 +14,7 @@ import {
 import type { FinalTime } from "@/domain/final-time";
 import type { Level, Levels } from "@/domain/levels";
 import { inTimeOrder, optionKey } from "@/domain/poll";
-import { type Deletion, deletionOf, expiresAt, type Keeping } from "@/domain/retention";
+import { type Deletion, deletesAt, deletionOf, type Keeping } from "@/domain/retention";
 import {
 	type EventDays,
 	type Schedule,
@@ -272,7 +272,7 @@ export async function touchEvent(queries: Queries, row: EventRow, now: Temporal.
  * to every page, action and version check, even before the purge deletes it.
  */
 export function isLive(row: EventRow, now: Temporal.Instant): boolean {
-	const end = expiresAt(deletionOfRow(row), row.referenceZone);
+	const end = deletesAt(deletionOfRow(row), row.referenceZone);
 
 	return end === null || Temporal.Instant.compare(now, end) < 0;
 }

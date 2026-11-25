@@ -24,29 +24,29 @@ test("the organizer picks a final time that the event page shows, and narrowing 
 	// A best window, picked on the manage page.
 	await organizer.goto(admin);
 
-	const picker = organizer.getByRole("region", { name: "Konečný čas" });
+	const picker = organizer.getByRole("region", { name: "Výsledný čas" });
 
-	await expect(picker.getByText("Konečný čas zatím není vybraný.")).toBeVisible();
+	await expect(picker.getByText("Výsledný čas zatím není vybraný.")).toBeVisible();
 	await organizer
 		.getByRole("region", { name: "Nejlepší časy" })
 		.getByRole("button", { name: new RegExp(`^${day}, 17:00–17:30`, "u") })
 		.click();
 	await expect(picker.getByText(`Vybráno: ${day}, 17:00–17:30`)).toBeVisible();
-	await picker.getByRole("button", { name: "Vybrat jako konečný čas" }).click();
-	await expect(picker.getByText(/^Konečný čas je .*17:00–17:30\.$/u)).toBeVisible();
+	await picker.getByRole("button", { name: "Vybrat jako výsledný čas" }).click();
+	await expect(picker.getByText(/^Výsledný čas je .*17:00–17:30\.$/u)).toBeVisible();
 
 	// Changed to a run selected in the grid, where nobody is available.
 	await cell(organizer, first, "20:00").click();
 	await cell(organizer, first, "20:30").click();
 	await expect(picker.getByText(`Vybráno: ${day}, 20:00–21:00`)).toBeVisible();
-	await picker.getByRole("button", { name: "Vybrat jako konečný čas" }).click();
-	await expect(picker.getByText(/^Konečný čas je .*20:00–21:00\.$/u)).toBeVisible();
+	await picker.getByRole("button", { name: "Vybrat jako výsledný čas" }).click();
+	await expect(picker.getByText(/^Výsledný čas je .*20:00–21:00\.$/u)).toBeVisible();
 
 	const viewer = await freshPage(browser);
 
 	await viewer.goto(share);
 
-	const banner = viewer.getByRole("region", { name: "Konečný čas" });
+	const banner = viewer.getByRole("region", { name: "Výsledný čas" });
 
 	await expect(banner).toContainText("20:00–21:00");
 	await expect(banner).toContainText("Ve vašem časovém pásmu, Europe/Prague.");
@@ -56,7 +56,7 @@ test("the organizer picks a final time that the event page shows, and narrowing 
 	await expect(
 		cell(viewer, first, "20:30").locator("xpath=..").locator(".cv-final"),
 	).toHaveAttribute("data-edge", "bottom");
-	await expect(viewer.getByRole("table").getByText("Konečný čas")).toHaveCount(1);
+	await expect(viewer.getByRole("table").getByText("Výsledný čas")).toHaveCount(1);
 
 	// The calendar file holds the final time in UTC and a share link that opens the event.
 	const utc = (time: string) =>
@@ -103,16 +103,16 @@ test("the organizer picks a final time that the event page shows, and narrowing 
 	await organizer.getByLabel("do", { exact: true }).selectOption({ label: "20:00" });
 	await organizer.getByRole("button", { name: "Uložit změny" }).click();
 
-	const asked = organizer.getByRole("alert").filter({ hasText: "konečný čas zruší" });
+	const asked = organizer.getByRole("alert").filter({ hasText: "výsledný čas zruší" });
 
 	await expect(asked).toBeVisible();
 	await expect(asked).not.toContainText("dostupnosti");
 	await organizer.getByRole("button", { name: "Uložit a odebrat" }).click();
 	await expect(organizer.getByText("Změny jsou uložené.")).toBeVisible();
-	await expect(picker.getByText("Konečný čas zatím není vybraný.")).toBeVisible();
+	await expect(picker.getByText("Výsledný čas zatím není vybraný.")).toBeVisible();
 
 	await viewer.reload();
-	await expect(viewer.getByRole("region", { name: "Konečný čas", exact: true })).toHaveCount(0);
+	await expect(viewer.getByRole("region", { name: "Výsledný čas", exact: true })).toHaveCount(0);
 
 	await viewer.context().close();
 	await organizer.context().close();

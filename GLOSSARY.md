@@ -9,8 +9,16 @@ One scheduling question: a name, a set of days, a daily time range and a slot le
 _Avoid_: Poll, meeting, survey
 
 **Organizer**:
-The person who created an event and holds its admin link.
-_Avoid_: Owner, creator, host
+Anyone managing an event via its admin link or as its owning account.
+_Avoid_: Creator, host
+
+**Event kind**:
+Whether an event is a grid of slots (`grid`) or a list of hand-picked poll options (`poll`).
+_Avoid_: Event type (which also conflicts with Day mode)
+
+**Poll option**:
+One dated time interval (start and end instant) offered in a poll event.
+_Avoid_: Poll slot
 
 **Day mode**:
 How the organizer chose an event's days: date range, specific dates or weekdays.
@@ -38,8 +46,11 @@ _Avoid_: Time block, interval
 The stored identity of a slot: a UTC instant for a dated event, a day of week and minute of day for a weekday event.
 
 **Planned deletion date**:
-The date after which an event and everything in it is deleted.
+The date after which an event and everything in it is deleted unless kept.
 _Avoid_: Expiry, TTL
+
+**Keeping**:
+Turning off age-based deletion for an owned event until the owner turns it back off or releases the event.
 
 ## People
 
@@ -105,3 +116,27 @@ One of the five fill levels of the heat map: none, up to 25 %, up to 50 %, up to
 **Final time**:
 The window the organizer picked as when the event takes place, as one dated occurrence with a start and an end. A weekday event's final time is one date on the window's weekday.
 _Avoid_: Final slot, decision, chosen date
+
+**Best window**:
+A maximal contiguous run of slots on one day where a common set of participants has a level.
+
+## Accounts
+
+**Owner**:
+The single account an event is claimed into or created by while signed in; anonymous events have none.
+_Avoid_: Calling an anonymous admin-link holder an owner (keep internal F5 `owner` symbols and `event_has_owner` problem codes as named).
+
+**Account**:
+An email address with its passkeys, sessions, email language, and notification settings.
+
+**Linked participant**:
+A participant bound to an account instead of a browser token.
+
+**Browser key**:
+The random secret in one HttpOnly cookie from which browser tokens are derived.
+
+**Browser token**:
+A participant token derived from the browser key and an event id.
+
+**Outbox**:
+Stored emails waiting to be sent and retried.

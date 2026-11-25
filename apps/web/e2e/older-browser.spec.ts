@@ -35,7 +35,7 @@ test("the pages work in a browser without Temporal and Map.groupBy", async ({
 	).toBeVisible();
 
 	await older.goto(admin);
-	await expect(older.getByRole("region", { name: "Konečný čas" })).toBeVisible();
+	await expect(older.getByRole("region", { name: "Výsledný čas" })).toBeVisible();
 
 	await older.goto("/cs");
 	await older.getByText("Dny po sobě").click();

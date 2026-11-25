@@ -100,10 +100,10 @@ export function deletionOf(
 }
 
 /**
- * The instant the event expires: the end of its deletion date in the reference zone, or `null`
+ * The instant the event deletes: the end of its deletion date in the reference zone, or `null`
  * while it is kept.
  */
-export function expiresAt(deletion: Deletion, referenceZone: string): Temporal.Instant | null {
+export function deletesAt(deletion: Deletion, referenceZone: string): Temporal.Instant | null {
 	return deletion.kind === "kept"
 		? null
 		: deletion.date.add({ days: 1 }).toZonedDateTime({ timeZone: referenceZone }).toInstant();

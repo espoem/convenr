@@ -12,7 +12,7 @@ The primary user is the organizer of a small group of 3 to 100 people: a club, a
 
 ## Product Purpose
 
-convenr helps a group find a time that works for most of its members. An event is done when the organizer can read the common window off the heat map and tell the group.
+convenr helps a group find a time that works for most of its members. An event is done when the organizer reads the common window off the heat map or ranked poll options, picks the final time, and shares it with the group.
 
 ## Positioning
 
@@ -21,13 +21,13 @@ Free, no ads, no trackers, and usable without an account by both organizer and p
 ## Operating Context
 
 - The link travels through group chats, so it is opened on phones, often in an in-app browser.
-- Participants paint availability on a grid by touch, mouse or keyboard.
+- Participants mark availability on a grid or answer poll options by touch, mouse or keyboard.
 - The organizer keeps a secret admin link; the service cannot recover it.
 - A participant identifies inside one event by a display name and an optional password.
 
 ## Capabilities and Constraints
 
-- Phase rules live in `docs/spec/phase-1.md`; the terms in `GLOSSARY.md`.
+- Rules live in `docs/spec/` ([phase 1](docs/spec/phase-1.md) through [phase 5](docs/spec/phase-5.md)); the terms in `GLOSSARY.md`.
 - Days are a date range, specific dates or weekdays. Slots are 15, 30 or 60 minutes.
 - Dated events are shown in the viewer's time zone; weekday events in the event's reference zone.
 - At most 100 participants per event.
@@ -49,7 +49,7 @@ No users, testimonials or usage data exist yet. Do not invent them.
 2. Privacy is the product: nothing is collected that the event does not need.
 3. Phone first: the grid is painted by touch, and nothing depends on hover.
 4. Time zones are correct by construction.
-5. Accounts, when they arrive, add convenience and never gate the core.
+5. Optional accounts add convenience (keeping events, notifications, claiming local events) and never gate the core.
 
 ## Accessibility & Inclusion
 

@@ -136,11 +136,13 @@ test("a poll is created, answered and finalized, and removing an answered option
 
 	// The organizer picks the first option as the final time.
 	await organizer.goto(admin);
-	await organizer.getByRole("button", { name: /^Vybrat .*18:00–20:00 jako konečný čas$/u }).click();
-	await expect(organizer.getByText(/^Konečný čas je .*18:00–20:00\.$/u)).toBeVisible();
+	await organizer
+		.getByRole("button", { name: /^Vybrat .*18:00–20:00 jako výsledný čas$/u })
+		.click();
+	await expect(organizer.getByText(/^Výsledný čas je .*18:00–20:00\.$/u)).toBeVisible();
 
 	await eva.reload();
-	await expect(eva.getByRole("region", { name: "Konečný čas" })).toContainText("18:00–20:00");
+	await expect(eva.getByRole("region", { name: "Výsledný čas" })).toContainText("18:00–20:00");
 
 	// A third option, then the answered first one removed: the change says what it costs.
 	await addOption(organizer, second, "10:00", "11:30");
@@ -150,10 +152,10 @@ test("a poll is created, answered and finalized, and removing an answered option
 	const confirm = organizer.getByRole("alert").filter({ hasText: "Uložit a odebrat" });
 
 	await expect(confirm).toContainText("2 účastníci přijdou o odpověď");
-	await expect(confirm).toContainText("takže se konečný čas zruší");
+	await expect(confirm).toContainText("takže se výsledný čas zruší");
 	await confirm.getByRole("button", { name: "Uložit a odebrat" }).click();
 	await expect(organizer.getByText("Změny jsou uložené.")).toBeVisible();
-	await expect(organizer.getByText("Konečný čas zatím není vybraný.")).toBeVisible();
+	await expect(organizer.getByText("Výsledný čas zatím není vybraný.")).toBeVisible();
 	await expect(organizer.getByRole("row", { name: /10:00–11:30/u })).toBeVisible();
 	await expect(organizer.getByRole("row", { name: /18:00–20:00/u })).toHaveCount(0);
 

@@ -81,21 +81,18 @@ Each phase ships on its own and is usable by real people.
 - An "if need be" level in addition to "available".
 - Poll mode: yes, if need be, or no on a few hand-picked options, on the same event model.
 - Light and dark theme: follows the system setting, with a manual switch.
-- Visual review of the application, which may revise the palette and how the grid marks cells in `DESIGN.md`. Defects seen so far (2026-11-19):
+- Visual review of the application, which may revise the palette and how the grid marks cells in `DESIGN.md`. Defects seen and fixed:
   1. A grid cell focused from the keyboard has too little contrast, and its outline is hard to see.
   2. A chosen best time in the list below the grid shifts its content by a pixel, because the mark widens the border from 1 to 2 px.
   3. The marks in the grid (availability, best time) have too little contrast against each other and the background.
   4. Switching the language shifts the layout.
   5. After switching the language, "Change password" and the rest of the line for the joined participant appear noticeably later than the other text. The board learns who has joined only after the browser sends its stored token to the server (`identifyAction` in `event-board.tsx`), so the line waits for that round trip on every page load.
-  6. The parts of the event page have no common width. Some stop at about 80 % of the page, others take its full width, and short notes wrap well before the line ends. The layout of the grid page needs one review that sets which parts take the full width and which keep the text measure.
-
-  Defects seen on 2026-11-23:
-
-  7. The hint under the participant filter ("Choose a name and the grid shows only that participant's availability…") wraps in a column that is too narrow. Review the widths of all text columns together with defect 6.
-  8. After a click on a copy button, the "Copied." notice stays on screen. It should hide after a short timeout.
-  9. A chosen best time can't be deselected. When the chosen option disappears from the list, for example after a response changes, the choice should reset.
-  10. The best times list shows on both the "Me" and the "Group" tab. It belongs only on "Group".
-  11. A reload switches the "Me"/"Group" tab back to its default. The page should keep the chosen tab across a reload, for example in the URL or in another way that fits better.
+  6. The parts of the event page had no common width, and short notes wrapped well before the line ended. `measure` now matches `form` at `42rem`.
+  7. The hint under the participant filter wrapped in a column that was too narrow.
+  8. After a click on a copy button, the "Copied." notice stayed on screen; it now clears after 2.5 seconds.
+  9. A chosen best time could stay highlighted when filtered away; the highlight now resets when the option leaves the visible list.
+  10. The best times list showed on both tabs; it now appears only on the "Group" tab.
+  11. A reload switched the "Me"/"Group" tab back to its default; `?tab=` now preserves it.
 - Live updates that replace the 15-second reload, using the technique that fits the hosting chosen by then.
 - Guides for people who run convenr or build on it, as sections of the README. A guide that is too long for the README moves to `docs/guides/` and the README links to it. A guide is done when each of its commands runs on a clean clone.
   1. Local deployment: run the application and PostgreSQL in containers, the settings an instance takes, and how to update it and back up its data.

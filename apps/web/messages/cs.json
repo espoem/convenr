@@ -59,13 +59,13 @@
 		"creating": "Vytvářím…",
 		"fixProblems": "Událost nejde uložit. Opravte označená pole.",
 		"failed": "Událost se nepodařilo uložit. Zkuste to prosím znovu.",
-		"lockedReason": "Nejde změnit, protože se už někdo připojil.",
+		"lockedReason": "Nejde změnit, protože se už někdo zapsal.",
 		"confirmLoss": "{count, plural, one {# účastník přijde} few {# účastníci přijdou} other {# účastníků přijde}} o část své dostupnosti, protože odebíráte dny nebo časy, které si označili.",
 		"confirmLossYes": "Uložit a odebrat",
 		"confirmLossNo": "Zpět k úpravám",
-		"confirmClearsFinal": "Změna odebere část konečného času, takže se konečný čas zruší.",
+		"confirmClearsFinal": "Změna odebere část výsledného času, takže se výsledný čas zruší.",
 		"pollConfirmLoss": "{count, plural, one {# účastník přijde} few {# účastníci přijdou} other {# účastníků přijde}} o odpověď, protože odebíráte termíny, na které odpověděli.",
-		"pollConfirmClearsFinal": "Změna odebere termín, který je konečným časem, takže se konečný čas zruší.",
+		"pollConfirmClearsFinal": "Změna odebere termín, který je výsledným časem, takže se výsledný čas zruší.",
 		"problem": {
 			"field_locked": "Délku políčka, způsob výběru dnů a časové pásmo už nejde změnit.",
 			"name": "Zadejte název, nejvýš 100 znaků.",
@@ -120,17 +120,17 @@
 		"saved": "Změny jsou uložené.",
 		"failed": "Nepovedlo se to. Zkuste to prosím znovu.",
 		"participants": "Účastníci ({count})",
-		"noParticipants": "Zatím se nikdo nepřipojil.",
+		"noParticipants": "Zatím se nikdo nezapsal.",
 		"removeParticipant": "Smazat",
 		"removeParticipantLabel": "Smazat účastníka {name}",
 		"removeParticipantConfirm": "Smazat účastníka {name}? Smaže se i jeho dostupnost a heslo a jméno se uvolní.",
 		"removeParticipantYes": "Smazat účastníka",
 		"keep": "Ponechat",
 		"keeping": {
-			"heading": "Ponechat událost",
-			"intro": "Dokud událost ponecháváte, nesmaže se. Když ji přestanete ponechávat, smaže se nejdříve po uplynutí doby uchování od toho dne.",
-			"switch": "Ponechat bez časového omezení",
-			"on": "Událost ponecháváte.",
+			"heading": "Uchovávat událost",
+			"intro": "Dokud událost uchováváte, nesmaže se. Když ji přestanete uchovávat, smaže se nejdříve po uplynutí doby uchování od toho dne.",
+			"switch": "Uchovávat bez časového omezení",
+			"on": "Událost uchováváte.",
 			"off": "Událost se smaže v plánovaném termínu.",
 			"failed": "Nepovedlo se to. Zkuste to prosím znovu."
 		},
@@ -139,22 +139,22 @@
 		"deleteEvent": "Smazat událost",
 		"deleteConfirm": "Opravdu smazat událost {name}? Nejde to vrátit.",
 		"deleteYes": "Smazat natrvalo",
-		"finalIs": "Konečný čas je {when}.",
-		"finalNone": "Konečný čas zatím není vybraný. Účastníci mohou odpovídat i po jeho výběru.",
-		"finalHint": "Vyberte jedno z nejlepších oken níže, nebo v mřížce označte souvislý úsek jednoho dne: klepněte na jeho první slot a pak na poslední.",
-		"finalGrid": "Dostupnost skupiny pro výběr konečného času",
+		"finalIs": "Výsledný čas je {when}.",
+		"finalNone": "Výsledný čas zatím není vybraný. Účastníci mohou odpovídat i po jeho výběru.",
+		"finalHint": "Vyberte jedno z nejlepších oken níže, nebo v mřížce označte souvislý úsek jednoho dne: klepněte na jeho první políčko a pak na poslední.",
+		"finalGrid": "Dostupnost skupiny pro výběr výsledného času",
 		"finalProposal": "Vybráno: {when}",
 		"finalDate": "Datum",
-		"finalDateHint": "Událost se opakuje každý týden, takže konečný čas potřebuje jedno datum.",
-		"finalPick": "Vybrat jako konečný čas",
-		"finalClear": "Zrušit konečný čas",
-		"pollFinalHint": "Vyberte jeden z termínů jako konečný čas.",
-		"pollFinalTable": "Termíny pro výběr konečného času",
+		"finalDateHint": "Událost se opakuje každý týden, takže pro výsledný čas vyberte konkrétní datum.",
+		"finalPick": "Vybrat jako výsledný čas",
+		"finalClear": "Zrušit výsledný čas",
+		"pollFinalHint": "Vyberte jeden z termínů jako výsledný čas.",
+		"pollFinalTable": "Termíny pro výběr výsledného času",
 		"pollIsFinal": "Vybráno",
-		"pollPickLabel": "Vybrat {when} jako konečný čas",
+		"pollPickLabel": "Vybrat {when} jako výsledný čas",
 		"finalProblem": {
-			"final_not_in_event": "Tohle není souvislý úsek slotů události. Označte ho znovu.",
-			"final_date_wrong_weekday": "Datum nepřipadá na den vybraných slotů.",
+			"final_not_in_event": "Tohle není souvislý úsek políček události. Označte ho znovu.",
+			"final_date_wrong_weekday": "Datum nepřipadá na den vybraných políček.",
 			"date_in_past": "Datum už minulo. Zvolte pozdější."
 		}
 	},
@@ -173,7 +173,7 @@
 		},
 		"legendLabel": "Barva ukazuje, kolik z {total} může. Když bude nutné se počítá napůl.",
 		"legendHalf": "Když bude nutné se počítá napůl.",
-		"finalTime": "Konečný čas",
+		"finalTime": "Výsledný čas",
 		"finalWhen": "{date}, {start}–{end}",
 		"finalWhenAcross": "{startDate}, {start} – {endDate}, {end}",
 		"finalZone": "Ve vašem časovém pásmu, {zone}.",
@@ -185,8 +185,8 @@
 		"groupHint": "Klepněte na políčko, najeďte na ně myší, nebo se k němu přesuňte klávesnicí a uvidíte, kdo může.",
 		"groupGrid": "Dostupnost skupiny",
 		"myGrid": "Vaše dostupnost",
-		"meHint": "Vyberte, co kreslíte, a klepněte na políčko nebo přes políčka táhněte prstem či myší. Klávesnicí: šipky, mezerník, Shift se šipkou vybere obdélník.",
-		"brush": "Kreslit",
+		"meHint": "Vyberte, co chcete označovat, a klepněte na políčko nebo přes políčka táhněte prstem či myší. Klávesnicí: šipky, mezerník, Shift se šipkou vybere obdélník.",
+		"brush": "Označovat",
 		"brushLevel": {
 			"available": "Můžu",
 			"if_need_be": "Když bude nutné",
@@ -252,7 +252,7 @@
 		"pollShownInZone": "Termíny jsou ve vašem pásmu, {zone}.",
 		"pollShownInReferenceZone": "Termíny jsou v pásmu události, {zone}.",
 		"pollChanged": "Pořadatel mezitím změnil termíny. Seznam je aktuální a vaše odpovědi zůstaly, kde to šlo. Uložte je znovu.",
-		"keptByOrganizer": "organizátor událost ponechává"
+		"keptByOrganizer": "pořadatel událost uchovává"
 	},
 	"Join": {
 		"heading": "Zapište svou dostupnost",
@@ -278,7 +278,7 @@
 		"problem": {
 			"invalid_name": "Zadejte jméno, nejvýš 40 znaků.",
 			"event_full": "Tato událost už má 100 účastníků.",
-			"name_in_account": "Toto jméno patří účastníkovi, který se připojil s účtem, a otevře ho jen tento účet. Přihlaste se k němu, nebo zvolte jiné jméno.",
+			"name_in_account": "Toto jméno patří účastníkovi, který se zapsal s účtem, a otevře ho jen tento účet. Přihlaste se k němu, nebo zvolte jiné jméno.",
 			"password_required": "Toto jméno už je v události obsazené a má heslo. Zadejte heslo.",
 			"wrong_password": "Heslo nesouhlasí.",
 			"too_many_attempts": "Příliš mnoho špatných hesel. Zkuste to znovu v {time}.",
@@ -339,32 +339,32 @@
 			"organized": "Události, které pořádám",
 			"joined": "Události, kterých se účastním",
 			"noneOrganized": "V účtu zatím nemáte žádné události, které pořádáte. Události, které vytvoříte přihlášeni nebo sem přidáte, můžete spravovat v každém prohlížeči, kde jste přihlášeni.",
-			"noneJoined": "Účtem jste se zatím k žádné události nepřipojili. Události, ke kterým se připojíte přihlášeni, se otevřou s vaším jménem v každém prohlížeči, kde jste přihlášeni.",
+			"noneJoined": "Účtem jste se zatím k žádné události nezapsali. Události, ke kterým se zapíšete přihlášeni, se otevřou s vaším jménem v každém prohlížeči, kde jste přihlášeni.",
 			"manage": "Spravovat",
 			"unlink": "Odebrat z účtu",
 			"releaseConfirm": "Odebrat událost {name} z účtu? Pak ji spravuje jen její odkaz pro správu; bez něj ji nikdo nezmění ani nesmaže.",
-			"releaseKept": "Zároveň ji přestanete ponechávat a znovu dostane datum smazání.",
+			"releaseKept": "Zároveň ji přestanete uchovávat a znovu dostane datum smazání.",
 			"unlinkConfirm": "Odebrat událost {name} z účtu? Zůstanete v ní jako {participant} jen v tomto prohlížeči.",
 			"unlinkYes": "Odebrat",
 			"unlinkNo": "Zrušit",
 			"unlinkFailed": "Událost se nepodařilo odebrat. Načtěte stránku znovu a zkuste to ještě jednou.",
 			"as": "jako {name}",
-			"open": "Termín zatím není vybraný",
-			"final": "Termín {when}",
+			"open": "Výsledný čas zatím není vybraný",
+			"final": "Výsledný čas {when}",
 			"deletion": "smaže se {date}",
 			"kept": "nemaže se",
-			"keptByOrganizer": "ponecháváte ji"
+			"keptByOrganizer": "uchováváte ji"
 		},
 		"claim": {
 			"heading": "Události v tomto prohlížeči",
-			"intro": "Tyto události v tomto prohlížeči pořádáte nebo jste se k nim připojili, ale nejsou ve vašem účtu. Přidejte je a otevřete je v každém prohlížeči, kde jste přihlášeni.",
+			"intro": "Tyto události v tomto prohlížeči pořádáte nebo jste se k nim zapsali, ale nejsou ve vašem účtu. Přidejte je a otevřete je v každém prohlížeči, kde jste přihlášeni.",
 			"add": "Přidat do účtu",
 			"addAll": "Přidat vše do účtu",
 			"problem": {
 				"event_has_owner": "Tuto událost už má jiný účet.",
 				"wrong_admin_secret": "Událost už neexistuje, nebo k ní odkaz pro správu už nepatří.",
 				"signed_out": "Jste odhlášeni. Přihlaste se znovu a událost přidejte.",
-				"not_joined": "Tento prohlížeč už k události připojený není.",
+				"not_joined": "Tento prohlížeč už v události není zapsaný.",
 				"account_already_joined": "Váš účet už je v této události pod jiným jménem."
 			}
 		},
@@ -383,9 +383,9 @@
 		"notifications": {
 			"heading": "E-maily o událostech",
 			"intro": "Platí pro všechny vaše události; stránka události je může pro danou událost změnit.",
-			"responses": "Nové odpovědi v událostech, které organizuji, nejvýš jednou za {minutes} minut",
-			"final": "Vybraný termín událostí, kterých se účastním, se souborem kalendáře",
-			"reminder": "Připomínka {hours} hodin před termínem",
+			"responses": "Nové odpovědi v událostech, které pořádám, nejvýš jednou za {minutes} minut",
+			"final": "Výsledný čas událostí, kterých se účastním, se souborem kalendáře",
+			"reminder": "Připomínka {hours} hodin před výsledným časem",
 			"save": "Uložit e-maily"
 		},
 		"passkeys": {
@@ -412,7 +412,7 @@
 		},
 		"delete": {
 			"heading": "Smazat účet",
-			"warning": "Vaše události zůstanou a dál fungují přes své odkazy. Událost ponechaná bez časového omezení znovu dostane datum smazání.",
+			"warning": "Vaše události zůstanou a dál fungují přes své odkazy. Událost uchovávaná bez časového omezení znovu dostane datum smazání.",
 			"confirm": "Chci smazat svůj účet",
 			"submit": "Smazat účet"
 		},
@@ -460,7 +460,7 @@
 			"unsubscribe": "Vypnout tyto e-maily pro tuto událost",
 			"reason": {
 				"responses": "Tento e-mail dostáváte, protože jste si zapnuli e-maily o nových odpovědích.",
-				"final": "Tento e-mail dostáváte, protože jste si zapnuli e-maily o vybraném termínu.",
+				"final": "Tento e-mail dostáváte, protože jste si zapnuli e-maily o výsledném času.",
 				"reminder": "Tento e-mail dostáváte, protože jste si zapnuli připomínky."
 			},
 			"responses": {
@@ -468,13 +468,13 @@
 				"intro": "Nové nebo změněné odpovědi v události {name} od posledního e-mailu: {names}."
 			},
 			"final": {
-				"subject": "Termín události {name}",
-				"intro": "Organizátor vybral termín události {name}: {when}.",
+				"subject": "Výsledný čas události {name}",
+				"intro": "Pořadatel vybral výsledný čas události {name}: {when}.",
 				"calendar": "V příloze je soubor kalendáře; když ho otevřete, událost se přidá do vašeho kalendáře nebo se v něm aktualizuje."
 			},
 			"cleared": {
-				"subject": "Termín události {name} je zrušený",
-				"intro": "Organizátor zrušil vybraný termín události {name}. Až vybere nový, přijde vám e-mail."
+				"subject": "Výsledný čas události {name} je zrušený",
+				"intro": "Pořadatel zrušil výsledný čas události {name}. Až vybere nový, přijde vám e-mail."
 			},
 			"reminder": {
 				"subject": "Připomínka: {name}",
@@ -486,8 +486,8 @@
 		"heading": "Moje e-maily o této události",
 		"kind": {
 			"responses": "Nové odpovědi",
-			"final": "Vybraný termín",
-			"reminder": "Připomínka před termínem"
+			"final": "Výsledný čas",
+			"reminder": "Připomínka před výsledným časem"
 		},
 		"account": {
 			"on": "Podle stránky účtu (zapnuto)",
@@ -502,13 +502,13 @@
 		"heading": "Vypnout e-maily",
 		"intro": {
 			"responses": "Tím vypnete e-maily o nových odpovědích v události <strong>{name}</strong>. Ostatní vaše události zůstanou, jak jsou.",
-			"final": "Tím vypnete e-maily o vybraném termínu události <strong>{name}</strong>. Ostatní vaše události zůstanou, jak jsou.",
+			"final": "Tím vypnete e-maily o výsledném času události <strong>{name}</strong>. Ostatní vaše události zůstanou, jak jsou.",
 			"reminder": "Tím vypnete připomínky události <strong>{name}</strong>. Ostatní vaše události zůstanou, jak jsou."
 		},
 		"submit": "Vypnout",
 		"done": {
 			"responses": "E-maily o nových odpovědích v události <strong>{name}</strong> jsou vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
-			"final": "E-maily o vybraném termínu události <strong>{name}</strong> jsou vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
+			"final": "E-maily o výsledném času události <strong>{name}</strong> jsou vypnuté. Po přihlášení je můžete znovu zapnout na stránce události.",
 			"reminder": "Připomínky události <strong>{name}</strong> jsou vypnuté. Po přihlášení je můžete znovu zapnout na stránce události."
 		},
 		"open": "Otevřít událost",
@@ -517,20 +517,20 @@
 	},
 	"ApiReference": {
 		"title": "API convenr",
-		"description": "Všechno, co člověk může udělat na stránkách convenr, jako JSON přes HTTP. Vytvoření události vrátí tajný klíč organizátora a připojení k ní vrátí token účastníka; oba se posílají jako `Authorization: Bearer <secret>`. Odmítnutý požadavek dostane problém podle RFC 9457 se stálým kódem `code`. V rámci verze 1 může odpověď získat nová pole, kódy problémů a hodnoty výčtů, takže klient ignoruje, co nezná. Požadavek obsahuje jen pole, která jmenuje jeho schéma.",
+		"description": "Všechno, co člověk může udělat na stránkách convenr, jako JSON přes HTTP. Vytvoření události vrátí tajný klíč pořadatele a zapsání k ní vrátí token účastníka; oba se posílají jako `Authorization: Bearer <secret>`. Odmítnutý požadavek dostane problém podle RFC 9457 se stálým kódem `code`. V rámci verze 1 může odpověď získat nová pole, kódy problémů a hodnoty výčtů, takže klient ignoruje, co nezná. Požadavek obsahuje jen pole, která jmenuje jeho schéma.",
 		"tags": {
 			"events": "Vytvoření, čtení, změna a smazání událostí a jejich nejlepší okna.",
-			"participants": "Připojení k události, odpověď na ni a odchod z ní.",
+			"participants": "Zapsání k události, odpověď na ni a odchod z ní.",
 			"description": "Tento popis API."
 		},
 		"security": {
-			"adminSecret": "Tajný klíč organizátora, začíná `cva_`. Vrátí se jednou, při vytvoření události.",
-			"participantToken": "Token účastníka, začíná `cvp_`. Vrátí ho každé připojení."
+			"adminSecret": "Tajný klíč pořadatele, začíná `cva_`. Vrátí se jednou, při vytvoření události.",
+			"participantToken": "Token účastníka, začíná `cvp_`. Vrátí ho každé zapsání."
 		},
 		"operations": {
 			"createEvent": {
 				"summary": "Vytvořit událost",
-				"description": "Vytvoří událost a vrátí ji s tajným klíčem organizátora, který později nejde obnovit."
+				"description": "Vytvoří událost a vrátí ji s tajným klíčem pořadatele, který později nejde obnovit."
 			},
 			"getEvent": {
 				"summary": "Přečíst událost",
@@ -545,28 +545,28 @@
 				"description": "Smaže událost i všechny účastníky najednou."
 			},
 			"pickFinal": {
-				"summary": "Vybrat konečný čas",
-				"description": "Vybere souvislou řadu slotů události v jednom dni jako konečný čas, nebo ho změní. Událost podle dnů v týdnu uvede i datum jediného termínu. Odpovídat jde dál. Výběr konečného času, který už událost má, nic nezmění."
+				"summary": "Vybrat výsledný čas",
+				"description": "Vybere souvislou řadu slotů události v jednom dni jako výsledný čas, nebo ho změní. Událost podle dnů v týdnu uvede i datum jediného termínu. Odpovídat jde dál. Výběr výsledného času, který už událost má, nic nezmění."
 			},
 			"getFinalCalendar": {
-				"summary": "Stáhnout konečný čas jako soubor kalendáře",
-				"description": "Soubor iCalendar s jednou událostí: název, popis následovaný odkazem pro účastníky a konečný čas v UTC. Nikdy neobsahuje odkaz pro správu ani jméno účastníka. `UID` vychází z id události a `SEQUENCE` roste s každým výběrem nebo změnou, takže kalendář, který naimportuje pozdější soubor, nahradí dřívější záznam. Je to jediná odpověď API, která není JSON."
+				"summary": "Stáhnout výsledný čas jako soubor kalendáře",
+				"description": "Soubor iCalendar s jednou událostí: název, popis následovaný odkazem pro účastníky a výsledný čas v UTC. Nikdy neobsahuje odkaz pro správu ani jméno účastníka. `UID` vychází z id události a `SEQUENCE` roste s každým výběrem nebo změnou, takže kalendář, který naimportuje pozdější soubor, nahradí dřívější záznam. Je to jediná odpověď API, která není JSON."
 			},
 			"clearFinal": {
-				"summary": "Zrušit konečný čas",
-				"description": "Zruší konečný čas. Odpovědi zůstanou, jak jsou; další výběr pokračuje v počítání `sequence`."
+				"summary": "Zrušit výsledný čas",
+				"description": "Zruší výsledný čas. Odpovědi zůstanou, jak jsou; další výběr pokračuje v počítání `sequence`."
 			},
 			"getWindows": {
 				"summary": "Nejlepší okna",
-				"description": "Nejvýš pět úseků po sobě jdoucích slotů, kdy může nejvíc lidí, tak jak je ukazuje stránka události. Okna datované události se berou po dnech v její referenční zóně. `ETag` je verze události; pošlete ho v `If-None-Match` a dokud se nic nezměnilo, dostanete `304`."
+				"description": "Nejvýš pět úseků po sobě jdoucích slotů, kdy může nejvíc lidí, tak jak je ukazuje stránka události. Okna datované události se berou po dnech v jejím referenčním pásmu. `ETag` je verze události; pošlete ho v `If-None-Match` a dokud se nic nezměnilo, dostanete `304`."
 			},
 			"join": {
-				"summary": "Připojit se k události",
-				"description": "Připojí se pod zobrazovaným jménem a vrátí token účastníka. Už použité jméno dá token pro tohoto účastníka; když má jméno heslo, pošlete ho jako `password`. Nové jméno ochráníte polem `newPassword`."
+				"summary": "Zapsat se k události",
+				"description": "Zapíše se pod zobrazovaným jménem a vrátí token účastníka. Už použité jméno dá token pro tohoto účastníka; když má jméno heslo, pošlete ho jako `password`. Nové jméno ochráníte polem `newPassword`."
 			},
 			"removeParticipant": {
 				"summary": "Smazat účastníka",
-				"description": "Organizátor smaže účastníka i jeho dostupnost."
+				"description": "Pořadatel smaže účastníka i jeho dostupnost."
 			},
 			"getMe": {
 				"summary": "Přečíst sebe",
@@ -608,13 +608,13 @@
 			"WWW-Authenticate": "Vždy `Bearer`."
 		},
 		"responses": {
-			"createEvent": "Nová událost a její tajný klíč organizátora.",
+			"createEvent": "Nová událost a její tajný klíč pořadatele.",
 			"getEvent": "Událost.",
 			"updateEvent": "Událost po změně, nebo jak byla, když se nic nezměnilo.",
 			"deleteEvent": "Událost je smazaná.",
-			"pickFinal": "Událost s konečným časem.",
-			"clearFinal": "Událost bez konečného času.",
-			"getFinalCalendar": "Soubor kalendáře s konečným časem.",
+			"pickFinal": "Událost s výsledným časem.",
+			"clearFinal": "Událost bez výsledného času.",
+			"getFinalCalendar": "Soubor kalendáře s výsledným časem.",
 			"getWindows": "Nejlepší okna a použité filtry.",
 			"join": "Účastník a jeho token.",
 			"removeParticipant": "Účastník je smazaný.",
@@ -633,20 +633,20 @@
 			"DatesSchedule": "Událost ve vybraných dnech.",
 			"RangeSchedule": "Událost v každém dni od jednoho data do druhého.",
 			"WeekdaysSchedule": "Událost ve dnech týdne, bez dat.",
-			"PollSchedule": "Anketa o několika vybraných časech; každý se odpovídá jako slot.",
-			"Option": "Čas, který anketa nabízí: začátek a konec v jednom dni v referenční zóně.",
+			"PollSchedule": "Anketa o několika vybraných časech; na každý se odpovídá jako na slot.",
+			"Option": "Čas, který anketa nabízí: začátek a konec v jednom dni v referenčním pásmu.",
 			"Slot": "Slot datované nebo týdenní události, nebo možnost ankety.",
 			"DatedSlot": "Slot datované události.",
-			"WeekdaySlot": "Slot týdenní události: čas na hodinách v referenční zóně.",
+			"WeekdaySlot": "Slot týdenní události: čas na hodinách v referenčním pásmu.",
 			"OptionSlot": "Možnost ankety; odpovídá se na ni jako na slot.",
 			"Retention": "Kdy se událost smaže, rozlišené podle `kind`.",
 			"RetentionUntil": "Událost se smaže v daný den.",
-			"RetentionKept": "Událost se uchová, dokud ji někdo nesmaže.",
-			"Final": "Konečný čas, rozlišený podle `kind`.",
-			"FinalOpen": "Pořadatel konečný čas nevybral.",
-			"FinalChosen": "Konečný čas, který pořadatel vybral, jako jeden termín s datem.",
-			"FinalRequest": "Konečný čas k výběru.",
-			"CreatedEvent": "Nová událost a její tajný klíč organizátora.",
+			"RetentionKept": "Událost se uchovává, dokud ji někdo nesmaže.",
+			"Final": "Výsledný čas, rozlišený podle `kind`.",
+			"FinalOpen": "Pořadatel výsledný čas nevybral.",
+			"FinalChosen": "Výsledný čas, který pořadatel vybral, jako jeden termín s datem.",
+			"FinalRequest": "Výsledný čas k výběru.",
+			"CreatedEvent": "Nová událost a její tajný klíč pořadatele.",
 			"Joined": "Účastník a jeho token.",
 			"Windows": "Nejlepší okna a použité filtry.",
 			"Window": "Úsek po sobě jdoucích slotů, kdy mohou stejní lidé.",
@@ -664,7 +664,7 @@
 			"OptionInput": "Možnost, kterou anketa ponechá, podle id, nebo nová, podle jejích časů.",
 			"KeptOptionInput": "Možnost, kterou anketa ponechá.",
 			"NewOptionInput": "Nová možnost. Možnost nejde změnit; nový čas je nová možnost.",
-			"JoinRequest": "Připojení. Nejvýš jedno z `password` a `newPassword`.",
+			"JoinRequest": "Zapsání. Nejvýš jedno z `password` a `newPassword`.",
 			"AvailabilityRequest": "Celá dostupnost účastníka.",
 			"SlotInput": "Slot datované nebo týdenní události, nebo možnost ankety.",
 			"DatedSlotInput": "Slot datované události.",
@@ -678,16 +678,16 @@
 			"id": "Veřejné id události.",
 			"name": "Název události.",
 			"description": "Popis události; prázdný, když žádný není.",
-			"referenceZone": "Časová zóna IANA, ve které organizátor událost naplánoval.",
+			"referenceZone": "Časové pásmo IANA, ve kterém pořadatel událost naplánoval.",
 			"firstDayOfWeek": "První den týdne v mřížce: 1 je pondělí, 7 neděle. Anketa ho nemá.",
 			"options": "Možnosti ankety v časovém pořadí.",
 			"option": "Id možnosti ankety.",
 			"schedule": "Kdy se událost může konat.",
 			"retention": "Kdy se událost smaže.",
-			"final": "Konečný čas, pokud ho pořadatel vybral.",
-			"sequence": "Kolikrát byl konečný čas vybrán nebo změněn. Zrušením se nesníží.",
+			"final": "Výsledný čas, pokud ho pořadatel vybral.",
+			"sequence": "Kolikrát byl výsledný čas vybrán nebo změněn. Zrušením se nesníží.",
 			"end": "Konec jako okamžik RFC 3339 v UTC.",
-			"participants": "Účastníci v pořadí, v jakém se připojili.",
+			"participants": "Účastníci v pořadí, v jakém se zapsali.",
 			"availability": "Sloty, ve kterých účastník může, včetně těch, kdy může jen když bude nutné, v časovém pořadí. Klient, který úrovně nezná, čte takový slot jako dostupný.",
 			"ifNeedBe": "Sloty z `availability`, ve kterých účastník může jen když bude nutné, v časovém pořadí.",
 			"score": "1 za každého, kdo může ve všech slotech, a ½ za každého, kdo v některém z nich může jen když bude nutné.",
@@ -706,7 +706,7 @@
 			"kind": "Zda má událost datum smazání.",
 			"date": "Den smazání, `YYYY-MM-DD`.",
 			"event": "Nová událost.",
-			"adminSecret": "Tajný klíč organizátora. Ukáže se jen tady a nejde obnovit.",
+			"adminSecret": "Tajný klíč pořadatele. Ukáže se jen tady a nejde obnovit.",
 			"participant": "Účastník.",
 			"participantToken": "Token účastníka.",
 			"minMinutes": "Nejkratší vypsané okno v minutách.",
@@ -721,7 +721,7 @@
 			"errors": "Chybné hodnoty.",
 			"retryAt": "U `too_many_attempts`: kdy jde heslo zkusit znovu.",
 			"losing": "U `confirmation_required`: kolik účastníků by přišlo o část dostupnosti.",
-			"clearsFinal": "U `confirmation_required`: zda by změna zrušila konečný čas.",
+			"clearsFinal": "U `confirmation_required`: zda by změna zrušila výsledný čas.",
 			"confirmedVersion": "`ETag` odmítnutí `confirmation_required`. Změna smí odebrat dostupnost, kterou to odmítnutí započítalo, dokud má událost tu verzi.",
 			"pointer": "Ukazatel JSON Pointer podle RFC 6901 do těla požadavku.",
 			"parameter": "Název parametru dotazu.",
@@ -737,31 +737,31 @@
 			"Option": {
 				"id": "Id možnosti, v rámci události jedinečné.",
 				"start": "Začátek jako okamžik RFC 3339 v UTC.",
-				"end": "Konec jako okamžik RFC 3339 v UTC, ve stejný den jako začátek v referenční zóně."
+				"end": "Konec jako okamžik RFC 3339 v UTC, ve stejný den jako začátek v referenčním pásmu."
 			},
 			"PollSchedule": {
 				"slots": "Jeden slot za každou možnost, v časovém pořadí."
 			},
 			"PollScheduleInput": {
-				"options": "2 až 20 možností. Změna jmenuje ponechané možnosti podle id a nové podle jejich časů; vynechaná možnost se odebere i s odpověďmi."
+				"options": "2 až 20 možností. Změna jmenuje zachované možnosti podle id a nové podle jejich časů; vynechaná možnost se odebere i s odpověďmi."
 			},
 			"KeptOptionInput": {
 				"id": "Id možnosti, kterou událost má."
 			},
 			"NewOptionInput": {
 				"start": "Začátek jako okamžik RFC 3339 v celou minutu, ne dřív než teď.",
-				"end": "Konec jako okamžik RFC 3339 v celou minutu, po začátku a ve stejný den v referenční zóně."
+				"end": "Konec jako okamžik RFC 3339 v celou minutu, po začátku a ve stejný den v referenčním pásmu."
 			},
 			"FinalOpen": {
-				"kind": "Zda je konečný čas vybraný."
+				"kind": "Zda je výsledný čas vybraný."
 			},
 			"FinalChosen": {
-				"kind": "Zda je konečný čas vybraný.",
+				"kind": "Zda je výsledný čas vybraný.",
 				"start": "Začátek jako okamžik RFC 3339 v UTC.",
-				"slots": "Sloty události uvnitř konečného času, v časovém pořadí; u ankety její jedna možnost."
+				"slots": "Sloty události uvnitř výsledného času, v časovém pořadí; u ankety její jedna možnost."
 			},
 			"FinalRequest": {
-				"slots": "Sloty konečného času: souvislá řada slotů události v jednom dni, v libovolném pořadí.",
+				"slots": "Sloty výsledného času: souvislá řada slotů události v jednom dni, v libovolném pořadí.",
 				"date": "Právě u události podle dnů v týdnu: datum jediného termínu, `YYYY-MM-DD`. Připadá na den v týdnu jeho slotů a není dřív než dnes v pásmu události."
 			},
 			"Window": {
@@ -782,7 +782,7 @@
 				"schedule": "Celý nový rozvrh se všemi poli svého druhu."
 			},
 			"JoinRequest": {
-				"name": "Zobrazované jméno, pod kterým se připojit.",
+				"name": "Zobrazované jméno, pod kterým se zapsat.",
 				"password": "Heslo jména, které už heslo má. Jméno, které nikdo nepoužívá, se s ním odmítne.",
 				"newPassword": "Heslo pro jméno, které zatím nikdo nepoužívá. Už použité jméno se s ním odmítne."
 			},
@@ -802,10 +802,10 @@
 			"password_required": "Toto jméno má heslo.",
 			"wrong_password": "Heslo nesouhlasí.",
 			"not_found": "Událost nebo účastník neexistuje.",
-			"not_finalized": "Událost nemá konečný čas.",
+			"not_finalized": "Událost nemá výsledný čas.",
 			"method_not_allowed": "Tato cesta metodu nepodporuje.",
 			"event_full": "Událost už má 100 účastníků.",
-			"field_locked": "Druh události, délka slotu, režim dnů a referenční zóna se nemohou změnit, jakmile se někdo připojil.",
+			"field_locked": "Druh události, délka slotu, režim dnů a referenční pásmo se nemohou změnit, jakmile se někdo zapsal.",
 			"no_password": "Účastník nemá heslo.",
 			"name_exists": "Toto jméno už některý účastník používá.",
 			"name_unknown": "Toto jméno žádný účastník nepoužívá.",
@@ -818,7 +818,7 @@
 			"range_reversed": "Poslední den je před prvním.",
 			"too_many_dates": "Událost má víc než 31 dat.",
 			"duplicate_day": "Některý den je vybraný víckrát.",
-			"date_in_past": "Datum leží před dneškem v referenční zóně.",
+			"date_in_past": "Datum leží před dneškem v referenčním pásmu.",
 			"out_of_day": "Denní čas leží mimo 00:00 až 24:00.",
 			"end_not_after_start": "Denní konec není po denním začátku.",
 			"not_on_slot_boundary": "Denní čas není násobkem délky slotu.",
@@ -830,9 +830,9 @@
 			"option_end_not_after_start": "Možnost končí dřív, než začne, nebo ve stejnou chvíli.",
 			"option_not_one_day": "Možnost končí v referenčním pásmu až v jiný den, než začíná.",
 			"duplicate_option": "Dvě možnosti mají stejný začátek i konec.",
-			"unknown_option": "Změna ponechává možnost, kterou událost nemá.",
-			"final_not_in_event": "Konečný čas není souvislá řada slotů události v jednom dni ani jedna možnost ankety, nebo uvádí datum, které událost mít nemůže.",
-			"final_date_wrong_weekday": "Datum konečného času nepřipadá na den v týdnu jeho slotů.",
+			"unknown_option": "Změna zachovává možnost, kterou událost nemá.",
+			"final_not_in_event": "Výsledný čas není souvislá řada slotů události v jednom dni ani jedna možnost ankety, nebo uvádí datum, které událost mít nemůže.",
+			"final_date_wrong_weekday": "Datum výsledného času nepřipadá na den v týdnu jeho slotů.",
 			"too_many_attempts": "Příliš mnoho špatných hesel za sebou.",
 			"internal_error": "Server nedokázal na požadavek odpovědět."
 		},

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FinalTime } from "./final-time";
-import { type Deletion, deletionOf, expiresAt, type Keeping } from "./retention";
+import { type Deletion, deletesAt, deletionOf, type Keeping } from "./retention";
 import type { GridSchedule } from "./schedule";
 
 const evenings: Omit<GridSchedule, "days"> = {
@@ -104,10 +104,10 @@ describe("keeping by the owner", () => {
 	});
 });
 
-describe("expiry", () => {
+describe("deletion instant", () => {
 	it("comes at the end of the deletion date in the reference zone", () => {
 		// Midnight after 19 July in Prague (summer time) is 22:00 UTC.
-		expect(expiresAt(on("2027-07-19"), "Europe/Prague")?.toString()).toBe("2027-07-19T22:00:00Z");
-		expect(expiresAt({ kind: "kept", by: "organizer" }, "Europe/Prague")).toBeNull();
+		expect(deletesAt(on("2027-07-19"), "Europe/Prague")?.toString()).toBe("2027-07-19T22:00:00Z");
+		expect(deletesAt({ kind: "kept", by: "organizer" }, "Europe/Prague")).toBeNull();
 	});
 });

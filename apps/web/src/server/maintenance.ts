@@ -77,7 +77,7 @@ insert into usage_counts (day, metric, bucket, count)
 select reached::date, metric, 0, count(*) from counts group by reached::date, metric
 on conflict (day, metric, bucket) do update set count = usage_counts.count + excluded.count`;
 
-// The expiry is the SQL form of `expiresAt` in `src/domain/retention.ts`: the end of the
+// The expiry is the SQL form of `deletesAt` in `src/domain/retention.ts`: the end of the
 // deletion date in the reference zone. A database test keeps the two in step. A weekday event
 // whose final date lies after its planned deletion date is kept until the retention after the
 // final date. An event its owner keeps is never deleted, and once the keeping ended the event
