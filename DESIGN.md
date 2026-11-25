@@ -155,8 +155,9 @@ The contrasts in this table are for the light theme. Measured contrast below sta
     - The final time is sewn: a 4-pixel solid `ink` frame between 1-pixel `surface` rings, inside the window's edge. Solid means decided. A flag stands beside the frame's first row: a Phosphor flag icon in `surface` on an `ink` tab with a 1-pixel `surface` rim. It sits on the right when a day column follows and on the left otherwise, never over the time labels and never outside the grid. Its accessible name says "final time"; the legend and the banner above the grid carry the word.
     - A slot marked "if need be" in the participant's own grid, and in the group grid filtered to one participant, is hatched at 135 degrees: 3-pixel stripes of `heat-4` on `heat-1`, 8 pixels apart, measured across the stripes. The stripes keep at least 3:1 on `heat-1` (Measured contrast). The brush above the grid shows each level's mark beside its name, and so does the legend of a filtered grid. The heat map shows no hatching: there if need be only counts half.
 
-14. **Flags.** The language menu shows each language's national flag in a 3:2 box with a 1-pixel `line` ring. A flag is an image of a national symbol, not an interface color, so its colors are the only literal colors in a component.
+14. **Flags.** The language menu shows each language's national flag in a 3:2 box with a 1-pixel `line` ring. A flag is an image of a national symbol, not an interface color, so its colors and those of provider marks are the only literal colors in a component.
 15. **Header menus.** The theme and language menus are menu buttons in the header, a `surface` panel with an `earth` border below each. They show the current choice as an icon or a flag with the language code, so switching does not change their width.
+16. **Provider marks.** A button that signs in through a provider, or adds it, shows the provider's own mark, unchanged and in its own colors, before the label. The mark is a 20-pixel image of a trademark, not an icon, and appears nowhere else. GitHub's mark has one color and takes `ink`. The button itself stays an outlined one.
 
 ## Components
 

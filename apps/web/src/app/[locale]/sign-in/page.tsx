@@ -3,24 +3,39 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
-import { controlClass, Field } from "@/components/field";
 import { PageShell } from "@/components/page-shell";
 import { PasskeySignIn } from "@/components/passkey-sign-in";
-import { Button } from "@/components/ui/button";
+import { ProviderButton } from "@/components/provider-button";
+import {
+	SIGN_IN_EMAIL_ID,
+	SIGN_IN_PROBLEMS,
+	SignInLinkForm,
+	type SignInStatus,
+} from "@/components/sign-in-link-form";
+import { PROVIDER_NAMES } from "@/domain/provider-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { redirect } from "@/i18n/navigation";
-import { requestSignInLinkAction } from "@/server/account-actions";
+import { asksToConfirm } from "@/server/confirm-address";
+import { offeredProviders } from "@/server/providers";
 import { currentVisitor } from "@/server/session";
 
-/** Whether a link was sent, or why not, as the form's redirect names it. */
+/**
+ * Whether a link was sent, or why not, as the form's redirect names it, and why a provider's
+ * sign-in failed, as Better Auth's callback names it.
+ */
 const statusSchema = z.object({
 	sent: z.literal("1").optional(),
-	problem: z
-		.enum(["invalid_email", "too_many_emails", "email_not_sent", "sign_in_link_invalid", "failed"])
-		.optional(),
+	problem: z.enum(SIGN_IN_PROBLEMS).optional(),
+	error: z.string().optional(),
 });
 
-const EMAIL_ID = "sign-in-email";
+function statusOf({ sent, problem }: z.infer<typeof statusSchema>): SignInStatus {
+	if (problem !== undefined) {
+		return { kind: "problem", problem };
+	}
+
+	return sent === undefined ? { kind: "none" } : { kind: "sent" };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("SignIn");
@@ -28,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
 	return { title: t("title"), robots: { index: false, follow: false } };
 }
 
-/** Sign-in by an email link, which works without scripts, or by a passkey. */
+/** Sign-in by an email link or a provider, which work without scripts, or by a passkey. */
 export default async function SignInPage({ searchParams }: PageProps<"/[locale]/sign-in">) {
 	const visitor = await currentVisitor();
 	const locale = await currentLocale();
@@ -41,17 +56,22 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 		redirect({ href: "/account", locale });
 	}
 
-	const t = await getTranslations("SignIn");
 	// An address edited by hand shows no status at all.
 	const parsed = statusSchema.safeParse(await searchParams);
-	const { sent, problem } = parsed.success ? parsed.data : {};
-	let status = "";
+	const query = parsed.success ? parsed.data : {};
 
-	if (problem !== undefined) {
-		status = t(`problem.${problem}`);
-	} else if (sent !== undefined) {
-		status = t("sent");
+	// The callback's error and description do not stay in the address. A used email link brings an
+	// error as well, beside the problem it stands for.
+	if (query.error !== undefined && query.problem === undefined) {
+		redirect({
+			href: asksToConfirm(query.error)
+				? "/sign-in/confirm"
+				: { pathname: "/sign-in", query: { problem: "provider_failed" } },
+			locale,
+		});
 	}
+
+	const t = await getTranslations("SignIn");
 
 	return (
 		<PageShell>
@@ -60,35 +80,18 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 					<h1 className="text-3xl">{t("heading")}</h1>
 					<p className="max-w-(--cv-measure)">{t("intro")}</p>
 				</header>
-				<form action={requestSignInLinkAction} className="flex flex-col gap-3">
-					<input type="hidden" name="locale" value={locale} />
-					<Field id={EMAIL_ID} label={t("email")}>
-						<input
-							id={EMAIL_ID}
-							name="email"
-							type="email"
-							required
-							autoComplete="email"
-							aria-invalid={problem === "invalid_email" || undefined}
-							aria-describedby={`${EMAIL_ID}-message sign-in-status`}
-							className={controlClass}
+				<SignInLinkForm locale={locale} address="" status={statusOf(query)} />
+				<div className="flex flex-col gap-3">
+					{offeredProviders().map((provider) => (
+						<ProviderButton
+							key={provider}
+							provider={provider}
+							locale={locale}
+							label={t("provider", { provider: PROVIDER_NAMES[provider] })}
 						/>
-					</Field>
-					<Button type="submit" className="w-full sm:w-fit">
-						{t("send")}
-					</Button>
-					<output
-						id="sign-in-status"
-						className={
-							problem === undefined
-								? "block empty:sr-only"
-								: "block font-semibold text-action-active empty:sr-only"
-						}
-					>
-						{status}
-					</output>
-				</form>
-				<PasskeySignIn emailField={EMAIL_ID} />
+					))}
+					<PasskeySignIn emailField={SIGN_IN_EMAIL_ID} />
+				</div>
 			</main>
 		</PageShell>
 	);

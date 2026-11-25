@@ -323,7 +323,17 @@
 		"sent": "If the address is right, a link is on its way. It works once, for 15 minutes, in any browser.",
 		"passkey": "Sign in with a passkey",
 		"passkeyFailed": "The passkey was not accepted. Try again or use the email link.",
+		"provider": "Continue with {provider}",
+		"forward": {
+			"link": "Continue to {provider}"
+		},
+		"confirm": {
+			"heading": "Confirm your address",
+			"intro": "Nobody is signed in yet. Send a sign-in link to your email address and open it to continue.",
+			"afterwards": "On your account page you can then add the service you came from, and sign in with it directly next time."
+		},
 		"problem": {
+			"provider_failed": "The sign-in was not finished. Try again or use the email link.",
 			"invalid_email": "Enter an email address such as name@example.org.",
 			"too_many_emails": "Too many links were asked for. Try again in an hour.",
 			"email_not_sent": "The email could not be sent. Try again in a while.",

@@ -14,6 +14,7 @@ import { type Locale, localeSchema, routing } from "@/i18n/routing";
 import { formText as text } from "@/lib/form-text";
 
 import { type Auth, auth } from "./auth";
+import { forgetAddressToConfirm } from "./confirm-address";
 import { setAccountChoices } from "./notifications";
 import { currentVisitor } from "./session";
 
@@ -59,6 +60,7 @@ export async function requestSignInLinkAction(form: FormData): Promise<void> {
 			},
 			headers: await headers(),
 		});
+		await forgetAddressToConfirm();
 	} catch (error) {
 		unstable_rethrow(error);
 		outcome = { problem: refusalSchema.parse(error) };

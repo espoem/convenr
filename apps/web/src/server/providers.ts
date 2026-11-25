@@ -14,7 +14,7 @@ import {
 	type Provider,
 	type ProviderAddress,
 } from "@/domain/provider-address";
-import type { ProviderSettings } from "@/env";
+import { env, type ProviderSettings } from "@/env";
 
 /** Milliseconds a visitor waits for one answer of a provider at most. */
 const PROVIDER_TIMEOUT = 10_000;
@@ -40,6 +40,13 @@ export async function withProviderAddress<Result>(
 	const result = await answered.run(store, handle);
 
 	return { result, address: store.address };
+}
+
+/** The providers a visitor can sign in through on this instance. */
+export function offeredProviders(): Provider[] {
+	const { accounts } = env();
+
+	return accounts.kind === "off" ? [] : accounts.providers.map(({ provider }) => provider);
 }
 
 /** The user Better Auth works with; it never sees a name, a picture or an unproved address. */

@@ -1,16 +1,20 @@
 // Browsers on the main server, where accounts are on, and signing them in with a link from
 // Mailpit.
-import { type Browser, type Page, test } from "@playwright/test";
+import { type Browser, type BrowserContextOptions, type Page, test } from "@playwright/test";
 
 import { expect } from "./helpers";
 import { emailTo, linkIn } from "./mail";
 import { ACCOUNTS_BASE_URL } from "./servers";
 
 /** A new browser on the main server using the active project's viewport and touch capability. */
-export async function accountsPage(browser: Browser): Promise<Page> {
+export async function accountsPage(
+	browser: Browser,
+	options: BrowserContextOptions = {},
+): Promise<Page> {
 	const { viewport, hasTouch } = test.info().project.use;
 
 	const context = await browser.newContext({
+		...options,
 		baseURL: ACCOUNTS_BASE_URL,
 		locale: "en-GB",
 		timezoneId: "Europe/Prague",

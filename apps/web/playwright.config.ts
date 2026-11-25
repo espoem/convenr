@@ -65,6 +65,12 @@ export default defineConfig({
 				PUBLIC_URL: ACCOUNTS_BASE_URL,
 				// Every test signs in under its own address; a higher limit keeps parallel runs apart.
 				MAIL_HOURLY_LIMIT: "10000",
+				GOOGLE_CLIENT_ID: "e2e",
+				GOOGLE_CLIENT_SECRET: "e2e",
+				GITHUB_CLIENT_ID: "e2e",
+				GITHUB_CLIENT_SECRET: "e2e",
+				// The test answers the server's requests to the providers.
+				NODE_OPTIONS: `--import ${new URL("e2e/provider-answers.mts", import.meta.url).href}`,
 			},
 			timeout: 60_000,
 		},
