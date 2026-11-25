@@ -240,8 +240,12 @@ function configure(settings: Extract<ReturnType<typeof env>["accounts"], { kind:
 				trustedProviders: settings.providers.map(({ provider }) => provider),
 			},
 		},
-		// Where a callback without a usable state ends, as it names no page to return to.
-		onAPIError: { errorURL: `${settings.publicUrl.origin}/sign-in` },
+		onAPIError: {
+			// Where a callback without a usable state ends, as it names no page to return to.
+			errorURL: `${settings.publicUrl.origin}/sign-in`,
+			// The route logs an unexpected error; Better Auth would log all of it.
+			throw: true,
+		},
 		disabledPaths: PRIVATE_PATHS,
 		// The details can hold a provider's answer or the state of a sign-in.
 		logger: { log: (level, message) => console[level](`Better Auth: ${message}`) },
