@@ -112,12 +112,18 @@ services:
 | `MAIL_FROM`             | with accounts | The sender of the emails, such as `convenr <hello@example.org>`.                                                                |
 | `AUTH_SECRET`           | with accounts | At least 32 random characters that sign session cookies and key the email limits. Keep it secret and stable.                    |
 | `PUBLIC_URL`            | with accounts | The address visitors reach the instance at, such as `https://convenr.example.org`. Links in emails and passkeys use it.         |
+| `GOOGLE_CLIENT_ID`      | no            | The OAuth client for sign-in with Google. Set it together with `GOOGLE_CLIENT_SECRET`.                                          |
+| `GOOGLE_CLIENT_SECRET`  | no            | The secret of that client.                                                                                                      |
+| `GITHUB_CLIENT_ID`      | no            | The OAuth app for sign-in with GitHub. Set it together with `GITHUB_CLIENT_SECRET`.                                             |
+| `GITHUB_CLIENT_SECRET`  | no            | The secret of that app.                                                                                                         |
 | `MAIL_HOURLY_LIMIT`     | no            | Emails the instance sends per hour at most. Default `300`.                                                                      |
 | `NOTIFY_DIGEST_MINUTES` | no            | Least minutes between two emails about new responses to one event. Default `60`.                                                |
 | `REMINDER_HOURS`        | no            | Hours before an event's final time that its reminder is sent. Default `24`.                                                     |
 | `MAINTENANCE_SECRET`    | no            | At least 32 random characters. When set, `POST /api/maintenance` with this bearer token runs the maintenance pass.              |
 
 Accounts are optional. Set `SMTP_URL`, `MAIL_FROM`, `AUTH_SECRET` and `PUBLIC_URL` together to turn them on; with only some of them, the server does not start. Passkeys need `PUBLIC_URL` to name a host, not an IP address.
+
+Sign-in with Google or GitHub is off until accounts are on and both settings of the provider are set. Register an OAuth application at the provider with the redirect address `PUBLIC_URL` followed by `/api/auth/callback/google` or `/api/auth/callback/github`. convenr asks for the email address only and stores the provider's identifier of the account, but no token, name or picture.
 
 ### Back up and restore
 

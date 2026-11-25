@@ -89,5 +89,22 @@ describe("parseEnv", () => {
 		it("refuse a short secret", () => {
 			expect(() => parseEnv({ ...all, AUTH_SECRET: "short" })).toThrow(/AUTH_SECRET/u);
 		});
+
+		it("offer each provider whose pair of settings is complete", () => {
+			const github = { GITHUB_CLIENT_ID: "id", GITHUB_CLIENT_SECRET: "secret" };
+
+			expect(parseEnv(all).accounts).toMatchObject({ providers: [] });
+			expect(parseEnv({ ...all, ...github }).accounts).toMatchObject({
+				providers: [{ provider: "github", clientId: "id", clientSecret: "secret" }],
+			});
+			expect(parseEnv({ DATABASE_URL: url, ...github }).accounts).toEqual({ kind: "off" });
+		});
+
+		it("refuse to start with half of a provider's pair, naming the missing one", () => {
+			expect(() => parseEnv({ ...all, GOOGLE_CLIENT_ID: "id" })).toThrow(/GOOGLE_CLIENT_SECRET/u);
+			expect(() => parseEnv({ ...all, GITHUB_CLIENT_SECRET: "secret" })).toThrow(
+				/GITHUB_CLIENT_ID/u,
+			);
+		});
 	});
 });

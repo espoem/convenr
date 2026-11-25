@@ -93,6 +93,19 @@ export async function emailChangeNotice(
 	});
 }
 
+export async function providerNotice(locale: Locale, to: string, provider: string): Promise<Email> {
+	const t = createTranslator({
+		locale,
+		messages: await catalog(locale),
+		namespace: "Email.providerNotice",
+	});
+
+	return compose(locale, to, t("subject", { provider }), {
+		intro: t("intro", { provider }),
+		rest: [t("notYou", { provider })],
+	});
+}
+
 /** What a notification email needs beyond its message. */
 export type NotificationContext = {
 	locale: Locale;

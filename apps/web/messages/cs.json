@@ -455,6 +455,11 @@
 			"intro": "Někdo přihlášený k vašemu účtu convenr požádal o změnu jeho e-mailové adresy na {email}. Změní se, až někdo otevře odkaz poslaný tam.",
 			"notYou": "Pokud jste to nebyli vy, přihlaste se a odhlaste všechny ostatní prohlížeče."
 		},
+		"providerNotice": {
+			"subject": "K vašemu účtu convenr byla přidána služba {provider}",
+			"intro": "Někdo přihlášený k vašemu účtu convenr k němu přidal službu {provider}. Tento účet {provider} teď přihlašuje k vašemu účtu convenr.",
+			"notYou": "Pokud jste to nebyli vy, přihlaste se, na stránce účtu službu {provider} odeberte a odhlaste všechny ostatní prohlížeče."
+		},
 		"notify": {
 			"open": "Otevřít událost",
 			"unsubscribe": "Vypnout tyto e-maily pro tuto událost",

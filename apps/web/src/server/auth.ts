@@ -1,9 +1,9 @@
 // Accounts with Better Auth (ADR 0009): sign-in by an email link and by passkeys, sessions in a
 // cookie, no names, no visitor addresses and no telemetry. Only this module configures it.
 import { passkey } from "@better-auth/passkey";
-import { betterAuth } from "better-auth";
+import { betterAuth, type GenericEndpointContext } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError } from "better-auth/api";
+import { APIError, getOAuthState, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
@@ -19,16 +19,44 @@ import {
 	authVerifications,
 } from "@/db/schema";
 import { browserFamily } from "@/domain/browser-family";
+import { type Provider, PROVIDER_NAMES, PROVIDERS } from "@/domain/provider-address";
 import { env } from "@/env";
 import { type Locale, localeSchema, routing } from "@/i18n/routing";
 
-import { changeEmailEmail, emailChangeNotice, signInEmail } from "./email/emails";
+import { changeEmailEmail, emailChangeNotice, providerNotice, signInEmail } from "./email/emails";
 import { type Email, sendEmail, takeEmailSlot } from "./mail";
+import { socialProviders } from "./providers";
 
 /** How long a sign-in or address-change link works. */
 const LINK_SECONDS = 15 * 60;
 
 const DAY_SECONDS = 24 * 60 * 60;
+
+/** An account holds no profile; what a provider sends of one is dropped on every write. */
+const NO_PROFILE = { name: "", image: null };
+
+/** Provider tokens are of no use after a sign-in, so none is ever stored. */
+const NO_TOKENS = {
+	accessToken: null,
+	refreshToken: null,
+	idToken: null,
+	accessTokenExpiresAt: null,
+	refreshTokenExpiresAt: null,
+	scope: null,
+};
+
+/** Better Auth's provider endpoints that only our own pages may use, after their own checks. */
+const PRIVATE_PATHS = [
+	"/sign-in/social",
+	"/link-social",
+	"/unlink-account",
+	"/list-accounts",
+	"/get-access-token",
+	"/refresh-token",
+	"/account-info",
+];
+
+const providerSchema = z.enum(PROVIDERS);
 
 async function accountLocale(accountId: string): Promise<Locale> {
 	const [row] = await db()
@@ -48,16 +76,47 @@ async function keepFirstLocale(accountId: string, locale: Locale): Promise<void>
 		.onConflictDoNothing({ target: accountSettings.accountId });
 }
 
-const linkQuerySchema = z.object({ callbackURL: z.string() });
+const callbackSchema = z.object({ callbackURL: z.string() });
 
 /**
- * The language of the page that asked for a sign-in link: the link returns to that language's
- * account page, `/{locale}/account`.
+ * The address a sign-in returns to: an email link names it in its query, and a provider's
+ * sign-in in the state it started with.
  */
-function linkLocale(callbackURL: string): Locale | undefined {
-	const locale = localeSchema.safeParse(callbackURL.split("/")[1]);
+async function signInCallback(
+	request: GenericEndpointContext | null | undefined,
+): Promise<string | undefined> {
+	// An account made outside a request, as in tests, started on no page. Better Auth's types say
+	// null for it, and the hook gets undefined.
+	if (request === null || request === undefined) {
+		return undefined;
+	}
 
-	return locale.success ? locale.data : undefined;
+	const link = callbackSchema.safeParse(request.query);
+
+	if (link.success) {
+		return link.data.callbackURL;
+	}
+
+	return callbackSchema.safeParse(await getOAuthState()).data?.callbackURL;
+}
+
+/** The account the browser of a request is signed in to. */
+async function browserAccount(
+	request: GenericEndpointContext | null | undefined,
+): Promise<string | undefined> {
+	if (request === null || request === undefined) {
+		return undefined;
+	}
+
+	return (await getSessionFromCtx(request))?.user.id;
+}
+
+/**
+ * The language of the page a sign-in started on: it returns to that language's account page,
+ * `/{locale}/account`.
+ */
+function linkLocale(callbackURL: string): Locale {
+	return localeSchema.parse(callbackURL.split("/")[1]);
 }
 
 /**
@@ -83,20 +142,48 @@ async function sendLinkEmail(address: string, email: Email): Promise<void> {
 	}
 }
 
-/** Tells the current address of an account that a change to `newEmail` was asked for. */
-async function noticeOldAddress(accountId: string, newEmail: string, locale: Locale) {
+async function accountAddress(accountId: string): Promise<string | undefined> {
 	const [current] = await db()
 		.select({ email: authUsers.email })
 		.from(authUsers)
 		.where(eq(authUsers.id, accountId));
 
-	// The notice is no link and needs no per-address limit, but it counts toward the total.
-	if (current !== undefined && current.email !== newEmail && (await takeEmailSlot(null))) {
-		try {
-			await sendEmail(await emailChangeNotice(locale, current.email, newEmail));
-		} catch {
-			// Best-effort notice: the confirmation link to the new address already went out.
-		}
+	return current?.email;
+}
+
+/**
+ * Sends a notice about something that happened to an account, as far as it goes: what it tells
+ * of is done already. It is no link and needs no per-address limit, but it counts toward the total.
+ */
+async function sendNotice(email: Email): Promise<void> {
+	if (!(await takeEmailSlot(null))) {
+		return;
+	}
+
+	try {
+		await sendEmail(email);
+	} catch {
+		// The mail server's refusal must not undo what the notice tells of.
+	}
+}
+
+/** Tells the current address of an account that a change to `newEmail` was asked for. */
+async function noticeOldAddress(accountId: string, newEmail: string, locale: Locale) {
+	const current = await accountAddress(accountId);
+
+	if (current !== undefined && current !== newEmail) {
+		await sendNotice(await emailChangeNotice(locale, current, newEmail));
+	}
+}
+
+/** Tells the address of an account that a provider was added to it. */
+async function noticeProvider(accountId: string, provider: Provider): Promise<void> {
+	const address = await accountAddress(accountId);
+
+	if (address !== undefined) {
+		await sendNotice(
+			await providerNotice(await accountLocale(accountId), address, PROVIDER_NAMES[provider]),
+		);
 	}
 }
 
@@ -141,18 +228,72 @@ function configure(settings: Extract<ReturnType<typeof env>["accounts"], { kind:
 			changeEmail: { enabled: true },
 			deleteUser: { enabled: true },
 		},
+		socialProviders: socialProviders(settings.providers),
+		account: {
+			updateAccountOnSignIn: false,
+			accountLinking: {
+				// A provider joins an existing account only from a session of that account.
+				disableImplicitLinking: true,
+				allowDifferentEmails: true,
+				allowUnlinkingAll: true,
+				// Lets a session add a provider whose address is not proved; a sign-in without a
+				// session never reaches this.
+				trustedProviders: settings.providers.map(({ provider }) => provider),
+			},
+		},
+		// Where a callback without a usable state ends, as it names no page to return to.
+		onAPIError: { errorURL: `${settings.publicUrl.origin}/sign-in` },
+		disabledPaths: PRIVATE_PATHS,
+		// The details can hold a provider's answer or the state of a sign-in.
+		logger: { log: (level, message) => console[level](`Better Auth: ${message}`) },
 		databaseHooks: {
 			user: {
 				create: {
-					before: (user) => Promise.resolve({ data: { ...user, name: "" } }),
-					after: async (user, context) => {
-						const query = linkQuerySchema.safeParse(context?.query);
-						const locale = query.success ? linkLocale(query.data.callbackURL) : undefined;
+					before: (user) => {
+						// No account exists before its address is proved, so nobody holds another
+						// person's address. The visitor is asked to confirm it by an email link.
+						if (!user.emailVerified) {
+							throw APIError.fromStatus("FORBIDDEN", { code: "address_not_proved" });
+						}
 
-						if (locale !== undefined) {
-							await keepFirstLocale(user.id, locale);
+						return Promise.resolve({ data: { ...user, ...NO_PROFILE } });
+					},
+					after: async (user, context) => {
+						const callbackURL = await signInCallback(context);
+
+						if (callbackURL !== undefined) {
+							await keepFirstLocale(user.id, linkLocale(callbackURL));
 						}
 					},
+				},
+				update: {
+					before: (user) => Promise.resolve({ data: { ...user, ...NO_PROFILE } }),
+				},
+			},
+			account: {
+				create: {
+					before: async (account, context) => {
+						const link = (await getOAuthState())?.link;
+
+						// Someone else may have signed in on this browser meanwhile; their provider must
+						// not join the account that started.
+						if (link !== undefined && link.userId !== (await browserAccount(context))) {
+							return false;
+						}
+
+						return { data: { ...account, ...NO_TOKENS } };
+					},
+					after: async (account) => {
+						const provider = providerSchema.safeParse(account.providerId);
+						const state = await getOAuthState();
+
+						if (provider.success && state?.link !== undefined) {
+							await noticeProvider(account.userId, provider.data);
+						}
+					},
+				},
+				update: {
+					before: (account) => Promise.resolve({ data: { ...account, ...NO_TOKENS } }),
 				},
 			},
 			session: {

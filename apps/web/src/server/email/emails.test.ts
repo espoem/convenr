@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { emailChangeNotice, notificationEmail, signInEmail } from "./emails";
+import { emailChangeNotice, notificationEmail, providerNotice, signInEmail } from "./emails";
 import { emailTokens } from "./tokens";
 
 const link = "https://convenr.example.org/api/auth/magic-link/verify?token=abc&callbackURL=%2Fcs";
@@ -27,6 +27,14 @@ describe("an email", () => {
 		);
 
 		expect([...hosts]).toEqual(["https://convenr.example.org"]);
+	});
+
+	it("names the provider that was added to the account, in its language", async () => {
+		const email = await providerNotice("cs", "jana@example.org", "GitHub");
+
+		expect(email.subject).toContain("GitHub");
+		expect(email.html).toContain('lang="cs"');
+		expect(email.text).not.toMatch(/https?:/u);
 	});
 
 	it("shows what a visitor wrote as text, not markup", async () => {

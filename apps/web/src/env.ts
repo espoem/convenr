@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { type Provider, PROVIDERS } from "@/domain/provider-address";
+
 const databaseUrl = z.url({ protocol: /^postgres(ql)?$/u });
 
 const schema = z.object({
@@ -24,6 +26,11 @@ const schema = z.object({
 	AUTH_SECRET: z.string().min(32).optional(),
 	/** The address the instance is reached at, for links in emails and for passkeys. */
 	PUBLIC_URL: z.url({ protocol: /^https?$/u }).optional(),
+	/** The application registered at each sign-in provider. */
+	GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+	GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+	GITHUB_CLIENT_ID: z.string().min(1).optional(),
+	GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
 	/**
 	 * The bearer token of `POST /api/maintenance`, for an instance whose maintenance pass a
 	 * schedule starts from outside; 32 characters or more. Without it the route does not exist.
@@ -40,11 +47,47 @@ const schema = z.object({
 /** The settings that turn accounts on; an instance sets all of them or none. */
 const ACCOUNT_SETTINGS = ["SMTP_URL", "MAIL_FROM", "AUTH_SECRET", "PUBLIC_URL"] as const;
 
+/** The settings that turn a provider on; an instance sets both of a pair or neither. */
+const PROVIDER_SETTINGS = {
+	google: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+	github: ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
+} as const satisfies Record<Provider, readonly [string, string]>;
+
+export type ProviderSettings = { provider: Provider; clientId: string; clientSecret: string };
+
 export type Accounts =
 	| { kind: "off" }
-	| { kind: "on"; smtpUrl: string; mailFrom: string; secret: string; publicUrl: URL };
+	| {
+			kind: "on";
+			smtpUrl: string;
+			mailFrom: string;
+			secret: string;
+			publicUrl: URL;
+			providers: ProviderSettings[];
+	  };
 
 type Env = z.infer<typeof schema> & { accounts: Accounts };
+
+/** The providers whose pair of settings is complete; throws when one of a pair is missing. */
+function providersOf(parsed: z.infer<typeof schema>): ProviderSettings[] {
+	return PROVIDERS.flatMap((provider) => {
+		const [idName, secretName] = PROVIDER_SETTINGS[provider];
+		const clientId = parsed[idName];
+		const clientSecret = parsed[secretName];
+
+		if (clientId === undefined && clientSecret === undefined) {
+			return [];
+		}
+
+		if (clientId === undefined || clientSecret === undefined) {
+			throw new Error(
+				`A sign-in provider needs this setting as well: ${clientId === undefined ? idName : secretName}.`,
+			);
+		}
+
+		return [{ provider, clientId, clientSecret }];
+	});
+}
 
 /** Validates a set of environment variables. Throws when a required one is missing or malformed. */
 export function parseEnv(source: Record<string, string | undefined>): Env {
@@ -56,6 +99,7 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
 	}
 
 	const { SMTP_URL, MAIL_FROM, AUTH_SECRET, PUBLIC_URL } = parsed;
+	const providers = providersOf(parsed);
 
 	const accounts: Accounts =
 		SMTP_URL === undefined ||
@@ -69,6 +113,7 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
 					mailFrom: MAIL_FROM,
 					secret: AUTH_SECRET,
 					publicUrl: new URL(PUBLIC_URL),
+					providers,
 				};
 
 	return { ...parsed, accounts };

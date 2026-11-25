@@ -455,6 +455,11 @@
 			"intro": "Someone signed in to your convenr account asked to change its email address to {email}. It changes only when the link sent there is opened.",
 			"notYou": "If this was not you, sign in and sign out every other browser."
 		},
+		"providerNotice": {
+			"subject": "{provider} was added to your convenr account",
+			"intro": "Someone signed in to your convenr account added {provider} to it. That {provider} account now signs in to your convenr account.",
+			"notYou": "If this was not you, sign in, remove {provider} on your account page and sign out every other browser."
+		},
 		"notify": {
 			"open": "Open the event",
 			"unsubscribe": "Turn these emails off for this event",
