@@ -51,7 +51,13 @@ async function healthy(): Promise<boolean> {
 	}
 }
 
-async function waitUntilHealthy(deadline: number): Promise<void> {
+async function waitUntilHealthy(deadline: number, exited: () => string | undefined): Promise<void> {
+	const exitReason = exited();
+
+	if (exitReason !== undefined) {
+		throw new Error(`The server at ${instance} exited before becoming healthy (${exitReason}).`);
+	}
+
 	if (await healthy()) {
 		return;
 	}
@@ -62,7 +68,7 @@ async function waitUntilHealthy(deadline: number): Promise<void> {
 
 	await sleep(250);
 
-	return waitUntilHealthy(deadline);
+	return waitUntilHealthy(deadline, exited);
 }
 
 function run(command: string, args: string[], cwd: string): boolean {
@@ -105,10 +111,16 @@ const server = spawn("node", ["scripts/start-standalone.mts"], {
 	env: { ...process.env, PORT: port, HOSTNAME: "127.0.0.1", DATABASE_URL: databaseUrl },
 });
 
+let exitReason: string | undefined;
+
+server.once("exit", (code, signal) => {
+	exitReason = signal === null ? `code ${String(code)}` : `signal ${signal}`;
+});
+
 let passed = false;
 
 try {
-	await waitUntilHealthy(performance.now() + 60_000);
+	await waitUntilHealthy(performance.now() + 60_000, () => exitReason);
 
 	const typescript = run("nub", ["run", "test:acceptance"], join(repository, "packages/sdk-ts"));
 

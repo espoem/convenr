@@ -38,17 +38,83 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
+        with:
+          install_args: node npm:@nubjs/nub docker-compose npm:@redocly/cli github:oasdiff/oasdiff python uv jactionlint shellcheck zizmor
       - name: Install dependencies
         run: nub ci
       - name: Format, lint, theme, type check, unit tests, OpenAPI and SDK checks, build
         run: mise run check
+      - name: Pack standalone build
+        run: tar -cf apps/web/standalone.tar -C apps/web .next/standalone .next/static .next/BUILD_ID
+      - name: Upload standalone build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-standalone
+          path: apps/web/standalone.tar
+          retention-days: 1
+
+  sdk-acceptance:
+    name: SDK acceptance tests and API guide
+    needs: [check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CONTAINER_ENGINE: docker
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
+        with:
+          install_args: node npm:@nubjs/nub docker-compose python uv jq
+      - name: Install dependencies
+        run: nub ci
+      - name: Download standalone build
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: web-standalone
+          path: apps/web
+      - name: Unpack standalone build
+        run: tar -xf apps/web/standalone.tar -C apps/web && rm -f apps/web/standalone.tar
       - name: SDK acceptance tests
         run: mise run sdk:acceptance
+
+  e2e:
+    name: End-to-end tests
+    needs: [check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CONTAINER_ENGINE: docker
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
+        with:
+          install_args: node npm:@nubjs/nub docker-compose mailpit
+      - name: Install dependencies
+        run: nub ci
+      - name: Download standalone build
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: web-standalone
+          path: apps/web
+      - name: Unpack standalone build
+        run: tar -xf apps/web/standalone.tar -C apps/web && rm -f apps/web/standalone.tar
+      - name: Read Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./apps/web/package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browser
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       - name: Install the test browser
         working-directory: apps/web
-        run: nubx playwright install --with-deps chromium
+        run: nubx playwright install --only-shell --with-deps chromium
       - name: End-to-end tests
-        run: mise run e2e
+        run: mise run db:up && scripts/e2e-clean.sh
       - name: Upload the end-to-end report
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -66,6 +132,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
+        with:
+          install_args: node npm:@nubjs/nub
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.4
@@ -82,10 +150,14 @@ jobs:
     name: Container image and compose stack
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      COMPOSE_DOCKER_CLI_BUILD: "1"
+      DOCKER_BUILDKIT: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build and start
         run: docker compose up --build --detach --wait
       - name: The application reaches the database
@@ -97,6 +169,8 @@ jobs:
         run: |
           curl --fail --silent --output /dev/null http://127.0.0.1:3000/cs
           curl --fail --silent --output /dev/null http://127.0.0.1:3000/en
+      - name: Usage command works inside container
+        run: docker compose exec -T web node apps/web/scripts/usage.mts
       - name: Logs on failure
         if: failure()
         run: docker compose logs
@@ -109,7 +183,7 @@ jobs:
   migrate:
     name: Migrate the production database
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [check, bun, compose]
+    needs: [check, sdk-acceptance, e2e, bun, compose]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production

@@ -8,11 +8,19 @@ for offset in 0 1 2 3; do
 	pids="$(lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null || true)"
 	if [ -n "$pids" ]; then
 		echo "e2e-clean: stopping stale listener(s) on port $p ($pids)" >&2
-		kill $pids 2>/dev/null || true
+		while IFS= read -r pid; do
+			[ -n "$pid" ] && kill "$pid" 2>/dev/null || true
+		done <<EOF
+$pids
+EOF
 		sleep 0.3
 		remaining="$(lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null || true)"
 		if [ -n "$remaining" ]; then
-			kill -9 $remaining 2>/dev/null || true
+			while IFS= read -r pid; do
+				[ -n "$pid" ] && kill -9 "$pid" 2>/dev/null || true
+			done <<EOF
+$remaining
+EOF
 		fi
 	fi
 done

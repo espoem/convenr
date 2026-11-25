@@ -9,7 +9,7 @@ COPY apps/web/package.json apps/web/package.json
 # The lockfile names every workspace package, so a frozen install needs each manifest.
 COPY packages/sdk-ts/package.json packages/sdk-ts/package.json
 COPY packages/sdk-codegen/package.json packages/sdk-codegen/package.json
-RUN nub ci
+RUN --mount=type=cache,id=nub-cache,target=/root/.cache nub ci
 
 FROM deps AS build
 COPY . .
@@ -21,10 +21,11 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 WORKDIR /app
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
-# The purge and usage commands (Phase 2 rules X4, U7), runnable with plain Node next to the server.
+# Standalone maintenance scripts run with plain Node next to the server and load `pg` directly.
 COPY --from=build --chown=node:node /repo/apps/web/scripts/purge.mts /repo/apps/web/scripts/usage.mts ./apps/web/scripts/
 COPY --from=build --chown=node:node /repo/apps/web/src/server/maintenance.ts ./apps/web/src/server/maintenance.ts
 COPY --from=build --chown=node:node /repo/apps/web/src/domain/usage.ts ./apps/web/src/domain/usage.ts
+RUN ln -s /app/node_modules/.store/node_modules/pg /app/apps/web/node_modules/pg
 USER node
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]

@@ -1,8 +1,13 @@
 .git
+.github
+README.md
 node_modules
 **/node_modules
 **/.next
 **/.venv
+playwright-report
+test-results
 docs
+packages/sdk-python
 .env
 .env.*

@@ -5,9 +5,9 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
 	output: "standalone",
-	// The email templates render React to MJML with react-dom/server, which runs as plain Node
-	// code outside the server component bundle.
-	serverExternalPackages: ["mjml", "@faire/mjml-react"],
+	// The email templates render React to MJML with react-dom/server outside the RSC bundle,
+	// and standalone maintenance scripts load `pg` directly with Node.
+	serverExternalPackages: ["mjml", "@faire/mjml-react", "pg"],
 	turbopack: {
 		rules: {
 			"*.css": {

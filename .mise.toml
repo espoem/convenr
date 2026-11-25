@@ -104,9 +104,9 @@ description = "Fail when the OpenAPI document breaks clients of main's; OPENAPI_
 run = "scripts/openapi-breaking.sh"
 
 [tasks."workflows:lint"]
-description = "Lint the GitHub workflows with jactionlint and zizmor"
+description = "Lint the GitHub workflows and repository shell scripts"
 # Offline, so a GitHub token in the shell does not add checks that CI does not run.
-run = ["jactionlint", "zizmor --offline .github/workflows"]
+run = ["jactionlint", "zizmor --offline .github/workflows", "shellcheck scripts/*.sh"]
 
 [tasks.sdk]
 description = "Generate both SDKs from apps/web/openapi.json"
