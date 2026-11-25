@@ -82,6 +82,7 @@ test("a passkey added after the email link signs in alone", async ({ browser }) 
 	await expect(page.getByRole("button", { name: "Rename" })).toBeVisible();
 
 	await page.getByRole("button", { name: "Sign out" }).click();
+	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
 	await page.goto("/en/sign-in");
 	await page.getByRole("button", { name: "Sign in with a passkey" }).click();
 	await expect(page.getByRole("heading", { name: "Your account", level: 1 })).toBeVisible();
