@@ -182,7 +182,7 @@
 		"calendarOutlook": "Přidat do Outlook.com",
 		"count": "{available} z {total}",
 		"countIfNeedBe": "{available} z {total}, z toho {ifNeedBe} když bude nutné",
-		"groupHint": "Najeďte myší na políčko, klepněte na ně, nebo se na ně přesuňte klávesnicí a uvidíte, kdo může.",
+		"groupHint": "Klepněte na políčko, najeďte na ně myší, nebo se k němu přesuňte klávesnicí a uvidíte, kdo může.",
 		"groupGrid": "Dostupnost skupiny",
 		"myGrid": "Vaše dostupnost",
 		"meHint": "Vyberte, co kreslíte, a klepněte na políčko nebo přes políčka táhněte prstem či myší. Klávesnicí: šipky, mezerník, Shift se šipkou vybere obdélník.",

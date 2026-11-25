@@ -201,20 +201,16 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 								className={controlClass}
 							/>
 						</Field>
-						<Button type="submit" variant="outline" className="w-fit">
+						<Button type="submit" variant="outline" className="w-full sm:w-fit">
 							{t("address.change")}
 						</Button>
 					</form>
 				</Section>
 
 				<Section id="account-language" heading={t("language.heading")}>
-					<form action={setLanguageAction} className="flex flex-wrap items-end gap-3">
+					<form action={setLanguageAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
 						{hidden}
-						<Field
-							id="account-language-select"
-							label={t("language.label")}
-							className="flex-[1_1_12rem]"
-						>
+						<Field id="account-language-select" label={t("language.label")} className="sm:flex-1">
 							<select
 								id="account-language-select"
 								name="language"
@@ -228,7 +224,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 								))}
 							</select>
 						</Field>
-						<Button type="submit" variant="outline">
+						<Button type="submit" variant="outline" className="w-full sm:w-auto">
 							{t("language.save")}
 						</Button>
 					</form>
@@ -249,7 +245,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 								{t(`notifications.${kind}`, { minutes, hours })}
 							</label>
 						))}
-						<Button type="submit" variant="outline" className="w-fit">
+						<Button type="submit" variant="outline" className="w-full sm:w-fit">
 							{t("notifications.save")}
 						</Button>
 					</form>
@@ -260,32 +256,35 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					<ul className="flex flex-col gap-4">
 						{passkeys.map((key) => (
 							<li key={key.id} className="flex flex-col gap-2">
-								<form action={renamePasskeyAction} className="flex flex-wrap items-end gap-3">
+								<form
+									action={renamePasskeyAction}
+									className="flex flex-col gap-3 sm:flex-row sm:items-end"
+								>
 									{hidden}
 									<input type="hidden" name="passkey" value={key.id} />
-									<Field
-										id={`passkey-${key.id}`}
-										label={t("passkeys.name")}
-										hint={
-											key.createdAt === undefined
-												? undefined
-												: t("passkeys.created", { date: day(key.createdAt) })
-										}
-										className="flex-[1_1_12rem]"
-									>
+									<Field id={`passkey-${key.id}`} label={t("passkeys.name")} className="sm:flex-1">
 										<input
 											id={`passkey-${key.id}`}
 											name="name"
 											defaultValue={key.name ?? t("passkeys.unnamed")}
 											maxLength={60}
-											aria-describedby={`passkey-${key.id}-message`}
+											aria-describedby={
+												key.createdAt === undefined
+													? `passkey-${key.id}-message`
+													: `passkey-${key.id}-created passkey-${key.id}-message`
+											}
 											className={controlClass}
 										/>
 									</Field>
-									<Button type="submit" variant="outline">
+									<Button type="submit" variant="outline" className="w-full sm:w-auto">
 										{t("passkeys.rename")}
 									</Button>
 								</form>
+								{key.createdAt === undefined ? null : (
+									<p id={`passkey-${key.id}-created`} className="text-sm text-ink-muted">
+										{t("passkeys.created", { date: day(key.createdAt) })}
+									</p>
+								)}
 								<RemovePasskey
 									name={key.name ?? t("passkeys.unnamed")}
 									fields={
@@ -327,7 +326,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					{sessions.length > 1 ? (
 						<form action={endOtherSessionsAction}>
 							{hidden}
-							<Button type="submit" variant="outline">
+							<Button type="submit" variant="outline" className="w-full sm:w-fit">
 								{t("sessions.endOthers")}
 							</Button>
 						</form>
@@ -339,10 +338,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					<form action={deleteAccountAction} className="flex flex-col gap-3">
 						{hidden}
 						<label className="flex min-h-11 items-center gap-2">
-							<input type="checkbox" name="confirm" required className="size-5" />
+							<input type="checkbox" name="confirm" required className="size-5 shrink-0" />
 							{t("delete.confirm")}
 						</label>
-						<Button type="submit" variant="destructive" className="w-fit">
+						<Button type="submit" variant="destructive" className="w-full sm:w-fit">
 							{t("delete.submit")}
 						</Button>
 					</form>

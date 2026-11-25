@@ -48,7 +48,7 @@ export function DatePicker({
 	const order = weekdaysFrom(firstDayOfWeek);
 
 	return (
-		<div className="flex w-fit max-w-full flex-col gap-2" aria-describedby={describedBy}>
+		<div className="flex w-full max-w-[22rem] flex-col gap-2" aria-describedby={describedBy}>
 			<div className="flex items-center justify-between gap-2">
 				<Button
 					type="button"
@@ -71,55 +71,46 @@ export function DatePicker({
 					<CaretRightIcon aria-hidden />
 				</Button>
 			</div>
-			<table className="border-separate border-spacing-1">
-				<thead>
-					<tr>
-						{order.map((weekday) => (
-							<th key={weekday} scope="col" className="text-sm font-normal text-ink-muted">
-								<abbr title={weekdays[weekday - 1]?.long} className="no-underline">
-									{weekdays[weekday - 1]?.short}
-								</abbr>
-							</th>
-						))}
-					</tr>
-				</thead>
-				<tbody>
-					{Array.from({ length: weeks }, (_week, week) => (
-						<tr key={week}>
-							{order.map((_weekday, day) => {
-								const date = start.add({ days: week * 7 + day });
-								const iso = date.toString();
+			<div className="grid grid-cols-7 gap-0.5 text-center">
+				{order.map((weekday) => (
+					<div key={weekday} className="py-1 text-sm font-normal text-ink-muted">
+						<abbr title={weekdays[weekday - 1]?.long} className="no-underline">
+							{weekdays[weekday - 1]?.short}
+						</abbr>
+					</div>
+				))}
+			</div>
+			<div className="grid grid-cols-7 gap-0.5">
+				{Array.from({ length: weeks * 7 }, (_cell, index) => {
+					const date = start.add({ days: index });
+					const iso = date.toString();
 
-								if (date.month !== month.month) {
-									return <td key={iso} aria-hidden />;
-								}
+					if (date.month !== month.month) {
+						return <span key={iso} aria-hidden />;
+					}
 
-								const past = Temporal.PlainDate.compare(date, today) < 0;
-								const on = chosen.has(iso);
+					const past = Temporal.PlainDate.compare(date, today) < 0;
+					const on = chosen.has(iso);
 
-								return (
-									<td key={iso}>
-										<button
-											type="button"
-											aria-pressed={on}
-											aria-label={date.toLocaleString(locale, {
-												weekday: "long",
-												day: "numeric",
-												month: "long",
-											})}
-											disabled={past && !on}
-											onClick={() => onToggle(iso)}
-											className="size-11 rounded-md border border-line tabular-nums hover:border-earth disabled:border-transparent disabled:text-ink-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
-										>
-											{date.day}
-										</button>
-									</td>
-								);
+					return (
+						<button
+							key={iso}
+							type="button"
+							aria-pressed={on}
+							aria-label={date.toLocaleString(locale, {
+								weekday: "long",
+								day: "numeric",
+								month: "long",
 							})}
-						</tr>
-					))}
-				</tbody>
-			</table>
+							disabled={past && !on}
+							onClick={() => onToggle(iso)}
+							className="min-h-11 w-full rounded-md border border-earth tabular-nums hover:border-ink disabled:border-transparent disabled:text-ink-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
+						>
+							{date.day}
+						</button>
+					);
+				})}
+			</div>
 		</div>
 	);
 }

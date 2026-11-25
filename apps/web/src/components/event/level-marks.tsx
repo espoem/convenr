@@ -52,7 +52,7 @@ export function BrushPicker({ brush, onChange }: BrushPickerProps) {
  * The marks of one participant's levels, shown while the grid shows only that participant.
  * Hidden, it keeps its space, so choosing a participant does not push the grid down.
  */
-export function PersonLegend({ shown }: { shown: boolean }) {
+export function PersonLegend({ shown, className }: { shown: boolean; className?: string }) {
 	const t = useTranslations("Event");
 	const levels: Level[] = ["available", "if_need_be"];
 
@@ -60,7 +60,7 @@ export function PersonLegend({ shown }: { shown: boolean }) {
 		<ul
 			aria-label={t("personLegend")}
 			aria-hidden={!shown}
-			className={cn("flex flex-wrap gap-x-4 gap-y-2 text-sm", !shown && "invisible")}
+			className={cn("flex flex-wrap gap-x-4 gap-y-2 text-sm", !shown && "invisible", className)}
 		>
 			{levels.map((level) => (
 				<li key={level} className="flex items-center gap-2">

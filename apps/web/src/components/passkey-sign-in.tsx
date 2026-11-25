@@ -68,10 +68,16 @@ export function PasskeySignIn({ emailField }: { emailField: string }) {
 
 	return (
 		<div className="flex flex-col gap-2">
-			<Button type="button" variant="outline" disabled={pending} onClick={signIn} className="w-fit">
+			<Button
+				type="button"
+				variant="outline"
+				disabled={pending}
+				onClick={signIn}
+				className="w-full sm:w-fit"
+			>
 				{t("passkey")}
 			</Button>
-			<p aria-live="polite" className="text-sm font-semibold text-action-active">
+			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{failed ? t("passkeyFailed") : ""}
 			</p>
 		</div>

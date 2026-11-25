@@ -2,11 +2,48 @@
 
 import { CheckIcon } from "@phosphor-icons/react";
 import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 import { FLAGS } from "@/components/flags";
 import { HeaderMenu, MENU_ENTRY } from "@/components/header-menu";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+
+function LocaleList({ current, href }: { current: string; href: string }) {
+	const t = useTranslations("LocaleSwitch");
+
+	return (
+		<nav aria-label={t("label")} className="contents">
+			{routing.locales.map((locale) => {
+				const Flag = FLAGS[locale];
+
+				return (
+					<Link
+						key={locale}
+						href={href}
+						locale={locale}
+						lang={locale}
+						scroll={false}
+						aria-current={locale === current ? "true" : undefined}
+						className={MENU_ENTRY}
+					>
+						<Flag />
+						<span className="flex-1">{t(locale)}</span>
+						{locale === current ? <CheckIcon aria-hidden className="size-4" /> : null}
+					</Link>
+				);
+			})}
+		</nav>
+	);
+}
+
+function LocaleLinks({ current, pathname }: { current: string; pathname: string }) {
+	const search = useSearchParams().toString();
+	const href = search === "" ? pathname : `${pathname}?${search}`;
+
+	return <LocaleList current={current} href={href} />;
+}
 
 /** The language menu: it keeps the visitor on the same page and at the same scroll position. */
 export function LocaleSwitch() {
@@ -28,27 +65,9 @@ export function LocaleSwitch() {
 				</>
 			}
 		>
-			<nav aria-label={t("label")} className="contents">
-				{routing.locales.map((locale) => {
-					const Flag = FLAGS[locale];
-
-					return (
-						<Link
-							key={locale}
-							href={pathname}
-							locale={locale}
-							lang={locale}
-							scroll={false}
-							aria-current={locale === current ? "true" : undefined}
-							className={MENU_ENTRY}
-						>
-							<Flag />
-							<span className="flex-1">{t(locale)}</span>
-							{locale === current ? <CheckIcon aria-hidden className="size-4" /> : null}
-						</Link>
-					);
-				})}
-			</nav>
+			<Suspense fallback={<LocaleList current={current} href={pathname} />}>
+				<LocaleLinks current={current} pathname={pathname} />
+			</Suspense>
 		</HeaderMenu>
 	);
 }

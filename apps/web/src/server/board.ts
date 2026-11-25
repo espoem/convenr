@@ -3,6 +3,7 @@
 import type { ServerGrid } from "@/components/event/board-view";
 import type { BoardEvent, ShownFinal } from "@/components/event/event-board";
 import type { PollBoardEvent } from "@/components/event/poll-board";
+import { maximalWindows } from "@/domain/best-windows";
 import { gridView } from "@/domain/grid-labels";
 import { datedLayout, weekdayLayout } from "@/domain/grid-layout";
 import { bestOptions, inTimeOrder, optionKey } from "@/domain/poll";
@@ -111,12 +112,15 @@ export function serverGridOf(event: GridEventView, formatLocale: string): Server
 		};
 	}
 
+	const inReferenceZone = gridView(
+		datedLayout(event.slots, schedule.referenceZone, schedule.firstDayOfWeek),
+		schedule.slotLength,
+		formatLocale,
+	);
+
 	return {
 		kind: "dated",
-		inReferenceZone: gridView(
-			datedLayout(event.slots, schedule.referenceZone, schedule.firstDayOfWeek),
-			schedule.slotLength,
-			formatLocale,
-		),
+		inReferenceZone,
+		windows: maximalWindows(inReferenceZone.layout, schedule.slotLength, event.participants),
 	};
 }

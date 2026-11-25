@@ -485,7 +485,7 @@ export function EventForm({
 										return (
 											<label
 												key={weekday}
-												className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface"
+												className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
 											>
 												<input
 													type="checkbox"
@@ -578,10 +578,10 @@ export function EventForm({
 
 			{pendingLoss === null ? (
 				<div className="flex flex-col items-start gap-2">
-					<Button type="submit" disabled={pending}>
+					<Button type="submit" disabled={pending} className="w-full sm:w-auto">
 						{pending ? pendingLabel : submitLabel}
 					</Button>
-					<p aria-live="polite" className="text-sm font-semibold text-action-active">
+					<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 						{submitMessage()}
 					</p>
 				</div>

@@ -29,7 +29,7 @@ export function CreatedLinks({ id, segment, locale, inAccount }: CreatedLinksPro
 
 	if (stored?.adminSecret === undefined) {
 		return (
-			<div className="flex max-w-(--cv-measure) flex-col gap-4">
+			<div className="flex max-w-(--cv-form) flex-col gap-4">
 				<p>{t("missing")}</p>
 				<CopyField label={t("shareLink")} value={`${origin}${eventPath}`} />
 			</div>
@@ -52,7 +52,7 @@ export function CreatedLinks({ id, segment, locale, inAccount }: CreatedLinksPro
 			</div>
 			<Link
 				href={`/e/${segment}`}
-				className="inline-flex min-h-11 w-fit items-center rounded-lg bg-action px-4 font-semibold text-on-action hover:bg-action-active"
+				className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-action px-4 font-semibold text-on-action hover:bg-action-active sm:w-fit"
 			>
 				{t("open")}
 			</Link>

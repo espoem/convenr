@@ -74,12 +74,16 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 							className={controlClass}
 						/>
 					</Field>
-					<Button type="submit" className="w-fit">
+					<Button type="submit" className="w-full sm:w-fit">
 						{t("send")}
 					</Button>
 					<output
 						id="sign-in-status"
-						className={problem === undefined ? "block" : "block font-semibold text-action-active"}
+						className={
+							problem === undefined
+								? "block empty:sr-only"
+								: "block font-semibold text-action-active empty:sr-only"
+						}
 					>
 						{status}
 					</output>

@@ -24,10 +24,10 @@
   --cv-heat-2-line: var(--cv-earth);
   --cv-heat-3-line: var(--cv-surface);
   --cv-heat-4-line: var(--cv-surface);
-  --cv-cell-min-width: 2.75rem;
+  --cv-cell-min-width: 3.25rem;
   --cv-cell-min-height: 1.5rem;
   --cv-touch-target: 2.75rem;
-  --cv-measure: 65ch;
+  --cv-measure: 42rem;
   --cv-form: 42rem;
 
   --background: var(--cv-background);

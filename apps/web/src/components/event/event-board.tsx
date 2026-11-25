@@ -5,7 +5,7 @@ import { useId, useRef, useState } from "react";
 
 import { SteadyLabel } from "@/components/steady-label";
 import { Button } from "@/components/ui/button";
-import { sameWindow, type Window } from "@/domain/best-windows";
+import { bestWindows, mostPeople, sameWindow, type Window } from "@/domain/best-windows";
 import { heatStep } from "@/domain/heat";
 import {
 	type Brush,
@@ -58,6 +58,7 @@ type EventBoardProps = {
 	viewer: Joined | null;
 	serverGrid: ServerGrid;
 	formatLocale: string;
+	initialTab?: "group" | "me" | undefined;
 };
 
 const DETAIL_WIDTH = 288;
@@ -72,7 +73,13 @@ function ownFill(level: Level | null): CellFill {
 }
 
 /** The event page below its header: join band, tabs, grid and participants (spec 6 and 8). */
-export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoardProps) {
+export function EventBoard({
+	event,
+	viewer,
+	serverGrid,
+	formatLocale,
+	initialTab,
+}: EventBoardProps) {
 	const t = useTranslations("Event");
 	const tJoin = useTranslations("Join");
 	const count = useCount();
@@ -80,7 +87,8 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 	const viewerZone = useViewerZone();
 	const wrapper = useRef<HTMLDivElement>(null);
 	// A participant the server recognized starts at their own grid.
-	const [tab, setTab] = useState<"group" | "me">(viewer === null ? "group" : "me");
+	const defaultTab: "group" | "me" = viewer === null ? "group" : "me";
+	const [tab, setTab] = useState<"group" | "me">(initialTab ?? defaultTab);
 	const [brush, setBrush] = useState<Brush>("available");
 	const [confirmDiscard, setConfirmDiscard] = useState(false);
 	const [inspected, setInspected] = useState<{ cell: CellRef; x: number; y: number } | null>(null);
@@ -88,10 +96,34 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 	// Not stored, so every visit starts in the viewer's zone.
 	const [inReferenceZone, setInReferenceZone] = useState(false);
 	const [chosenWindow, setChosenWindow] = useState<Window | null>(null);
+	const [minSlots, setMinSlots] = useState(1);
+	const [chosenPeople, setChosenPeople] = useState<number | null>(null);
+
+	function syncTabUrl(next: "group" | "me") {
+		const url = new URL(window.location.href);
+
+		if (next === defaultTab) {
+			url.searchParams.delete("tab");
+		} else {
+			url.searchParams.set("tab", next);
+		}
+
+		window.history.replaceState(
+			window.history.state,
+			"",
+			`${url.pathname}${url.search}${url.hash}`,
+		);
+	}
 
 	const participation = useParticipation(event, viewer, formatLocale, {
-		onJoined: () => setTab("me"),
-		onLeft: () => setTab("group"),
+		onJoined: () => {
+			setTab("me");
+			syncTabUrl("me");
+		},
+		onLeft: () => {
+			setTab("group");
+			syncTabUrl("group");
+		},
 	});
 
 	const { joined, selection, dirty, edit } = participation;
@@ -99,8 +131,12 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 
 	const { view, windows } = useBoardView(event, serverGrid, shownZone, formatLocale);
 
-	// A window from before a reload or a zone switch may no longer exist.
-	const highlight = windows.find((window) => sameWindow(chosenWindow, window)) ?? null;
+	const highest = mostPeople(windows);
+	const minPeople = chosenPeople ?? Math.max(highest, 1);
+	const shownWindows = bestWindows(windows, { minSlots, minPeople });
+
+	// A window that disappeared from the shown list clears rather than staying highlighted.
+	const highlight = shownWindows.find((window) => sameWindow(chosenWindow, window)) ?? null;
 
 	const total = event.participants.length;
 
@@ -138,6 +174,7 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 		setInspected(null);
 		edit(null);
 		setTab(next);
+		syncTabUrl(next);
 	}
 
 	function inspect(cell: CellRef | null, box: DOMRect | null) {
@@ -156,7 +193,7 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 				? Math.max(box.left - area.left - DETAIL_WIDTH - 8, 0)
 				: beside;
 
-		setInspected({ cell, x, y: box.top - area.top });
+		setInspected({ cell, x, y: Math.max(0, box.top - area.top) });
 	}
 
 	const detailKeys =
@@ -258,6 +295,7 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 										edit(null);
 										setConfirmDiscard(false);
 										setTab("group");
+										syncTabUrl("group");
 									}}
 								>
 									{t("discardAndLeave")}
@@ -282,23 +320,31 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 
 					{tab === "group" ? (
 						<>
-							<div
-								className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm tabular-nums"
-								aria-label={t("legendLabel", { total })}
-							>
-								<span className="whitespace-nowrap">{t("count", { available: 0, total })}</span>
-								<span aria-hidden className="flex border border-earth">
-									{HEAT.map((step) => (
-										<span key={step} className={cn("h-5 w-6", step)} />
-									))}
-								</span>
-								<span className="whitespace-nowrap">{t("count", { available: total, total })}</span>
-								<span aria-hidden className="text-ink-muted">
-									{t("legendHalf")}
-								</span>
+							<div className="grid items-start">
+								<div
+									aria-hidden={filtered !== undefined}
+									className={cn(
+										"col-start-1 row-start-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm tabular-nums",
+										filtered !== undefined && "invisible",
+									)}
+									aria-label={t("legendLabel", { total })}
+								>
+									<span className="whitespace-nowrap">{t("count", { available: 0, total })}</span>
+									<span aria-hidden className="flex border border-earth">
+										{HEAT.map((step) => (
+											<span key={step} className={cn("h-5 w-6", step)} />
+										))}
+									</span>
+									<span className="whitespace-nowrap">
+										{t("count", { available: total, total })}
+									</span>
+									<span aria-hidden className="text-ink-muted">
+										{t("legendHalf")}
+									</span>
+								</div>
+								<PersonLegend shown={filtered !== undefined} className="col-start-1 row-start-1" />
 							</div>
 							{final === undefined ? null : <FinalLegend />}
-							<PersonLegend shown={filtered !== undefined} />
 							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("groupHint")}</p>
 						</>
 					) : null}
@@ -343,7 +389,7 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 
 					{tab === "group" || joined !== null ? (
 						<div ref={wrapper} className="relative">
-							<div className="max-h-[75dvh] max-w-full overflow-auto overscroll-x-contain pt-2">
+							<div className="max-h-[75dvh] max-w-full overflow-auto overscroll-x-contain pt-2 pb-3">
 								{renderGrid()}
 							</div>
 							{tab === "group" && inspected !== null && detailTime !== undefined ? (
@@ -373,24 +419,40 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 				/>
 			) : null}
 
-			<BestWindows
-				view={view}
-				windows={windows}
-				names={event.participants.map((participant) => participant.name)}
-				slotLength={event.slotLength}
-				formatLocale={formatLocale}
-				selected={highlight}
-				onSelect={(window) => {
-					if (tab === "me" && dirty) {
-						setConfirmDiscard(true);
+			{tab === "group" ? (
+				<BestWindows
+					view={view}
+					windows={windows}
+					names={event.participants.map((participant) => participant.name)}
+					slotLength={event.slotLength}
+					formatLocale={formatLocale}
+					selected={highlight}
+					filters={{
+						minSlots,
+						chosenPeople,
+						onMinSlotsChange: (next) => {
+							setMinSlots(next);
+							const nextShown = bestWindows(windows, { minSlots: next, minPeople });
 
-						return;
-					}
+							if (!nextShown.some((window) => sameWindow(chosenWindow, window))) {
+								setChosenWindow(null);
+							}
+						},
+						onChosenPeopleChange: (next) => {
+							setChosenPeople(next);
+							const nextPeople = next ?? Math.max(highest, 1);
+							const nextShown = bestWindows(windows, { minSlots, minPeople: nextPeople });
 
-					setChosenWindow(window);
-					showTab("group");
-				}}
-			/>
+							if (!nextShown.some((window) => sameWindow(chosenWindow, window))) {
+								setChosenWindow(null);
+							}
+						},
+					}}
+					onSelect={(window) => {
+						setChosenWindow(window);
+					}}
+				/>
+			) : null}
 
 			<section aria-labelledby={`${id}-people`} className="flex flex-col gap-3">
 				<h2 id={`${id}-people`} className="text-xl">
@@ -403,7 +465,7 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 						<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("filterHint")}</p>
 						<ul className="flex flex-wrap gap-2">
 							{event.participants.map((participant) => (
-								<li key={participant.name}>
+								<li key={participant.name} className="max-w-full">
 									<button
 										type="button"
 										aria-pressed={person === participant.name}
@@ -417,7 +479,7 @@ export function EventBoard({ event, viewer, serverGrid, formatLocale }: EventBoa
 											setPerson(person === participant.name ? null : participant.name);
 											showTab("group");
 										}}
-										className="min-h-11 rounded-md border border-earth px-3 aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
+										className="min-h-11 max-w-full rounded-md border border-earth px-3 text-left [overflow-wrap:anywhere] aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-surface"
 									>
 										<SteadyLabel text={participant.name} />
 									</button>

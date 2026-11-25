@@ -46,7 +46,7 @@ export function SlotDetail({
 			aria-label={`${day}, ${time}`}
 			aria-live="polite"
 			style={wide ? { left: x, top: y } : undefined}
-			className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 border-t border-line bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_16px_color-mix(in_oklch,var(--cv-ink),transparent_88%)] sm:absolute sm:right-auto sm:bottom-auto sm:w-72 sm:rounded-lg sm:border sm:pb-3 sm:shadow-[0_4px_16px_color-mix(in_oklch,var(--cv-ink),transparent_88%)]"
+			className="fixed inset-x-0 bottom-0 z-30 flex max-h-[50dvh] flex-col gap-2 overflow-y-auto border-t border-earth bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_16px_color-mix(in_oklch,var(--cv-ink),transparent_88%)] sm:absolute sm:right-auto sm:bottom-auto sm:max-h-none sm:w-72 sm:rounded-lg sm:border sm:border-earth sm:pb-3 sm:shadow-[0_4px_16px_color-mix(in_oklch,var(--cv-ink),transparent_88%)]"
 		>
 			<div className="flex items-start justify-between gap-2">
 				{/* The day and the time each keep to one line, so a narrow panel breaks between them. */}
@@ -58,7 +58,7 @@ export function SlotDetail({
 					type="button"
 					onClick={onClose}
 					aria-label={t("closeDetail")}
-					className="-mt-2 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-md sm:hidden"
+					className="-mt-2 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-md sm:[@media(hover:hover)_and_(pointer:fine)]:hidden"
 				>
 					<XIcon aria-hidden className="size-5" />
 				</button>

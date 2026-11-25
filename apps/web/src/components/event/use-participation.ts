@@ -128,9 +128,9 @@ export function useParticipation(
 		}
 	}, [lost]);
 
-	// The start page lists the events by what local storage remembers, so it follows the server.
+	// The start page lists the events by what local storage remembers, so it follows the active participant.
 	useEffect(() => {
-		if (viewer === null || remembered === viewer.name) {
+		if (joined === null || remembered === joined.name) {
 			return;
 		}
 
@@ -139,9 +139,9 @@ export function useParticipation(
 			id: event.id,
 			name: event.name,
 			segment: event.segment,
-			participant: { name: viewer.name },
+			participant: { name: joined.name },
 		}));
-	}, [event.id, event.name, event.segment, viewer, remembered]);
+	}, [event.id, event.name, event.segment, joined, remembered]);
 
 	const mine =
 		event.participants.find((participant) => participant.name === joined?.name)?.levels ?? nobody;

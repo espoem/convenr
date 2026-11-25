@@ -109,8 +109,8 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 			<h2 id="join" className="text-xl">
 				{t("heading")}
 			</h2>
-			<div className="flex flex-wrap items-end gap-3">
-				<Field id={`${id}-name`} label={t("name")} className="flex-[2_1_14rem]">
+			<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+				<Field id={`${id}-name`} label={t("name")} className="w-full sm:flex-[2_1_14rem]">
 					<input
 						id={`${id}-name`}
 						name="name"
@@ -121,7 +121,7 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 						className={controlClass}
 					/>
 				</Field>
-				<Field id={`${id}-password`} label={t("password")} className="flex-[2_1_14rem]">
+				<Field id={`${id}-password`} label={t("password")} className="w-full sm:flex-[2_1_14rem]">
 					<input
 						ref={password}
 						id={`${id}-password`}
@@ -133,14 +133,14 @@ function JoinForm({ eventId, onJoined, formatTime }: JoinBandProps) {
 						className={controlClass}
 					/>
 				</Field>
-				<Button type="submit" disabled={pending} className="flex-[1_1_8rem]">
+				<Button type="submit" disabled={pending} className="w-full sm:w-auto sm:flex-[1_1_8rem]">
 					{t("submit")}
 				</Button>
 			</div>
 			<p
 				id={`${id}-problem`}
 				aria-live="polite"
-				className="text-sm font-semibold text-action-active"
+				className="text-sm font-semibold text-action-active empty:sr-only"
 			>
 				{problem === null ? "" : t(`problem.${problem.key}`, { time: problem.time ?? "" })}
 			</p>
@@ -259,17 +259,21 @@ function JoinedLine({
 				</div>
 			</div>
 
-			<div id={`${id}-panel`}>
+			<div id={`${id}-panel`} className="empty:hidden">
 				{panel === "password" ? (
 					<form
 						onSubmit={(event) => {
 							event.preventDefault();
 							changePassword(event.currentTarget, false);
 						}}
-						className="mt-3 flex flex-wrap items-start gap-3"
+						className="mt-3 flex max-w-(--cv-form) flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start"
 					>
 						{joined.hasPassword ? (
-							<Field id={`${id}-current`} label={t("currentPassword")} className="flex-[1_1_12rem]">
+							<Field
+								id={`${id}-current`}
+								label={t("currentPassword")}
+								className="w-full sm:flex-[1_1_12rem]"
+							>
 								<input
 									id={`${id}-current`}
 									name="current"
@@ -283,7 +287,7 @@ function JoinedLine({
 							id={`${id}-next`}
 							label={t("newPassword")}
 							hint={t("passwordHint")}
-							className="flex-[1_1_12rem]"
+							className="w-full sm:flex-[1_1_12rem]"
 						>
 							<input
 								id={`${id}-next`}
@@ -336,7 +340,7 @@ function JoinedLine({
 			<p
 				aria-live="polite"
 				className={cn(
-					"mt-2 text-sm empty:mt-0",
+					"mt-2 text-sm empty:sr-only",
 					message?.problem === true && "font-semibold text-action-active",
 				)}
 			>

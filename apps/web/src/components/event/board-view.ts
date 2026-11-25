@@ -16,7 +16,7 @@ import type { BoardEvent } from "./event-board";
  */
 export type ServerGrid =
 	| { kind: "weekday"; view: GridView }
-	| { kind: "dated"; inReferenceZone: GridView };
+	| { kind: "dated"; inReferenceZone: GridView; windows: Window[] };
 
 /** The grid and its maximal windows. */
 export type BoardView = { view: GridView; windows: Window[] };
@@ -47,10 +47,13 @@ export function useBoardView(
 			: serverGrid.inReferenceZone;
 	}, [serverGrid, temporalReady, zone, event, formatLocale]);
 
-	const windows = useMemo(
-		() => maximalWindows(view.layout, event.slotLength, event.participants),
-		[view, event.slotLength, event.participants],
-	);
+	const windows = useMemo(() => {
+		if (serverGrid.kind === "dated" && (!temporalReady || zone === null)) {
+			return serverGrid.windows;
+		}
+
+		return maximalWindows(view.layout, event.slotLength, event.participants);
+	}, [serverGrid, temporalReady, zone, view.layout, event.slotLength, event.participants]);
 
 	return { view, windows };
 }

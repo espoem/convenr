@@ -11,7 +11,10 @@ export default function NotFound() {
 			<main className="flex flex-col gap-4">
 				<h1 className="text-3xl">{t("heading")}</h1>
 				<p className="max-w-(--cv-measure)">{t("hint")}</p>
-				<Link href="/" className="w-fit text-action underline underline-offset-4">
+				<Link
+					href="/"
+					className="inline-flex min-h-11 w-fit items-center text-action underline underline-offset-4"
+				>
 					{t("back")}
 				</Link>
 			</main>

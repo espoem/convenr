@@ -91,7 +91,7 @@ export function PollFinalPicker({
 				}}
 			/>
 
-			<p aria-live="polite" className="text-sm font-semibold text-action-active">
+			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{message ?? ""}
 			</p>
 

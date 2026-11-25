@@ -56,9 +56,9 @@ export default async function EventPage({
 
 	const locale = await currentLocale();
 
-	if (segment !== event.segment) {
-		const raw = await searchParams;
+	const raw = await searchParams;
 
+	if (segment !== event.segment) {
 		const query = Object.fromEntries(
 			Object.entries(raw).flatMap(([key, value]) => {
 				const parsed = z.string().safeParse(value);
@@ -69,6 +69,9 @@ export default async function EventPage({
 
 		redirect({ href: { pathname: `/e/${event.segment}`, query }, locale });
 	}
+
+	const parsedTab = z.enum(["group", "me"]).safeParse(raw["tab"]);
+	const initialTab = parsedTab.success ? parsedTab.data : undefined;
 
 	const format = formatLocale(locale, (await headers()).get("accept-language"));
 	const t = await getTranslations("Event");
@@ -94,6 +97,7 @@ export default async function EventPage({
 				viewer={viewer}
 				serverGrid={serverGridOf(kind.event, format)}
 				formatLocale={format}
+				initialTab={initialTab}
 			/>
 		) : (
 			<PollBoard

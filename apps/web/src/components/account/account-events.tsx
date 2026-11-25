@@ -53,11 +53,13 @@ export function AccountEvents({
 			event.deletion.kind === "kept"
 				? t(event.deletion.by === "organizer" ? "keptByOrganizer" : "kept")
 				: t("deletion", {
-						date: Temporal.PlainDate.from(event.deletion.date).toLocaleString(formatLocale, {
-							day: "numeric",
-							month: "long",
-							year: "numeric",
-						}),
+						date: ready
+							? Temporal.PlainDate.from(event.deletion.date).toLocaleString(formatLocale, {
+									day: "numeric",
+									month: "long",
+									year: "numeric",
+								})
+							: event.deletion.date,
 					});
 
 		if (event.final.kind === "open") {
@@ -134,7 +136,7 @@ export function AccountEvents({
 							</Button>
 						</div>
 					</div>
-					<div id={`unlink-${event.id}`}>
+					<div id={`unlink-${event.id}`} className="empty:hidden">
 						{confirming === event.id ? (
 							<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
 								<p>{consequence(event)}</p>

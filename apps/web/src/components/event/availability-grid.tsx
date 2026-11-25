@@ -342,7 +342,7 @@ export function AvailabilityGrid({
 					<td
 						aria-hidden
 						style={{ width: TIME_COLUMN }}
-						className="sticky top-0 left-0 z-[5] bg-background"
+						className="sticky top-0 left-0 z-[8] bg-background"
 					/>
 					{columns.map((column, index) => {
 						const text = view.columns[index];
@@ -353,13 +353,13 @@ export function AvailabilityGrid({
 									<td
 										aria-hidden
 										style={{ width: BLOCK_GAP }}
-										className="sticky top-0 z-10 bg-background"
+										className="sticky top-0 z-[6] bg-background"
 									/>
 								) : null}
 								<th
 									scope="col"
 									aria-label={text?.long}
-									className="sticky top-0 z-10 bg-background px-1 pb-1.5 text-center leading-tight font-normal"
+									className="sticky top-0 z-[6] bg-background px-0.5 pb-1.5 text-center leading-tight font-normal"
 								>
 									<span aria-hidden className="block text-sm">
 										{text?.day}
@@ -367,7 +367,7 @@ export function AvailabilityGrid({
 									{text?.date === null ? null : (
 										<span
 											aria-hidden
-											className="block font-semibold whitespace-nowrap tabular-nums"
+											className="block text-sm font-semibold whitespace-nowrap tabular-nums"
 										>
 											{text?.date}
 										</span>
@@ -387,7 +387,10 @@ export function AvailabilityGrid({
 						<tr key={minute}>
 							<th
 								scope="row"
-								className="sticky left-0 z-10 bg-background pr-2 text-right align-top text-sm font-normal text-ink-muted tabular-nums"
+								className={cn(
+									"sticky left-0 bg-background pr-2 text-right align-top text-sm font-normal text-ink-muted tabular-nums",
+									row === 0 ? "z-10" : "z-[7]",
+								)}
 							>
 								<span
 									className={cn(
@@ -397,6 +400,14 @@ export function AvailabilityGrid({
 								>
 									{time?.start}
 								</span>
+								{row === lastRow && time !== undefined ? (
+									<span
+										aria-hidden
+										className="pointer-events-none absolute right-2 -bottom-[0.7em] block whitespace-nowrap"
+									>
+										{time.end}
+									</span>
+								) : null}
 							</th>
 							{columns.map((column, index) => {
 								const cell = { column: index, row };

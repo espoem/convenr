@@ -200,7 +200,7 @@ export function FinalPicker({
 			<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("finalHint")}</p>
 			{final === undefined ? null : <FinalLegend />}
 
-			<div className="max-h-[75dvh] max-w-full overflow-auto overscroll-x-contain pt-2">
+			<div className="max-h-[75dvh] max-w-full overflow-auto overscroll-x-contain pt-2 pb-3">
 				<AvailabilityGrid
 					view={view}
 					slotLength={event.slotLength}
@@ -242,7 +242,7 @@ export function FinalPicker({
 					)}
 					<Button
 						type="button"
-						className="w-fit"
+						className="w-full sm:w-fit"
 						disabled={pending}
 						onClick={() => pick(validProposal)}
 					>
@@ -251,7 +251,7 @@ export function FinalPicker({
 				</div>
 			)}
 
-			<p aria-live="polite" className="text-sm font-semibold text-action-active">
+			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{message ?? ""}
 			</p>
 

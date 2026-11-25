@@ -187,11 +187,17 @@ export function PollOptionsEditor({
 						className={controlClass}
 					/>
 				</Field>
-				<Button type="button" variant="outline" disabled={full || !temporalReady} onClick={add}>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={full || !temporalReady}
+					onClick={add}
+					className="w-full sm:w-auto"
+				>
 					{t("pollAdd")}
 				</Button>
 			</div>
-			<p aria-live="polite" className="text-sm font-semibold text-action-active">
+			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{full ? t("pollFull", { max: MAX_OPTIONS }) : (addError ?? "")}
 			</p>
 			<FieldMessage

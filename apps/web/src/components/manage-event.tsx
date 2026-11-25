@@ -356,7 +356,7 @@ export function ManageEvent({
 				)}
 			</section>
 
-			<p aria-live="polite" className="text-sm font-semibold text-action-active">
+			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{failed ? t("failed") : ""}
 			</p>
 		</div>

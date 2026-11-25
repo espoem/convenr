@@ -28,7 +28,7 @@ export function AddPasskey() {
 			<Button type="button" variant="outline" disabled={pending} onClick={add} className="w-fit">
 				{t("add")}
 			</Button>
-			<p aria-live="polite" className="text-sm font-semibold text-action-active">
+			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{failed ? t("addFailed") : ""}
 			</p>
 		</div>

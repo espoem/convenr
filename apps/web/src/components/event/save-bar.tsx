@@ -27,7 +27,7 @@ export function SaveBar({ message, dirty, saving, poll = false, onDiscard, onSav
 				<p
 					aria-live="polite"
 					className={cn(
-						"mr-auto text-sm",
+						"basis-full text-sm empty:sr-only sm:mr-auto sm:basis-auto",
 						message !== null && message !== "saved" && "font-semibold text-action-active",
 					)}
 				>

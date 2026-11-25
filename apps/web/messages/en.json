@@ -182,7 +182,7 @@
 		"calendarOutlook": "Add to Outlook.com",
 		"count": "{available} of {total}",
 		"countIfNeedBe": "{available} of {total}, {ifNeedBe} of them if need be",
-		"groupHint": "Point at a slot, tap it, or move to it with the keyboard to see who is available.",
+		"groupHint": "Tap a slot, point at it, or move to it with the keyboard to see who is available.",
 		"groupGrid": "Group availability",
 		"myGrid": "Your availability",
 		"meHint": "Choose what to paint, then tap a slot or drag across slots with a finger or the mouse. Keyboard: arrows, Space, and Shift with an arrow to select a rectangle.",

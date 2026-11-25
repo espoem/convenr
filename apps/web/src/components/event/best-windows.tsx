@@ -15,6 +15,13 @@ import type { GridView } from "@/domain/grid-labels";
 
 import { useCount } from "./count";
 
+export type BestWindowsFilter = {
+	minSlots: number;
+	chosenPeople: number | null;
+	onMinSlotsChange: (minSlots: number) => void;
+	onChosenPeopleChange: (chosenPeople: number | null) => void;
+};
+
 type BestWindowsProps = {
 	view: GridView;
 	/** Every maximal window of the grid. */
@@ -24,6 +31,7 @@ type BestWindowsProps = {
 	formatLocale: string;
 	selected: Window | null;
 	onSelect: (window: Window | null) => void;
+	filters?: BestWindowsFilter | undefined;
 };
 
 /** The list of best windows below the grid, with filters by people and length. */
@@ -35,13 +43,18 @@ export function BestWindows({
 	formatLocale,
 	selected,
 	onSelect,
+	filters,
 }: BestWindowsProps) {
 	const t = useTranslations("Event");
 	const count = useCount();
 	const id = useId();
-	const [minSlots, setMinSlots] = useState(1);
+	const [localMinSlots, setLocalMinSlots] = useState(1);
 	// `null` follows the highest count as responses change until the viewer picks a number.
-	const [chosenPeople, setChosenPeople] = useState<number | null>(null);
+	const [localChosenPeople, setLocalChosenPeople] = useState<number | null>(null);
+	const minSlots = filters?.minSlots ?? localMinSlots;
+	const chosenPeople = filters === undefined ? localChosenPeople : filters.chosenPeople;
+	const setMinSlots = filters?.onMinSlotsChange ?? setLocalMinSlots;
+	const setChosenPeople = filters?.onChosenPeopleChange ?? setLocalChosenPeople;
 	const highest = mostPeople(windows);
 	const minPeople = chosenPeople ?? Math.max(highest, 1);
 	const shown = bestWindows(windows, { minSlots, minPeople });
@@ -116,7 +129,7 @@ export function BestWindows({
 									type="button"
 									aria-pressed={on}
 									onClick={() => onSelect(on ? null : window)}
-									className="flex w-full flex-col items-start gap-1 rounded-md border border-earth px-3 py-2 text-left aria-pressed:border-ink aria-pressed:shadow-[inset_0_0_0_1px_var(--cv-ink)]"
+									className="flex min-h-11 w-full flex-col items-start gap-1 rounded-md border border-earth px-3 py-2 text-left aria-pressed:border-ink aria-pressed:shadow-[inset_0_0_0_1px_var(--cv-ink)]"
 								>
 									<span className="flex w-full flex-wrap justify-between gap-x-4">
 										<span className="font-semibold">
@@ -127,7 +140,7 @@ export function BestWindows({
 										</span>
 										<span className="tabular-nums">{count(windowTally(window), names.length)}</span>
 									</span>
-									<span className="text-sm break-words">
+									<span className="text-sm [overflow-wrap:anywhere]">
 										{list.format(
 											window.people.map(({ person, level }) => {
 												const name = names[person] ?? "";

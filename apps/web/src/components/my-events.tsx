@@ -24,7 +24,7 @@ export function MyEvents() {
 					<li key={event.id} className="flex flex-wrap items-baseline justify-between gap-x-4 py-2">
 						<Link
 							href={`/e/${event.segment}`}
-							className="flex min-h-11 items-center font-semibold text-action underline underline-offset-4"
+							className="flex min-h-11 min-w-0 items-center font-semibold [overflow-wrap:anywhere] text-action underline underline-offset-4"
 						>
 							{event.name}
 						</Link>

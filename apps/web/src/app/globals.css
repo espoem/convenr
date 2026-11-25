@@ -37,12 +37,27 @@
 		border-color: var(--border);
 	}
 
+	html {
+		scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+	}
+
 	body {
 		background: var(--background);
 		color: var(--foreground);
 		font-family: var(--font-sans);
 		font-size: 1rem;
 		line-height: 1.5;
+		overflow-wrap: break-word;
+	}
+
+	:where(a, code) {
+		overflow-wrap: anywhere;
+	}
+
+	button:not(:disabled),
+	[role="button"]:not([aria-disabled="true"]),
+	summary {
+		cursor: pointer;
 	}
 
 	h1,

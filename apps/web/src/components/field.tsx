@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
  * disabled control is a locked one (see "Locked controls" in DESIGN.md): its value stays in `ink`.
  */
 export const controlClass =
-	"min-h-11 w-full min-w-0 rounded-md border border-earth bg-surface px-3 text-base disabled:cursor-not-allowed disabled:border-line disabled:bg-locked disabled:text-ink aria-invalid:border-2 aria-invalid:border-action-active";
+	"min-h-11 w-full min-w-0 rounded-lg border border-earth bg-surface px-3 py-2 text-base disabled:cursor-not-allowed disabled:border-line disabled:bg-locked disabled:text-ink aria-invalid:border-action-active aria-invalid:shadow-[inset_0_0_0_1px_var(--cv-action-active)]";
 
 type FieldProps = {
 	id: string;

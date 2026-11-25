@@ -43,8 +43,8 @@ export function EventNotifications({
 				{t("heading")}
 			</h2>
 			{choices.map(({ kind, choice, general }) => (
-				<label key={kind} className="flex max-w-(--cv-form) flex-col gap-1">
-					{t(`kind.${kind}`)}
+				<label key={kind} className="flex max-w-(--cv-form) flex-col gap-1.5">
+					<span className="font-medium">{t(`kind.${kind}`)}</span>
 					<select
 						value={choice}
 						disabled={pending}
@@ -57,7 +57,7 @@ export function EventNotifications({
 					</select>
 				</label>
 			))}
-			<p aria-live="polite" className="text-sm font-semibold text-action-active">
+			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{failed ? t("failed") : ""}
 			</p>
 		</section>

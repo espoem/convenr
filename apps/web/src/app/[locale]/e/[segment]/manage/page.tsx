@@ -73,7 +73,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 					</h1>
 					<Link
 						href={`/e/${event.segment}`}
-						className="w-fit text-action underline underline-offset-4"
+						className="inline-flex min-h-11 w-fit items-center text-action underline underline-offset-4"
 					>
 						{t("open")}
 					</Link>

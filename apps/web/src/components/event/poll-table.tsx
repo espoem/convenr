@@ -215,7 +215,7 @@ export function BestOptions({ options, best, names, zone, formatLocale }: BestOp
 									</span>
 									<span className="tabular-nums">{count(tally, names.length)}</span>
 								</span>
-								<span className="text-sm break-words">
+								<span className="text-sm [overflow-wrap:anywhere]">
 									{namesOf(
 										result.people.map(({ person, level }) => ({
 											name: names[person] ?? "",

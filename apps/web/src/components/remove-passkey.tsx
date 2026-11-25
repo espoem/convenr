@@ -27,7 +27,7 @@ export function RemovePasskey({ name, fields }: { name: string; fields: ReactNod
 			>
 				{t("remove")}
 			</Button>
-			<div id={id}>
+			<div id={id} className="empty:hidden">
 				{confirming ? (
 					<form
 						action={removePasskeyAction}

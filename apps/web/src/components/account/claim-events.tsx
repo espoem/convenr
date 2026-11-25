@@ -100,8 +100,8 @@ export function ClaimEvents({ ownedIds, joinedIds }: { ownedIds: string[]; joine
 				{candidates.map((event) => (
 					<li key={event.id} className="flex flex-col gap-1 py-3">
 						<span className="flex flex-wrap items-center justify-between gap-3">
-							<span className="flex flex-col">
-								<span className="font-semibold break-words">{event.name}</span>
+							<span className="flex min-w-0 flex-col">
+								<span className="font-semibold [overflow-wrap:anywhere]">{event.name}</span>
 								<span className="text-sm text-ink-muted">
 									{event.additions
 										.map((addition) =>
@@ -121,7 +121,7 @@ export function ClaimEvents({ ownedIds, joinedIds }: { ownedIds: string[]; joine
 								{t("add")}
 							</Button>
 						</span>
-						<span className="text-sm font-semibold text-action-active">
+						<span className="text-sm font-semibold text-action-active empty:sr-only">
 							{(refused.get(event.id) ?? []).map((refusal) => t(`problem.${refusal}`)).join(" ")}
 						</span>
 					</li>
