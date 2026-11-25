@@ -85,12 +85,12 @@ test("copy button shows icon on narrow screens, preserves tab on reload and loca
 	await eva.getByLabel("Délka aspoň").selectOption("1");
 	await expect(firstWindow).toHaveAttribute("aria-pressed", "false");
 
-	await eva.reload();
-	await expect(eva.getByRole("tab", { name: "Skupina" })).toHaveAttribute("aria-selected", "true");
-
 	await eva.getByLabel("Jazyk: Čeština").click();
 	await eva.getByRole("link", { name: "English" }).click();
 	await expect(eva).toHaveURL(/\/en\/e\/.*\?tab=group$/u);
+	await expect(eva.getByRole("tab", { name: "Group" })).toHaveAttribute("aria-selected", "true");
+
+	await eva.reload();
 	await expect(eva.getByRole("tab", { name: "Group" })).toHaveAttribute("aria-selected", "true");
 
 	// Leaving from the Group tab returns cleanly to the join form with zero errors.

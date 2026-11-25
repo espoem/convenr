@@ -85,10 +85,14 @@ test("a page whose stream fails twice checks for changes instead", async ({ brow
 	await organizer.context().close();
 	await jana.route("**/api/live/**", (route) => route.fulfill({ status: 503 }));
 	await jana.clock.install();
+	const firstRefusal = jana.waitForResponse("**/api/live/**");
 	await jana.goto(share);
 	await expect(jana.getByRole("heading", { name: "Účastníci (0)" })).toBeVisible();
+	await firstRefusal;
 	// The first refusal opens the stream again after a second; the second gives way to checks.
+	const secondRefusal = jana.waitForResponse("**/api/live/**");
 	await jana.clock.fastForward(1000);
+	await secondRefusal;
 	await someoneJoins(browser, share, "Petr");
 	await jana.clock.fastForward(CHECK_MS);
 	await expect(jana.getByRole("heading", { name: "Účastníci (1)" })).toBeVisible();
@@ -127,11 +131,11 @@ test("an idle page pauses its updates and resumes on input", async ({ browser })
 
 	await organizer.context().close();
 	await jana.clock.install();
+	// Live updates open the stream right after arming the idle timer on hydration.
+	const stream = jana.waitForRequest("**/api/live/**");
 	await jana.goto(share);
 	await expect(jana.getByRole("heading", { name: "Účastníci (0)" })).toBeVisible();
-	// The idle timer starts with hydration, after which the dated grid appears; a clock moved
-	// before it would pass unnoticed.
-	await expect(jana.getByRole("table")).toBeVisible();
+	await stream;
 
 	// Thirty minutes without input stop the stream and say so.
 	await jana.clock.fastForward("30:00");

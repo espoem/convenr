@@ -82,7 +82,13 @@ function syncTabUrl(next: "group" | "me", isJoined: boolean) {
 		url.searchParams.set("tab", next);
 	}
 
-	window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+	const nextHref = `${url.pathname}${url.search}${url.hash}`;
+
+	if (nextHref === `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+		return;
+	}
+
+	window.history.replaceState(null, "", nextHref);
 }
 
 /** The event page below its header: join band, tabs, grid and participants. */
