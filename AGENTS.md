@@ -60,10 +60,15 @@ Project skills live in [`.agents/skills/`](.agents/skills/README.md). Install an
 
 When two sources disagree, the earlier one in this list wins: the operator's request, this file, `DESIGN.md`, `impeccable`, the `antislop` skills.
 
-- `impeccable` leads interface design work: direction, layout, type, color and copy.
+For every UI or app design task, including a small visual fix, load these two skills in this order before editing:
+
+1. Call skill tool `impeccable`. It leads the design: direction, layout, type, color and copy.
+2. Call skill tool `modern-web-guidance`. Search it for the HTML, CSS and browser API patterns the design needs; its `npx modern-web-guidance` command may be run as the skill describes. Rule 12 is the browser support policy it asks for.
+
+The other skills:
+
 - `antislop`, `antislop-ui`, `antislop-human`, `antislop-layoutmobile` and `antislop-copywriting` are a checklist. Apply them while building and run their Delivery Gate before reporting interface work done. Their mode for this project is `during`; do not ask for it.
 - `antislop-code` governs code comments.
-- `modern-web-guidance` gives current HTML, CSS and browser API patterns. Search it before writing interface code; its `npx modern-web-guidance` command may be run as the skill describes. Rule 12 is the browser support policy it asks for.
 - `install-anti-slop` installs and updates the anti-slop Oxlint rules in `tools/oxlint/anti-slop/`. `mise run lint` enforces them. Fix a finding; do not disable a rule.
 
 ### Issue tracker
