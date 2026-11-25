@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useId, useState, useTransition, type SubmitEvent } from "react";
 
 import { DatePicker } from "@/components/date-picker";
-import { controlClass, Field, FieldMessage, LockedNote } from "@/components/field";
+import { controlClass, Field, FieldMessage, LockedNote, Select } from "@/components/field";
 import {
 	type DraftOption,
 	optionInput,
@@ -296,20 +296,19 @@ export function EventForm({
 			locked={locked ? t("lockedReason") : undefined}
 			className="flex-[2_1_16rem]"
 		>
-			<select
+			<Select
 				id={`${id}-zone`}
 				value={shownZone}
 				disabled={locked}
 				onChange={(event) => setZone(event.target.value)}
 				aria-describedby={locked ? `${id}-zone-locked ${id}-zone-message` : `${id}-zone-message`}
-				className={controlClass}
 			>
 				{zones.map((name) => (
 					<option key={name} value={name}>
 						{name.replaceAll("_", " ")}
 					</option>
 				))}
-			</select>
+			</Select>
 		</Field>
 	);
 
@@ -511,24 +510,18 @@ export function EventForm({
 						<legend className="mb-2 font-heading text-xl font-semibold">{t("times")}</legend>
 						<div className="flex flex-wrap gap-4">
 							<Field id={`${id}-start`} label={t("dailyStart")} className="flex-[1_1_8rem]">
-								<select
+								<Select
 									id={`${id}-start`}
 									name="dailyStart"
 									defaultValue={grid?.dailyStart ?? 9 * 60}
-									className={controlClass}
 								>
 									{timeOptions(0, 23, grid?.dailyStart)}
-								</select>
+								</Select>
 							</Field>
 							<Field id={`${id}-end`} label={t("dailyEnd")} className="flex-[1_1_8rem]">
-								<select
-									id={`${id}-end`}
-									name="dailyEnd"
-									defaultValue={grid?.dailyEnd ?? 17 * 60}
-									className={controlClass}
-								>
+								<Select id={`${id}-end`} name="dailyEnd" defaultValue={grid?.dailyEnd ?? 17 * 60}>
 									{timeOptions(1, 24, grid?.dailyEnd)}
-								</select>
+								</Select>
 							</Field>
 							<Field
 								id={`${id}-slot`}
@@ -536,40 +529,38 @@ export function EventForm({
 								locked={locked ? t("lockedReason") : undefined}
 								className="flex-[1_1_8rem]"
 							>
-								<select
+								<Select
 									id={`${id}-slot`}
 									name="slotLength"
 									defaultValue={grid?.slotLength ?? 30}
 									disabled={locked}
 									aria-describedby={locked ? `${id}-slot-locked` : undefined}
-									className={controlClass}
 								>
 									{SLOT_LENGTHS.map((length) => (
 										<option key={length} value={length}>
 											{t("minutes", { count: length })}
 										</option>
 									))}
-								</select>
+								</Select>
 							</Field>
 						</div>
 						<FieldMessage id={`${id}-times-message`} error={error("times")} />
 						<div className="flex flex-wrap gap-4">
 							{zoneField}
 							<Field id={`${id}-week`} label={t("firstDayOfWeek")} className="flex-[1_1_10rem]">
-								<select
+								<Select
 									id={`${id}-week`}
 									value={firstDayOfWeek}
 									onChange={(event) =>
 										setFirstDayOfWeek(toWeekday(Number(event.target.value)) ?? firstDayOfWeek)
 									}
-									className={controlClass}
 								>
 									{WEEKDAYS.map((weekday) => (
 										<option key={weekday} value={weekday}>
 											{options.weekdays[weekday - 1]?.long}
 										</option>
 									))}
-								</select>
+								</Select>
 							</Field>
 						</div>
 					</fieldset>

@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
-import { controlClass, Field } from "@/components/field";
+import { Field, Select } from "@/components/field";
 import {
 	bestWindows,
 	mostPeople,
@@ -85,32 +85,30 @@ export function BestWindows({
 			</h2>
 			<div className="flex max-w-(--cv-form) flex-wrap gap-4">
 				<Field id={`${id}-slots`} label={t("minDuration")} className="flex-[1_1_9rem]">
-					<select
+					<Select
 						id={`${id}-slots`}
 						value={minSlots}
 						onChange={(event) => setMinSlots(Number(event.target.value))}
-						className={controlClass}
 					>
 						{Array.from({ length: Math.max(longest, minSlots) }, (_, index) => (
 							<option key={index} value={index + 1}>
 								{duration(index + 1)}
 							</option>
 						))}
-					</select>
+					</Select>
 				</Field>
 				<Field id={`${id}-people`} label={t("minPeople")} className="flex-[1_1_9rem]">
-					<select
+					<Select
 						id={`${id}-people`}
 						value={minPeople}
 						onChange={(event) => setChosenPeople(Number(event.target.value))}
-						className={controlClass}
 					>
 						{Array.from({ length: Math.max(names.length, minPeople) }, (_, index) => (
 							<option key={index} value={index + 1}>
 								{index + 1}
 							</option>
 						))}
-					</select>
+					</Select>
 				</Field>
 			</div>
 

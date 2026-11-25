@@ -6,7 +6,6 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { controlClass } from "@/components/field";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 type CopyFieldProps = {
 	label: string;
@@ -57,7 +56,7 @@ export function CopyField({ label, value }: CopyFieldProps) {
 						readOnly
 						value={value}
 						onFocus={(event) => event.currentTarget.select()}
-						className={cn(controlClass, "pr-8")}
+						className={controlClass}
 					/>
 					<span
 						aria-hidden

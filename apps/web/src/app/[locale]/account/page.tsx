@@ -8,7 +8,7 @@ import { z } from "zod";
 import { type AccountEventItem, AccountEvents } from "@/components/account/account-events";
 import { ClaimEvents } from "@/components/account/claim-events";
 import { AddPasskey } from "@/components/add-passkey";
-import { controlClass, Field } from "@/components/field";
+import { controlClass, Field, Select } from "@/components/field";
 import { PageShell } from "@/components/page-shell";
 import { RemovePasskey } from "@/components/remove-passkey";
 import { strong } from "@/components/rich-text";
@@ -208,18 +208,13 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					<form action={setLanguageAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
 						{hidden}
 						<Field id="account-language-select" label={t("language.label")} className="sm:flex-1">
-							<select
-								id="account-language-select"
-								name="language"
-								defaultValue={emailLocale}
-								className={controlClass}
-							>
+							<Select id="account-language-select" name="language" defaultValue={emailLocale}>
 								{routing.locales.map((option) => (
 									<option key={option} value={option}>
 										{tLocale(option)}
 									</option>
 								))}
-							</select>
+							</Select>
 						</Field>
 						<Button type="submit" variant="outline" className="w-full sm:w-auto">
 							{t("language.save")}

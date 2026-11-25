@@ -9,7 +9,7 @@ import { type ServerGrid, useBoardView } from "@/components/event/board-view";
 import { useCount } from "@/components/event/count";
 import type { BoardEvent } from "@/components/event/event-board";
 import { FinalLegend, useFinalWhen } from "@/components/event/final-time";
-import { controlClass, Field } from "@/components/field";
+import { Field, Select } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { heatStep } from "@/domain/heat";
 import { tallyIn as countTallyIn } from "@/domain/levels";
@@ -221,10 +221,9 @@ export function FinalPicker({
 					</p>
 					{weekday === null ? null : (
 						<Field id={`${id}-date`} label={t("finalDate")} hint={t("finalDateHint")}>
-							<select
+							<Select
 								id={`${id}-date`}
 								aria-describedby={`${id}-date-message`}
-								className={controlClass}
 								value={date ?? ""}
 								onChange={(change) => setSelectedDate(change.target.value)}
 							>
@@ -238,7 +237,7 @@ export function FinalPicker({
 										})}
 									</option>
 								))}
-							</select>
+							</Select>
 						</Field>
 					)}
 					<Button

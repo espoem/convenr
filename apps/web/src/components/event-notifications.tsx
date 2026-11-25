@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
-import { controlClass } from "@/components/field";
+import { Select } from "@/components/field";
 import type { EventChoice, NotificationKind } from "@/domain/notifications";
 import { useRouter } from "@/i18n/navigation";
 import { setEventChoiceAction } from "@/server/notification-actions";
@@ -45,16 +45,15 @@ export function EventNotifications({
 			{choices.map(({ kind, choice, general }) => (
 				<label key={kind} className="flex max-w-(--cv-form) flex-col gap-1.5">
 					<span className="font-medium">{t(`kind.${kind}`)}</span>
-					<select
+					<Select
 						value={choice}
 						disabled={pending}
 						onChange={(change) => choose(kind, change.target.value)}
-						className={controlClass}
 					>
 						<option value="account">{t(general ? "account.on" : "account.off")}</option>
 						<option value="on">{t("on")}</option>
 						<option value="off">{t("off")}</option>
-					</select>
+					</Select>
 				</label>
 			))}
 			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
