@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
 import { z } from "zod";
 
 import { PageShell } from "@/components/page-shell";
+import { strong } from "@/components/rich-text";
 import { Button } from "@/components/ui/button";
 import { env } from "@/env";
 import { currentLocale } from "@/i18n/current-locale";
@@ -17,10 +17,6 @@ const querySchema = z.object({
 	done: z.literal("1").optional(),
 	problem: z.literal("invalid").optional(),
 });
-
-function strong(text: ReactNode) {
-	return <strong>{text}</strong>;
-}
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("Unsubscribe");

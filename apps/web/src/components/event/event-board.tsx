@@ -12,7 +12,7 @@ import {
 	cellLevel,
 	type Level,
 	type Levels,
-	type Tally,
+	tallyIn as countTallyIn,
 	withLevel,
 } from "@/domain/levels";
 import type { Weekday } from "@/domain/schedule";
@@ -72,7 +72,7 @@ function ownFill(level: Level | null): CellFill {
 	return level === "available" ? 4 : "if_need_be";
 }
 
-/** The event page below its header: join band, tabs, grid and participants (spec 6 and 8). */
+/** The event page below its header: join band, tabs, grid and participants. */
 export function EventBoard({
 	event,
 	viewer,
@@ -155,11 +155,11 @@ export function EventBoard({
 		return { available: at("available"), ifNeedBe: at("if_need_be"), unavailable: at(null) };
 	}
 
-	function tallyIn(keys: readonly string[]): Tally {
-		const names = namesIn(keys);
-
-		return { available: names.available.length, ifNeedBe: names.ifNeedBe.length };
-	}
+	const tallyIn = (keys: readonly string[]) =>
+		countTallyIn(
+			event.participants.map((participant) => participant.levels),
+			keys,
+		);
 
 	const filtered = event.participants.find((participant) => participant.name === person);
 

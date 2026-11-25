@@ -12,7 +12,7 @@ import { FinalLegend, useFinalWhen } from "@/components/event/final-time";
 import { controlClass, Field } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { heatStep } from "@/domain/heat";
-import { cellLevel, type Tally } from "@/domain/levels";
+import { tallyIn as countTallyIn } from "@/domain/levels";
 import type { Weekday } from "@/domain/schedule";
 import { useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
@@ -141,12 +141,11 @@ export function FinalPicker({
 			? { keys: new Set(event.final.slots), label: tEvent("finalTime") }
 			: undefined;
 
-	function tallyIn(keys: readonly string[]): Tally {
-		const at = (level: "available" | "if_need_be") =>
-			event.participants.filter((person) => cellLevel(person.levels, keys) === level).length;
-
-		return { available: at("available"), ifNeedBe: at("if_need_be") };
-	}
+	const tallyIn = (keys: readonly string[]) =>
+		countTallyIn(
+			event.participants.map((person) => person.levels),
+			keys,
+		);
 
 	function pickCell(cell: CellRef) {
 		setMessage(null);

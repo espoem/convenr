@@ -1,4 +1,4 @@
-export const DISPLAY_NAME_MAX_LENGTH = 40;
+const DISPLAY_NAME_MAX_LENGTH = 40;
 
 export type DisplayNameResult =
 	| { ok: true; name: string; key: string }

@@ -24,6 +24,7 @@ import {
 import type { EventVersion } from "@/lib/event-version";
 
 import { FIELD_CODES, fieldErrors } from "./api/field-codes";
+import { weekdaySchema } from "./api/schemas";
 import {
 	deletionOfRow,
 	type EventRow,
@@ -37,11 +38,10 @@ import {
 import { hashSecret, newSecret } from "./secrets";
 import { countCreated } from "./usage";
 
-export const EVENT_NAME_MAX_LENGTH = 100;
-export const DESCRIPTION_MAX_LENGTH = 500;
+const EVENT_NAME_MAX_LENGTH = 100;
+const DESCRIPTION_MAX_LENGTH = 500;
 
 const isoDate = z.iso.date().transform((text) => Temporal.PlainDate.from(text));
-const weekday = z.literal([1, 2, 3, 4, 5, 6, 7]);
 
 function isTimeZone(zone: string): boolean {
 	try {
@@ -106,12 +106,12 @@ const gridEventSchema = z.object({
 		z.object({ mode: z.literal("range"), first: isoDate, last: isoDate }),
 		// The upper bounds only stop oversized input; validateSchedule applies the real limits.
 		z.object({ mode: z.literal("dates"), dates: z.array(isoDate).max(MAX_DATES * 2) }),
-		z.object({ mode: z.literal("weekdays"), weekdays: z.array(weekday).max(14) }),
+		z.object({ mode: z.literal("weekdays"), weekdays: z.array(weekdaySchema).max(14) }),
 	]),
 	dailyStart: z.int(),
 	dailyEnd: z.int(),
 	slotLength: z.literal(SLOT_LENGTHS),
-	firstDayOfWeek: weekday,
+	firstDayOfWeek: weekdaySchema,
 });
 
 const pollEventSchema = z.object({

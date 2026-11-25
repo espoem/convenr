@@ -34,6 +34,24 @@ export function cellLevel(levels: Levels, keys: readonly string[]): Level | null
 	return found.includes("if_need_be") ? "if_need_be" : "available";
 }
 
+/** Counts available and if-need-be responses for `keys`. */
+export function tallyIn(responses: readonly Levels[], keys: readonly string[]): Tally {
+	let available = 0;
+	let ifNeedBe = 0;
+
+	for (const levels of responses) {
+		const level = cellLevel(levels, keys);
+
+		if (level === "available") {
+			available += 1;
+		} else if (level === "if_need_be") {
+			ifNeedBe += 1;
+		}
+	}
+
+	return { available, ifNeedBe };
+}
+
 export type LevelsInput = {
 	/** Every slot with a level. */
 	available: readonly string[];

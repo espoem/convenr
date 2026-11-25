@@ -11,6 +11,7 @@ import { AddPasskey } from "@/components/add-passkey";
 import { controlClass, Field } from "@/components/field";
 import { PageShell } from "@/components/page-shell";
 import { RemovePasskey } from "@/components/remove-passkey";
+import { strong } from "@/components/rich-text";
 import { Button } from "@/components/ui/button";
 import { NOTIFICATION_KINDS } from "@/domain/notifications";
 import { env } from "@/env";
@@ -58,10 +59,6 @@ const statusSchema = z.object({
 		])
 		.optional(),
 });
-
-function strong(text: ReactNode) {
-	return <strong>{text}</strong>;
-}
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("Account");

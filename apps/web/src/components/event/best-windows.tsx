@@ -15,7 +15,7 @@ import type { GridView } from "@/domain/grid-labels";
 
 import { useCount } from "./count";
 
-export type BestWindowsFilter = {
+type BestWindowsFilter = {
 	minSlots: number;
 	chosenPeople: number | null;
 	onMinSlotsChange: (minSlots: number) => void;

@@ -67,7 +67,7 @@ export async function sendEmail(email: Email): Promise<void> {
 }
 
 /** The key an address is counted under: its HMAC, so no plain address is stored. */
-export function addressKey(address: string, secret: string): string {
+function addressKey(address: string, secret: string): string {
 	return createHmac("sha256", secret).update(address.trim().toLowerCase()).digest("base64url");
 }
 

@@ -15,7 +15,7 @@ import type { FieldError, ProblemBody } from "./schemas";
 export const BODY_LIMIT_BYTES = 64 * 1024;
 
 /** The base of every problem's `type`; the code completes it. */
-export const PROBLEM_TYPE_BASE = "https://convenr.party/problems/";
+const PROBLEM_TYPE_BASE = "https://convenr.party/problems/";
 
 /** Every problem code the API sends, with its HTTP status. */
 export const PROBLEM_STATUS = {
@@ -114,7 +114,7 @@ export function jsonPointer(path: readonly PropertyKey[]): string {
 }
 
 /** Each value at fault in a request body, at its JSON Pointer, with the API's field code. */
-export function schemaErrors(error: z.ZodError): FieldError[] {
+function schemaErrors(error: z.ZodError): FieldError[] {
 	return fieldErrors(error.issues).map(({ path, code }) => ({ pointer: jsonPointer(path), code }));
 }
 

@@ -5,7 +5,7 @@ import { defineRule, type ESTree } from "@oxlint/plugins";
  * part of the spec. ADRs are not matched: an accepted ADR does not change.
  */
 const SPEC_REFERENCE =
-	/\bPhase \d\b|\b[A-Z]\d{1,2}\b|\b[Rr]ules? \d+\b|\bspec(?:ification)? (?:rule|section)\b/u;
+	/\b[Pp]hase \d\b|\b[A-Z]\d{1,2}\b|\b[Rr]ules? \d+\b|\b[Ss]pec(?:ification)? (?:rule|section|\d+)\b/u;
 
 /** A problem code that starts with a rule id: a capital letter, one or two digits, then a dot or underscore. */
 const RULE_ID_CODE = /^[A-Z]\d{1,2}[._]/u;

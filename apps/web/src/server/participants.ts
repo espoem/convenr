@@ -25,7 +25,7 @@ import { countFirstResponse } from "./usage";
 
 export const MAX_PARTICIPANTS = 100;
 export const MAX_FAILED_ATTEMPTS = 5;
-export const LOCKOUT = Temporal.Duration.from({ minutes: 15 });
+const LOCKOUT = Temporal.Duration.from({ minutes: 15 });
 
 /** How long after its last attempt a count of wrong passwords is kept. */
 export const ATTEMPTS_KEPT = Temporal.Duration.from({ minutes: 15 });

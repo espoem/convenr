@@ -38,14 +38,13 @@ test("the organizer manages an event and expired events disappear", async ({
 	const first = Temporal.Now.plainDateISO("Europe/Prague").add({ days: 14 });
 	const organizer = await freshPage(browser);
 
-	// Step 1: events A and B; two participants join A and mark 20:00.
 	const a = await createEvent(organizer, "Zkouška kapely", first);
 	const b = await createEvent(organizer, "Výlet", first);
 
 	await respond(request, a.share, "Jana", first, ["20:00"]);
 	await respond(request, a.share, "Petr", first, ["20:00"]);
 
-	// Step 2: narrowing the hours names how many participants lose availability.
+	// Narrowing the hours asks how many participants lose availability.
 	await organizer.goto(a.admin);
 	await expect(organizer.getByLabel("Délka políčka")).toBeDisabled();
 	await organizer.getByLabel("do", { exact: true }).selectOption({ label: "19:00" });
@@ -63,8 +62,7 @@ test("the organizer manages an event and expired events disappear", async ({
 	await expect(cell(viewer, first, "19:00")).toHaveCount(0);
 	await viewer.context().close();
 
-	// Step 3: deleting a participant, then A. No row of A remains; responses go with
-	// their participants.
+	// Deleting a participant, then deleting A removes its rows and responses.
 	await organizer.getByRole("button", { name: "Smazat účastníka Jana" }).click();
 	await organizer.getByRole("button", { name: "Smazat účastníka", exact: true }).click();
 	await expect(organizer.getByRole("heading", { name: "Účastníci (1)" })).toBeVisible();
@@ -84,8 +82,7 @@ test("the organizer manages an event and expired events disappear", async ({
 		]),
 	).toBe(0);
 
-	// Step 4: B's dates move into the past, so its deletion date has passed. B is unknown at
-	// once, and the purge command deletes it.
+	// Backdating B causes its planned deletion date to expire immediately, and purge deletes it.
 	await database.query(
 		"update events set range_first = '2020-01-01', range_last = '2020-01-02' where id = $1",
 		[idOf(b.share)],

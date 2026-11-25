@@ -65,7 +65,6 @@ test("ten people find the one hour that suits everyone", async ({ browser }) => 
 		throw new Error("Five dates are needed.");
 	}
 
-	// Step 1: the organizer creates the event.
 	const organizer = await freshPage(browser);
 
 	await organizer.goto("/cs");
@@ -84,8 +83,8 @@ test("ten people find the one hour that suits everyone", async ({ browser }) => 
 
 	await organizer.context().close();
 
-	// Steps 2 and 3: ten people join in fresh browsers and paint different patterns. Only the
-	// fourth date from 18:00 to 19:00 is common to all; each person also marks one other slot.
+	// Ten people join in fresh browsers and paint different patterns. Only the fourth date from
+	// 18:00 to 19:00 is common to all; each person also marks one other slot.
 	const others = ["17:00", "17:30", "19:00", "19:30", "20:00", "20:30"];
 	const common: Temporal.PlainDate = fourth;
 	const fallback: Temporal.PlainDate = first;
@@ -122,7 +121,7 @@ test("ten people find the one hour that suits everyone", async ({ browser }) => 
 		await respond(name, index);
 	}, Promise.resolve());
 
-	// Step 4: a visitor who has not joined sees "10 of 10" in exactly the two common slots.
+	// An unjoined visitor sees "10 of 10" in only the two common slots.
 	const visitor = await freshPage(browser);
 
 	await visitor.goto(share);
@@ -134,7 +133,7 @@ test("ten people find the one hour that suits everyone", async ({ browser }) => 
 	await expect(cell(visitor, fourth, "18:30")).toHaveAccessibleName(/10 z 10$/u);
 	await visitor.context().close();
 
-	// Step 5: a participant with a password returns in a fresh browser.
+	// A participant with a password returns in a fresh browser.
 	const returning = await freshPage(browser);
 
 	await returning.goto(share);
@@ -150,7 +149,7 @@ test("ten people find the one hour that suits everyone", async ({ browser }) => 
 	await expect(returning.locator('tbody button[aria-pressed="true"]')).toHaveCount(3);
 	await returning.context().close();
 
-	// Step 6: in New York the common window is 12:00 to 13:00 on the same date, with a zone notice.
+	// In New York the common window shifts to 12:00-13:00 with a zone notice.
 	const newYork = await freshPage(browser, NEW_YORK);
 
 	await newYork.goto(share);

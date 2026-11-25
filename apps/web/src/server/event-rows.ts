@@ -145,11 +145,11 @@ export function finalOf(row: EventRow): FinalTime {
 	};
 }
 
-export function weekdaySlotKey(row: { weekday: number; minute: number }): string {
+function weekdaySlotKey(row: { weekday: number; minute: number }): string {
 	return slotKey({ kind: "weekday", weekday: weekday(row.weekday), minute: row.minute });
 }
 
-export function datedSlotKey(row: { slotStart: string }): string {
+function datedSlotKey(row: { slotStart: string }): string {
 	return slotKey({ kind: "dated", start: Temporal.Instant.from(row.slotStart) });
 }
 

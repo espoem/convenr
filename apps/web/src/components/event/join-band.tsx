@@ -1,9 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useId, useRef, useState, useTransition, type ReactNode, type SubmitEvent } from "react";
+import { useId, useRef, useState, useTransition, type SubmitEvent } from "react";
 
 import { controlClass, Field } from "@/components/field";
+import { strong } from "@/components/rich-text";
 import { Button } from "@/components/ui/button";
 import { formText } from "@/lib/form-text";
 import { cn } from "@/lib/utils";
@@ -32,10 +33,6 @@ type JoinBandProps = {
 };
 
 type Problem = { key: string; time?: string };
-
-function strong(text: ReactNode) {
-	return <strong>{text}</strong>;
-}
 
 /** Joining, passwords and leaving. Above the tabs; one line once the browser holds a token. */
 export function JoinBand(props: JoinBandProps) {
