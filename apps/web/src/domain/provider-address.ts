@@ -4,7 +4,9 @@ import { z } from "zod";
 
 export const PROVIDERS = ["google", "github"] as const;
 
-export type Provider = (typeof PROVIDERS)[number];
+export const providerSchema = z.enum(PROVIDERS);
+
+export type Provider = z.infer<typeof providerSchema>;
 
 /** The providers' own names, which are the same in every language. */
 export const PROVIDER_NAMES: Readonly<Record<Provider, string>> = {

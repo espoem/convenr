@@ -42,6 +42,11 @@ export async function withProviderAddress<Result>(
 	return { result, address: store.address };
 }
 
+/** What a visitor goes to a provider for. */
+export const PROVIDER_PURPOSES = ["sign_in", "add"] as const;
+
+export type ProviderPurpose = (typeof PROVIDER_PURPOSES)[number];
+
 /** The providers a visitor can sign in through on this instance. */
 export function offeredProviders(): Provider[] {
 	const { accounts } = env();

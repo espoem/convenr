@@ -379,6 +379,18 @@ describe("adding a provider from a session", () => {
 		expect(await providersOf(second.id)).toEqual([]);
 	});
 
+	it("is refused for a second identity of the same provider", async () => {
+		const account = await emailAccount(`${unique()}@example.org`);
+		const first = { id: githubId() };
+
+		await add("github", first, account.headers);
+
+		const outcome = await add("github", { id: githubId() }, account.headers);
+
+		expect(outcome.error).toBe("unable_to_link_account");
+		expect(await providersOf(account.id)).toMatchObject([{ accountId: first.id }]);
+	});
+
 	it("is refused when the browser is signed in to another account meanwhile", async () => {
 		const first = await emailAccount(`${unique()}@example.org`);
 		const second = await emailAccount(`${unique()}@example.org`);

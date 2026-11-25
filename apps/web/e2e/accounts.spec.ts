@@ -43,8 +43,16 @@ test("an account changes its address by a link to the new one, then deletes itse
 
 	// The current address is told at once; the change waits for the new address's link.
 	expect((await emailTo(address, "A change of your email address")).Text).toContain(next);
-	await page.goto(linkIn((await emailTo(next, "Confirm your new email address")).Text));
+	const link = linkIn((await emailTo(next, "Confirm your new email address")).Text);
+
+	await page.goto(link);
 	await expect(page.getByText(`Signed in as ${next}`)).toBeVisible();
+
+	// The link works once.
+	await page.goto(link);
+	await expect(
+		page.getByText("This confirmation link is used, expired or incomplete."),
+	).toBeVisible();
 
 	await page.getByLabel("I want to delete my account").check();
 	await page.getByRole("button", { name: "Delete account" }).click();

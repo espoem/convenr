@@ -20,6 +20,16 @@ export function instantOf(time: Date): Temporal.Instant {
 	return Temporal.Instant.fromEpochMilliseconds(time.getTime());
 }
 
+const FRESH = Temporal.Duration.from({ hours: 24 });
+
+/**
+ * Whether the sign-in is recent enough for what an unattended browser must not do, such as
+ * deleting the account.
+ */
+export function isFresh({ sessionCreatedAt }: Extract<Visitor, { kind: "signed_in" }>): boolean {
+	return Temporal.Duration.compare(Temporal.Now.instant().since(sessionCreatedAt), FRESH) < 0;
+}
+
 export async function currentVisitor(): Promise<Visitor> {
 	const instance = auth();
 

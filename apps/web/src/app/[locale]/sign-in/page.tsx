@@ -52,19 +52,26 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 		notFound();
 	}
 
-	if (visitor.kind === "signed_in") {
-		redirect({ href: "/account", locale });
-	}
-
 	// An address edited by hand shows no status at all.
 	const parsed = statusSchema.safeParse(await searchParams);
 	const query = parsed.success ? parsed.data : {};
+	// A used email link brings an error as well, beside the problem it stands for.
+	const providerFailed = query.error !== undefined && query.problem === undefined;
 
-	// The callback's error and description do not stay in the address. A used email link brings an
-	// error as well, beside the problem it stands for.
-	if (query.error !== undefined && query.problem === undefined) {
+	if (visitor.kind === "signed_in") {
+		// Adding a provider ends here when its state is lost, as nothing else names the page.
 		redirect({
-			href: asksToConfirm(query.error)
+			href: providerFailed
+				? { pathname: "/account", query: { problem: "provider_failed" } }
+				: "/account",
+			locale,
+		});
+	}
+
+	// The callback's error and description do not stay in the address.
+	if (providerFailed) {
+		redirect({
+			href: asksToConfirm(query.error ?? "")
 				? "/sign-in/confirm"
 				: { pathname: "/sign-in", query: { problem: "provider_failed" } },
 			locale,
@@ -86,6 +93,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 						<ProviderButton
 							key={provider}
 							provider={provider}
+							purpose="sign_in"
 							locale={locale}
 							label={t("provider", { provider: PROVIDER_NAMES[provider] })}
 						/>

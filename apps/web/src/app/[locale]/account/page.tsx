@@ -10,10 +10,12 @@ import { ClaimEvents } from "@/components/account/claim-events";
 import { AddPasskey } from "@/components/add-passkey";
 import { controlClass, Field, Select } from "@/components/field";
 import { PageShell } from "@/components/page-shell";
-import { RemovePasskey } from "@/components/remove-passkey";
+import { ProviderButton } from "@/components/provider-button";
+import { RemoveQuestion } from "@/components/remove-question";
 import { strong } from "@/components/rich-text";
 import { Button } from "@/components/ui/button";
 import { NOTIFICATION_KINDS } from "@/domain/notifications";
+import { PROVIDER_NAMES } from "@/domain/provider-address";
 import { env } from "@/env";
 import { currentLocale } from "@/i18n/current-locale";
 import { formatLocale } from "@/i18n/format-locale";
@@ -24,14 +26,18 @@ import {
 	deleteAccountAction,
 	endOtherSessionsAction,
 	endSessionAction,
+	removePasskeyAction,
+	removeProviderAction,
 	renamePasskeyAction,
 	setLanguageAction,
 	setNotificationsAction,
 	signOutAction,
 } from "@/server/account-actions";
+import { accountProviders } from "@/server/account-providers";
 import { accountLocaleOrSet, auth } from "@/server/auth";
 import { accountChoices } from "@/server/notifications";
 import { type AccountEvent, joinedEvents, ownedEvents } from "@/server/ownership";
+import { offeredProviders } from "@/server/providers";
 import { currentVisitor, instantOf } from "@/server/session";
 
 /** What the last action on the page did, or why it failed, as its redirect names it. */
@@ -46,6 +52,8 @@ const statusSchema = z.object({
 			"sessions",
 			"passkey",
 			"passkey_removed",
+			"provider",
+			"provider_removed",
 		])
 		.optional(),
 	problem: z
@@ -55,10 +63,27 @@ const statusSchema = z.object({
 			"email_not_sent",
 			"confirmation_link_invalid",
 			"sign_in_again",
+			"provider_failed",
+			"provider_in_other_account",
 			"failed",
 		])
 		.optional(),
+	error: z.string().optional(),
 });
+
+type Status = z.infer<typeof statusSchema>;
+
+/** What an error of Better Auth means, which it adds to the address it was told to return to. */
+function problemOf(error: string, done: Status["done"]): NonNullable<Status["problem"]> {
+	// Only a link that confirms an address returns to a page that says what is done.
+	if (done === "email") {
+		return "confirmation_link_invalid";
+	}
+
+	return error === "account_already_linked_to_different_user"
+		? "provider_in_other_account"
+		: "provider_failed";
+}
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("Account");
@@ -115,7 +140,16 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 	const tLocale = await getTranslations("LocaleSwitch");
 	// An address edited by hand shows no status at all.
 	const parsed = statusSchema.safeParse(await searchParams);
-	const { done, problem } = parsed.success ? parsed.data : {};
+	const { done, problem, error } = parsed.success ? parsed.data : {};
+
+	// The error and its description do not stay in the address.
+	if (error !== undefined) {
+		redirect({
+			href: { pathname: "/account", query: { problem: problemOf(error, done) } },
+			locale,
+		});
+	}
+
 	let status = "";
 
 	if (problem !== undefined) {
@@ -124,14 +158,20 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 		status = t(`done.${done}`);
 	}
 
-	const [emailLocale, sessions, passkeys, owned, joined, notifications] = await Promise.all([
-		accountLocaleOrSet(visitor.accountId, locale),
-		instance.api.listSessions({ headers: requestHeaders }),
-		instance.api.listPasskeys({ headers: requestHeaders }),
-		ownedEvents(visitor.accountId),
-		joinedEvents(visitor.accountId),
-		accountChoices(visitor.accountId),
-	]);
+	const [emailLocale, sessions, passkeys, providers, owned, joined, notifications] =
+		await Promise.all([
+			accountLocaleOrSet(visitor.accountId, locale),
+			instance.api.listSessions({ headers: requestHeaders }),
+			instance.api.listPasskeys({ headers: requestHeaders }),
+			accountProviders(visitor.accountId),
+			ownedEvents(visitor.accountId),
+			joinedEvents(visitor.accountId),
+			accountChoices(visitor.accountId),
+		]);
+
+	const addable = offeredProviders().filter(
+		(offered) => !providers.some(({ provider }) => provider === offered),
+	);
 
 	const { NOTIFY_DIGEST_MINUTES: minutes, REMINDER_HOURS: hours } = env();
 
@@ -277,20 +317,77 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 										{t("passkeys.created", { date: day(key.createdAt) })}
 									</p>
 								)}
-								<RemovePasskey
-									name={key.name ?? t("passkeys.unnamed")}
+								<RemoveQuestion
+									action={removePasskeyAction}
 									fields={
 										<>
 											{hidden}
 											<input type="hidden" name="passkey" value={key.id} />
 										</>
 									}
+									texts={{
+										remove: t("passkeys.remove"),
+										question: t("passkeys.removeConfirm", {
+											name: key.name ?? t("passkeys.unnamed"),
+										}),
+										yes: t("passkeys.removeYes"),
+										no: t("passkeys.removeNo"),
+									}}
 								/>
 							</li>
 						))}
 					</ul>
 					<AddPasskey />
 				</Section>
+
+				{providers.length === 0 && addable.length === 0 ? null : (
+					<Section id="account-providers" heading={t("providers.heading")}>
+						<p className="max-w-(--cv-measure)">{t("providers.intro")}</p>
+						{providers.length === 0 ? null : (
+							<ul className="flex flex-col gap-4">
+								{providers.map(({ id, provider, addedAt }) => (
+									<li key={id} className="flex flex-col gap-2">
+										<span>
+											<strong>{PROVIDER_NAMES[provider]}</strong>
+											{" · "}
+											{t("providers.added", { date: day(addedAt) })}
+										</span>
+										<RemoveQuestion
+											action={removeProviderAction}
+											fields={
+												<>
+													{hidden}
+													<input type="hidden" name="provider" value={provider} />
+												</>
+											}
+											texts={{
+												remove: t("providers.remove", { provider: PROVIDER_NAMES[provider] }),
+												question: t("providers.removeConfirm", {
+													provider: PROVIDER_NAMES[provider],
+												}),
+												yes: t("providers.removeYes"),
+												no: t("providers.removeNo"),
+											}}
+										/>
+									</li>
+								))}
+							</ul>
+						)}
+						{addable.length === 0 ? null : (
+							<div className="flex flex-col gap-3">
+								{addable.map((provider) => (
+									<ProviderButton
+										key={provider}
+										provider={provider}
+										purpose="add"
+										locale={locale}
+										label={t("providers.add", { provider: PROVIDER_NAMES[provider] })}
+									/>
+								))}
+							</div>
+						)}
+					</Section>
+				)}
 
 				<Section id="account-sessions" heading={t("sessions.heading")}>
 					<ul className="flex flex-col gap-3">

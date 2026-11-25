@@ -1,15 +1,22 @@
-// Starts a sign-in at a provider. The answer is a page that forwards, not a redirect: the Content
-// Security Policy lets a form reach this site only, and browsers hold a redirect to it as well.
+// Starts a sign-in at a provider, or adds one to the account. The answer is a page that forwards,
+// not a redirect: the Content Security Policy lets a form reach this site only, and browsers hold
+// a redirect to it as well.
 import { createTranslator } from "next-intl";
+import { headers } from "next/headers";
 import { z } from "zod";
 
-import { PROVIDER_NAMES, PROVIDERS, type Provider } from "@/domain/provider-address";
+import { type Provider, PROVIDER_NAMES, providerSchema } from "@/domain/provider-address";
 import { env } from "@/env";
 import { catalog } from "@/i18n/catalogs";
 import { type Locale, localeSchema } from "@/i18n/routing";
+import { accountProviders } from "@/server/account-providers";
 import { type Auth, auth } from "@/server/auth";
+import { offeredProviders, PROVIDER_PURPOSES } from "@/server/providers";
+import { currentVisitor, isFresh } from "@/server/session";
 
-const formSchema = z.object({ provider: z.enum(PROVIDERS) });
+const formSchema = z.object({ provider: providerSchema, purpose: z.enum(PROVIDER_PURPOSES) });
+
+type Form = z.infer<typeof formSchema>;
 
 function escapeHtml(text: string): string {
 	return text
@@ -50,12 +57,43 @@ async function forwardingPage(locale: Locale, provider: Provider, url: string): 
 	);
 }
 
-/** The provider's address where the sign-in continues; the state's cookie goes with the answer. */
-async function signInUrl(
+/** The page that says why a provider cannot be added now, or nothing when it can. */
+async function refusal(provider: Provider): Promise<string | undefined> {
+	const visitor = await currentVisitor();
+
+	if (visitor.kind !== "signed_in") {
+		return "/sign-in";
+	}
+
+	if (!isFresh(visitor)) {
+		return "/account?problem=sign_in_again";
+	}
+
+	const added = await accountProviders(visitor.accountId);
+
+	return added.some((each) => each.provider === provider) ? "/account" : undefined;
+}
+
+/** The provider's address where the visitor continues; the state's cookie goes with the answer. */
+async function providerUrl(
 	instance: Auth,
 	locale: Locale,
-	provider: Provider,
+	{ provider, purpose }: Form,
 ): Promise<string | undefined> {
+	if (purpose === "add") {
+		const { url } = await instance.api.linkSocialAccount({
+			body: {
+				provider,
+				callbackURL: `/${locale}/account?done=provider`,
+				errorCallbackURL: `/${locale}/account`,
+				disableRedirect: true,
+			},
+			headers: await headers(),
+		});
+
+		return url;
+	}
+
 	const { url } = await instance.api.signInSocial({
 		body: {
 			provider,
@@ -88,17 +126,19 @@ export async function POST(
 	const locale = localeSchema.parse(segment);
 	const form = formSchema.safeParse(Object.fromEntries(await request.formData()));
 
-	if (
-		!form.success ||
-		!accounts.providers.some(({ provider }) => provider === form.data.provider)
-	) {
+	if (!form.success || !offeredProviders().includes(form.data.provider)) {
 		return new Response(null, { status: 404 });
 	}
 
-	const { provider } = form.data;
-	const url = await signInUrl(instance, locale, provider);
+	const page = form.data.purpose === "add" ? await refusal(form.data.provider) : undefined;
+
+	if (page !== undefined) {
+		return new Response(null, { status: 303, headers: { Location: `/${locale}${page}` } });
+	}
+
+	const url = await providerUrl(instance, locale, form.data);
 
 	return url === undefined
 		? new Response(null, { status: 502 })
-		: forwardingPage(locale, provider, url);
+		: forwardingPage(locale, form.data.provider, url);
 }

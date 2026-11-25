@@ -412,6 +412,16 @@
 			"removeYes": "Remove passkey",
 			"removeNo": "Cancel"
 		},
+		"providers": {
+			"heading": "Sign in with other services",
+			"intro": "A service you add here signs you in to this account. Its email address may differ from the account's.",
+			"added": "added {date}",
+			"add": "Add {provider}",
+			"remove": "Remove {provider}",
+			"removeConfirm": "Remove {provider}? It no longer signs you in; the email link keeps working.",
+			"removeYes": "Remove service",
+			"removeNo": "Cancel"
+		},
 		"sessions": {
 			"heading": "Signed-in browsers",
 			"started": "signed in on {date}",
@@ -434,14 +444,18 @@
 			"session": "That browser is signed out.",
 			"sessions": "Every other browser is signed out.",
 			"passkey": "The passkey is saved.",
-			"passkey_removed": "The passkey is removed."
+			"passkey_removed": "The passkey is removed.",
+			"provider": "The service is added.",
+			"provider_removed": "The service is removed."
 		},
 		"problem": {
 			"invalid_email": "Enter an email address such as name@example.org.",
 			"too_many_emails": "Too many links were asked for. Try again in an hour.",
 			"email_not_sent": "The email could not be sent. Try again in a while.",
 			"confirmation_link_invalid": "This confirmation link is used, expired or incomplete.",
-			"sign_in_again": "To delete the account, sign out, sign in again with a new email link, and delete it within a day.",
+			"sign_in_again": "This needs a sign-in less than a day old. Sign out, sign in again, and repeat it.",
+			"provider_failed": "The service was not added. Try again.",
+			"provider_in_other_account": "This sign-in already belongs to another convenr account. Remove it there first.",
 			"failed": "Something went wrong. Try again."
 		}
 	},

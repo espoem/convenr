@@ -19,10 +19,11 @@ import {
 	authVerifications,
 } from "@/db/schema";
 import { browserFamily } from "@/domain/browser-family";
-import { type Provider, PROVIDER_NAMES, PROVIDERS } from "@/domain/provider-address";
+import { type Provider, PROVIDER_NAMES, providerSchema } from "@/domain/provider-address";
 import { env } from "@/env";
 import { type Locale, localeSchema, routing } from "@/i18n/routing";
 
+import { accountProviders } from "./account-providers";
 import { changeEmailEmail, emailChangeNotice, providerNotice, signInEmail } from "./email/emails";
 import { type Email, sendEmail, takeEmailSlot } from "./mail";
 import { socialProviders } from "./providers";
@@ -55,8 +56,6 @@ const PRIVATE_PATHS = [
 	"/refresh-token",
 	"/account-info",
 ];
-
-const providerSchema = z.enum(PROVIDERS);
 
 async function accountLocale(accountId: string): Promise<Locale> {
 	const [row] = await db()
@@ -278,6 +277,13 @@ function configure(settings: Extract<ReturnType<typeof env>["accounts"], { kind:
 						// Someone else may have signed in on this browser meanwhile; their provider must
 						// not join the account that started.
 						if (link !== undefined && link.userId !== (await browserAccount(context))) {
+							return false;
+						}
+
+						const added = await accountProviders(account.userId);
+
+						// Two pages can start adding a provider before either of them added it.
+						if (added.some(({ provider }) => provider === account.providerId)) {
 							return false;
 						}
 

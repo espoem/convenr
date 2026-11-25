@@ -412,6 +412,16 @@
 			"removeYes": "Odebrat klíč",
 			"removeNo": "Zrušit"
 		},
+		"providers": {
+			"heading": "Přihlášení přes jiné služby",
+			"intro": "Služba, kterou sem přidáte, vás přihlásí k tomuto účtu. Její e-mailová adresa se od adresy účtu může lišit.",
+			"added": "přidáno {date}",
+			"add": "Přidat {provider}",
+			"remove": "Odebrat {provider}",
+			"removeConfirm": "Odebrat {provider}? Touto službou se už nepřihlásíte; odkaz e-mailem funguje dál.",
+			"removeYes": "Odebrat službu",
+			"removeNo": "Zrušit"
+		},
 		"sessions": {
 			"heading": "Přihlášené prohlížeče",
 			"started": "přihlášeno {date}",
@@ -434,14 +444,18 @@
 			"session": "Ten prohlížeč je odhlášený.",
 			"sessions": "Všechny ostatní prohlížeče jsou odhlášené.",
 			"passkey": "Přístupový klíč je uložený.",
-			"passkey_removed": "Přístupový klíč je odebraný."
+			"passkey_removed": "Přístupový klíč je odebraný.",
+			"provider": "Služba je přidaná.",
+			"provider_removed": "Služba je odebraná."
 		},
 		"problem": {
 			"invalid_email": "Zadejte e-mailovou adresu, například jmeno@example.org.",
 			"too_many_emails": "Odkazů bylo vyžádáno příliš mnoho. Zkuste to znovu za hodinu.",
 			"email_not_sent": "E-mail se nepodařilo odeslat. Zkuste to za chvíli znovu.",
 			"confirmation_link_invalid": "Tento potvrzovací odkaz je použitý, prošlý nebo neúplný.",
-			"sign_in_again": "Chcete-li účet smazat, odhlaste se, přihlaste se znovu novým odkazem e-mailem a smažte ho do jednoho dne.",
+			"sign_in_again": "K tomu je potřeba přihlášení mladší než jeden den. Odhlaste se, znovu se přihlaste a zopakujte to.",
+			"provider_failed": "Služba se nepřidala. Zkuste to znovu.",
+			"provider_in_other_account": "Toto přihlášení už patří k jinému účtu convenr. Nejdřív ho odeberte tam.",
 			"failed": "Něco se nepovedlo. Zkuste to znovu."
 		}
 	},

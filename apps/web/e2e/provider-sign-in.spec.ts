@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 
-import { accountsPage } from "./accounts";
+import { accountsPage, signIn } from "./accounts";
 import { expect } from "./helpers";
 import { emailTo, linkIn, uniqueAddress } from "./mail";
 import { providerSignsIn, uniqueId } from "./providers";
@@ -59,9 +59,64 @@ test("a visitor who stops at the provider returns to the sign-in page", async ({
 	await page.context().close();
 });
 
+test("an account adds a provider, signs in with it and removes it", async ({ browser }) => {
+	const page = await accountsPage(browser);
+	const address = uniqueAddress("eva");
+	const person = { id: uniqueId(), email: uniqueAddress("other"), verified: false };
+
+	await signIn(page, address);
+	await providerSignsIn(page, person);
+	await page.getByRole("button", { name: "Add GitHub" }).click();
+	await page.getByRole("link", { name: "Go back" }).click();
+	await expect(page.getByText("The service is added.")).toBeVisible();
+	expect((await emailTo(address, "GitHub")).Text).not.toContain(person.email);
+
+	await page.getByRole("button", { name: "Sign out" }).click();
+	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+	await page.goto("/en/sign-in");
+	await page.getByRole("button", { name: "Continue with GitHub" }).click();
+	await page.getByRole("link", { name: "Go back" }).click();
+	await expect(page.getByText(`Signed in as ${address}`)).toBeVisible();
+
+	await page.getByRole("button", { name: "Remove GitHub" }).click();
+	await page.getByRole("button", { name: "Remove service" }).click();
+	await expect(page.getByText("The service is removed.")).toBeVisible();
+	await expect(page.getByRole("button", { name: "Add GitHub" })).toBeVisible();
+
+	await page.context().close();
+});
+
+test("a provider identity of another account is refused", async ({ browser }) => {
+	const person = { id: uniqueId(), email: `first-${uniqueId()}@gmail.com`, verified: true };
+	const first = await accountsPage(browser);
+	const second = await accountsPage(browser);
+
+	await providerSignsIn(first, person);
+	await first.goto("/en/sign-in");
+	await first.getByRole("button", { name: "Continue with Google" }).click();
+	await first.getByRole("link", { name: "Go back" }).click();
+	await expect(first.getByText(`Signed in as ${person.email}`)).toBeVisible();
+
+	await signIn(second, uniqueAddress("second"));
+
+	// A callback that this browser did not start, or whose state expired, says that it failed.
+	await second.goto("/api/auth/callback/github?code=x&state=lost");
+	await expect(second.getByText("The service was not added.")).toBeVisible();
+
+	await providerSignsIn(second, person);
+	await second.getByRole("button", { name: "Add Google" }).click();
+	await second.getByRole("link", { name: "Go back" }).click();
+	await expect(
+		second.getByText("This sign-in already belongs to another convenr account."),
+	).toBeVisible();
+
+	await first.context().close();
+	await second.context().close();
+});
+
 test("another site cannot start a sign-in", async ({ request }) => {
 	const answer = await request.post("/en/sign-in/provider", {
-		form: { provider: "google" },
+		form: { provider: "google", purpose: "sign_in" },
 		headers: { origin: "https://example.org" },
 	});
 

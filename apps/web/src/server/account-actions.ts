@@ -13,12 +13,11 @@ import { redirect } from "@/i18n/navigation";
 import { type Locale, localeSchema, routing } from "@/i18n/routing";
 import { formText as text } from "@/lib/form-text";
 
+import { accountProviders } from "./account-providers";
 import { type Auth, auth } from "./auth";
 import { forgetAddressToConfirm } from "./confirm-address";
 import { setAccountChoices } from "./notifications";
-import { currentVisitor } from "./session";
-
-const DAY = Temporal.Duration.from({ hours: 24 });
+import { currentVisitor, isFresh } from "./session";
 
 function localeOf(form: FormData): Locale {
 	return localeSchema.parse(text(form, "locale"));
@@ -230,20 +229,54 @@ export async function removePasskeyAction(form: FormData): Promise<void> {
 	backToAccount(locale, { done: "passkey_removed" });
 }
 
+/** Removes a provider from the account, which needs a session under a day old. */
+export async function removeProviderAction(form: FormData): Promise<void> {
+	const locale = localeOf(form);
+	const visitor = await signedIn(locale);
+
+	if (!isFresh(visitor)) {
+		backToAccount(locale, { problem: "sign_in_again" });
+	}
+
+	const name = text(form, "provider");
+	const added = await accountProviders(visitor.accountId);
+	const removed = added.find(({ provider }) => provider === name);
+
+	if (removed === undefined) {
+		return backToAccount(locale, { done: "provider_removed" });
+	}
+
+	try {
+		await instance(locale).api.unlinkAccount({
+			body: { accountId: removed.id },
+			headers: await headers(),
+		});
+	} catch (error) {
+		unstable_rethrow(error);
+
+		if (error instanceof APIError) {
+			backToAccount(locale, { problem: "failed" });
+		}
+
+		throw error;
+	}
+
+	backToAccount(locale, { done: "provider_removed" });
+}
+
 /**
- * Deletes the account at once when its session is under a day old. An older session first signs
- * in again by an email link, which proves the address still belongs to the visitor.
+ * Deletes the account at once when its session is under a day old. The visitor of an older session
+ * signs in again first.
  */
 export async function deleteAccountAction(form: FormData): Promise<void> {
 	const locale = localeOf(form);
 	const visitor = await signedIn(locale);
-	const age = Temporal.Now.instant().since(visitor.sessionCreatedAt);
 
 	if (form.get("confirm") !== "on") {
 		backToAccount(locale, {});
 	}
 
-	if (Temporal.Duration.compare(age, DAY) >= 0) {
+	if (!isFresh(visitor)) {
 		backToAccount(locale, { problem: "sign_in_again" });
 	}
 
