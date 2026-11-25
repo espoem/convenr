@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 
 import { useFinalWhen } from "@/components/event/final-time";
-import { controlClass, Field, FieldMessage } from "@/components/field";
+import { DateTimeInput, Field, FieldMessage } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import { MAX_OPTIONS, MIN_OPTIONS } from "@/domain/poll";
 import { useTemporalReady } from "@/lib/browser-time";
@@ -157,34 +157,31 @@ export function PollOptionsEditor({
 					label={t("pollDate")}
 					className="flex-[1_1_100%] sm:flex-[2_1_11rem]"
 				>
-					<input
+					<DateTimeInput
 						id={`${id}-date`}
 						type="date"
 						min={today}
 						value={date}
 						disabled={full}
 						onChange={(change) => setDate(change.target.value)}
-						className={controlClass}
 					/>
 				</Field>
 				<Field id={`${id}-start`} label={t("pollStart")} className="flex-[1_1_7rem]">
-					<input
+					<DateTimeInput
 						id={`${id}-start`}
 						type="time"
 						value={start}
 						disabled={full}
 						onChange={(change) => setStart(change.target.value)}
-						className={controlClass}
 					/>
 				</Field>
 				<Field id={`${id}-end`} label={t("pollEnd")} className="flex-[1_1_7rem]">
-					<input
+					<DateTimeInput
 						id={`${id}-end`}
 						type="time"
 						value={end}
 						disabled={full}
 						onChange={(change) => setEnd(change.target.value)}
-						className={controlClass}
 					/>
 				</Field>
 				<Button

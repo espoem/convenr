@@ -4,7 +4,14 @@ import { useTranslations } from "next-intl";
 import { useId, useState, useTransition, type SubmitEvent } from "react";
 
 import { DatePicker } from "@/components/date-picker";
-import { controlClass, Field, FieldMessage, LockedNote, Select } from "@/components/field";
+import {
+	controlClass,
+	DateTimeInput,
+	Field,
+	FieldMessage,
+	LockedNote,
+	Select,
+} from "@/components/field";
 import {
 	type DraftOption,
 	optionInput,
@@ -457,21 +464,19 @@ export function EventForm({
 						{mode === "range" ? (
 							<div className="flex flex-wrap gap-4">
 								<Field id={`${id}-first`} label={t("first")} className="flex-[1_1_12rem]">
-									<input
+									<DateTimeInput
 										id={`${id}-first`}
 										name="first"
 										type="date"
 										defaultValue={range?.first}
-										className={controlClass}
 									/>
 								</Field>
 								<Field id={`${id}-last`} label={t("last")} className="flex-[1_1_12rem]">
-									<input
+									<DateTimeInput
 										id={`${id}-last`}
 										name="last"
 										type="date"
 										defaultValue={range?.last}
-										className={controlClass}
 									/>
 								</Field>
 							</div>
