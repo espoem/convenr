@@ -73,6 +73,10 @@ Shown on the web pages only; the API has no account endpoints.
 | `wrong_admin_secret` | The admin secret sent to add an event does not match it, or the event is gone. | OW1 |
 | `account_already_joined` | The browser's participant is added to an account that already has another participant in the event. | OW1 |
 | `signed_out` | An account action arrives after the session ended. | AU7 |
+| `sign_in_again` | An action that needs a session under a day old came from an older one. | AU10, AU14, AU15 |
+| `provider_failed` | A sign-in through a provider was stopped, or the provider's answer could not be used. | AU13 |
+| `provider_in_other_account` | The provider identity added to an account already belongs to another one. | AU14 |
+| `address_not_proved` | An account was about to be created for an address nobody proved. Used only inside the service: the visitor is asked to confirm the address. | AU12, AU13 |
 
 ## API
 

@@ -127,7 +127,14 @@ The single account an event is claimed into or created by while signed in; anony
 _Avoid_: Calling an anonymous admin-link holder an owner (keep internal F5 `owner` symbols and `event_has_owner` problem codes as named).
 
 **Account**:
-An email address with its passkeys, sessions, email language, and notification settings.
+A proved email address with its passkeys, providers, sessions, email language, and notification settings.
+
+**Provider**:
+A service, such as Google or GitHub, whose sign-in tells convenr who the person is.
+_Avoid_: Social login, identity provider
+
+**Proved address**:
+An email address whose holder followed a sign-in link, or which a provider that is authoritative for it names.
 
 **Linked participant**:
 A participant bound to an account instead of a browser token.

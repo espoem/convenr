@@ -1,16 +1,16 @@
 # Phase 5 functional specification: browser identity and optional accounts
 
-Status: agreed 2026-11-21. This document defines Phase F5 of the [roadmap](../roadmap.md). It builds on the specifications of [Phase 1](phase-1.md), [Phase 2](phase-2.md), [Phase 3](phase-3.md) and [Phase 4](phase-4.md): every earlier rule still holds unless a rule here replaces it. Identifiers and secrets are in [ADR 0003](../adr/0003-identifiers-and-secrets.md), the browser identity in [ADR 0008](../adr/0008-browser-identity-cookie.md), and accounts in [ADR 0009](../adr/0009-accounts-with-better-auth.md). Problem codes are listed in [problem-codes.md](problem-codes.md).
+Status: agreed 2026-11-21. This document defines Phase F5 of the [roadmap](../roadmap.md). It builds on the specifications of [Phase 1](phase-1.md), [Phase 2](phase-2.md), [Phase 3](phase-3.md) and [Phase 4](phase-4.md): every earlier rule still holds unless a rule here replaces it. Identifiers and secrets are in [ADR 0003](../adr/0003-identifiers-and-secrets.md), the browser identity in [ADR 0008](../adr/0008-browser-identity-cookie.md), accounts in [ADR 0009](../adr/0009-accounts-with-better-auth.md), and sign-in through providers in [ADR 0012](../adr/0012-provider-sign-in.md). Problem codes are listed in [problem-codes.md](problem-codes.md).
 
 The spec is written as domain rules. Each rule has an id so that the spec can map it to code and tests; code and tests do not cite the ids.
 
 ## 1. Scope
 
-Phase 5 ships in two steps. In the first step the server learns from one cookie which participants a browser has joined as, so the event page arrives already showing the participant's line and grid. In the second step a person can sign in with an email link or a passkey, add the events of a browser to an account, keep an organized event without a time limit, and get emails about responses, the final time and reminders. Accounts stay optional: everything earlier phases allow without an account still works without one.
+Phase 5 ships in three steps. In the first step the server learns from one cookie which participants a browser has joined as, so the event page arrives already showing the participant's line and grid. In the second step a person can sign in with an email link or a passkey, add the events of a browser to an account, keep an organized event without a time limit, and get emails about responses, the final time and reminders. In the third step a person can also sign in through Google or GitHub. Accounts stay optional: everything earlier phases allow without an account still works without one.
 
 Phase 5 does not include:
 
-- sign-in with Google, Facebook, Seznam or GitHub; it waits for a later step of F5 (roadmap);
+- sign-in with Seznam, which waits for Seznam's approval, or with Facebook, which waits for Meta's;
 - account endpoints in the public API, account tokens or changes to the SDKs; the API stays anonymous;
 - account passwords, names or profile pictures;
 - protection against automated abuse beyond the email limits of AU6; decision D5 stays open;
@@ -20,7 +20,8 @@ Phase 5 does not include:
 
 - **Browser key:** a random secret held in one HttpOnly cookie, which the server reads on each request and never stores.
 - **Browser token:** a participant token derived from the browser key and an event id (Y2).
-- **Account:** an email address with its passkeys, sessions, language and notification settings. An account has no name.
+- **Account:** an email address with its passkeys, providers, sessions, language and notification settings. An account has no name.
+- **Provider:** a service, such as Google, that tells convenr who signed in.
 - **Linked participant:** a participant that belongs to an account.
 - **Owner:** the account an event belongs to after its organizer claimed it.
 - **Outbox:** the stored emails waiting to be sent.
@@ -47,7 +48,7 @@ These rules replace Phase 1 rules B1 and B2 and ADR 0003 item 10. B3 and B4 stil
 
 **AU1. Availability.** Accounts exist on an instance only when the settings `SMTP_URL`, `MAIL_FROM`, `AUTH_SECRET` and `PUBLIC_URL` are all set. When one is missing, no page shows sign-in, the account address answers not found, and every earlier rule works as before. An instance that sets some but not all of them refuses to start and names the missing ones.
 
-**AU2. Content.** An account holds one email address, its passkeys, its sessions, the language of its emails and its notification settings (NT1). It has no name or other profile data. The email address is stored as entered after trimming and lower-casing its domain, and two accounts cannot share one address.
+**AU2. Content.** An account holds one proved email address, its passkeys, its providers (AU16), its sessions, the language of its emails and its notification settings (NT1). It has no name or other profile data. The email address is stored as entered after trimming and lower-casing its domain, and two accounts cannot share one address.
 
 **AU3. Sign-in link.** The sign-in page takes an email address and sends a link to it. Following the link signs the browser in, creating the account when the address has none. A link works once, for 15 minutes, in any browser. The page says the same thing whether or not the address has an account. An account created this way takes the language of the page that asked for the link.
 
@@ -63,7 +64,21 @@ These rules replace Phase 1 rules B1 and B2 and ADR 0003 item 10. B3 and B4 stil
 
 **AU9. Unlinking.** From the account page, a linked participant can be unlinked. It then stays in its event like any participant; the browser that unlinks it gets a browser token for it, so it stays joined there.
 
-**AU10. Deleting the account.** The account page deletes the account after a confirmation. When the session is more than a day old, the page asks the visitor to sign out, sign in again with a new email link and delete the account within a day. Deleting removes the account, its sessions, passkeys and settings and every email of it in the outbox. Its owned events lose their owner (OW5) and its linked participants become ordinary participants; nothing else of the events changes. The admin links and the browser tokens keep working.
+**AU10. Deleting the account.** The account page deletes the account after a confirmation. When the session is more than a day old, the page asks the visitor to sign out, sign in again and delete the account within a day. Deleting removes the account, its sessions, passkeys, providers and settings and every email of it in the outbox. Its owned events lose their owner (OW5) and its linked participants become ordinary participants; nothing else of the events changes. The admin links and the browser tokens keep working.
+
+**AU11. Providers.** An instance offers sign-in with Google when accounts are on and `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set, and with GitHub when accounts are on and `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set. Each provider is on or off by itself. An instance that sets only one of a pair refuses to start and names the missing one. While accounts are off, the pairs do nothing. The sign-in page shows one button for each provider that is on, and the buttons work without JavaScript. The server asks a provider for the account's identifier and email address only: the scopes `openid email` at Google and `user:email` at GitHub.
+
+**AU12. Proved addresses.** No account exists before its address is proved. A sign-in link proves the address it was sent to. A provider proves an address only where it is authoritative for it. Google proves an address that it marks as verified and that either ends in `@gmail.com` or comes with a hosted domain. GitHub proves none: it verifies an address once and never again, so a former holder of the address could still sign in with it. GitHub's address is its primary one, unless that ends in `@users.noreply.github.com`.
+
+The first sign-in through a provider that proves an address without an account creates the account. The new account takes the language of the page the sign-in started on.
+
+**AU13. Confirming the address.** A signed-out sign-in through a provider that is in no account, and whose address is not proved, is missing or already has an account, signs nobody in and changes nothing. The visitor reaches the page "Confirm your address", which sends a sign-in link (AU3) to an address the visitor can edit, filled in with the provider's address when there is one. The page says that the provider can be added from the account page afterwards. It is the same for all three reasons and shows the provider's address to nobody but the browser that signed in. The address travels in a cookie for 10 minutes, never in a page's address. A sign-in that the visitor stops, or that fails, returns to the sign-in page with `provider_failed`.
+
+**AU14. Adding a provider.** A signed-in account can add each provider that is on, once, from the account page. The provider's address may differ from the account's, which does not change, and may be unproved or missing. Adding needs a session under a day old, as deleting the account does (AU10), and the browser that returns from the provider must still be signed in to the account that started. The account's address gets a notice that names the provider. A provider identity belongs to at most one account: adding one that is in another account is refused with `provider_in_other_account`. From then on that identity signs in to the account directly, whatever its address.
+
+**AU15. Removing a provider.** The account page lists the account's providers and removes each after a question inside the page. Removing the last one is allowed, because the email link always works. Removing needs a session under a day old.
+
+**AU16. Stored data.** Of a provider's answer the server keeps the provider's name and its identifier of the person. It keeps no token, scope, name or picture, and it keeps the address only as the address of an account created by AU12.
 
 ## 5. Ownership rules
 
@@ -123,14 +138,15 @@ These rules extend Phase 2 rules U1 to U7 and Phase 4 rules U8 to U10.
 |---|---|---|
 | Event | `/{locale}/e/{slug}-{id}` | Rendered for the recognized participant (Y3), the owner's manage link (OW3), the per-event notification settings (NT1). |
 | Manage | `/{locale}/e/{slug}-{id}/manage` | Opens for the owner without the admin link (OW3), the keeping switch (OW4), the per-event notification settings (NT1). |
-| Sign-in | `/{locale}/sign-in` | The email field and the passkey button (AU3, AU4). |
-| Account | `/{locale}/account` | The lists "I organize" and "I joined", each event with its name, deletion date or that it is kept, final time and link; the events of this browser not in the account (OW1); passkeys, sessions, address, language, notification settings and deletion (AU4 to AU10, NT1, NT6). |
+| Sign-in | `/{locale}/sign-in` | The email field, the passkey button and a button for each provider (AU3, AU4, AU11). |
+| Confirm your address | `/{locale}/sign-in/confirm` | Sends a sign-in link after a provider's sign-in that signed nobody in (AU13). |
+| Account | `/{locale}/account` | The lists "I organize" and "I joined", each event with its name, deletion date or that it is kept, final time and link; the events of this browser not in the account (OW1); passkeys, providers, sessions, address, language, notification settings and deletion (AU4 to AU10, AU14, AU15, NT1, NT6). |
 | Unsubscribe | `/{locale}/unsubscribe` | Confirms NT5. |
 | Every page | | A sign-in link in the header, or the account menu when signed in, when accounts are on (AU1). |
 
 ## 10. Errors
 
-Phase 1 section 12 and Phase 2 section 9 apply. The new codes are listed in [problem-codes.md](problem-codes.md): `sign_in_link_invalid`, `too_many_emails`, `email_not_sent`, `event_has_owner`, `wrong_admin_secret`, `passkey_not_recognized` and `confirmation_link_invalid`.
+Phase 1 section 12 and Phase 2 section 9 apply. The new codes are listed in [problem-codes.md](problem-codes.md): `sign_in_link_invalid`, `too_many_emails`, `email_not_sent`, `event_has_owner`, `wrong_admin_secret`, `passkey_not_recognized`, `confirmation_link_invalid`, `sign_in_again`, `provider_failed`, `provider_in_other_account` and `address_not_proved`.
 
 ## 11. Review
 
