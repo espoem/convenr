@@ -114,7 +114,7 @@ The rules are in the [Phase 5 specification](spec/phase-5.md). F5 ships in three
    - A signed-in organizer can keep an event without a time limit.
    - Opt-in email notifications for new responses, finalization and reminders, with their timing set per instance.
    - Accounts stay off on the public instance until the privacy policy exists.
-3. **Sign-in with providers** ([ADR 0012](adr/0012-provider-sign-in.md)): Google and GitHub first, then Seznam after Seznam's approval and Facebook after Meta's. A provider creates an account only for an address it proves, and joins an existing account only from inside a signed-in session. Each provider stays off until an instance sets its client id and secret.
+3. **Sign-in with providers** ([ADR 0012](adr/0012-provider-sign-in.md)): Google and GitHub first, then Seznam after Seznam's approval and Facebook after Meta's, and later Apple and mojeID. A provider creates an account only for an address it proves, and joins an existing account only from inside a signed-in session. Each provider stays off until an instance sets its client id and secret.
 
 *Exit criterion:* the end-to-end test in the [Phase 5 specification](spec/phase-5.md#12-acceptance-test) passes: a reload without JavaScript shows a joined participant, an organizer signs in by email link, claims and keeps an event, and a signed-in participant receives the final time by email with a matching `.ics` file.
 
