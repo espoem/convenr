@@ -10,6 +10,7 @@ import { EventBoard } from "@/components/event/event-board";
 import { FinalBanner } from "@/components/event/final-time";
 import { PollBoard } from "@/components/event/poll-board";
 import { LiveUpdates } from "@/components/live-updates";
+import { PageMain, PageRegion } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { ShareLink } from "@/components/share-link";
 import { eventIdFromSegment } from "@/domain/event-address";
@@ -110,7 +111,7 @@ export default async function EventPage({
 	return (
 		<PageShell>
 			<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
-			<main className="flex flex-col gap-6">
+			<PageMain className="gap-6">
 				{final.kind === "chosen" ? (
 					<FinalBanner
 						event={{
@@ -128,9 +129,9 @@ export default async function EventPage({
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl break-words sm:text-4xl">{event.name}</h1>
 					{event.description === "" ? null : (
-						<p className="max-w-(--cv-measure) text-lg break-words whitespace-pre-line">
-							{event.description}
-						</p>
+						<PageRegion width="measure">
+							<p className="text-lg break-words whitespace-pre-line">{event.description}</p>
+						</PageRegion>
 					)}
 					<p className="text-ink-muted">
 						{t("referenceZone", { zone: schedule.referenceZone.replaceAll("_", " ") })}
@@ -153,16 +154,16 @@ export default async function EventPage({
 							{t("manage")}
 						</Link>
 					) : null}
-					<div className="max-w-(--cv-form)">
+					<PageRegion width="form">
 						<ShareLink
 							label={t("shareLink")}
 							path={getPathname({ href: `/e/${event.segment}`, locale })}
 						/>
-					</div>
+					</PageRegion>
 				</header>
 				{board}
 				<EventNotifications eventId={event.id} choices={choices} />
-			</main>
+			</PageMain>
 		</PageShell>
 	);
 }

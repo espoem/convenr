@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { CreateEventForm } from "@/components/create-event-form";
 import { MyEvents } from "@/components/my-events";
+import { PageMain, PageRegion } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { eventFormOptions } from "@/i18n/event-form-options";
 
@@ -17,24 +18,24 @@ export default async function StartPage({ searchParams }: PageProps<"/[locale]">
 
 	return (
 		<PageShell>
-			<main className="flex flex-col gap-10">
+			<PageMain className="gap-10">
 				{deleted ? (
-					<output className="block max-w-(--cv-measure) font-semibold">
-						{t("accountDeleted")}
-					</output>
+					<PageRegion width="measure">
+						<output className="block font-semibold">{t("accountDeleted")}</output>
+					</PageRegion>
 				) : null}
-				<div className="flex flex-col gap-3">
+				<PageRegion width="measure" className="gap-3">
 					<h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
-					<p className="max-w-(--cv-measure) text-lg">{t("lead")}</p>
-				</div>
+					<p className="text-lg">{t("lead")}</p>
+				</PageRegion>
 				<MyEvents />
-				<section aria-labelledby="create" className="flex flex-col gap-6">
+				<PageRegion as="section" width="form" aria-labelledby="create" className="gap-6">
 					<h2 id="create" className="text-2xl">
 						{t("create")}
 					</h2>
 					<CreateEventForm options={options} />
-				</section>
-			</main>
+				</PageRegion>
+			</PageMain>
 		</PageShell>
 	);
 }

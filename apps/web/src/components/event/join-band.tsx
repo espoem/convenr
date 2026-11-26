@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useId, useRef, useState, useTransition, type SubmitEvent } from "react";
 
 import { controlClass, Field } from "@/components/field";
+import { PageRegion, widthClass } from "@/components/page-region";
 import { strong } from "@/components/rich-text";
 import { Button } from "@/components/ui/button";
 import { formText } from "@/lib/form-text";
@@ -263,7 +264,10 @@ function JoinedLine({
 							event.preventDefault();
 							changePassword(event.currentTarget, false);
 						}}
-						className="mt-3 flex max-w-(--cv-form) flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start"
+						className={cn(
+							widthClass("form"),
+							"mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start",
+						)}
 					>
 						{joined.hasPassword ? (
 							<Field
@@ -320,7 +324,7 @@ function JoinedLine({
 				) : null}
 
 				{panel === "leave" ? (
-					<div role="alert" className="mt-3 flex max-w-(--cv-measure) flex-col gap-3">
+					<PageRegion width="measure" role="alert" className="mt-3 gap-3">
 						<p>{t("leaveConfirm", { name: joined.name })}</p>
 						<div className="flex flex-wrap gap-2">
 							<Button type="button" variant="destructive" disabled={pending} onClick={leave}>
@@ -330,7 +334,7 @@ function JoinedLine({
 								{t("leaveNo")}
 							</Button>
 						</div>
-					</div>
+					</PageRegion>
 				) : null}
 			</div>
 

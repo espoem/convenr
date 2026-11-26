@@ -39,7 +39,7 @@ export function CopyField({ label, value }: CopyFieldProps) {
 	}
 
 	return (
-		<div className="flex w-full max-w-(--cv-form) flex-col gap-1.5">
+		<div className="flex w-full flex-col gap-1.5">
 			<div className="flex items-baseline justify-between gap-2">
 				<label htmlFor={id} className="font-medium">
 					{label}

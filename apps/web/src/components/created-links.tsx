@@ -29,7 +29,7 @@ export function CreatedLinks({ id, segment, locale, inAccount }: CreatedLinksPro
 
 	if (stored?.adminSecret === undefined) {
 		return (
-			<div className="flex max-w-(--cv-form) flex-col gap-4">
+			<div className="flex flex-col gap-4">
 				<p>{t("missing")}</p>
 				<CopyField label={t("shareLink")} value={`${origin}${eventPath}`} />
 			</div>
@@ -37,7 +37,7 @@ export function CreatedLinks({ id, segment, locale, inAccount }: CreatedLinksPro
 	}
 
 	return (
-		<div className="flex max-w-(--cv-form) flex-col gap-6">
+		<div className="flex flex-col gap-6">
 			<CopyField label={t("shareLink")} value={`${origin}${eventPath}`} />
 			<div className="flex flex-col gap-2">
 				<CopyField
@@ -45,9 +45,9 @@ export function CreatedLinks({ id, segment, locale, inAccount }: CreatedLinksPro
 					value={`${origin}${eventPath}/manage#${stored.adminSecret}`}
 				/>
 				{inAccount ? (
-					<p className="max-w-(--cv-measure)">{t("adminInAccount")}</p>
+					<p>{t("adminInAccount")}</p>
 				) : (
-					<p className="max-w-(--cv-measure) font-semibold">{t("adminWarning")}</p>
+					<p className="font-semibold">{t("adminWarning")}</p>
 				)}
 			</div>
 			<Link

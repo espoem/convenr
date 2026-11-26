@@ -9,6 +9,7 @@ import { type AccountEventItem, AccountEvents } from "@/components/account/accou
 import { ClaimEvents } from "@/components/account/claim-events";
 import { AddPasskey } from "@/components/add-passkey";
 import { controlClass, Field, Select } from "@/components/field";
+import { PageMain, PageRegion, type PageWidth } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { ProviderButton } from "@/components/provider-button";
 import { RemoveQuestion } from "@/components/remove-question";
@@ -95,14 +96,24 @@ export async function generateMetadata(): Promise<Metadata> {
 const CHECK_ROW = "flex min-h-11 items-start gap-2 py-2.5";
 const CHECK_BOX = "mt-0.5 size-5 shrink-0";
 
-function Section({ id, heading, children }: { id: string; heading: string; children: ReactNode }) {
+function Section({
+	id,
+	heading,
+	width = "form",
+	children,
+}: {
+	id: string;
+	heading: string;
+	width?: PageWidth;
+	children: ReactNode;
+}) {
 	return (
-		<section aria-labelledby={id} className="flex flex-col gap-3">
+		<PageRegion as="section" width={width} aria-labelledby={id} className="gap-3">
 			<h2 id={id} className="text-xl">
 				{heading}
 			</h2>
 			{children}
-		</section>
+		</PageRegion>
 	);
 }
 
@@ -190,8 +201,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 
 	return (
 		<PageShell>
-			<main className="flex max-w-(--cv-form) flex-col gap-8">
-				<header className="flex flex-col gap-3">
+			<PageMain className="gap-8">
+				<PageRegion as="header" width="form" className="gap-3">
 					<h1 className="text-3xl">{t("heading")}</h1>
 					<p>{t.rich("signedInAs", { email: visitor.email, strong })}</p>
 					<form action={signOutAction}>
@@ -205,9 +216,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					>
 						{status}
 					</output>
-				</header>
+				</PageRegion>
 
-				<Section id="account-organize" heading={t("events.organized")}>
+				<Section id="account-organize" heading={t("events.organized")} width="column">
 					<AccountEvents
 						events={owned.map((event) => listItem(event))}
 						empty={t("events.noneOrganized")}
@@ -215,7 +226,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					/>
 				</Section>
 
-				<Section id="account-joined" heading={t("events.joined")}>
+				<Section id="account-joined" heading={t("events.joined")} width="column">
 					<AccountEvents
 						events={joined.map((event) => listItem(event))}
 						empty={t("events.noneJoined")}
@@ -269,7 +280,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 				<Section id="account-notifications" heading={t("notifications.heading")}>
 					<form action={setNotificationsAction} className="flex flex-col gap-3">
 						{hidden}
-						<p className="max-w-(--cv-measure)">{t("notifications.intro")}</p>
+						<p>{t("notifications.intro")}</p>
 						{NOTIFICATION_KINDS.map((kind) => (
 							<label key={kind} className={CHECK_ROW}>
 								<input
@@ -346,7 +357,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 
 				{providers.length === 0 && addable.length === 0 ? null : (
 					<Section id="account-providers" heading={t("providers.heading")}>
-						<p className="max-w-(--cv-measure)">{t("providers.intro")}</p>
+						<p>{t("providers.intro")}</p>
 						{providers.length === 0 ? null : (
 							<ul className="flex flex-col gap-4">
 								{providers.map(({ id, provider, addedAt }) => (
@@ -427,7 +438,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 				</Section>
 
 				<Section id="account-delete" heading={t("delete.heading")}>
-					<p className="max-w-(--cv-measure)">{t("delete.warning")}</p>
+					<p>{t("delete.warning")}</p>
 					<form action={deleteAccountAction} className="flex flex-col gap-3">
 						{hidden}
 						<label className={CHECK_ROW}>
@@ -439,7 +450,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 						</Button>
 					</form>
 				</Section>
-			</main>
+			</PageMain>
 		</PageShell>
 	);
 }

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { Select } from "@/components/field";
+import { PageRegion } from "@/components/page-region";
 import type { EventChoice, NotificationKind } from "@/domain/notifications";
 import { useRouter } from "@/i18n/navigation";
 import { setEventChoiceAction } from "@/server/notification-actions";
@@ -38,12 +39,12 @@ export function EventNotifications({
 	}
 
 	return (
-		<section aria-labelledby="event-notifications" className="flex flex-col gap-3">
+		<PageRegion as="section" width="form" aria-labelledby="event-notifications" className="gap-3">
 			<h2 id="event-notifications" className="text-xl">
 				{t("heading")}
 			</h2>
 			{choices.map(({ kind, choice, general }) => (
-				<label key={kind} className="flex max-w-(--cv-form) flex-col gap-1.5">
+				<label key={kind} className="flex flex-col gap-1.5">
 					<span className="font-medium">{t(`kind.${kind}`)}</span>
 					<Select
 						value={choice}
@@ -59,6 +60,6 @@ export function EventNotifications({
 			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{failed ? t("failed") : ""}
 			</p>
-		</section>
+		</PageRegion>
 	);
 }

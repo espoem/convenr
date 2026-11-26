@@ -12,6 +12,7 @@ import {
 	LockedNote,
 	Select,
 } from "@/components/field";
+import { widthClass } from "@/components/page-region";
 import {
 	type DraftOption,
 	optionInput,
@@ -33,6 +34,7 @@ import {
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import type { EventVersion } from "@/lib/event-version";
 import { formText } from "@/lib/form-text";
+import { cn } from "@/lib/utils";
 import type { EventProblem, GridEventInput, NewEvent } from "@/server/events";
 import type { Confirmation } from "@/server/manage";
 
@@ -340,7 +342,7 @@ export function EventForm({
 	};
 
 	return (
-		<form onSubmit={submit} noValidate className="flex max-w-(--cv-form) flex-col gap-8">
+		<form onSubmit={submit} noValidate className="flex w-full flex-col gap-8">
 			<Field id={`${id}-name`} label={t("name")} error={error("name")}>
 				<input
 					id={`${id}-name`}
@@ -504,7 +506,7 @@ export function EventForm({
 										);
 									})}
 								</div>
-								<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("weekdaysHint")}</p>
+								<p className="text-sm text-ink-muted">{t("weekdaysHint")}</p>
 							</div>
 						) : null}
 
@@ -582,7 +584,7 @@ export function EventForm({
 					</p>
 				</div>
 			) : (
-				<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
+				<div role="alert" className={cn("flex flex-col gap-3", widthClass("measure"))}>
 					{pendingLoss.losing > 0 ? (
 						<p>
 							{t(pendingLoss.input.kind === "poll" ? "pollConfirmLoss" : "confirmLoss", {

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
+import { PageMain } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { PasskeySignIn } from "@/components/passkey-sign-in";
 import { ProviderButton } from "@/components/provider-button";
@@ -82,10 +83,10 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 
 	return (
 		<PageShell>
-			<main className="flex max-w-(--cv-form) flex-col gap-6">
+			<PageMain width="form" className="gap-6">
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl">{t("heading")}</h1>
-					<p className="max-w-(--cv-measure)">{t("intro")}</p>
+					<p>{t("intro")}</p>
 				</header>
 				<SignInLinkForm locale={locale} address="" status={statusOf(query)} />
 				<div className="flex flex-col gap-3">
@@ -100,7 +101,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 					))}
 					<PasskeySignIn emailField={SIGN_IN_EMAIL_ID} />
 				</div>
-			</main>
+			</PageMain>
 		</PageShell>
 	);
 }

@@ -2,7 +2,9 @@
 
 import { useTranslations } from "next-intl";
 
+import { widthClass } from "@/components/page-region";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type ZoneNoticeProps = {
 	referenceZone: string;
@@ -50,7 +52,9 @@ export function ZoneNotice({
 
 	return (
 		<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-			<p className="max-w-(--cv-measure) font-semibold">{notice(viewerZone)}</p>
+			<p className={cn("font-semibold", widthClass("measure", { fit: true }))}>
+				{notice(viewerZone)}
+			</p>
 			{dated ? (
 				<Button type="button" variant="outline" onClick={onSwitch}>
 					{inReferenceZone

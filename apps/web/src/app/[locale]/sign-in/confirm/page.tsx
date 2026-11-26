@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { PageMain } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { SignInLinkForm } from "@/components/sign-in-link-form";
 import { PROVIDER_NAMES } from "@/domain/provider-address";
@@ -37,11 +38,11 @@ export default async function ConfirmAddressPage() {
 
 	return (
 		<PageShell>
-			<main className="flex max-w-(--cv-form) flex-col gap-6">
+			<PageMain width="form" className="gap-6">
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl">{t("heading")}</h1>
-					<p className="max-w-(--cv-measure)">{t("intro")}</p>
-					<p className="max-w-(--cv-measure)">
+					<p>{t("intro")}</p>
+					<p>
 						{pending === undefined
 							? t("afterwards")
 							: t("attaches", { provider: PROVIDER_NAMES[pending.provider] })}
@@ -53,7 +54,7 @@ export default async function ConfirmAddressPage() {
 					status={{ kind: "none" }}
 					finishesProvider={pending !== undefined}
 				/>
-			</main>
+			</PageMain>
 		</PageShell>
 	);
 }

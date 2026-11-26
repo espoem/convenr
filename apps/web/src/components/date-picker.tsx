@@ -48,7 +48,7 @@ export function DatePicker({
 	const order = weekdaysFrom(firstDayOfWeek);
 
 	return (
-		<div className="flex w-full max-w-[22rem] flex-col gap-2" aria-describedby={describedBy}>
+		<div className="flex w-full max-w-(--cv-picker) flex-col gap-2" aria-describedby={describedBy}>
 			<div className="flex items-center justify-between gap-2">
 				<Button
 					type="button"

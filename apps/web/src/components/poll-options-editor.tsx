@@ -113,12 +113,12 @@ export function PollOptionsEditor({
 	return (
 		<fieldset className="flex flex-col gap-4" aria-describedby={`${id}-list-message`}>
 			<legend className="mb-2 font-heading text-xl font-semibold">{t("pollOptions")}</legend>
-			<p className="max-w-(--cv-measure) text-sm text-ink-muted">
+			<p className="text-sm text-ink-muted">
 				{t("pollOptionsHint", { min: MIN_OPTIONS, max: MAX_OPTIONS })}
 			</p>
 
 			{options.length === 0 ? null : (
-				<ul className="flex max-w-(--cv-form) flex-col divide-y divide-line border-y border-line">
+				<ul className="flex flex-col divide-y divide-line border-y border-line">
 					{options.map((option, index) => {
 						const shown = label(option);
 						const problem = optionProblems.get(index);
@@ -151,7 +151,7 @@ export function PollOptionsEditor({
 				{t("pollCount", { count: options.length, max: MAX_OPTIONS })}
 			</p>
 
-			<div className="flex max-w-(--cv-form) flex-wrap items-end gap-4">
+			<div className="flex flex-wrap items-end gap-4">
 				<Field
 					id={`${id}-date`}
 					label={t("pollDate")}

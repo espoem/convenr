@@ -4,6 +4,7 @@ import { FlagIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useId } from "react";
 
+import { PageRegion } from "@/components/page-region";
 import { heatStep } from "@/domain/heat";
 import { type Level, type Levels, type Tally } from "@/domain/levels";
 import { useTemporalReady } from "@/lib/browser-time";
@@ -191,12 +192,12 @@ export function BestOptions({ options, best, names, zone, formatLocale }: BestOp
 	}
 
 	return (
-		<section aria-labelledby={id} className="flex flex-col gap-4">
+		<PageRegion as="section" width="form" aria-labelledby={id} className="gap-4">
 			<h2 id={id} className="text-xl">
 				{t("windowsHeading")}
 			</h2>
 			{best.length === 0 ? (
-				<p className="max-w-(--cv-measure) text-sm text-ink-muted">{emptyMessage()}</p>
+				<p className="text-sm text-ink-muted">{emptyMessage()}</p>
 			) : (
 				<ol className="flex flex-col gap-2">
 					{best.map((result) => {
@@ -228,6 +229,6 @@ export function BestOptions({ options, best, names, zone, formatLocale }: BestOp
 					})}
 				</ol>
 			)}
-		</section>
+		</PageRegion>
 	);
 }

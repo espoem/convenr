@@ -7,6 +7,7 @@ import { EventNotifications } from "@/components/event-notifications";
 import { KeepEvent } from "@/components/keep-event";
 import { LiveUpdates } from "@/components/live-updates";
 import { ManageEvent, type ManagedBoard } from "@/components/manage-event";
+import { PageMain } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { eventIdFromSegment } from "@/domain/event-address";
 import { currentLocale } from "@/i18n/current-locale";
@@ -66,7 +67,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 	return (
 		<PageShell>
 			<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
-			<main className="flex flex-col gap-8">
+			<PageMain className="gap-8">
 				<div className="flex flex-col gap-3">
 					<h1 className="text-3xl text-balance break-words sm:text-4xl">
 						{t.rich("heading", { name: event.name, label })}
@@ -93,7 +94,7 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 						</>
 					}
 				/>
-			</main>
+			</PageMain>
 		</PageShell>
 	);
 }

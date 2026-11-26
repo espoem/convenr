@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { PageMain } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { env } from "@/env";
 
@@ -63,7 +64,7 @@ export default async function PrivacyPage() {
 
 	return (
 		<PageShell>
-			<main className="flex max-w-(--cv-measure) flex-col gap-8 text-pretty [overflow-wrap:anywhere]">
+			<PageMain width="measure" className="gap-8 text-pretty [overflow-wrap:anywhere]">
 				<div className="flex flex-col gap-3">
 					<h1 className="text-3xl text-balance">{t("heading")}</h1>
 					<p className="text-ink-muted">{t("updated")}</p>
@@ -81,7 +82,7 @@ export default async function PrivacyPage() {
 						{t.rich(`sections.${section}.body`, tags)}
 					</section>
 				))}
-			</main>
+			</PageMain>
 		</PageShell>
 	);
 }

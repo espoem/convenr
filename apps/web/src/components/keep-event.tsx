@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
+import { PageRegion } from "@/components/page-region";
 import { useRouter } from "@/i18n/navigation";
 import { setKeepingAction } from "@/server/ownership-actions";
 
@@ -21,11 +22,11 @@ export function KeepEvent({ eventId, kept }: { eventId: string; kept: boolean })
 	}
 
 	return (
-		<section aria-labelledby="keep" className="flex flex-col gap-3">
+		<PageRegion as="section" width="form" aria-labelledby="keep" className="gap-3">
 			<h2 id="keep" className="text-2xl">
 				{t("heading")}
 			</h2>
-			<p className="max-w-(--cv-measure)">{t("intro")}</p>
+			<p>{t("intro")}</p>
 			<button
 				type="button"
 				aria-pressed={kept}
@@ -38,6 +39,6 @@ export function KeepEvent({ eventId, kept }: { eventId: string; kept: boolean })
 			<p aria-live="polite" className="text-sm">
 				{failed ? t("failed") : t(kept ? "on" : "off")}
 			</p>
-		</section>
+		</PageRegion>
 	);
 }

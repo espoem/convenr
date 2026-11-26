@@ -10,6 +10,7 @@ import { useCount } from "@/components/event/count";
 import type { BoardEvent } from "@/components/event/event-board";
 import { FinalLegend, useFinalWhen } from "@/components/event/final-time";
 import { Field, Select } from "@/components/field";
+import { PageRegion, widthClass } from "@/components/page-region";
 import { Button } from "@/components/ui/button";
 import { heatStep } from "@/domain/heat";
 import { tallyIn as countTallyIn } from "@/domain/levels";
@@ -17,6 +18,7 @@ import type { Weekday } from "@/domain/schedule";
 import { useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
 import type { ManageCredential } from "@/lib/manage-credential";
+import { cn } from "@/lib/utils";
 import { clearFinalAction, type FinalChange, pickFinalAction } from "@/server/event-actions";
 
 /** Rows `first` to `last` of one column. */
@@ -182,7 +184,7 @@ export function FinalPicker({
 
 			{event.final.kind === "chosen" ? (
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-					<p className="max-w-(--cv-measure) text-lg">
+					<p className={cn("text-lg", widthClass("measure", { fit: true }))}>
 						{t("finalIs", { when: when(event.final, viewerZone, formatLocale) })}
 					</p>
 					<Button
@@ -195,10 +197,14 @@ export function FinalPicker({
 					</Button>
 				</div>
 			) : (
-				<p className="max-w-(--cv-measure) text-ink-muted">{t("finalNone")}</p>
+				<PageRegion width="measure">
+					<p className="text-ink-muted">{t("finalNone")}</p>
+				</PageRegion>
 			)}
 
-			<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("finalHint")}</p>
+			<PageRegion width="measure">
+				<p className="text-sm text-ink-muted">{t("finalHint")}</p>
+			</PageRegion>
 			{final === undefined ? null : <FinalLegend />}
 
 			<div className="max-h-[75dvh] max-w-full overflow-auto overscroll-x-contain pt-2 pb-3">
@@ -215,7 +221,7 @@ export function FinalPicker({
 			</div>
 
 			{validProposal === null ? null : (
-				<div className="flex max-w-(--cv-measure) flex-col gap-3">
+				<PageRegion width="measure" className="gap-3">
 					<p aria-live="polite" className="font-semibold">
 						{t("finalProposal", { when: time(validProposal) })}
 					</p>
@@ -248,7 +254,7 @@ export function FinalPicker({
 					>
 						{t("finalPick")}
 					</Button>
-				</div>
+				</PageRegion>
 			)}
 
 			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">

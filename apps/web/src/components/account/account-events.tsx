@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { useFinalWhen } from "@/components/event/final-time";
+import { PageRegion } from "@/components/page-region";
 import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTemporalReady, useViewerZone } from "@/lib/browser-time";
@@ -45,7 +46,11 @@ export function AccountEvents({
 	const [pending, startTransition] = useTransition();
 
 	if (events.length === 0) {
-		return <p className="max-w-(--cv-measure)">{empty}</p>;
+		return (
+			<PageRegion width="measure">
+				<p>{empty}</p>
+			</PageRegion>
+		);
 	}
 
 	function details(event: AccountEventItem): string {
@@ -138,7 +143,7 @@ export function AccountEvents({
 					</div>
 					<div id={`unlink-${event.id}`} className="empty:hidden">
 						{confirming === event.id ? (
-							<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
+							<PageRegion width="measure" role="alert" className="gap-3">
 								<p>{consequence(event)}</p>
 								<div className="flex flex-wrap gap-2">
 									<Button
@@ -153,7 +158,7 @@ export function AccountEvents({
 										{t("unlinkNo")}
 									</Button>
 								</div>
-							</div>
+							</PageRegion>
 						) : null}
 					</div>
 					{failed === event.id ? (

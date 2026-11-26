@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
+import { PageMain } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { strong } from "@/components/rich-text";
 import { Button } from "@/components/ui/button";
@@ -48,17 +49,15 @@ export default async function UnsubscribePage({
 	let body;
 
 	if (target.status === "invalid" || query.value === undefined) {
-		body = <p className="max-w-(--cv-measure)">{t("invalid")}</p>;
+		body = <p>{t("invalid")}</p>;
 	} else if (target.status === "event_gone") {
-		body = <p className="max-w-(--cv-measure)">{t("gone")}</p>;
+		body = <p>{t("gone")}</p>;
 	} else if (query.done === undefined) {
 		body = (
 			<form action={unsubscribeAction} className="flex flex-col gap-4">
 				<input type="hidden" name="locale" value={locale} />
 				<input type="hidden" name="value" value={query.value} />
-				<p className="max-w-(--cv-measure)">
-					{t.rich(`intro.${target.kind}`, { name: target.name, strong })}
-				</p>
+				<p>{t.rich(`intro.${target.kind}`, { name: target.name, strong })}</p>
 				<Button type="submit" className="w-fit">
 					{t("submit")}
 				</Button>
@@ -67,7 +66,7 @@ export default async function UnsubscribePage({
 	} else {
 		body = (
 			<>
-				<output className="block max-w-(--cv-measure)">
+				<output className="block">
 					{t.rich(`done.${target.kind}`, { name: target.name, strong })}
 				</output>
 				<Link
@@ -82,10 +81,10 @@ export default async function UnsubscribePage({
 
 	return (
 		<PageShell>
-			<main className="flex max-w-(--cv-form) flex-col gap-6">
+			<PageMain width="form" className="gap-6">
 				<h1 className="text-3xl">{t("heading")}</h1>
 				{body}
-			</main>
+			</PageMain>
 		</PageShell>
 	);
 }

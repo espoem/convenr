@@ -31,6 +31,7 @@ test("copy button shows icon on narrow screens, preserves tab on reload and loca
 	});
 
 	await organizer.goto(share);
+	await expect(organizer.getByRole("table")).toBeVisible();
 
 	const copyButton = organizer.getByRole("button", { name: "Kopírovat" });
 	const copyBox = await copyButton.boundingBox();
@@ -144,4 +145,44 @@ test("keeps layout within 360px across home date picker, event board, and manage
 	await expectNoOverflow();
 
 	await context.close();
+});
+
+test("page regions align to the column left edge without overflow", async ({ page }, testInfo) => {
+	const checkPaths = async ([path, ...rest]: string[]): Promise<void> => {
+		if (path === undefined) {
+			return;
+		}
+
+		await page.goto(path);
+		await expect(page.locator("main")).toBeVisible();
+
+		const metrics = await page.evaluate(() => {
+			const brand = document.querySelector("header a");
+			const main = document.querySelector("main");
+
+			const firstContent = Array.from(main?.children ?? []).find(
+				(element) => element.getBoundingClientRect().height > 0,
+			);
+
+			return {
+				overflow: document.documentElement.scrollWidth - window.innerWidth,
+				headerLeft: brand?.getBoundingClientRect().left ?? -1,
+				mainLeft: firstContent?.getBoundingClientRect().left ?? -1,
+			};
+		});
+
+		expect(metrics.overflow, `${path} in ${testInfo.project.name}`).toBeLessThanOrEqual(0);
+		expect(
+			metrics.headerLeft,
+			`${path} headerLeft in ${testInfo.project.name}`,
+		).toBeGreaterThanOrEqual(0);
+		expect(
+			Math.abs(metrics.mainLeft - metrics.headerLeft),
+			`${path} mainLeft aligned with headerLeft in ${testInfo.project.name}`,
+		).toBeLessThanOrEqual(1);
+
+		await checkPaths(rest);
+	};
+
+	await checkPaths(["/cs", "/cs/sign-in", "/cs/privacy", "/cs/api"]);
 });

@@ -6,6 +6,7 @@ import {
 } from "@phosphor-icons/react/ssr";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
+import { widthClass } from "@/components/page-region";
 import { cn } from "@/lib/utils";
 
 /**
@@ -98,7 +99,10 @@ export function Field({ id, label, hint, error, locked, children, className }: F
 /** The lock and the reason below a control that cannot change. */
 export function LockedNote({ id, text }: { id: string; text: string }) {
 	return (
-		<p id={id} className="flex max-w-(--cv-measure) items-start gap-1.5 text-sm text-ink-muted">
+		<p
+			id={id}
+			className={cn(widthClass("measure"), "flex items-start gap-1.5 text-sm text-ink-muted")}
+		>
 			<LockSimpleIcon aria-hidden className="mt-0.5 size-4 shrink-0" />
 			{text}
 		</p>
@@ -110,14 +114,14 @@ type FieldMessageProps = { id: string; hint?: string | undefined; error?: string
 export function FieldMessage({ id, hint, error }: FieldMessageProps) {
 	if (error !== undefined) {
 		return (
-			<p id={id} className="text-sm font-semibold text-action-active">
+			<p id={id} className={cn(widthClass("measure"), "text-sm font-semibold text-action-active")}>
 				{error}
 			</p>
 		);
 	}
 
 	return hint === undefined ? null : (
-		<p id={id} className="max-w-(--cv-measure) text-sm text-ink-muted">
+		<p id={id} className={cn(widthClass("measure"), "text-sm text-ink-muted")}>
 			{hint}
 		</p>
 	);

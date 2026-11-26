@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
+import { PageRegion } from "@/components/page-region";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import { useLocalEvents } from "@/lib/local-events";
@@ -91,11 +92,13 @@ export function ClaimEvents({ ownedIds, joinedIds }: { ownedIds: string[]; joine
 	}
 
 	return (
-		<section aria-labelledby="account-claim" className="flex flex-col gap-3">
+		<PageRegion as="section" width="column" aria-labelledby="account-claim" className="gap-3">
 			<h2 id="account-claim" className="text-xl">
 				{t("heading")}
 			</h2>
-			<p className="max-w-(--cv-measure)">{t("intro")}</p>
+			<PageRegion width="measure">
+				<p>{t("intro")}</p>
+			</PageRegion>
 			<ul className="flex flex-col divide-y divide-line border-y border-line">
 				{candidates.map((event) => (
 					<li key={event.id} className="flex flex-col gap-1 py-3">
@@ -132,6 +135,6 @@ export function ClaimEvents({ ownedIds, joinedIds }: { ownedIds: string[]; joine
 					{t("addAll")}
 				</Button>
 			) : null}
-		</section>
+		</PageRegion>
 	);
 }

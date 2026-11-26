@@ -2,7 +2,9 @@
 
 import { useId, useState, type ReactNode } from "react";
 
+import { widthClass } from "@/components/page-region";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
  * Removes something of the account after a question inside the page, as every destructive action
@@ -34,7 +36,11 @@ export function RemoveQuestion({
 			</Button>
 			<div id={id} className="empty:hidden">
 				{confirming ? (
-					<form action={action} role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
+					<form
+						action={action}
+						role="alert"
+						className={cn("flex flex-col gap-3", widthClass("measure"))}
+					>
 						{fields}
 						<p>{texts.question}</p>
 						<div className="flex flex-wrap gap-2">

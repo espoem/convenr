@@ -7,9 +7,11 @@ import { useId } from "react";
 import { finalKeyOf, type PollBoardEvent } from "@/components/event/poll-board";
 import { BestOptions, PollTable, useOptionWhen } from "@/components/event/poll-table";
 import { useFinalChange } from "@/components/final-picker";
+import { PageRegion, widthClass } from "@/components/page-region";
 import { Button } from "@/components/ui/button";
 import { useViewerZone } from "@/lib/browser-time";
 import type { ManageCredential } from "@/lib/manage-credential";
+import { cn } from "@/lib/utils";
 import { clearFinalAction, pickFinalAction } from "@/server/event-actions";
 
 type PollFinalPickerProps = {
@@ -43,10 +45,12 @@ export function PollFinalPicker({
 			</h2>
 
 			{final === undefined ? (
-				<p className="max-w-(--cv-measure) text-ink-muted">{t("finalNone")}</p>
+				<PageRegion width="measure">
+					<p className="text-ink-muted">{t("finalNone")}</p>
+				</PageRegion>
 			) : (
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-					<p className="min-h-[1.5em] max-w-(--cv-measure) text-lg">
+					<p className={cn("min-h-[1.5em] text-lg", widthClass("measure", { fit: true }))}>
 						{t("finalIs", { when: whenOf(final) })}
 					</p>
 					<Button
@@ -60,7 +64,9 @@ export function PollFinalPicker({
 				</div>
 			)}
 
-			<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("pollFinalHint")}</p>
+			<PageRegion width="measure">
+				<p className="text-sm text-ink-muted">{t("pollFinalHint")}</p>
+			</PageRegion>
 
 			<PollTable
 				event={{ ...event, finalKey }}

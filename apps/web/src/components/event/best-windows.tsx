@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
 import { Field, Select } from "@/components/field";
+import { PageRegion } from "@/components/page-region";
 import {
 	bestWindows,
 	mostPeople,
@@ -79,11 +80,11 @@ export function BestWindows({
 	}
 
 	return (
-		<section aria-labelledby={`${id}-heading`} className="flex flex-col gap-4">
+		<PageRegion as="section" width="form" aria-labelledby={`${id}-heading`} className="gap-4">
 			<h2 id={`${id}-heading`} className="text-xl">
 				{t("windowsHeading")}
 			</h2>
-			<div className="flex max-w-(--cv-form) flex-wrap gap-4">
+			<div className="flex flex-wrap gap-4">
 				<Field id={`${id}-slots`} label={t("minDuration")} className="flex-[1_1_9rem]">
 					<Select
 						id={`${id}-slots`}
@@ -113,7 +114,7 @@ export function BestWindows({
 			</div>
 
 			{shown.length === 0 ? (
-				<p aria-live="polite" className="max-w-(--cv-measure) text-sm text-ink-muted">
+				<p aria-live="polite" className="text-sm text-ink-muted">
 					{emptyMessage()}
 				</p>
 			) : (
@@ -153,6 +154,6 @@ export function BestWindows({
 					})}
 				</ol>
 			)}
-		</section>
+		</PageRegion>
 	);
 }

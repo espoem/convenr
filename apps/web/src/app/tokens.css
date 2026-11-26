@@ -29,6 +29,8 @@
   --cv-touch-target: 2.75rem;
   --cv-measure: 42rem;
   --cv-form: 42rem;
+  --cv-column: 64rem;
+  --cv-picker: 22rem;
 
   --background: var(--cv-background);
   --foreground: var(--cv-ink);

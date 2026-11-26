@@ -16,6 +16,7 @@ import type { ServerGrid } from "@/components/event/board-view";
 import type { BoardEvent } from "@/components/event/event-board";
 import type { PollBoardEvent } from "@/components/event/poll-board";
 import { FinalPicker } from "@/components/final-picker";
+import { PageRegion } from "@/components/page-region";
 import { PollFinalPicker } from "@/components/poll-final-picker";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
@@ -161,9 +162,11 @@ export function ManageEvent({
 
 	if (event === null) {
 		return (
-			<p role="alert" className="max-w-(--cv-measure) text-lg">
-				{t("invalid")}
-			</p>
+			<PageRegion width="measure">
+				<p role="alert" className="text-lg">
+					{t("invalid")}
+				</p>
+			</PageRegion>
 		);
 	}
 
@@ -258,7 +261,7 @@ export function ManageEvent({
 				/>
 			)}
 
-			<section aria-labelledby="edit" className="flex flex-col gap-6">
+			<PageRegion as="section" width="form" aria-labelledby="edit" className="gap-6">
 				<h2 id="edit" className="text-2xl">
 					{t("edit")}
 				</h2>
@@ -275,16 +278,16 @@ export function ManageEvent({
 				<p aria-live="polite" className="text-sm">
 					{saved > 0 ? t("saved") : ""}
 				</p>
-			</section>
+			</PageRegion>
 
-			<section aria-labelledby="people" className="flex flex-col gap-4">
+			<PageRegion as="section" width="form" aria-labelledby="people" className="gap-4">
 				<h2 id="people" className="text-2xl">
 					{t("participants", { count: event.participants.length })}
 				</h2>
 				{event.participants.length === 0 ? (
 					<p className="text-ink-muted">{t("noParticipants")}</p>
 				) : (
-					<ul className="flex max-w-(--cv-form) flex-col divide-y divide-line border-y border-line">
+					<ul className="flex flex-col divide-y divide-line border-y border-line">
 						{event.participants.map((person) => (
 							<li
 								key={person.id}
@@ -304,7 +307,7 @@ export function ManageEvent({
 					</ul>
 				)}
 				{removing === null ? null : (
-					<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
+					<PageRegion width="measure" role="alert" className="gap-3">
 						<p>{t("removeParticipantConfirm", { name: removing.name })}</p>
 						<div className="flex flex-wrap gap-2">
 							<Button
@@ -319,18 +322,18 @@ export function ManageEvent({
 								{t("keep")}
 							</Button>
 						</div>
-					</div>
+					</PageRegion>
 				)}
-			</section>
+			</PageRegion>
 
 			{settings}
 
-			<section aria-labelledby="delete" className="flex flex-col gap-4">
+			<PageRegion as="section" width="form" aria-labelledby="delete" className="gap-4">
 				<h2 id="delete" className="text-2xl">
 					{t("deleteHeading")}
 				</h2>
 				{deleting ? (
-					<div role="alert" className="flex max-w-(--cv-measure) flex-col gap-3">
+					<PageRegion width="measure" role="alert" className="gap-3">
 						<p>{t("deleteConfirm", { name: event.name })}</p>
 						<div className="flex flex-wrap gap-2">
 							<Button type="button" variant="destructive" disabled={pending} onClick={deleteEvent}>
@@ -340,10 +343,10 @@ export function ManageEvent({
 								{t("keep")}
 							</Button>
 						</div>
-					</div>
+					</PageRegion>
 				) : (
 					<>
-						<p className="max-w-(--cv-measure)">{t("deleteLead")}</p>
+						<p>{t("deleteLead")}</p>
 						<Button
 							type="button"
 							variant="destructive"
@@ -354,7 +357,7 @@ export function ManageEvent({
 						</Button>
 					</>
 				)}
-			</section>
+			</PageRegion>
 
 			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">
 				{failed ? t("failed") : ""}

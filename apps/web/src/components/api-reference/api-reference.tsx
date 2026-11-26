@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { PageMain, PageRegion, widthClass } from "@/components/page-region";
 import { FIELD_CODES } from "@/server/api/field-codes";
 import { PROBLEM_STATUS, type ProblemCode } from "@/server/api/http";
 import {
@@ -59,7 +60,7 @@ function Entry({
 					<span className="font-mono break-words text-ink-muted">{detail}</span>
 				)}
 			</dt>
-			{children !== undefined && <dd className="max-w-(--cv-measure)">{children}</dd>}
+			{children !== undefined && <dd className={widthClass("measure")}>{children}</dd>}
 		</div>
 	);
 }
@@ -163,10 +164,10 @@ function Operation({ endpoint, t }: { endpoint: Endpoint; t: Translate }) {
 					{path}
 				</p>
 			</div>
-			<p className="max-w-(--cv-measure)">
+			<p className={widthClass("measure")}>
 				<InlineCode text={operation.description} />
 			</p>
-			<p>
+			<p className={widthClass("measure")}>
 				{secret === undefined ? (
 					t("page.noSecret")
 				) : (
@@ -242,7 +243,7 @@ function Schema({ name, schema, t }: { name: string; schema: JsonSchema; t: Tran
 				{name}
 			</h3>
 			{schema.description !== undefined && (
-				<p className="max-w-(--cv-measure)">
+				<p className={widthClass("measure")}>
 					<InlineCode text={schema.description} />
 				</p>
 			)}
@@ -302,10 +303,10 @@ export async function ApiReference({ document }: { document: OpenApiDocument }) 
 	] as const;
 
 	return (
-		<main className="flex flex-col gap-12">
-			<div className="flex flex-col gap-4">
+		<PageMain className="gap-12">
+			<PageRegion width="measure" className="gap-4">
 				<h1 className="text-3xl sm:text-4xl">{document.info.title}</h1>
-				<p className="max-w-(--cv-measure) text-lg">
+				<p className="text-lg">
 					<InlineCode text={document.info.description} />
 				</p>
 				<p>
@@ -315,7 +316,7 @@ export async function ApiReference({ document }: { document: OpenApiDocument }) 
 						{t("page.document")}
 					</a>
 				</p>
-			</div>
+			</PageRegion>
 
 			<nav aria-labelledby="contents" className="flex flex-col gap-3">
 				<h2 id="contents" className={sectionHeading}>
@@ -378,7 +379,7 @@ export async function ApiReference({ document }: { document: OpenApiDocument }) 
 				<h2 id="problems" className={sectionHeading}>
 					{t("page.problems")}
 				</h2>
-				<p className="max-w-(--cv-measure)">
+				<p className={widthClass("measure")}>
 					<InlineCode text={t("page.problemsLead")} />
 				</p>
 				<dl className={list}>
@@ -394,7 +395,7 @@ export async function ApiReference({ document }: { document: OpenApiDocument }) 
 				<h2 id="field-codes" className={sectionHeading}>
 					{t("page.fieldCodes")}
 				</h2>
-				<p className="max-w-(--cv-measure)">
+				<p className={widthClass("measure")}>
 					<InlineCode text={t("page.fieldCodesLead")} />
 				</p>
 				<dl className={list}>
@@ -405,6 +406,6 @@ export async function ApiReference({ document }: { document: OpenApiDocument }) 
 					))}
 				</dl>
 			</section>
-		</main>
+		</PageMain>
 	);
 }

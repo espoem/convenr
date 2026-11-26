@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
+import { PageRegion } from "@/components/page-region";
 import { SteadyLabel } from "@/components/steady-label";
 import { type Brush, type Level, withLevel } from "@/domain/levels";
 import { useViewerZone } from "@/lib/browser-time";
@@ -95,9 +96,11 @@ export function PollBoard({ event, viewer, formatLocale }: PollBoardProps) {
 	return (
 		<div className="flex flex-col gap-6">
 			{participation.dropped ? (
-				<output className="block max-w-(--cv-measure) font-semibold text-action-active">
-					{tJoin("problem.not_joined")}
-				</output>
+				<PageRegion width="measure">
+					<output className="block font-semibold text-action-active">
+						{tJoin("problem.not_joined")}
+					</output>
+				</PageRegion>
 			) : null}
 			<JoinBand {...participation.band} />
 
@@ -113,9 +116,11 @@ export function PollBoard({ event, viewer, formatLocale }: PollBoardProps) {
 					inReferenceZone={inReferenceZone}
 					onSwitch={() => setInReferenceZone(!inReferenceZone)}
 				/>
-				<p className="max-w-(--cv-measure) text-sm text-ink-muted">
-					{joined === null ? t("pollJoinFirst") : t("pollHint")}
-				</p>
+				<PageRegion width="measure">
+					<p className="text-sm text-ink-muted">
+						{joined === null ? t("pollJoinFirst") : t("pollHint")}
+					</p>
+				</PageRegion>
 				<PollTable
 					event={table}
 					zone={zone}

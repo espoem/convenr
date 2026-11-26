@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 
+import { PageRegion } from "@/components/page-region";
 import { SteadyLabel } from "@/components/steady-label";
 import { Button } from "@/components/ui/button";
 import { bestWindows, mostPeople, sameWindow, type Window } from "@/domain/best-windows";
@@ -257,9 +258,11 @@ export function EventBoard({
 	return (
 		<div className="flex flex-col gap-6">
 			{participation.dropped ? (
-				<output className="block max-w-(--cv-measure) font-semibold text-action-active">
-					{tJoin("problem.not_joined")}
-				</output>
+				<PageRegion width="measure">
+					<output className="block font-semibold text-action-active">
+						{tJoin("problem.not_joined")}
+					</output>
+				</PageRegion>
 			) : null}
 			<JoinBand {...participation.band} />
 
@@ -348,17 +351,23 @@ export function EventBoard({
 								<PersonLegend shown={filtered !== undefined} className="col-start-1 row-start-1" />
 							</div>
 							{final === undefined ? null : <FinalLegend />}
-							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("groupHint")}</p>
+							<PageRegion width="measure">
+								<p className="text-sm text-ink-muted">{t("groupHint")}</p>
+							</PageRegion>
 						</>
 					) : null}
 
 					{tab === "me" && joined === null ? (
-						<p className="max-w-(--cv-measure)">{t("joinFirst")}</p>
+						<PageRegion width="measure">
+							<p>{t("joinFirst")}</p>
+						</PageRegion>
 					) : null}
 
 					{tab === "me" && joined !== null ? (
 						<>
-							<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("meHint")}</p>
+							<PageRegion width="measure">
+								<p className="text-sm text-ink-muted">{t("meHint")}</p>
+							</PageRegion>
 							<BrushPicker brush={brush} onChange={setBrush} />
 							<div className="flex flex-wrap gap-2">
 								<Button
@@ -465,7 +474,9 @@ export function EventBoard({
 					<p className="text-ink-muted">{t("noParticipants")}</p>
 				) : (
 					<>
-						<p className="max-w-(--cv-measure) text-sm text-ink-muted">{t("filterHint")}</p>
+						<PageRegion width="measure">
+							<p className="text-sm text-ink-muted">{t("filterHint")}</p>
+						</PageRegion>
 						<ul className="flex flex-wrap gap-2">
 							{event.participants.map((participant) => (
 								<li key={participant.name} className="max-w-full">
