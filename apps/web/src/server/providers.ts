@@ -19,27 +19,33 @@ import { env, type ProviderSettings } from "@/env";
 /** Milliseconds a visitor waits for one answer of a provider at most. */
 const PROVIDER_TIMEOUT = 10_000;
 
-type Answer = { address: ProviderAddress };
+/** Who a provider said signed in, as Better Auth keys the provider's row of an account. */
+export type ProviderAnswer = { provider: Provider; subject: string; address: ProviderAddress };
+
+type Answer = { kind: "none" } | ({ kind: "answered" } & ProviderAnswer);
+
+/** The answer of one request, which the provider's code fills in. */
+type AnswerSlot = { answer: Answer };
 
 declare global {
-	var convenrProviderAnswer: AsyncLocalStorage<Answer> | undefined;
+	var convenrProviderAnswer: AsyncLocalStorage<AnswerSlot> | undefined;
 }
 
 // Better Auth is made once for the whole server, but each bundle has its own copy of this module:
 // the copy that made it and the copy that asks must share the storage.
-const answered = (globalThis.convenrProviderAnswer ??= new AsyncLocalStorage<Answer>());
+const answered = (globalThis.convenrProviderAnswer ??= new AsyncLocalStorage<AnswerSlot>());
 
 /**
- * Runs `handle` and returns its result with the address a provider named meanwhile. The address
+ * Runs `handle` and returns its result with what a provider answered meanwhile. The answer
  * reaches the visitor's own browser when the sign-in has to be finished by an email link.
  */
-export async function withProviderAddress<Result>(
+export async function withProviderAnswer<Result>(
 	handle: () => Promise<Result>,
-): Promise<{ result: Result; address: ProviderAddress }> {
-	const store: Answer = { address: { kind: "missing" } };
+): Promise<{ result: Result; answer: Answer }> {
+	const store: AnswerSlot = { answer: { kind: "none" } };
 	const result = await answered.run(store, handle);
 
-	return { result, address: store.address };
+	return { result, answer: store.answer };
 }
 
 /** What a visitor goes to a provider for. */
@@ -59,7 +65,7 @@ function authUser(provider: Provider, subject: string, address: ProviderAddress)
 	const store = answered.getStore();
 
 	if (store !== undefined) {
-		store.address = address;
+		store.answer = { kind: "answered", provider, subject, address };
 	}
 
 	return { ...authAddress(provider, subject, address), name: "" };
@@ -95,11 +101,14 @@ async function githubUser(accessToken: string) {
 			return null;
 		}
 
-		const profile = githubUserSchema.parse(await user.json());
+		const answer: unknown = await user.json();
+		const profile = githubUserSchema.parse(answer);
+		// GitHub's id is a number, whatever Better Auth's type says; the row keeps it as text.
+		const { id } = githubIdSchema.parse(answer);
 		const listed = githubEmailsSchema.parse(await emails.json());
 
 		return {
-			user: authUser("github", profile.id, githubAddress(listed)),
+			user: authUser("github", String(id), githubAddress(listed)),
 			data: profile,
 		};
 	} catch {

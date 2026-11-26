@@ -15,8 +15,8 @@ import { formText as text } from "@/lib/form-text";
 
 import { accountProviders } from "./account-providers";
 import { type Auth, auth } from "./auth";
-import { forgetAddressToConfirm } from "./confirm-address";
 import { setAccountChoices } from "./notifications";
+import { forgetPendingSignIn, markLinkSent, newLinkKey, pendingSignIn } from "./pending-sign-in";
 import { currentVisitor, isFresh } from "./session";
 
 function localeOf(form: FormData): Locale {
@@ -48,18 +48,23 @@ export async function requestSignInLinkAction(form: FormData): Promise<void> {
 	}
 
 	let outcome: { sent: "1" } | { problem: string } = { sent: "1" };
+	// Only the confirm page finishes a provider's sign-in; any other link leaves it behind.
+	const pending = text(form, "finish") === "provider" ? await pendingSignIn() : undefined;
+	const key = newLinkKey();
 
 	try {
 		await authInstance.api.signInMagicLink({
 			body: {
 				email: email.data,
-				callbackURL: `/${locale}/account`,
+				callbackURL:
+					pending === undefined ? `/${locale}/account` : `/${locale}/sign-in/attach?key=${key}`,
 				errorCallbackURL: `/${locale}/sign-in?problem=sign_in_link_invalid`,
 				metadata: { locale },
 			},
 			headers: await headers(),
 		});
-		await forgetAddressToConfirm();
+
+		await (pending === undefined ? forgetPendingSignIn() : markLinkSent(pending, email.data, key));
 	} catch (error) {
 		unstable_rethrow(error);
 		outcome = { problem: refusalSchema.parse(error) };

@@ -1,7 +1,7 @@
 import { env } from "@/env";
 import { type Auth, auth } from "@/server/auth";
-import { asksToConfirm, keepAddressToConfirm } from "@/server/confirm-address";
-import { withProviderAddress } from "@/server/providers";
+import { asksToConfirm, keepPendingSignIn } from "@/server/pending-sign-in";
+import { withProviderAnswer } from "@/server/providers";
 
 /** The error a redirect of Better Auth's callback names, or an empty one. */
 function errorOf(answer: Response, origin: string): string {
@@ -16,13 +16,13 @@ function errorOf(answer: Response, origin: string): string {
  */
 async function answerOf(request: Request, instance: Auth, publicUrl: URL): Promise<Response> {
 	try {
-		const { result: answer, address } = await withProviderAddress(() => instance.handler(request));
+		const { result, answer } = await withProviderAnswer(() => instance.handler(request));
 
-		if (asksToConfirm(errorOf(answer, publicUrl.origin))) {
-			await keepAddressToConfirm(address, publicUrl.protocol === "https:");
+		if (answer.kind === "answered" && asksToConfirm(errorOf(result, publicUrl.origin))) {
+			await keepPendingSignIn(answer);
 		}
 
-		return answer;
+		return result;
 	} catch (error) {
 		const failure = error instanceof Error ? error.constructor.name : "a thrown value";
 

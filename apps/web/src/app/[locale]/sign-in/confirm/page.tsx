@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 
 import { PageShell } from "@/components/page-shell";
 import { SignInLinkForm } from "@/components/sign-in-link-form";
+import { PROVIDER_NAMES } from "@/domain/provider-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { redirect } from "@/i18n/navigation";
-import { addressToConfirm } from "@/server/confirm-address";
+import { pendingSignIn } from "@/server/pending-sign-in";
 import { currentVisitor } from "@/server/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,6 +33,7 @@ export default async function ConfirmAddressPage() {
 	}
 
 	const t = await getTranslations("SignIn.confirm");
+	const pending = await pendingSignIn();
 
 	return (
 		<PageShell>
@@ -39,12 +41,17 @@ export default async function ConfirmAddressPage() {
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl">{t("heading")}</h1>
 					<p className="max-w-(--cv-measure)">{t("intro")}</p>
-					<p className="max-w-(--cv-measure)">{t("afterwards")}</p>
+					<p className="max-w-(--cv-measure)">
+						{pending === undefined
+							? t("afterwards")
+							: t("attaches", { provider: PROVIDER_NAMES[pending.provider] })}
+					</p>
 				</header>
 				<SignInLinkForm
 					locale={locale}
-					address={await addressToConfirm()}
+					address={pending?.address ?? ""}
 					status={{ kind: "none" }}
+					finishesProvider={pending !== undefined}
 				/>
 			</main>
 		</PageShell>

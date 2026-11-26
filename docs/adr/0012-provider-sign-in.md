@@ -29,7 +29,7 @@ A form that posts to us and is redirected to a provider is blocked by `form-acti
 
 ## Consequences
 
-- A person whose provider does not prove their address signs in with the email link once and adds the provider from the account page.
+- A person whose provider does not prove their address signs in with the email link once. Opened in the browser that signed in at the provider, the link adds the provider as well; the identity waits there in a cookie signed with `AUTH_SECRET`, and joins only the account at the address the link went to, so a stranger cannot attach their provider to an address they typed. Opened elsewhere, the link only signs in, and the person adds the provider from the account page.
 - The placeholder must stay out of every account. The refusal of item 1 guarantees it, because a placeholder is never proved.
 - An upgrade of Better Auth needs a look at the callback, the link path and the disabled endpoints.
 - Rollback: without a provider's two settings the provider is off. Its rows in `auth_accounts` then do nothing, and the email link keeps working.

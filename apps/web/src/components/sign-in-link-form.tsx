@@ -22,15 +22,20 @@ export type SignInStatus =
 	| { kind: "sent" }
 	| { kind: "problem"; problem: (typeof SIGN_IN_PROBLEMS)[number] };
 
-/** Sends a sign-in link to an address; works without scripts. */
+/**
+ * Sends a sign-in link to an address; works without scripts. On the confirm page the link also
+ * finishes the provider's sign-in that this browser started.
+ */
 export async function SignInLinkForm({
 	locale,
 	address,
 	status,
+	finishesProvider = false,
 }: {
 	locale: Locale;
 	address: string;
 	status: SignInStatus;
+	finishesProvider?: boolean;
 }) {
 	const t = await getTranslations("SignIn");
 	const failed = status.kind === "problem";
@@ -45,6 +50,7 @@ export async function SignInLinkForm({
 	return (
 		<form action={requestSignInLinkAction} className="flex flex-col gap-3">
 			<input type="hidden" name="locale" value={locale} />
+			{finishesProvider ? <input type="hidden" name="finish" value="provider" /> : null}
 			<Field id={SIGN_IN_EMAIL_ID} label={t("email")}>
 				<input
 					id={SIGN_IN_EMAIL_ID}

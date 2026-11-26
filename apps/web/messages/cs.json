@@ -330,7 +330,8 @@
 		"confirm": {
 			"heading": "Potvrďte svou adresu",
 			"intro": "Zatím nejste přihlášeni. Pošlete si na svou e-mailovou adresu přihlašovací odkaz a otevřete ho.",
-			"afterwards": "Na stránce účtu pak můžete přidat službu, ze které přicházíte, a příště se přes ni přihlásit rovnou."
+			"afterwards": "Na stránce účtu pak můžete přidat službu, ze které přicházíte, a příště se přes ni přihlásit rovnou.",
+			"attaches": "Otevřete odkaz v tomto prohlížeči a {provider} se přidá k vašemu účtu: příště vás přihlásí rovnou. Pokud se odkaz otevře jinde, přidejte {provider} na stránce účtu."
 		},
 		"problem": {
 			"provider_failed": "Přihlášení se nedokončilo. Zkuste to znovu, nebo použijte odkaz e-mailem.",

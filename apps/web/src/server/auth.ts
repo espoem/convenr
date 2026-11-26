@@ -176,7 +176,7 @@ async function noticeOldAddress(accountId: string, newEmail: string, locale: Loc
 }
 
 /** Tells the address of an account that a provider was added to it. */
-async function noticeProvider(accountId: string, provider: Provider): Promise<void> {
+export async function noticeProvider(accountId: string, provider: Provider): Promise<void> {
 	const address = await accountAddress(accountId);
 
 	if (address !== undefined) {

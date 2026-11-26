@@ -42,6 +42,18 @@ test("an address the provider does not prove is confirmed by an email link", asy
 	await page.goto(linkIn((await emailTo(email, "sign-in link")).Text));
 	await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
 
+	// The link opened in the browser that signed in at GitHub, so GitHub joined the account.
+	await expect(page.getByText("The service is added.")).toBeVisible();
+	await expect(page.getByRole("button", { name: "Remove GitHub" })).toBeVisible();
+	await emailTo(email, "GitHub");
+
+	await page.getByRole("button", { name: "Sign out" }).click();
+	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+	await page.goto("/en/sign-in");
+	await page.getByRole("button", { name: "Continue with GitHub" }).click();
+	await page.getByRole("link", { name: "Go back" }).click();
+	await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+
 	await page.context().close();
 });
 

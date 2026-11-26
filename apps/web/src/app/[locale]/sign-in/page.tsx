@@ -15,7 +15,7 @@ import {
 import { PROVIDER_NAMES } from "@/domain/provider-address";
 import { currentLocale } from "@/i18n/current-locale";
 import { redirect } from "@/i18n/navigation";
-import { asksToConfirm } from "@/server/confirm-address";
+import { asksToConfirm } from "@/server/pending-sign-in";
 import { offeredProviders } from "@/server/providers";
 import { currentVisitor } from "@/server/session";
 

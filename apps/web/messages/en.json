@@ -330,7 +330,8 @@
 		"confirm": {
 			"heading": "Confirm your address",
 			"intro": "Nobody is signed in yet. Send a sign-in link to your email address and open it to continue.",
-			"afterwards": "On your account page you can then add the service you came from, and sign in with it directly next time."
+			"afterwards": "On your account page you can then add the service you came from, and sign in with it directly next time.",
+			"attaches": "Open the link in this browser, and {provider} is added to your account: next time it signs you in directly. If the link opens elsewhere, add {provider} on your account page."
 		},
 		"problem": {
 			"provider_failed": "The sign-in was not finished. Try again or use the email link.",

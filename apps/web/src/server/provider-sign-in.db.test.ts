@@ -10,8 +10,10 @@ import { db } from "@/db/client";
 import { accountSettings, authAccounts, authSessions, authUsers, emailCounts } from "@/db/schema";
 import type { ProviderAddress } from "@/domain/provider-address";
 
+import { attachPendingProvider } from "./attach-provider";
 import { type Auth, auth } from "./auth";
-import { withProviderAddress } from "./providers";
+import type { PendingSignIn } from "./pending-sign-in";
+import { withProviderAnswer } from "./providers";
 
 const SECRET = "test-secret-that-is-long-enough-for-accounts";
 const ORIGIN = "http://localhost:3000";
@@ -115,6 +117,7 @@ type Outcome = {
 	error: string | null;
 	cookies: string;
 	address: ProviderAddress;
+	answer: Awaited<ReturnType<typeof withProviderAnswer>>["answer"];
 };
 
 /** Follows the provider's redirect back to the callback. */
@@ -124,7 +127,7 @@ async function callBack(provider: string, authorization: URL, cookie: string): P
 	callback.searchParams.set("code", "the-code");
 	callback.searchParams.set("state", authorization.searchParams.get("state") ?? "");
 
-	const { result, address } = await withProviderAddress(() =>
+	const { result, answer } = await withProviderAnswer(() =>
 		instance().handler(new Request(callback, { headers: { cookie } })),
 	);
 
@@ -134,7 +137,8 @@ async function callBack(provider: string, authorization: URL, cookie: string): P
 		location,
 		error: new URL(location, ORIGIN).searchParams.get("error"),
 		cookies: cookiesOf(result.headers),
-		address,
+		address: answer.kind === "answered" ? answer.address : { kind: "missing" },
+		answer,
 	};
 }
 
@@ -535,5 +539,101 @@ describe("the provider endpoints", () => {
 
 		expect(outcome.error).toBe("state_mismatch");
 		expect(await countAccounts()).toBe(before);
+	});
+});
+
+/** What the confirm page keeps once it sent the link to `to`, after GitHub answered. */
+async function confirmed(email: string, to = email): Promise<PendingSignIn> {
+	const { answer } = await signIn("github", { id: githubId(), email, verified: true });
+
+	if (answer.kind !== "answered") {
+		throw new Error("GitHub did not answer.");
+	}
+
+	return {
+		kind: "sent",
+		provider: answer.provider,
+		subject: answer.subject,
+		address: email,
+		startedAt: Temporal.Now.instant().epochMilliseconds,
+		to,
+		sentAt: Temporal.Now.instant().epochMilliseconds,
+		keyHash: "unused",
+	};
+}
+
+function signedIn(id: string, email: string, sessionCreatedAt = Temporal.Now.instant()) {
+	return { accountId: id, email, sessionCreatedAt };
+}
+
+describe("finishing a provider's sign-in by the email link", () => {
+	it("attaches the identity, which then signs in to the account directly", async () => {
+		const email = `${unique()}@example.org`;
+		const pending = await confirmed(email);
+		const account = await emailAccount(email);
+
+		expect(await attachPendingProvider(pending, signedIn(account.id, email))).toEqual({
+			kind: "attached",
+		});
+		expect(await providersOf(account.id)).toMatchObject([
+			{ providerId: "github", accountId: pending.subject, accessToken: null },
+		]);
+
+		expect(await signedInTo((await signIn("github", { id: pending.subject })).cookies)).toBe(
+			account.id,
+		);
+	});
+
+	it("attaches nothing to an account at another address than the link went to", async () => {
+		const email = `${unique()}@example.org`;
+		const pending = await confirmed(email, `${unique()}@example.org`);
+		const account = await emailAccount(email);
+
+		expect(await attachPendingProvider(pending, signedIn(account.id, email))).toEqual({
+			kind: "skipped",
+		});
+		expect(await providersOf(account.id)).toEqual([]);
+	});
+
+	it("attaches nothing to a session older than the link, or before a link was sent", async () => {
+		const email = `${unique()}@example.org`;
+		const account = await emailAccount(email);
+		const pending = await confirmed(email);
+		const older = Temporal.Now.instant().subtract({ minutes: 1 });
+
+		expect(await attachPendingProvider(pending, signedIn(account.id, email, older))).toEqual({
+			kind: "skipped",
+		});
+		expect(
+			await attachPendingProvider({ ...pending, kind: "asked" }, signedIn(account.id, email)),
+		).toEqual({ kind: "skipped" });
+		expect(await providersOf(account.id)).toEqual([]);
+	});
+
+	it("refuses an identity in another account and skips a provider the account has", async () => {
+		const email = `${unique()}@example.org`;
+		const pending = await confirmed(email);
+		const other = await emailAccount(`${unique()}@example.org`);
+
+		await db()
+			.insert(authAccounts)
+			.values({ id: unique(), providerId: "github", accountId: pending.subject, userId: other.id });
+
+		const account = await emailAccount(email);
+
+		expect(await attachPendingProvider(pending, signedIn(account.id, email))).toEqual({
+			kind: "in_other_account",
+		});
+
+		await db()
+			.insert(authAccounts)
+			.values({ id: unique(), providerId: "github", accountId: githubId(), userId: account.id });
+
+		expect(
+			await attachPendingProvider(
+				{ ...pending, subject: githubId() },
+				signedIn(account.id, email.toUpperCase()),
+			),
+		).toEqual({ kind: "skipped" });
 	});
 });
