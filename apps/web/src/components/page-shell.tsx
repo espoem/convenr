@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { LocaleSwitch } from "@/components/locale-switch";
 import { ThemeMenu } from "@/components/theme-menu";
+import { env } from "@/env";
 import { Link } from "@/i18n/navigation";
 import { currentVisitor } from "@/server/session";
 
@@ -48,6 +49,27 @@ export function PageShell({ children }: { children: ReactNode }) {
 				</div>
 			</header>
 			{children}
+			<Footer />
 		</div>
+	);
+}
+
+/** The link to the privacy page, on an instance that shows one. */
+async function Footer() {
+	if (env().privacy.kind === "off") {
+		return null;
+	}
+
+	const t = await getTranslations("Footer");
+
+	return (
+		<footer className="mt-auto flex border-t border-line pt-2 text-sm">
+			<Link
+				href="/privacy"
+				className="inline-flex min-h-11 items-center text-ink-muted underline-offset-4 hover:underline"
+			>
+				{t("privacy")}
+			</Link>
+		</footer>
 	);
 }

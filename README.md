@@ -120,10 +120,14 @@ services:
 | `NOTIFY_DIGEST_MINUTES` | no            | Least minutes between two emails about new responses to one event. Default `60`.                                                |
 | `REMINDER_HOURS`        | no            | Hours before an event's final time that its reminder is sent. Default `24`.                                                     |
 | `MAINTENANCE_SECRET`    | no            | At least 32 random characters. When set, `POST /api/maintenance` with this bearer token runs the maintenance pass.              |
+| `OPERATOR_NAME`         | no            | Who runs the instance, named as the data controller on the privacy page. Set it together with `PRIVACY_CONTACT`.                |
+| `PRIVACY_CONTACT`       | no            | The email address for questions about personal data.                                                                            |
 
 Accounts are optional. Set `SMTP_URL`, `MAIL_FROM`, `AUTH_SECRET` and `PUBLIC_URL` together to turn them on; with only some of them, the server does not start. Passkeys need `PUBLIC_URL` to name a host, not an IP address.
 
 Sign-in with Google or GitHub is off until accounts are on and both settings of the provider are set. Register an OAuth application at the provider with the redirect address `PUBLIC_URL` followed by `/api/auth/callback/google` or `/api/auth/callback/github`. convenr asks for the email address only and stores the provider's identifier of the account, but no token, name or picture.
+
+The privacy page at `/privacy`, and the footer link to it, appear once `OPERATOR_NAME` and `PRIVACY_CONTACT` are both set. Its text describes the instance at convenr.party, including its processors (Vercel, Neon, Lettermint) and the Czech data protection authority. Check every line against your own hosting before you set the two settings, and change the text in `apps/web/messages/` where it differs.
 
 ### Back up and restore
 

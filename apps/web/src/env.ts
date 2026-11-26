@@ -42,7 +42,29 @@ const schema = z.object({
 	REMINDER_HOURS: z.coerce.number().int().min(1).max(720).default(24),
 	/** Emails of all kinds the instance sends per hour at most. */
 	MAIL_HOURLY_LIMIT: z.coerce.number().int().min(1).max(100_000).default(300),
+	/** Who runs the instance, named as its data controller on the privacy page. */
+	OPERATOR_NAME: z.string().trim().min(1).optional(),
+	/** The email address for questions about personal data. */
+	PRIVACY_CONTACT: z.email().optional(),
 });
+
+/** The privacy page, which an instance shows only once it names its operator. */
+export type Privacy = { kind: "off" } | { kind: "on"; operator: string; contact: string };
+
+/** The privacy page needs both settings; one alone stops the server, naming the other. */
+function privacyOf({ OPERATOR_NAME, PRIVACY_CONTACT }: z.infer<typeof schema>): Privacy {
+	if (OPERATOR_NAME === undefined && PRIVACY_CONTACT === undefined) {
+		return { kind: "off" };
+	}
+
+	if (OPERATOR_NAME === undefined || PRIVACY_CONTACT === undefined) {
+		throw new Error(
+			`The privacy page needs this setting as well: ${OPERATOR_NAME === undefined ? "OPERATOR_NAME" : "PRIVACY_CONTACT"}.`,
+		);
+	}
+
+	return { kind: "on", operator: OPERATOR_NAME, contact: PRIVACY_CONTACT };
+}
 
 /** The settings that turn accounts on; an instance sets all of them or none. */
 const ACCOUNT_SETTINGS = ["SMTP_URL", "MAIL_FROM", "AUTH_SECRET", "PUBLIC_URL"] as const;
@@ -66,7 +88,7 @@ export type Accounts =
 			providers: ProviderSettings[];
 	  };
 
-type Env = z.infer<typeof schema> & { accounts: Accounts };
+type Env = z.infer<typeof schema> & { accounts: Accounts; privacy: Privacy };
 
 /** The providers whose pair of settings is complete; throws when one of a pair is missing. */
 function providersOf(parsed: z.infer<typeof schema>): ProviderSettings[] {
@@ -116,7 +138,7 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
 					providers,
 				};
 
-	return { ...parsed, accounts };
+	return { ...parsed, accounts, privacy: privacyOf(parsed) };
 }
 
 let cached: Env | undefined;

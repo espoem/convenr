@@ -544,6 +544,49 @@
 		"gone": "Tato událost už neexistuje, takže už žádné e-maily neposílá.",
 		"invalid": "Tento odkaz není platný. Zkontrolujte, že jste otevřeli celý, nebo si e-maily nastavte na stránce účtu."
 	},
+	"Footer": {
+		"privacy": "Ochrana soukromí"
+	},
+	"Privacy": {
+		"title": "Ochrana soukromí",
+		"heading": "Ochrana soukromí",
+		"updated": "Aktualizováno 26. listopadu 2026.",
+		"intro": "convenr nezobrazuje reklamy a nepoužívá sledování ani analytiku třetích stran. Uchovává to, co událost potřebuje, a u účtu jednu e-mailovou adresu a jeho nastavení. Účet je nepovinný.",
+		"sections": {
+			"who": {
+				"heading": "Kdo službu provozuje",
+				"body": "<p>Službu provozuje {operator}, správce osobních údajů podle GDPR. Pište na <mail>{contact}</mail>.</p>"
+			},
+			"data": {
+				"heading": "Co uchováváme",
+				"body": "<ul><li>Událost: její název, popis, dny, časy nebo možnosti ankety, časové pásmo a konečný termín.</li><li>Odpověď: vaše zobrazované jméno a kdy můžete, nebo vaše odpovědi v anketě. Jméno může být přezdívka.</li><li>Nepovinné heslo k odpovědi, uložené jen jako otisk (hash).</li><li>Účet: vaši e-mailovou adresu, vaše přístupové klíče se jmény, která jim dáte, jazyk a nastavení e-mailů.</li><li>Přihlášení: kdy jste se přihlásili a druh prohlížeče, například „Firefox na Androidu“.</li><li>E-maily čekající na odeslání a počet e-mailů na jednu adresu za poslední hodinu, uložený pod otiskem adresy.</li></ul><p>Neuchováváme IP adresy a nevytváříme profily. Uchováváme to kvůli události nebo účtu, o které jste požádali (čl. 6 odst. 1 písm. b GDPR), a abychom skupině ukázali, kdo kdy může, a předešli zneužití (čl. 6 odst. 1 písm. f).</p>"
+			},
+			"visible": {
+				"heading": "Kdo událost vidí",
+				"body": "<p>Kdo má odkaz na událost, vidí její název, popis, jména účastníků a kdy mohou. Vaše e-mailová adresa se nikomu nezobrazuje.</p>"
+			},
+			"cookies": {
+				"heading": "Cookies a úložiště prohlížeče",
+				"body": "<ul><li><code>__Host-convenr-key</code> pozná odpovědi z tohoto prohlížeče, 400 dní.</li><li><code>theme</code> si rok pamatuje světlý nebo tmavý vzhled, pokud si ho zvolíte.</li><li>Cookie přihlášení začínající <code>__Secure-convenr</code> vás udrží přihlášené 30 dní.</li><li>Místní úložiště <code>convenr.events</code> uchovává seznam vašich událostí v tomto prohlížeči.</li></ul><p>Slouží jen tomu, o co jste požádali, proto nežádáme o souhlas.</p>"
+			},
+			"processors": {
+				"heading": "Kdo pro nás údaje zpracovává",
+				"body": "<ul><li>Vercel Inc., Spojené státy, provozuje aplikaci na serverech ve Frankfurtu a při každém požadavku zpracovává vaši IP adresu.</li><li>Neon (Databricks, Inc.), Spojené státy, provozuje databázi ve Frankfurtu.</li><li>Lettermint, Nizozemsko, odesílá e-maily: vaši adresu a text.</li></ul><p>Údaje neprodáváme a nikomu dalšímu je nedáváme, pokud to nevyžaduje zákon.</p>"
+			},
+			"retention": {
+				"heading": "Jak dlouho údaje uchováváme",
+				"body": "<ul><li>Událost s daty: 90 dní po jejím posledním dni. Událost podle dnů v týdnu: 90 dní po poslední změně, nebo po konečném termínu, je-li pozdější.</li><li>Událost, kterou si ponechal přihlášený organizátor: dokud si ji ponechává, potom nejméně 90 dní.</li><li>Účet: dokud ho nesmažete.</li><li>Přihlášení: 30 dní od posledního použití.</li><li>Odkaz pro přihlášení: 15 minut.</li><li>Odeslaný e-mail u Lettermintu: nejvýše 28 dní.</li></ul>"
+			},
+			"delete": {
+				"heading": "Jak údaje smazat sami",
+				"body": "<ul><li>Událost: na její stránce pro správu.</li><li>Odpověď: odejděte z události na její stránce.</li><li>Účet: na stránce účtu. Vaše události zůstanou bez vlastníka a odpovědi jako běžné, takže je nejdřív smažte, pokud je nechcete ponechat.</li></ul>"
+			},
+			"rights": {
+				"heading": "Vaše práva",
+				"body": "<p>Můžete požádat o kopii svých údajů, jejich opravu nebo výmaz a vznést námitku proti zpracování na základě oprávněného zájmu. Pište na <mail>{contact}</mail>; odpovíme do měsíce. Bez účtu nevíme, kdo jste, proto pošlete odkaz na událost a jméno, které jste použili.</p><p>Stížnost můžete podat u Úřadu pro ochranu osobních údajů (<uoou>uoou.gov.cz</uoou>) nebo u úřadu v zemi, kde žijete.</p>"
+			}
+		}
+	},
 	"ApiReference": {
 		"title": "API convenr",
 		"description": "Všechno, co člověk může udělat na stránkách convenr, jako JSON přes HTTP. Vytvoření události vrátí tajný klíč pořadatele a zapsání k ní vrátí token účastníka; oba se posílají jako `Authorization: Bearer <secret>`. Odmítnutý požadavek dostane problém podle RFC 9457 se stálým kódem `code`. V rámci verze 1 může odpověď získat nová pole, kódy problémů a hodnoty výčtů, takže klient ignoruje, co nezná. Požadavek obsahuje jen pole, která jmenuje jeho schéma.",

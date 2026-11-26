@@ -107,4 +107,34 @@ describe("parseEnv", () => {
 			);
 		});
 	});
+
+	describe("the privacy page", () => {
+		const url = "postgres://user@localhost/convenr";
+
+		it("is off until the instance names its operator and contact", () => {
+			expect(parseEnv({ DATABASE_URL: url }).privacy).toEqual({ kind: "off" });
+			expect(
+				parseEnv({
+					DATABASE_URL: url,
+					OPERATOR_NAME: "Jana Nováková",
+					PRIVACY_CONTACT: "privacy@example.org",
+				}).privacy,
+			).toEqual({ kind: "on", operator: "Jana Nováková", contact: "privacy@example.org" });
+		});
+
+		it("refuses to start with one of the two settings, naming the other", () => {
+			expect(() => parseEnv({ DATABASE_URL: url, OPERATOR_NAME: "Jana" })).toThrow(
+				/PRIVACY_CONTACT/u,
+			);
+			expect(() => parseEnv({ DATABASE_URL: url, PRIVACY_CONTACT: "privacy@example.org" })).toThrow(
+				/OPERATOR_NAME/u,
+			);
+		});
+
+		it("refuses a contact that is not an address", () => {
+			expect(() =>
+				parseEnv({ DATABASE_URL: url, OPERATOR_NAME: "Jana", PRIVACY_CONTACT: "Jana" }),
+			).toThrow(/PRIVACY_CONTACT/u);
+		});
+	});
 });

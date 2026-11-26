@@ -71,6 +71,8 @@ export default defineConfig({
 				GITHUB_CLIENT_SECRET: "e2e",
 				// The test answers the server's requests to the providers.
 				NODE_OPTIONS: `--import ${new URL("e2e/provider-answers.mts", import.meta.url).href}`,
+				OPERATOR_NAME: "Jana Nováková",
+				PRIVACY_CONTACT: "privacy@example.org",
 			},
 			timeout: 60_000,
 		},

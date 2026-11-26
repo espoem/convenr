@@ -544,6 +544,49 @@
 		"gone": "This event no longer exists, so it sends no more emails.",
 		"invalid": "This link is not valid. Check that you opened all of it, or change your emails on the account page."
 	},
+	"Footer": {
+		"privacy": "Privacy"
+	},
+	"Privacy": {
+		"title": "Privacy",
+		"heading": "Privacy",
+		"updated": "Updated on 26 November 2026.",
+		"intro": "convenr shows no ads and uses no trackers or third-party analytics. It keeps what an event needs, and for an account one email address and its settings. An account is optional.",
+		"sections": {
+			"who": {
+				"heading": "Who runs the service",
+				"body": "<p>This service is run by {operator}, the data controller under the GDPR. Write to <mail>{contact}</mail>.</p>"
+			},
+			"data": {
+				"heading": "What we keep",
+				"body": "<ul><li>An event: its name, description, days, times or poll options, time zone and final time.</li><li>A response: your display name and when you can come, or your poll answers. A display name can be a nickname.</li><li>An optional password for your response, kept only as a hash.</li><li>An account: your email address, your passkeys with the names you give them, your language and your email settings.</li><li>A session: when you signed in and the kind of browser, such as “Firefox on Android”.</li><li>Emails waiting to be sent, and how many went to an address in the last hour, under a hash of the address.</li></ul><p>We keep no IP addresses and make no profiles. We keep this to run the event or the account you asked for (GDPR Art. 6(1)(b)), and to show the group who can come when and to prevent abuse (Art. 6(1)(f)).</p>"
+			},
+			"visible": {
+				"heading": "Who can see an event",
+				"body": "<p>Anyone with the event link sees its name, description, the names of participants and when they can come. Your email address is never shown to anyone.</p>"
+			},
+			"cookies": {
+				"heading": "Cookies and browser storage",
+				"body": "<ul><li><code>__Host-convenr-key</code> recognizes the responses of this browser, for 400 days.</li><li><code>theme</code> remembers light or dark for a year, if you choose one.</li><li>The session cookie, starting with <code>__Secure-convenr</code>, keeps you signed in for 30 days.</li><li>Local storage <code>convenr.events</code> lists your events in this browser.</li></ul><p>They serve only what you asked for, so we ask for no consent.</p>"
+			},
+			"processors": {
+				"heading": "Who processes data for us",
+				"body": "<ul><li>Vercel Inc., United States, runs the application on servers in Frankfurt and handles your IP address with each request.</li><li>Neon (Databricks, Inc.), United States, runs the database in Frankfurt.</li><li>Lettermint, the Netherlands, sends the emails: your address and the text.</li></ul><p>We sell no data and give it to nobody else, unless the law requires it.</p>"
+			},
+			"retention": {
+				"heading": "How long we keep it",
+				"body": "<ul><li>An event with dates: 90 days after its last day. A weekday event: 90 days after its last change, or after its final time if that is later.</li><li>An event kept by its signed-in organizer: until the organizer stops keeping it, then at least 90 days.</li><li>An account: until you delete it.</li><li>A session: 30 days after its last use.</li><li>A sign-in link: 15 minutes.</li><li>A sent email at Lettermint: at most 28 days.</li></ul>"
+			},
+			"delete": {
+				"heading": "Deleting your data yourself",
+				"body": "<ul><li>An event: on its manage page.</li><li>A response: leave the event on its page.</li><li>An account: on the account page. Your events stay without an owner and your responses stay as ordinary ones, so delete them first if you want them gone.</li></ul>"
+			},
+			"rights": {
+				"heading": "Your rights",
+				"body": "<p>You can ask for a copy of your data, its correction or deletion, and object to processing that rests on legitimate interest. Write to <mail>{contact}</mail>; we answer within a month. Without an account we do not know who you are, so send the event link and the name you used.</p><p>You can complain to the Czech data protection authority, Úřad pro ochranu osobních údajů (<uoou>uoou.gov.cz</uoou>), or to the authority where you live.</p>"
+			}
+		}
+	},
 	"ApiReference": {
 		"title": "convenr API",
 		"description": "Everything a person can do on the convenr pages, as JSON over HTTP. Creating an event returns an admin secret, and joining one returns a participant token; each is sent as `Authorization: Bearer <secret>`. A refused request gets an RFC 9457 problem with a stable `code`. Within version 1 a response may gain fields, problem codes and enum values, so a client ignores what it does not know. A request holds only the fields its schema names.",
