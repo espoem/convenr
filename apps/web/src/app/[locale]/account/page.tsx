@@ -389,7 +389,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 							</ul>
 						)}
 						{addable.length === 0 ? null : (
-							<div className="flex flex-col gap-3">
+							<div className="flex flex-col gap-3 sm:max-w-sm">
 								{addable.map((provider) => (
 									<ProviderButton
 										key={provider}
@@ -397,6 +397,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 										purpose="add"
 										locale={locale}
 										label={t("providers.add", { provider: PROVIDER_NAMES[provider] })}
+										fullWidth
 									/>
 								))}
 							</div>

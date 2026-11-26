@@ -1,5 +1,6 @@
 "use client";
 
+import { KeyIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 
@@ -24,7 +25,13 @@ async function canAutofill(): Promise<boolean> {
  * offered in the autofill of the field `emailField`, which then asks for them by its
  * `autocomplete` value.
  */
-export function PasskeySignIn({ emailField }: { emailField: string }) {
+export function PasskeySignIn({
+	emailField,
+	fullWidth = false,
+}: {
+	emailField: string;
+	fullWidth?: boolean;
+}) {
 	const t = useTranslations("SignIn");
 	const router = useRouter();
 	const [failed, setFailed] = useState(false);
@@ -73,8 +80,9 @@ export function PasskeySignIn({ emailField }: { emailField: string }) {
 				variant="outline"
 				disabled={pending}
 				onClick={signIn}
-				className="w-full sm:w-fit"
+				className={fullWidth ? "w-full justify-start px-3.5" : "w-full sm:w-fit"}
 			>
+				<KeyIcon aria-hidden className="size-5 shrink-0" />
 				{t("passkey")}
 			</Button>
 			<p aria-live="polite" className="text-sm font-semibold text-action-active empty:sr-only">

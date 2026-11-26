@@ -30,28 +30,40 @@ export async function SignInLinkForm({
 	locale,
 	address,
 	status,
+	hint,
 	finishesProvider = false,
 }: {
 	locale: Locale;
 	address: string;
 	status: SignInStatus;
+	hint?: string;
 	finishesProvider?: boolean;
 }) {
 	const t = await getTranslations("SignIn");
 	const failed = status.kind === "problem";
+	const sent = status.kind === "sent";
 	let text = "";
 
 	if (status.kind === "problem") {
 		text = t(`problem.${status.problem}`);
-	} else if (status.kind === "sent") {
+	} else if (sent) {
 		text = t("sent");
 	}
 
+	let statusClass = "block empty:sr-only";
+
+	if (failed) {
+		statusClass = "block text-sm font-semibold text-action-active empty:sr-only";
+	} else if (sent) {
+		statusClass =
+			"block rounded-md border border-earth bg-surface px-4 py-3 text-sm font-medium text-ink empty:sr-only";
+	}
+
 	return (
-		<form action={requestSignInLinkAction} className="flex flex-col gap-3">
+		<form action={requestSignInLinkAction} className="flex flex-col gap-4">
 			<input type="hidden" name="locale" value={locale} />
 			{finishesProvider ? <input type="hidden" name="finish" value="provider" /> : null}
-			<Field id={SIGN_IN_EMAIL_ID} label={t("email")}>
+			<Field id={SIGN_IN_EMAIL_ID} label={t("email")} hint={hint}>
 				<input
 					id={SIGN_IN_EMAIL_ID}
 					name="email"
@@ -67,12 +79,7 @@ export async function SignInLinkForm({
 			<Button type="submit" className="w-full sm:w-fit">
 				{t("send")}
 			</Button>
-			<output
-				id="sign-in-status"
-				className={
-					failed ? "block font-semibold text-action-active empty:sr-only" : "block empty:sr-only"
-				}
-			>
+			<output id="sign-in-status" className={statusClass}>
 				{text}
 			</output>
 		</form>

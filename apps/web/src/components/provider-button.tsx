@@ -13,19 +13,29 @@ export function ProviderButton({
 	purpose,
 	locale,
 	label,
+	fullWidth = false,
 }: {
 	provider: Provider;
 	purpose: ProviderPurpose;
 	locale: Locale;
 	label: string;
+	fullWidth?: boolean;
 }) {
 	const Mark = PROVIDER_MARKS[provider];
 
 	return (
-		<form method="post" action={`/${locale}/sign-in/provider`}>
+		<form
+			method="post"
+			action={`/${locale}/sign-in/provider`}
+			className={fullWidth ? "w-full" : undefined}
+		>
 			<input type="hidden" name="provider" value={provider} />
 			<input type="hidden" name="purpose" value={purpose} />
-			<Button type="submit" variant="outline" className="w-full sm:w-fit">
+			<Button
+				type="submit"
+				variant="outline"
+				className={fullWidth ? "w-full justify-start px-3.5" : "w-full sm:w-fit"}
+			>
 				<Mark />
 				{label}
 			</Button>

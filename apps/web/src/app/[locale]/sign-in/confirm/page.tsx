@@ -34,15 +34,16 @@ export default async function ConfirmAddressPage() {
 	}
 
 	const t = await getTranslations("SignIn.confirm");
+	const tSignIn = await getTranslations("SignIn");
 	const pending = await pendingSignIn();
 
 	return (
 		<PageShell>
-			<PageMain width="form" className="gap-6">
+			<PageMain width="form" className="gap-8">
 				<header className="flex flex-col gap-3">
 					<h1 className="text-3xl">{t("heading")}</h1>
-					<p>{t("intro")}</p>
-					<p>
+					<p className="text-ink-muted">{t("intro")}</p>
+					<p className="text-ink-muted">
 						{pending === undefined
 							? t("afterwards")
 							: t("attaches", { provider: PROVIDER_NAMES[pending.provider] })}
@@ -52,6 +53,7 @@ export default async function ConfirmAddressPage() {
 					locale={locale}
 					address={pending?.address ?? ""}
 					status={{ kind: "none" }}
+					hint={tSignIn("emailHint")}
 					finishesProvider={pending !== undefined}
 				/>
 			</PageMain>

@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
-import { PageMain } from "@/components/page-region";
+import { PageMain, PageRegion } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
 import { PasskeySignIn } from "@/components/passkey-sign-in";
 import { ProviderButton } from "@/components/provider-button";
@@ -80,26 +80,60 @@ export default async function SignInPage({ searchParams }: PageProps<"/[locale]/
 	}
 
 	const t = await getTranslations("SignIn");
+	const providers = offeredProviders();
 
 	return (
 		<PageShell>
-			<PageMain width="form" className="gap-6">
-				<header className="flex flex-col gap-3">
+			<PageMain className="gap-8">
+				<PageRegion as="header" width="measure" className="gap-3">
 					<h1 className="text-3xl">{t("heading")}</h1>
-					<p>{t("intro")}</p>
-				</header>
-				<SignInLinkForm locale={locale} address="" status={statusOf(query)} />
-				<div className="flex flex-col gap-3">
-					{offeredProviders().map((provider) => (
-						<ProviderButton
-							key={provider}
-							provider={provider}
-							purpose="sign_in"
+					<p className="text-ink-muted">{t("intro")}</p>
+				</PageRegion>
+
+				<div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[minmax(0,1.2fr)_1px_minmax(0,0.9fr)] md:items-start md:gap-10">
+					<section aria-labelledby="sign-in-email-heading" className="flex min-w-0 flex-col gap-4">
+						<h2 id="sign-in-email-heading" className="text-xl">
+							{t("emailHeading")}
+						</h2>
+						<SignInLinkForm
 							locale={locale}
-							label={t("provider", { provider: PROVIDER_NAMES[provider] })}
+							address=""
+							status={statusOf(query)}
+							hint={t("emailHint")}
 						/>
-					))}
-					<PasskeySignIn emailField={SIGN_IN_EMAIL_ID} />
+					</section>
+
+					<div aria-hidden className="hidden w-px self-stretch bg-line md:block" />
+
+					<div aria-hidden className="flex items-center gap-3 text-sm text-ink-muted md:hidden">
+						<span className="h-px flex-1 bg-line" />
+						<span>{t("or")}</span>
+						<span className="h-px flex-1 bg-line" />
+					</div>
+
+					<section aria-labelledby="sign-in-other-heading" className="flex min-w-0 flex-col gap-4">
+						<div className="flex flex-col gap-1">
+							<h2 id="sign-in-other-heading" className="text-xl">
+								{t("otherHeading")}
+							</h2>
+							<p className="text-sm text-ink-muted">
+								{providers.length > 0 ? t("otherIntro") : t("otherPasskeyIntro")}
+							</p>
+						</div>
+						<div className="flex flex-col gap-3">
+							{providers.map((provider) => (
+								<ProviderButton
+									key={provider}
+									provider={provider}
+									purpose="sign_in"
+									locale={locale}
+									label={t("provider", { provider: PROVIDER_NAMES[provider] })}
+									fullWidth
+								/>
+							))}
+							<PasskeySignIn emailField={SIGN_IN_EMAIL_ID} fullWidth />
+						</div>
+					</section>
 				</div>
 			</PageMain>
 		</PageShell>
