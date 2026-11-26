@@ -91,6 +91,10 @@ export async function generateMetadata(): Promise<Metadata> {
 	return { title: t("title"), robots: { index: false, follow: false } };
 }
 
+// The box sits beside the first line of a label that wraps; a one-line row keeps its full height.
+const CHECK_ROW = "flex min-h-11 items-start gap-2 py-2.5";
+const CHECK_BOX = "mt-0.5 size-5 shrink-0";
+
 function Section({ id, heading, children }: { id: string; heading: string; children: ReactNode }) {
 	return (
 		<section aria-labelledby={id} className="flex flex-col gap-3">
@@ -267,12 +271,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 						{hidden}
 						<p className="max-w-(--cv-measure)">{t("notifications.intro")}</p>
 						{NOTIFICATION_KINDS.map((kind) => (
-							<label key={kind} className="flex min-h-11 items-center gap-2">
+							<label key={kind} className={CHECK_ROW}>
 								<input
 									type="checkbox"
 									name={kind}
 									defaultChecked={notifications[kind]}
-									className="size-5 shrink-0"
+									className={CHECK_BOX}
 								/>
 								{t(`notifications.${kind}`, { minutes, hours })}
 							</label>
@@ -426,8 +430,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 					<p className="max-w-(--cv-measure)">{t("delete.warning")}</p>
 					<form action={deleteAccountAction} className="flex flex-col gap-3">
 						{hidden}
-						<label className="flex min-h-11 items-center gap-2">
-							<input type="checkbox" name="confirm" required className="size-5 shrink-0" />
+						<label className={CHECK_ROW}>
+							<input type="checkbox" name="confirm" required className={CHECK_BOX} />
 							{t("delete.confirm")}
 						</label>
 						<Button type="submit" variant="destructive" className="w-full sm:w-fit">
