@@ -1,6 +1,6 @@
-// Starts a sign-in at a provider, or adds one to the account. The answer is a page that forwards,
-// not a redirect: the Content Security Policy lets a form reach this site only, and browsers hold
-// a redirect to it as well.
+// Starts a sign-in at a provider, or adds one to the account. Scripts request JSON and navigate
+// straight to the returned address; without scripts, a plain form submission receives an HTML
+// forwarding page because Content Security Policy keeps form-action at 'self' (ADR 0012).
 import { createTranslator } from "next-intl";
 import { headers } from "next/headers";
 import { z } from "zod";
@@ -24,6 +24,22 @@ function escapeHtml(text: string): string {
 		.replaceAll("<", "&lt;")
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;");
+}
+
+function wantsJson(request: Request): boolean {
+	const accept = request.headers.get("accept");
+
+	if (accept === null) {
+		return false;
+	}
+
+	return accept
+		.split(",")
+		.some((part) => part.split(";")[0]?.trim().toLowerCase() === "application/json");
+}
+
+function jsonTarget(url: string): Response {
+	return Response.json({ url }, { headers: { "Cache-Control": "no-store", Vary: "Accept" } });
 }
 
 async function forwardingPage(locale: Locale, provider: Provider, url: string): Promise<Response> {
@@ -52,6 +68,7 @@ async function forwardingPage(locale: Locale, provider: Provider, url: string): 
 				"Content-Type": "text/html; charset=utf-8",
 				"Cache-Control": "no-store",
 				Refresh: `0; url=${url}`,
+				Vary: "Accept",
 			},
 		},
 	);
@@ -130,15 +147,25 @@ export async function POST(
 		return new Response(null, { status: 404 });
 	}
 
+	const asJson = wantsJson(request);
 	const page = form.data.purpose === "add" ? await refusal(form.data.provider) : undefined;
 
 	if (page !== undefined) {
-		return new Response(null, { status: 303, headers: { Location: `/${locale}${page}` } });
+		const target = `/${locale}${page}`;
+
+		return asJson
+			? jsonTarget(target)
+			: new Response(null, {
+					status: 303,
+					headers: { Location: target, "Cache-Control": "no-store", Vary: "Accept" },
+				});
 	}
 
 	const url = await providerUrl(instance, locale, form.data);
 
-	return url === undefined
-		? new Response(null, { status: 502 })
-		: forwardingPage(locale, form.data.provider, url);
+	if (url === undefined) {
+		return new Response(null, { status: 502 });
+	}
+
+	return asJson ? jsonTarget(url) : forwardingPage(locale, form.data.provider, url);
 }

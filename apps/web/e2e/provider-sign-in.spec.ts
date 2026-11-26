@@ -4,6 +4,7 @@ import { accountsPage, signIn } from "./accounts";
 import { expect } from "./helpers";
 import { emailTo, linkIn, uniqueAddress } from "./mail";
 import { providerSignsIn, uniqueId } from "./providers";
+import { ACCOUNTS_BASE_URL } from "./servers";
 
 // Sign-in through a provider on the main server, whose requests to the providers the test answers.
 test.skip(({ viewport }) => viewport?.width !== 390, "Defined once, for the phone viewport.");
@@ -27,6 +28,13 @@ test("an address the provider does not prove is confirmed by an email link", asy
 }) => {
 	const page = await accountsPage(browser);
 	const email = uniqueAddress("petr");
+	const navigations: string[] = [];
+
+	page.on("framenavigated", (frame) => {
+		if (frame === page.mainFrame()) {
+			navigations.push(frame.url());
+		}
+	});
 
 	// GitHub verified the address once, which does not prove that it is still the person's.
 	await providerSignsIn(page, { id: uniqueId(), email, verified: true });
@@ -35,6 +43,7 @@ test("an address the provider does not prove is confirmed by an email link", asy
 	await page.getByRole("link", { name: "Go back" }).click();
 
 	await expect(page.getByRole("heading", { name: "Confirm your address" })).toBeVisible();
+	expect(navigations.some((url) => url.includes("/sign-in/provider"))).toBe(false);
 	expect(page.url()).not.toContain("petr");
 	await expect(page.getByLabel("Email address")).toHaveValue(email);
 
@@ -133,4 +142,33 @@ test("another site cannot start a sign-in", async ({ request }) => {
 	});
 
 	expect(answer.status()).toBe(403);
+});
+
+test("provider start answers with JSON or the forwarding page according to Accept", async ({
+	request,
+}) => {
+	const jsonAnswer = await request.post(`${ACCOUNTS_BASE_URL}/en/sign-in/provider`, {
+		form: { provider: "google", purpose: "sign_in" },
+		headers: { origin: ACCOUNTS_BASE_URL, accept: "application/json" },
+	});
+
+	expect(jsonAnswer.status()).toBe(200);
+	expect(jsonAnswer.headers()["content-type"]).toContain("application/json");
+	expect(jsonAnswer.headers()["cache-control"]).toBe("no-store");
+	expect(
+		jsonAnswer.headersArray().some((header) => header.name.toLowerCase() === "set-cookie"),
+	).toBe(true);
+
+	const body: unknown = await jsonAnswer.json();
+
+	expect(body).toMatchObject({ url: expect.stringMatching(/^https:\/\/accounts\.google\.com\//u) });
+
+	const htmlAnswer = await request.post(`${ACCOUNTS_BASE_URL}/en/sign-in/provider`, {
+		form: { provider: "google", purpose: "sign_in" },
+		headers: { origin: ACCOUNTS_BASE_URL, accept: "text/html" },
+	});
+
+	expect(htmlAnswer.status()).toBe(200);
+	expect(htmlAnswer.headers()["content-type"]).toContain("text/html");
+	expect(htmlAnswer.headers()["refresh"]).toMatch(/^0; url=https:\/\/accounts\.google\.com\//u);
 });

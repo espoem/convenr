@@ -22,7 +22,7 @@ A form that posts to us and is redirected to a provider is blocked by `form-acti
 3. **Joining only from a session.** Implicit linking is off. Linking from a session accepts any address, because the account's own address does not change.
 4. **Built-in providers for Google and GitHub.** Better Auth maintains their endpoints and checks. Seznam will use the generic plugin.
 5. **Nothing but the key is kept.** Hooks empty the tokens, scopes, name and picture on every write.
-6. **A forwarding page.** The button posts to a route of ours, which answers with a page that forwards by `Refresh`. `form-action` stays `'self'`, and the button works without JavaScript.
+6. **Direct navigation with scripts, forwarding page without.** With JavaScript enabled, the button posts to our route via `fetch` asking for JSON and navigates directly to the returned address so no intermediate page flashes. Without JavaScript, the plain form submission receives a page that forwards by `Refresh`. `form-action` stays `'self'` in both cases.
 7. **Only the callback is public.** Better Auth's HTTP endpoints that start, link, list, unlink or read providers are disabled. Our routes and actions call the same functions on the server, after their own checks.
 8. **The log names only the event.** Better Auth's log lines go out without their details, and an unexpected error by its class name. GitHub's refusal of a code is the exception: Better Auth logs the error GitHub names, which holds no token or address.
 9. **Tests at the network's edge.** The tests run the real provider code and answer its requests in place of Google and GitHub. The application has no setting for a test provider.
