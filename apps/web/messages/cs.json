@@ -560,7 +560,7 @@
 			},
 			"data": {
 				"heading": "Co uchováváme",
-				"body": "<ul><li>Událost: její název, popis, dny, časy nebo možnosti ankety, časové pásmo a konečný termín.</li><li>Odpověď: vaše zobrazované jméno a kdy můžete, nebo vaše odpovědi v anketě. Jméno může být přezdívka.</li><li>Nepovinné heslo k odpovědi, uložené jen jako otisk (hash).</li><li>Účet: vaši e-mailovou adresu, vaše přístupové klíče se jmény, která jim dáte, jazyk a nastavení e-mailů.</li><li>Přihlášení: kdy jste se přihlásili a druh prohlížeče, například „Firefox na Androidu“.</li><li>E-maily čekající na odeslání a počet e-mailů na jednu adresu za poslední hodinu, uložený pod otiskem adresy.</li></ul><p>Neuchováváme IP adresy a nevytváříme profily. Uchováváme to kvůli události nebo účtu, o které jste požádali (čl. 6 odst. 1 písm. b GDPR), a abychom skupině ukázali, kdo kdy může, a předešli zneužití (čl. 6 odst. 1 písm. f).</p>"
+				"body": "<ul><li>Událost: její název, popis, dny, časy nebo možnosti ankety, časové pásmo a konečný termín.</li><li>Odpověď: vaše zobrazované jméno a kdy můžete, nebo vaše odpovědi v anketě. Jméno může být přezdívka.</li><li>Nepovinné heslo k odpovědi, uložené jen jako otisk (hash).</li><li>Účet: vaši e-mailovou adresu, vaše přístupové klíče se jmény, která jim dáte, jazyk a nastavení e-mailů.</li><li>Přihlášení: kdy jste se přihlásili a druh prohlížeče, například „Firefox na Androidu“.</li><li>Služba, přes kterou se přihlašujete, například Google nebo GitHub: její název a její identifikátor vašeho účtu. Žádné jméno, obrázek ani přístupový token.</li><li>E-maily čekající na odeslání a počet e-mailů na jednu adresu za poslední hodinu, uložený pod otiskem adresy.</li></ul><p>Neuchováváme IP adresy a nevytváříme profily. Uchováváme to kvůli události nebo účtu, o které jste požádali (čl. 6 odst. 1 písm. b GDPR), a abychom skupině ukázali, kdo kdy může, a předešli zneužití (čl. 6 odst. 1 písm. f).</p>"
 			},
 			"visible": {
 				"heading": "Kdo událost vidí",
@@ -568,11 +568,11 @@
 			},
 			"cookies": {
 				"heading": "Cookies a úložiště prohlížeče",
-				"body": "<ul><li><code>__Host-convenr-key</code> pozná odpovědi z tohoto prohlížeče, 400 dní.</li><li><code>theme</code> si rok pamatuje světlý nebo tmavý vzhled, pokud si ho zvolíte.</li><li>Cookie přihlášení začínající <code>__Secure-convenr</code> vás udrží přihlášené 30 dní.</li><li>Místní úložiště <code>convenr.events</code> uchovává seznam vašich událostí v tomto prohlížeči.</li></ul><p>Slouží jen tomu, o co jste požádali, proto nežádáme o souhlas.</p>"
+				"body": "<ul><li><code>__Host-convenr-key</code> pozná odpovědi z tohoto prohlížeče, 400 dní.</li><li><code>theme</code> si rok pamatuje světlý nebo tmavý vzhled, pokud si ho zvolíte.</li><li>Cookie přihlášení začínající <code>__Secure-convenr</code> vás udrží přihlášené 30 dní.</li><li><code>__Host-convenr-pending-sign-in</code> 15 minut uchovává přihlášení přes Google nebo GitHub, které musí dokončit odkaz e-mailem.</li><li>Místní úložiště <code>convenr.events</code> uchovává seznam vašich událostí v tomto prohlížeči.</li></ul><p>Slouží jen tomu, o co jste požádali, proto nežádáme o souhlas.</p>"
 			},
 			"processors": {
 				"heading": "Kdo pro nás údaje zpracovává",
-				"body": "<ul><li>Vercel Inc., Spojené státy, provozuje aplikaci na serverech ve Frankfurtu a při každém požadavku zpracovává vaši IP adresu.</li><li>Neon (Databricks, Inc.), Spojené státy, provozuje databázi ve Frankfurtu.</li><li>Lettermint, Nizozemsko, odesílá e-maily: vaši adresu a text.</li></ul><p>Údaje neprodáváme a nikomu dalšímu je nedáváme, pokud to nevyžaduje zákon.</p>"
+				"body": "<ul><li>Vercel Inc., Spojené státy, provozuje aplikaci na serverech ve Frankfurtu a při každém požadavku zpracovává vaši IP adresu.</li><li>Neon (Databricks, Inc.), Spojené státy, provozuje databázi ve Frankfurtu.</li><li>Lettermint, Nizozemsko, odesílá e-maily: vaši adresu a text.</li></ul><p>Google a GitHub se o tom, že používáte convenr, dozvědí jen tehdy, když stisknete jejich tlačítko. Přihlášení pak zpracují jako samostatní správci podle svých vlastních zásad.</p><p>Údaje neprodáváme a nikomu dalšímu je nedáváme, pokud to nevyžaduje zákon.</p>"
 			},
 			"retention": {
 				"heading": "Jak dlouho údaje uchováváme",

@@ -560,7 +560,7 @@
 			},
 			"data": {
 				"heading": "What we keep",
-				"body": "<ul><li>An event: its name, description, days, times or poll options, time zone and final time.</li><li>A response: your display name and when you can come, or your poll answers. A display name can be a nickname.</li><li>An optional password for your response, kept only as a hash.</li><li>An account: your email address, your passkeys with the names you give them, your language and your email settings.</li><li>A session: when you signed in and the kind of browser, such as “Firefox on Android”.</li><li>Emails waiting to be sent, and how many went to an address in the last hour, under a hash of the address.</li></ul><p>We keep no IP addresses and make no profiles. We keep this to run the event or the account you asked for (GDPR Art. 6(1)(b)), and to show the group who can come when and to prevent abuse (Art. 6(1)(f)).</p>"
+				"body": "<ul><li>An event: its name, description, days, times or poll options, time zone and final time.</li><li>A response: your display name and when you can come, or your poll answers. A display name can be a nickname.</li><li>An optional password for your response, kept only as a hash.</li><li>An account: your email address, your passkeys with the names you give them, your language and your email settings.</li><li>A session: when you signed in and the kind of browser, such as “Firefox on Android”.</li><li>A service you sign in with, such as Google or GitHub: its name and its identifier for you. No name, picture or access token.</li><li>Emails waiting to be sent, and how many went to an address in the last hour, under a hash of the address.</li></ul><p>We keep no IP addresses and make no profiles. We keep this to run the event or the account you asked for (GDPR Art. 6(1)(b)), and to show the group who can come when and to prevent abuse (Art. 6(1)(f)).</p>"
 			},
 			"visible": {
 				"heading": "Who can see an event",
@@ -568,11 +568,11 @@
 			},
 			"cookies": {
 				"heading": "Cookies and browser storage",
-				"body": "<ul><li><code>__Host-convenr-key</code> recognizes the responses of this browser, for 400 days.</li><li><code>theme</code> remembers light or dark for a year, if you choose one.</li><li>The session cookie, starting with <code>__Secure-convenr</code>, keeps you signed in for 30 days.</li><li>Local storage <code>convenr.events</code> lists your events in this browser.</li></ul><p>They serve only what you asked for, so we ask for no consent.</p>"
+				"body": "<ul><li><code>__Host-convenr-key</code> recognizes the responses of this browser, for 400 days.</li><li><code>theme</code> remembers light or dark for a year, if you choose one.</li><li>The session cookie, starting with <code>__Secure-convenr</code>, keeps you signed in for 30 days.</li><li><code>__Host-convenr-pending-sign-in</code> keeps a sign-in through Google or GitHub that an email link has to finish, for 15 minutes.</li><li>Local storage <code>convenr.events</code> lists your events in this browser.</li></ul><p>They serve only what you asked for, so we ask for no consent.</p>"
 			},
 			"processors": {
 				"heading": "Who processes data for us",
-				"body": "<ul><li>Vercel Inc., United States, runs the application on servers in Frankfurt and handles your IP address with each request.</li><li>Neon (Databricks, Inc.), United States, runs the database in Frankfurt.</li><li>Lettermint, the Netherlands, sends the emails: your address and the text.</li></ul><p>We sell no data and give it to nobody else, unless the law requires it.</p>"
+				"body": "<ul><li>Vercel Inc., United States, runs the application on servers in Frankfurt and handles your IP address with each request.</li><li>Neon (Databricks, Inc.), United States, runs the database in Frankfurt.</li><li>Lettermint, the Netherlands, sends the emails: your address and the text.</li></ul><p>Google and GitHub learn that you use convenr only if you press their button. They then handle your sign-in as controllers in their own right, under their own policies.</p><p>We sell no data and give it to nobody else, unless the law requires it.</p>"
 			},
 			"retention": {
 				"heading": "How long we keep it",
