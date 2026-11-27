@@ -27,6 +27,7 @@ What the market offered when this roadmap was written (survey of public product 
 4. **Time zones are correct by construction.** See [ADR 0002](adr/0002-time-representation.md).
 5. **Accounts add, never gate.** Sign-in only adds dashboards, notifications, calendar overlay, groups and unlimited retention.
 6. **One runnable exit criterion per phase.** A phase is done when its test passes on a clean clone.
+7. **Top Web Vitals, kept by lint.** Every public page holds a strict top score in Web Vitals benchmarks on phone and desktop. Deterministic lint rules stop changes that would lower that score. See [ADR 0013](adr/0013-web-vitals-and-lint-guards.md).
 
 ## 3. Phases
 
@@ -139,6 +140,8 @@ The rules are in the [Phase 5 specification](spec/phase-5.md). F5 ships in three
 F6 to F8 get an exit criterion when each is planned in detail.
 
 Each of F5 to F8 ends with a UI and UX review of what it added and of the pages it changed: layout and widths, flow, copy, accessibility and behavior on a phone. Its defects are listed in the phase, as in F4, and fixed before the phase is done.
+
+A Web Vitals benchmark suite checks the production build on phone and desktop profiles and requires a strict top score on every public page for Largest Contentful Paint, Interaction to Next Paint and Cumulative Layout Shift. Deterministic `oxlint`, Stylelint and bundle-budget checks enforce the static practices that keep those scores at the top, so regressions fail `mise run check`. The detailed rules are in the [Web Vitals specification](spec/web-vitals.md).
 
 ## 4. Decisions
 
