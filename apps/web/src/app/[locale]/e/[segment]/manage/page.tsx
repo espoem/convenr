@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { ClientMessages } from "@/components/client-messages";
 import { EventNotifications } from "@/components/event-notifications";
 import { KeepEvent } from "@/components/keep-event";
 import { LiveUpdates } from "@/components/live-updates";
@@ -66,35 +67,37 @@ export default async function ManagePage({ params }: PageProps<"/[locale]/e/[seg
 
 	return (
 		<PageShell>
-			<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
-			<PageMain className="gap-8">
-				<div className="flex flex-col gap-3">
-					<h1 className="text-3xl text-balance break-words sm:text-4xl">
-						{t.rich("heading", { name: event.name, label })}
-					</h1>
-					<Link
-						href={`/e/${event.segment}`}
-						className="inline-flex min-h-11 w-fit items-center text-action underline underline-offset-4"
-					>
-						{t("open")}
-					</Link>
-				</div>
-				<ManageEvent
-					id={event.id}
-					options={await eventFormOptions()}
-					board={board}
-					version={event.version}
-					formatLocale={format}
-					settings={
-						<>
-							{owner.kind === "owner" && owner.keeping.kind === "shown" ? (
-								<KeepEvent eventId={event.id} kept={owner.keeping.kept} />
-							) : null}
-							<EventNotifications eventId={event.id} choices={choices} />
-						</>
-					}
-				/>
-			</PageMain>
+			<ClientMessages namespaces={["Manage", "Create", "Event", "Copy", "EventNotifications"]}>
+				<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
+				<PageMain className="gap-8">
+					<div className="flex flex-col gap-3">
+						<h1 className="text-3xl text-balance break-words sm:text-4xl">
+							{t.rich("heading", { name: event.name, label })}
+						</h1>
+						<Link
+							href={`/e/${event.segment}`}
+							className="inline-flex min-h-11 w-fit items-center text-action underline underline-offset-4"
+						>
+							{t("open")}
+						</Link>
+					</div>
+					<ManageEvent
+						id={event.id}
+						options={await eventFormOptions()}
+						board={board}
+						version={event.version}
+						formatLocale={format}
+						settings={
+							<>
+								{owner.kind === "owner" && owner.keeping.kind === "shown" ? (
+									<KeepEvent eventId={event.id} kept={owner.keeping.kept} />
+								) : null}
+								<EventNotifications eventId={event.id} choices={choices} />
+							</>
+						}
+					/>
+				</PageMain>
+			</ClientMessages>
 		</PageShell>
 	);
 }

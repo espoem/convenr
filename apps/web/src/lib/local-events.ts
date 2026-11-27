@@ -5,16 +5,19 @@
 // unloads, so the current visit still works.
 
 import { useSyncExternalStore } from "react";
-import { z } from "zod";
+import { z } from "zod/mini";
+
+// Strict CSP forbids `new Function`, which Zod's JIT compiler otherwise probes (ADR 0003).
+z.config({ jitless: true });
 
 const localEventSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	segment: z.string(),
-	adminSecret: z.string().optional(),
+	adminSecret: z.optional(z.string()),
 	// The name only, for the start page's list: the server knows the participant from the
 	// browser's key (ADR 0008). A `token` is one kept before the key existed, until it moves.
-	participant: z.object({ name: z.string(), token: z.string().optional() }).optional(),
+	participant: z.optional(z.object({ name: z.string(), token: z.optional(z.string()) })),
 });
 
 export type LocalEvent = z.infer<typeof localEventSchema>;
@@ -23,7 +26,7 @@ export type LocalEvent = z.infer<typeof localEventSchema>;
 export type LocalEvents = ReadonlyMap<string, LocalEvent>;
 
 const STORAGE_KEY = "convenr.events";
-const storedEvents = z.record(z.string(), localEventSchema).catch({});
+const storedEvents = z.catch(z.record(z.string(), localEventSchema), {});
 const listeners = new Set<() => void>();
 const noEvents: LocalEvents = new Map();
 

@@ -1,8 +1,8 @@
 // Where a sign-in link from the confirm page returns: it adds the provider this browser signed in
 // with to the account the link signed in to, then shows the account page.
-import { localeSchema } from "@/i18n/routing";
 import { attachPendingProvider } from "@/server/attach-provider";
 import { noticeProvider } from "@/server/auth";
+import { localeSchema } from "@/server/locale";
 import { followsLink, forgetPendingSignIn, pendingSignIn } from "@/server/pending-sign-in";
 import { offeredProviders } from "@/server/providers";
 import { currentVisitor } from "@/server/session";

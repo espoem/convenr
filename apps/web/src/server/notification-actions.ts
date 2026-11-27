@@ -7,9 +7,9 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { NOTIFICATION_KINDS } from "@/domain/notifications";
 import { redirect } from "@/i18n/navigation";
-import { localeSchema } from "@/i18n/routing";
 import { formText as text } from "@/lib/form-text";
 
+import { localeSchema } from "./locale";
 import { eventChoices, setEventChoice, unsubscribe } from "./notifications";
 import { currentVisitor } from "./session";
 

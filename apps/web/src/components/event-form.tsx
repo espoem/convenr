@@ -402,118 +402,120 @@ export function EventForm({
 			</fieldset>
 
 			{kind === "poll" ? (
-				<>
-					<PollOptionsEditor
-						options={pollOptions}
-						onChange={setPollOptions}
-						zone={shownZone}
-						formatLocale={options.formatLocale}
-						listProblem={optionErrors.list}
-						optionProblems={optionErrors.byIndex}
-					/>
-					<div className="flex flex-wrap gap-4">{zoneField}</div>
-				</>
+				<PollOptionsEditor
+					options={pollOptions}
+					onChange={setPollOptions}
+					zone={shownZone}
+					formatLocale={options.formatLocale}
+					listProblem={optionErrors.list}
+					optionProblems={optionErrors.byIndex}
+				/>
 			) : (
-				<>
-					<fieldset className="flex flex-col gap-4" aria-describedby={`${id}-days-message`}>
-						<legend className="mb-2 font-heading text-xl font-semibold">{t("days")}</legend>
-						<div
-							role="radiogroup"
-							aria-label={t("dayMode")}
-							aria-describedby={locked ? `${id}-mode-locked` : undefined}
-							className="flex flex-wrap gap-2"
-						>
-							{DAY_MODES.map((option) => (
-								<label
-									key={option}
-									className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-disabled:cursor-not-allowed has-disabled:not-has-checked:border-line has-disabled:not-has-checked:bg-locked"
-								>
-									<input
-										type="radio"
-										name="dayMode"
-										value={option}
-										checked={mode === option}
-										disabled={locked}
-										onChange={() => setMode(option)}
-										className="accent-ink"
-									/>
-									{t(`mode.${option}`)}
-								</label>
-							))}
+				<fieldset className="flex flex-col gap-4" aria-describedby={`${id}-days-message`}>
+					<legend className="mb-2 font-heading text-xl font-semibold">{t("days")}</legend>
+					<div
+						role="radiogroup"
+						aria-label={t("dayMode")}
+						aria-describedby={locked ? `${id}-mode-locked` : undefined}
+						className="flex flex-wrap gap-2"
+					>
+						{DAY_MODES.map((option) => (
+							<label
+								key={option}
+								className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-disabled:cursor-not-allowed has-disabled:not-has-checked:border-line has-disabled:not-has-checked:bg-locked"
+							>
+								<input
+									type="radio"
+									name="dayMode"
+									value={option}
+									checked={mode === option}
+									disabled={locked}
+									onChange={() => setMode(option)}
+									className="accent-ink"
+								/>
+								{t(`mode.${option}`)}
+							</label>
+						))}
+					</div>
+					{locked ? <LockedNote id={`${id}-mode-locked`} text={t("lockedReason")} /> : null}
+
+					{mode === "dates" ? (
+						<>
+							{temporalReady ? (
+								<DatePicker
+									selected={dates}
+									onToggle={toggleDate}
+									firstDayOfWeek={firstDayOfWeek}
+									weekdays={options.weekdays}
+									locale={options.formatLocale}
+									describedBy={`${id}-days-message`}
+								/>
+							) : (
+								<div className="h-80" />
+							)}
+							<p aria-live="polite" className="text-sm text-ink-muted tabular-nums">
+								{t("datesChosen", { count: dates.length, max: MAX_DATES })}
+							</p>
+						</>
+					) : null}
+
+					{mode === "range" ? (
+						<div className="flex flex-wrap gap-4">
+							<Field id={`${id}-first`} label={t("first")} className="flex-[1_1_12rem]">
+								<DateTimeInput
+									id={`${id}-first`}
+									name="first"
+									type="date"
+									defaultValue={range?.first}
+								/>
+							</Field>
+							<Field id={`${id}-last`} label={t("last")} className="flex-[1_1_12rem]">
+								<DateTimeInput
+									id={`${id}-last`}
+									name="last"
+									type="date"
+									defaultValue={range?.last}
+								/>
+							</Field>
 						</div>
-						{locked ? <LockedNote id={`${id}-mode-locked`} text={t("lockedReason")} /> : null}
+					) : null}
 
-						{mode === "dates" ? (
-							<>
-								{temporalReady ? (
-									<DatePicker
-										selected={dates}
-										onToggle={toggleDate}
-										firstDayOfWeek={firstDayOfWeek}
-										weekdays={options.weekdays}
-										locale={options.formatLocale}
-										describedBy={`${id}-days-message`}
-									/>
-								) : (
-									<div className="h-80" />
-								)}
-								<p aria-live="polite" className="text-sm text-ink-muted tabular-nums">
-									{t("datesChosen", { count: dates.length, max: MAX_DATES })}
-								</p>
-							</>
-						) : null}
-
-						{mode === "range" ? (
-							<div className="flex flex-wrap gap-4">
-								<Field id={`${id}-first`} label={t("first")} className="flex-[1_1_12rem]">
-									<DateTimeInput
-										id={`${id}-first`}
-										name="first"
-										type="date"
-										defaultValue={range?.first}
-									/>
-								</Field>
-								<Field id={`${id}-last`} label={t("last")} className="flex-[1_1_12rem]">
-									<DateTimeInput
-										id={`${id}-last`}
-										name="last"
-										type="date"
-										defaultValue={range?.last}
-									/>
-								</Field>
+					{mode === "weekdays" ? (
+						<div className="flex flex-col gap-2">
+							<div className="flex flex-wrap gap-2">
+								{weekdaysFrom(firstDayOfWeek).map((weekday) => {
+									return (
+										<label
+											key={weekday}
+											className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
+										>
+											<input
+												type="checkbox"
+												className="sr-only"
+												checked={weekdays.includes(weekday)}
+												onChange={() => toggleWeekday(weekday)}
+											/>
+											<abbr title={options.weekdays[weekday - 1]?.long} className="no-underline">
+												{options.weekdays[weekday - 1]?.short}
+											</abbr>
+										</label>
+									);
+								})}
 							</div>
-						) : null}
+							<p className="text-sm text-ink-muted">{t("weekdaysHint")}</p>
+						</div>
+					) : null}
 
-						{mode === "weekdays" ? (
-							<div className="flex flex-col gap-2">
-								<div className="flex flex-wrap gap-2">
-									{weekdaysFrom(firstDayOfWeek).map((weekday) => {
-										return (
-											<label
-												key={weekday}
-												className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border border-earth px-3 has-checked:bg-ink has-checked:text-surface has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
-											>
-												<input
-													type="checkbox"
-													className="sr-only"
-													checked={weekdays.includes(weekday)}
-													onChange={() => toggleWeekday(weekday)}
-												/>
-												<abbr title={options.weekdays[weekday - 1]?.long} className="no-underline">
-													{options.weekdays[weekday - 1]?.short}
-												</abbr>
-											</label>
-										);
-									})}
-								</div>
-								<p className="text-sm text-ink-muted">{t("weekdaysHint")}</p>
-							</div>
-						) : null}
+					<FieldMessage id={`${id}-days-message`} error={error("days")} />
+				</fieldset>
+			)}
 
-						<FieldMessage id={`${id}-days-message`} error={error("days")} />
-					</fieldset>
-
-					<fieldset className="flex flex-col gap-4" aria-describedby={`${id}-times-message`}>
+			<fieldset
+				className="flex flex-col gap-4"
+				aria-describedby={kind === "grid" ? `${id}-times-message` : undefined}
+			>
+				{kind === "grid" ? (
+					<>
 						<legend className="mb-2 font-heading text-xl font-semibold">{t("times")}</legend>
 						<div className="flex flex-wrap gap-4">
 							<Field id={`${id}-start`} label={t("dailyStart")} className="flex-[1_1_8rem]">
@@ -552,27 +554,29 @@ export function EventForm({
 							</Field>
 						</div>
 						<FieldMessage id={`${id}-times-message`} error={error("times")} />
-						<div className="flex flex-wrap gap-4">
-							{zoneField}
-							<Field id={`${id}-week`} label={t("firstDayOfWeek")} className="flex-[1_1_10rem]">
-								<Select
-									id={`${id}-week`}
-									value={firstDayOfWeek}
-									onChange={(event) =>
-										setFirstDayOfWeek(toWeekday(Number(event.target.value)) ?? firstDayOfWeek)
-									}
-								>
-									{WEEKDAYS.map((weekday) => (
-										<option key={weekday} value={weekday}>
-											{options.weekdays[weekday - 1]?.long}
-										</option>
-									))}
-								</Select>
-							</Field>
-						</div>
-					</fieldset>
-				</>
-			)}
+					</>
+				) : null}
+				<div className="flex flex-wrap gap-4">
+					{zoneField}
+					{kind === "grid" ? (
+						<Field id={`${id}-week`} label={t("firstDayOfWeek")} className="flex-[1_1_10rem]">
+							<Select
+								id={`${id}-week`}
+								value={firstDayOfWeek}
+								onChange={(event) =>
+									setFirstDayOfWeek(toWeekday(Number(event.target.value)) ?? firstDayOfWeek)
+								}
+							>
+								{WEEKDAYS.map((weekday) => (
+									<option key={weekday} value={weekday}>
+										{options.weekdays[weekday - 1]?.long}
+									</option>
+								))}
+							</Select>
+						</Field>
+					) : null}
+				</div>
+			</fieldset>
 
 			{pendingLoss === null ? (
 				<div className="flex flex-col items-start gap-2">

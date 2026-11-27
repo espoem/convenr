@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { z } from "zod";
 
+import { ClientMessages } from "@/components/client-messages";
 import { EventNotifications } from "@/components/event-notifications";
 import { EventBoard } from "@/components/event/event-board";
 import { FinalBanner } from "@/components/event/final-time";
@@ -110,60 +111,62 @@ export default async function EventPage({
 
 	return (
 		<PageShell>
-			<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
-			<PageMain className="gap-6">
-				{final.kind === "chosen" ? (
-					<FinalBanner
-						event={{
-							id: event.id,
-							name: event.name,
-							description: event.description,
-							segment: event.segment,
-						}}
-						final={final}
-						referenceZone={schedule.referenceZone}
-						initialWhen={formatWhen(final, schedule.referenceZone, format, translateWhen)}
-						formatLocale={format}
-					/>
-				) : null}
-				<header className="flex flex-col gap-3">
-					<h1 className="text-3xl break-words sm:text-4xl">{event.name}</h1>
-					{event.description === "" ? null : (
-						<PageRegion width="measure">
-							<p className="text-lg break-words whitespace-pre-line">{event.description}</p>
-						</PageRegion>
-					)}
-					<p className="text-ink-muted">
-						{t("referenceZone", { zone: schedule.referenceZone.replaceAll("_", " ") })}
-						{" · "}
-						{event.deletion.kind === "kept"
-							? t(event.deletion.by === "organizer" ? "keptByOrganizer" : "kept")
-							: t("deletion", {
-									date: event.deletion.date.toLocaleString(format, {
-										day: "numeric",
-										month: "long",
-										year: "numeric",
-									}),
-								})}
-					</p>
-					{owner.kind === "owner" ? (
-						<Link
-							href={`/e/${event.segment}/manage`}
-							className="flex min-h-11 w-fit items-center text-action underline underline-offset-4"
-						>
-							{t("manage")}
-						</Link>
-					) : null}
-					<PageRegion width="form">
-						<ShareLink
-							label={t("shareLink")}
-							path={getPathname({ href: `/e/${event.segment}`, locale })}
+			<ClientMessages namespaces={["Event", "Join", "Copy", "EventNotifications"]}>
+				<LiveUpdates eventId={event.id} version={event.version} settings={liveSettings()} />
+				<PageMain className="gap-6">
+					{final.kind === "chosen" ? (
+						<FinalBanner
+							event={{
+								id: event.id,
+								name: event.name,
+								description: event.description,
+								segment: event.segment,
+							}}
+							final={final}
+							referenceZone={schedule.referenceZone}
+							initialWhen={formatWhen(final, schedule.referenceZone, format, translateWhen)}
+							formatLocale={format}
 						/>
-					</PageRegion>
-				</header>
-				{board}
-				<EventNotifications eventId={event.id} choices={choices} />
-			</PageMain>
+					) : null}
+					<header className="flex flex-col gap-3">
+						<h1 className="text-3xl break-words sm:text-4xl">{event.name}</h1>
+						{event.description === "" ? null : (
+							<PageRegion width="measure">
+								<p className="text-lg break-words whitespace-pre-line">{event.description}</p>
+							</PageRegion>
+						)}
+						<p className="text-ink-muted">
+							{t("referenceZone", { zone: schedule.referenceZone.replaceAll("_", " ") })}
+							{" · "}
+							{event.deletion.kind === "kept"
+								? t(event.deletion.by === "organizer" ? "keptByOrganizer" : "kept")
+								: t("deletion", {
+										date: event.deletion.date.toLocaleString(format, {
+											day: "numeric",
+											month: "long",
+											year: "numeric",
+										}),
+									})}
+						</p>
+						{owner.kind === "owner" ? (
+							<Link
+								href={`/e/${event.segment}/manage`}
+								className="flex min-h-11 w-fit items-center text-action underline underline-offset-4"
+							>
+								{t("manage")}
+							</Link>
+						) : null}
+						<PageRegion width="form">
+							<ShareLink
+								label={t("shareLink")}
+								path={getPathname({ href: `/e/${event.segment}`, locale })}
+							/>
+						</PageRegion>
+					</header>
+					{board}
+					<EventNotifications eventId={event.id} choices={choices} />
+				</PageMain>
+			</ClientMessages>
 		</PageShell>
 	);
 }

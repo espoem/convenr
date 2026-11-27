@@ -106,18 +106,29 @@ function cellAt(x: number, y: number): CellRef | undefined {
 	return { column: Number(element.dataset["column"]), row: Number(element.dataset["row"]) };
 }
 
-/** Gives the table the size of the hatching pattern and each cell its place in it. */
+/** Gives the table the size of the hatching pattern and each hatched cell its place in it. */
 function placeHatching(grid: HTMLTableElement): void {
+	const hatched = [...grid.querySelectorAll<HTMLElement>('.cv-cell[data-fill="if_need_be"]')];
+
+	if (hatched.length === 0) {
+		return;
+	}
+
+	// Batch all DOM reads before any DOM write to avoid forced synchronous reflows.
 	const box = grid.getBoundingClientRect();
+
+	const offsets = hatched.map((cell) => {
+		const own = cell.getBoundingClientRect();
+
+		return { cell, x: own.left - box.left, y: own.top - box.top };
+	});
 
 	grid.style.setProperty("--hatch-width", `${box.width}px`);
 	grid.style.setProperty("--hatch-height", `${box.height}px`);
 
-	for (const cell of grid.querySelectorAll<HTMLElement>(".cv-cell")) {
-		const own = cell.getBoundingClientRect();
-
-		cell.style.setProperty("--hatch-x", `${own.left - box.left}px`);
-		cell.style.setProperty("--hatch-y", `${own.top - box.top}px`);
+	for (const item of offsets) {
+		item.cell.style.setProperty("--hatch-x", `${item.x}px`);
+		item.cell.style.setProperty("--hatch-y", `${item.y}px`);
 	}
 }
 
@@ -161,7 +172,12 @@ export function AvailabilityGrid({
 		const rebuilt = new MutationObserver(place);
 
 		resized.observe(grid);
-		rebuilt.observe(grid, { childList: true, subtree: true });
+		rebuilt.observe(grid, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeFilter: ["data-fill"],
+		});
 
 		return () => {
 			resized.disconnect();

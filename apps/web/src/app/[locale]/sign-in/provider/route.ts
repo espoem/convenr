@@ -8,9 +8,10 @@ import { z } from "zod";
 import { type Provider, PROVIDER_NAMES, providerSchema } from "@/domain/provider-address";
 import { env } from "@/env";
 import { catalog } from "@/i18n/catalogs";
-import { type Locale, localeSchema } from "@/i18n/routing";
+import type { Locale } from "@/i18n/routing";
 import { accountProviders } from "@/server/account-providers";
 import { type Auth, auth } from "@/server/auth";
+import { localeSchema } from "@/server/locale";
 import { offeredProviders, PROVIDER_PURPOSES } from "@/server/providers";
 import { currentVisitor, isFresh } from "@/server/session";
 

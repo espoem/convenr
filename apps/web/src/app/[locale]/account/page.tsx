@@ -8,6 +8,7 @@ import { z } from "zod";
 import { type AccountEventItem, AccountEvents } from "@/components/account/account-events";
 import { ClaimEvents } from "@/components/account/claim-events";
 import { AddPasskey } from "@/components/add-passkey";
+import { ClientMessages } from "@/components/client-messages";
 import { controlClass, Field, Select } from "@/components/field";
 import { PageMain, PageRegion, type PageWidth } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
@@ -201,257 +202,266 @@ export default async function AccountPage({ searchParams }: PageProps<"/[locale]
 
 	return (
 		<PageShell>
-			<PageMain className="gap-8">
-				<PageRegion as="header" width="form" className="gap-3">
-					<h1 className="text-3xl">{t("heading")}</h1>
-					<p>{t.rich("signedInAs", { email: visitor.email, strong })}</p>
-					<form action={signOutAction}>
-						{hidden}
-						<Button type="submit" variant="outline">
-							{t("signOut")}
-						</Button>
-					</form>
-					<output
-						className={problem === undefined ? "block" : "block font-semibold text-action-active"}
-					>
-						{status}
-					</output>
-				</PageRegion>
-
-				<Section id="account-organize" heading={t("events.organized")} width="column">
-					<AccountEvents
-						events={owned.map((event) => listItem(event))}
-						empty={t("events.noneOrganized")}
-						formatLocale={format}
-					/>
-				</Section>
-
-				<Section id="account-joined" heading={t("events.joined")} width="column">
-					<AccountEvents
-						events={joined.map((event) => listItem(event))}
-						empty={t("events.noneJoined")}
-						formatLocale={format}
-					/>
-				</Section>
-
-				<ClaimEvents
-					ownedIds={owned.map((event) => event.id)}
-					joinedIds={joined.map((event) => event.id)}
-				/>
-
-				<Section id="account-address" heading={t("address.heading")}>
-					<form action={changeEmailAction} className="flex flex-col gap-3">
-						{hidden}
-						<Field id="account-email" label={t("address.new")} hint={t("address.hint")}>
-							<input
-								id="account-email"
-								name="email"
-								type="email"
-								required
-								autoComplete="email"
-								aria-describedby="account-email-message"
-								className={controlClass}
-							/>
-						</Field>
-						<Button type="submit" variant="outline" className="w-full sm:w-fit">
-							{t("address.change")}
-						</Button>
-					</form>
-				</Section>
-
-				<Section id="account-language" heading={t("language.heading")}>
-					<form action={setLanguageAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-						{hidden}
-						<Field id="account-language-select" label={t("language.label")} className="sm:flex-1">
-							<Select id="account-language-select" name="language" defaultValue={emailLocale}>
-								{routing.locales.map((option) => (
-									<option key={option} value={option}>
-										{tLocale(option)}
-									</option>
-								))}
-							</Select>
-						</Field>
-						<Button type="submit" variant="outline" className="w-full sm:w-auto">
-							{t("language.save")}
-						</Button>
-					</form>
-				</Section>
-
-				<Section id="account-notifications" heading={t("notifications.heading")}>
-					<form action={setNotificationsAction} className="flex flex-col gap-3">
-						{hidden}
-						<p>{t("notifications.intro")}</p>
-						{NOTIFICATION_KINDS.map((kind) => (
-							<label key={kind} className={CHECK_ROW}>
-								<input
-									type="checkbox"
-									name={kind}
-									defaultChecked={notifications[kind]}
-									className={CHECK_BOX}
-								/>
-								{t(`notifications.${kind}`, { minutes, hours })}
-							</label>
-						))}
-						<Button type="submit" variant="outline" className="w-full sm:w-fit">
-							{t("notifications.save")}
-						</Button>
-					</form>
-				</Section>
-
-				<Section id="account-passkeys" heading={t("passkeys.heading")}>
-					{passkeys.length === 0 ? <p>{t("passkeys.none")}</p> : null}
-					<ul className="flex flex-col gap-4">
-						{passkeys.map((key) => (
-							<li key={key.id} className="flex flex-col gap-2">
-								<form
-									action={renamePasskeyAction}
-									className="flex flex-col gap-3 sm:flex-row sm:items-end"
-								>
-									{hidden}
-									<input type="hidden" name="passkey" value={key.id} />
-									<Field id={`passkey-${key.id}`} label={t("passkeys.name")} className="sm:flex-1">
-										<input
-											id={`passkey-${key.id}`}
-											name="name"
-											defaultValue={key.name ?? t("passkeys.unnamed")}
-											maxLength={60}
-											aria-describedby={
-												key.createdAt === undefined
-													? `passkey-${key.id}-message`
-													: `passkey-${key.id}-created passkey-${key.id}-message`
-											}
-											className={controlClass}
-										/>
-									</Field>
-									<Button type="submit" variant="outline" className="w-full sm:w-auto">
-										{t("passkeys.rename")}
-									</Button>
-								</form>
-								{key.createdAt === undefined ? null : (
-									<p id={`passkey-${key.id}-created`} className="text-sm text-ink-muted">
-										{t("passkeys.created", { date: day(key.createdAt) })}
-									</p>
-								)}
-								<RemoveQuestion
-									action={removePasskeyAction}
-									fields={
-										<>
-											{hidden}
-											<input type="hidden" name="passkey" value={key.id} />
-										</>
-									}
-									texts={{
-										remove: t("passkeys.remove"),
-										question: t("passkeys.removeConfirm", {
-											name: key.name ?? t("passkeys.unnamed"),
-										}),
-										yes: t("passkeys.removeYes"),
-										no: t("passkeys.removeNo"),
-									}}
-								/>
-							</li>
-						))}
-					</ul>
-					<AddPasskey />
-				</Section>
-
-				{providers.length === 0 && addable.length === 0 ? null : (
-					<Section id="account-providers" heading={t("providers.heading")}>
-						<p>{t("providers.intro")}</p>
-						{providers.length === 0 ? null : (
-							<ul className="flex flex-col gap-4">
-								{providers.map(({ id, provider, addedAt }) => (
-									<li key={id} className="flex flex-col gap-2">
-										<span>
-											<strong>{PROVIDER_NAMES[provider]}</strong>
-											{" · "}
-											{t("providers.added", { date: day(addedAt) })}
-										</span>
-										<RemoveQuestion
-											action={removeProviderAction}
-											fields={
-												<>
-													{hidden}
-													<input type="hidden" name="provider" value={provider} />
-												</>
-											}
-											texts={{
-												remove: t("providers.remove", { provider: PROVIDER_NAMES[provider] }),
-												question: t("providers.removeConfirm", {
-													provider: PROVIDER_NAMES[provider],
-												}),
-												yes: t("providers.removeYes"),
-												no: t("providers.removeNo"),
-											}}
-										/>
-									</li>
-								))}
-							</ul>
-						)}
-						{addable.length === 0 ? null : (
-							<div className="flex flex-col gap-3 sm:max-w-sm">
-								{addable.map((provider) => (
-									<ProviderButton
-										key={provider}
-										provider={provider}
-										purpose="add"
-										locale={locale}
-										label={t("providers.add", { provider: PROVIDER_NAMES[provider] })}
-										fullWidth
-									/>
-								))}
-							</div>
-						)}
-					</Section>
-				)}
-
-				<Section id="account-sessions" heading={t("sessions.heading")}>
-					<ul className="flex flex-col gap-3">
-						{sessions.map((session) => (
-							<li key={session.id} className="flex flex-wrap items-center justify-between gap-3">
-								<span>
-									<strong>{session.userAgent ?? t("sessions.unknown")}</strong>
-									{" · "}
-									{t("sessions.started", { date: day(session.createdAt) })}
-								</span>
-								{session.id === visitor.sessionId ? (
-									<span className="text-ink-muted">{t("sessions.current")}</span>
-								) : (
-									<form action={endSessionAction}>
-										{hidden}
-										<input type="hidden" name="session" value={session.id} />
-										<Button type="submit" variant="outline">
-											{t("sessions.end")}
-										</Button>
-									</form>
-								)}
-							</li>
-						))}
-					</ul>
-					{sessions.length > 1 ? (
-						<form action={endOtherSessionsAction}>
+			<ClientMessages namespaces={["Account", "MyEvents"]}>
+				<PageMain className="gap-8">
+					<PageRegion as="header" width="form" className="gap-3">
+						<h1 className="text-3xl">{t("heading")}</h1>
+						<p>{t.rich("signedInAs", { email: visitor.email, strong })}</p>
+						<form action={signOutAction}>
 							{hidden}
-							<Button type="submit" variant="outline" className="w-full sm:w-fit">
-								{t("sessions.endOthers")}
+							<Button type="submit" variant="outline">
+								{t("signOut")}
 							</Button>
 						</form>
-					) : null}
-				</Section>
+						<output
+							className={problem === undefined ? "block" : "block font-semibold text-action-active"}
+						>
+							{status}
+						</output>
+					</PageRegion>
 
-				<Section id="account-delete" heading={t("delete.heading")}>
-					<p>{t("delete.warning")}</p>
-					<form action={deleteAccountAction} className="flex flex-col gap-3">
-						{hidden}
-						<label className={CHECK_ROW}>
-							<input type="checkbox" name="confirm" required className={CHECK_BOX} />
-							{t("delete.confirm")}
-						</label>
-						<Button type="submit" variant="destructive" className="w-full sm:w-fit">
-							{t("delete.submit")}
-						</Button>
-					</form>
-				</Section>
-			</PageMain>
+					<Section id="account-organize" heading={t("events.organized")} width="column">
+						<AccountEvents
+							events={owned.map((event) => listItem(event))}
+							empty={t("events.noneOrganized")}
+							formatLocale={format}
+						/>
+					</Section>
+
+					<Section id="account-joined" heading={t("events.joined")} width="column">
+						<AccountEvents
+							events={joined.map((event) => listItem(event))}
+							empty={t("events.noneJoined")}
+							formatLocale={format}
+						/>
+					</Section>
+
+					<ClaimEvents
+						ownedIds={owned.map((event) => event.id)}
+						joinedIds={joined.map((event) => event.id)}
+					/>
+
+					<Section id="account-address" heading={t("address.heading")}>
+						<form action={changeEmailAction} className="flex flex-col gap-3">
+							{hidden}
+							<Field id="account-email" label={t("address.new")} hint={t("address.hint")}>
+								<input
+									id="account-email"
+									name="email"
+									type="email"
+									required
+									autoComplete="email"
+									aria-describedby="account-email-message"
+									className={controlClass}
+								/>
+							</Field>
+							<Button type="submit" variant="outline" className="w-full sm:w-fit">
+								{t("address.change")}
+							</Button>
+						</form>
+					</Section>
+
+					<Section id="account-language" heading={t("language.heading")}>
+						<form
+							action={setLanguageAction}
+							className="flex flex-col gap-3 sm:flex-row sm:items-end"
+						>
+							{hidden}
+							<Field id="account-language-select" label={t("language.label")} className="sm:flex-1">
+								<Select id="account-language-select" name="language" defaultValue={emailLocale}>
+									{routing.locales.map((option) => (
+										<option key={option} value={option}>
+											{tLocale(option)}
+										</option>
+									))}
+								</Select>
+							</Field>
+							<Button type="submit" variant="outline" className="w-full sm:w-auto">
+								{t("language.save")}
+							</Button>
+						</form>
+					</Section>
+
+					<Section id="account-notifications" heading={t("notifications.heading")}>
+						<form action={setNotificationsAction} className="flex flex-col gap-3">
+							{hidden}
+							<p>{t("notifications.intro")}</p>
+							{NOTIFICATION_KINDS.map((kind) => (
+								<label key={kind} className={CHECK_ROW}>
+									<input
+										type="checkbox"
+										name={kind}
+										defaultChecked={notifications[kind]}
+										className={CHECK_BOX}
+									/>
+									{t(`notifications.${kind}`, { minutes, hours })}
+								</label>
+							))}
+							<Button type="submit" variant="outline" className="w-full sm:w-fit">
+								{t("notifications.save")}
+							</Button>
+						</form>
+					</Section>
+
+					<Section id="account-passkeys" heading={t("passkeys.heading")}>
+						{passkeys.length === 0 ? <p>{t("passkeys.none")}</p> : null}
+						<ul className="flex flex-col gap-4">
+							{passkeys.map((key) => (
+								<li key={key.id} className="flex flex-col gap-2">
+									<form
+										action={renamePasskeyAction}
+										className="flex flex-col gap-3 sm:flex-row sm:items-end"
+									>
+										{hidden}
+										<input type="hidden" name="passkey" value={key.id} />
+										<Field
+											id={`passkey-${key.id}`}
+											label={t("passkeys.name")}
+											className="sm:flex-1"
+										>
+											<input
+												id={`passkey-${key.id}`}
+												name="name"
+												defaultValue={key.name ?? t("passkeys.unnamed")}
+												maxLength={60}
+												aria-describedby={
+													key.createdAt === undefined
+														? `passkey-${key.id}-message`
+														: `passkey-${key.id}-created passkey-${key.id}-message`
+												}
+												className={controlClass}
+											/>
+										</Field>
+										<Button type="submit" variant="outline" className="w-full sm:w-auto">
+											{t("passkeys.rename")}
+										</Button>
+									</form>
+									{key.createdAt === undefined ? null : (
+										<p id={`passkey-${key.id}-created`} className="text-sm text-ink-muted">
+											{t("passkeys.created", { date: day(key.createdAt) })}
+										</p>
+									)}
+									<RemoveQuestion
+										action={removePasskeyAction}
+										fields={
+											<>
+												{hidden}
+												<input type="hidden" name="passkey" value={key.id} />
+											</>
+										}
+										texts={{
+											remove: t("passkeys.remove"),
+											question: t("passkeys.removeConfirm", {
+												name: key.name ?? t("passkeys.unnamed"),
+											}),
+											yes: t("passkeys.removeYes"),
+											no: t("passkeys.removeNo"),
+										}}
+									/>
+								</li>
+							))}
+						</ul>
+						<AddPasskey />
+					</Section>
+
+					{providers.length === 0 && addable.length === 0 ? null : (
+						<Section id="account-providers" heading={t("providers.heading")}>
+							<p>{t("providers.intro")}</p>
+							{providers.length === 0 ? null : (
+								<ul className="flex flex-col gap-4">
+									{providers.map(({ id, provider, addedAt }) => (
+										<li key={id} className="flex flex-col gap-2">
+											<span>
+												<strong>{PROVIDER_NAMES[provider]}</strong>
+												{" · "}
+												{t("providers.added", { date: day(addedAt) })}
+											</span>
+											<RemoveQuestion
+												action={removeProviderAction}
+												fields={
+													<>
+														{hidden}
+														<input type="hidden" name="provider" value={provider} />
+													</>
+												}
+												texts={{
+													remove: t("providers.remove", { provider: PROVIDER_NAMES[provider] }),
+													question: t("providers.removeConfirm", {
+														provider: PROVIDER_NAMES[provider],
+													}),
+													yes: t("providers.removeYes"),
+													no: t("providers.removeNo"),
+												}}
+											/>
+										</li>
+									))}
+								</ul>
+							)}
+							{addable.length === 0 ? null : (
+								<div className="flex flex-col gap-3 sm:max-w-sm">
+									{addable.map((provider) => (
+										<ProviderButton
+											key={provider}
+											provider={provider}
+											purpose="add"
+											locale={locale}
+											label={t("providers.add", { provider: PROVIDER_NAMES[provider] })}
+											fullWidth
+										/>
+									))}
+								</div>
+							)}
+						</Section>
+					)}
+
+					<Section id="account-sessions" heading={t("sessions.heading")}>
+						<ul className="flex flex-col gap-3">
+							{sessions.map((session) => (
+								<li key={session.id} className="flex flex-wrap items-center justify-between gap-3">
+									<span>
+										<strong>{session.userAgent ?? t("sessions.unknown")}</strong>
+										{" · "}
+										{t("sessions.started", { date: day(session.createdAt) })}
+									</span>
+									{session.id === visitor.sessionId ? (
+										<span className="text-ink-muted">{t("sessions.current")}</span>
+									) : (
+										<form action={endSessionAction}>
+											{hidden}
+											<input type="hidden" name="session" value={session.id} />
+											<Button type="submit" variant="outline">
+												{t("sessions.end")}
+											</Button>
+										</form>
+									)}
+								</li>
+							))}
+						</ul>
+						{sessions.length > 1 ? (
+							<form action={endOtherSessionsAction}>
+								{hidden}
+								<Button type="submit" variant="outline" className="w-full sm:w-fit">
+									{t("sessions.endOthers")}
+								</Button>
+							</form>
+						) : null}
+					</Section>
+
+					<Section id="account-delete" heading={t("delete.heading")}>
+						<p>{t("delete.warning")}</p>
+						<form action={deleteAccountAction} className="flex flex-col gap-3">
+							{hidden}
+							<label className={CHECK_ROW}>
+								<input type="checkbox" name="confirm" required className={CHECK_BOX} />
+								{t("delete.confirm")}
+							</label>
+							<Button type="submit" variant="destructive" className="w-full sm:w-fit">
+								{t("delete.submit")}
+							</Button>
+						</form>
+					</Section>
+				</PageMain>
+			</ClientMessages>
 		</PageShell>
 	);
 }

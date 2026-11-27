@@ -12,11 +12,12 @@ import { eventSegment, shareUrl } from "@/domain/event-address";
 import type { FinalTime } from "@/domain/final-time";
 import { MAX_ATTEMPTS, type OutboxMessage, RETRY_DELAYS_MINUTES } from "@/domain/notifications";
 import { env } from "@/env";
-import { localeSchema, routing } from "@/i18n/routing";
+import { routing } from "@/i18n/routing";
 
 import { calendarEntryOf } from "./calendar";
 import { notificationEmail } from "./email/emails";
 import { finalOf, liveEvent, scheduleOf } from "./event-rows";
+import { localeSchema } from "./locale";
 import { type Email, sendEmail, takeEmailSlot } from "./mail";
 import { recipients } from "./notifications";
 import { unsubscribeValue } from "./unsubscribe-value";

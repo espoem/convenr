@@ -1,17 +1,24 @@
 // The version of an event: a count of its changes, kept apart from every instant.
-import { z } from "zod";
+
+declare const EVENT_VERSION_BRAND: unique symbol;
 
 /**
  * How many changes an event has had, starting at 1 for the new event (the column's default). A
  * branded bigint, so the type system does not let anyone pass a time or another number as one.
  */
-export const eventVersionSchema = z.bigint().min(1n).brand<"EventVersion">();
+export type EventVersion = bigint & { readonly [EVENT_VERSION_BRAND]: true };
 
-export type EventVersion = z.infer<typeof eventVersionSchema>;
+function isPositiveVersion(value: bigint): value is EventVersion {
+	return value >= 1n;
+}
 
 /** The version as the database returned it. */
 export function asEventVersion(value: bigint): EventVersion {
-	return eventVersionSchema.parse(value);
+	if (!isPositiveVersion(value)) {
+		throw new RangeError("Event version must be at least 1.");
+	}
+
+	return value;
 }
 
 /** The version in the text a header or a request names it by: decimal digits. */

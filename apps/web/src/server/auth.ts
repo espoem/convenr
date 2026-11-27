@@ -21,10 +21,11 @@ import {
 import { browserFamily } from "@/domain/browser-family";
 import { type Provider, PROVIDER_NAMES, providerSchema } from "@/domain/provider-address";
 import { env } from "@/env";
-import { type Locale, localeSchema, routing } from "@/i18n/routing";
+import { type Locale, routing } from "@/i18n/routing";
 
 import { accountProviders } from "./account-providers";
 import { changeEmailEmail, emailChangeNotice, providerNotice, signInEmail } from "./email/emails";
+import { localeSchema } from "./locale";
 import { type Email, sendEmail, takeEmailSlot } from "./mail";
 import { socialProviders } from "./providers";
 

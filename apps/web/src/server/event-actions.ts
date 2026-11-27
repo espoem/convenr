@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import type { FinalProblem, FinalRequest } from "@/domain/final-time";
 import { isPublicId } from "@/domain/public-id";
-import { type EventVersion, eventVersionSchema } from "@/lib/event-version";
+import { asEventVersion, type EventVersion } from "@/lib/event-version";
 import { type ManageCredential, manageCredentialSchema } from "@/lib/manage-credential";
 
 import { createEvent, type EventProblem, eventVersion, type NewEvent } from "./events";
@@ -26,6 +26,7 @@ import { sendSoon } from "./outbox";
 import { currentVisitor } from "./session";
 
 const eventId = z.string().max(64);
+const eventVersionSchema = z.bigint().min(1n).transform(asEventVersion);
 
 /** The access a credential gives, or `undefined` for an owner credential without a session. */
 async function accessOf(credential: ManageCredential): Promise<AdminAccess | undefined> {

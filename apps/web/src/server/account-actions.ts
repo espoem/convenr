@@ -10,11 +10,12 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { accountSettings } from "@/db/schema";
 import { redirect } from "@/i18n/navigation";
-import { type Locale, localeSchema, routing } from "@/i18n/routing";
+import { type Locale, routing } from "@/i18n/routing";
 import { formText as text } from "@/lib/form-text";
 
 import { accountProviders } from "./account-providers";
 import { type Auth, auth } from "./auth";
+import { localeSchema } from "./locale";
 import { setAccountChoices } from "./notifications";
 import { forgetPendingSignIn, markLinkSent, newLinkKey, pendingSignIn } from "./pending-sign-in";
 import { currentVisitor, isFresh } from "./session";

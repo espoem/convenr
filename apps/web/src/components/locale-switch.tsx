@@ -61,7 +61,9 @@ export function LocaleSwitch() {
 			button={
 				<>
 					<CurrentFlag />
-					<span className="w-6 text-center font-semibold">{current.toUpperCase()}</span>
+					<span aria-hidden="true" className="w-6 text-center font-semibold">
+						{current.toUpperCase()}
+					</span>
 				</>
 			}
 		>

@@ -1,16 +1,130 @@
 // Writes apps/web/src/polyfills.generated.ts: the core-js modules that the browsers of the
-// "browserslist" field of apps/web/package.json lack. Each module tests for its feature first,
-// so a browser that has it keeps its own.
+// "browserslist" field of apps/web/package.json lack and that client-reachable source files
+// actually use. Unknown core-js modules are kept by default so updates stay safe.
 // Usage: nub apps/web/scripts/generate-polyfills.ts [--check]
 //   --check  fail when the generated file is out of date
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import compat from "core-js-compat";
 import { z } from "zod";
 
 const webRoot = join(import.meta.dirname, "..");
-const outputPath = join(webRoot, "src/polyfills.generated.ts");
+const srcRoot = join(webRoot, "src");
+const outputPath = join(srcRoot, "polyfills.generated.ts");
+
+const SKIP_DIRECTORIES = new Set(["server", "db"]);
+
+const SKIP_FILES = new Set([
+	"env.ts",
+	"proxy.ts",
+	"instrumentation.ts",
+	"instrumentation-node.ts",
+	"route.ts",
+	"middleware.ts",
+	"polyfills.generated.ts",
+]);
+
+function isClientSourceFile(name: string): boolean {
+	if (!name.endsWith(".ts") && !name.endsWith(".tsx")) {
+		return false;
+	}
+
+	if (name.endsWith(".test.ts") || name.endsWith(".test.tsx")) {
+		return false;
+	}
+
+	return !SKIP_FILES.has(name);
+}
+
+function collectClientSources(dir: string): string[] {
+	const files: string[] = [];
+
+	for (const entry of readdirSync(dir, { withFileTypes: true })) {
+		const fullPath = join(dir, entry.name);
+
+		if (entry.isDirectory()) {
+			if (SKIP_DIRECTORIES.has(entry.name)) {
+				continue;
+			}
+
+			files.push(...collectClientSources(fullPath));
+			continue;
+		}
+
+		if (isClientSourceFile(entry.name)) {
+			files.push(readFileSync(fullPath, "utf8"));
+		}
+	}
+
+	return files;
+}
+
+const clientSources = collectClientSources(srcRoot);
+const sourceCorpus = clientSources.join("\n");
+
+const COMPOUND_PATTERNS: ReadonlyArray<[RegExp, RegExp, RegExp]> = [
+	[/^web\.url-search-params\.delete$/u, /\bURLSearchParams\b/u, /\.delete\(/u],
+	[/^web\.url-search-params\.has$/u, /\bURLSearchParams\b/u, /\.has\(/u],
+	[/^web\.url-search-params\.size$/u, /\bURLSearchParams\b/u, /\.size\b/u],
+];
+
+const MODULE_PATTERNS: ReadonlyArray<[RegExp, RegExp]> = [
+	[/^es\.array\.from-async$/u, /\bArray\.fromAsync\b/u],
+	[/^es\.array\.includes$/u, /\.includes\(/u],
+	[/^es\.array-buffer\.(?:detached|transfer.*)$/u, /\.detached\b|\.transfer(?:ToFixedLength)?\(/u],
+	[
+		/^es\.(?:async-)?disposable-stack\.|^es\.symbol\.(?:async-)?dispose$|^es\.(?:async-)?iterator\.(?:async-)?dispose$/u,
+		/\b(?:Async)?DisposableStack\b|\busing\s/u,
+	],
+	[/^es\.data-view\.(?:get|set)-float16$/u, /Float16/u],
+	[/^es\.error\.is-error$/u, /\bError\.isError\b/u],
+	[/^es\.iterator\./u, /\bIterator\./u],
+	[/^es\.json\.(?:is-raw-json|raw-json|parse|stringify)$/u, /\bJSON\.(?:rawJSON|isRawJSON)\b/u],
+	[/^es\.map\.group-by$/u, /\bMap\.groupBy\b/u],
+	[/^es\.(?:weak-)?map\.get-or-insert/u, /\.getOrInsert(?:Computed)?\(/u],
+	[/^es\.math\.f16round$/u, /\bMath\.f16round\b/u],
+	[/^es\.math\.sum-precise$/u, /\bMath\.sumPrecise\b/u],
+	[/^es\.object\.group-by$/u, /\bObject\.groupBy\b/u],
+	[/^es\.promise\.try$/u, /\bPromise\.try\b/u],
+	[/^es\.promise\.with-resolvers$/u, /\bPromise\.withResolvers\b/u],
+	[/^es\.regexp\.escape$/u, /\bRegExp\.escape\b/u],
+	[
+		/^es\.set\.(?:difference|intersection|is-disjoint-from|is-subset-of|is-superset-of|symmetric-difference|union)/u,
+		/\.(?:difference|intersection|isDisjointFrom|isSubsetOf|isSupersetOf|symmetricDifference|union)\(/u,
+	],
+	[/^es\.string\.(?:is|to)-well-formed$/u, /\.(?:isWellFormed|toWellFormed)\(/u],
+	[/^es\.suppressed-error\./u, /\bSuppressedError\b/u],
+	[/^es\.typed-array\.with$/u, /\.with\(/u],
+	[
+		/^es\.uint8-array\.(?:from|set-from|to)-(?:base64|hex)$/u,
+		/\.(?:fromBase64|fromHex|setFromBase64|setFromHex|toBase64|toHex)\(/u,
+	],
+	[/^web\.dom-exception\.stack$/u, /\bDOMException\b/u],
+	[/^web\.immediate$/u, /\bsetImmediate\b/u],
+	[/^web\.structured-clone$/u, /\bstructuredClone\b/u],
+	[/^web\.url\.can-parse$/u, /\bURL\.canParse\b/u],
+	[/^web\.url\.parse$/u, /\bURL\.parse\b/u],
+	[/^web\.url-search-params\./u, /\bURLSearchParams\b/u],
+];
+
+function isModuleNeeded(moduleName: string): boolean {
+	for (const [moduleRegex, containerRegex, methodRegex] of COMPOUND_PATTERNS) {
+		if (moduleRegex.test(moduleName)) {
+			return clientSources.some(
+				(source) => containerRegex.test(source) && methodRegex.test(source),
+			);
+		}
+	}
+
+	for (const [moduleRegex, usageRegex] of MODULE_PATTERNS) {
+		if (moduleRegex.test(moduleName)) {
+			return usageRegex.test(sourceCorpus);
+		}
+	}
+
+	return true;
+}
 
 const { browserslist } = z
 	.object({ browserslist: z.array(z.string()).min(1) })
@@ -18,13 +132,14 @@ const { browserslist } = z
 
 // `stable` is the standardized features only; proposals are not polyfilled.
 const { list } = compat({ modules: ["core-js/stable"], targets: browserslist });
+const needed = list.filter((name) => isModuleNeeded(name));
 
 const generated = [
 	"// Generated by apps/web/scripts/generate-polyfills.ts (`mise run polyfills`); do not edit.",
 	`// Browsers: ${browserslist.join(", ")}`,
-	...(list.length === 0
+	...(needed.length === 0
 		? ["export {};"]
-		: list.map((name) => `import "core-js/modules/${name}.js";`)),
+		: needed.map((name) => `import "core-js/modules/${name}.js";`)),
 	"",
 ].join("\n");
 
@@ -43,5 +158,5 @@ if (process.argv.includes("--check")) {
 	}
 } else {
 	writeFileSync(outputPath, generated);
-	console.log(`${list.length} core-js modules for ${browserslist.join(", ")}`);
+	console.log(`${needed.length} of ${list.length} core-js modules for ${browserslist.join(", ")}`);
 }

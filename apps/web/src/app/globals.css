@@ -1,8 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/bricolage-grotesque/wght.css";
-@import "@fontsource-variable/atkinson-hyperlegible-next/wght.css";
+@import "./fonts.css";
 @import "./tokens.css";
 
 /* Maps the variables shadcn components read onto Tailwind color utilities.
@@ -46,6 +45,7 @@
 		color: var(--foreground);
 		font-family: var(--font-sans);
 		font-size: 1rem;
+		font-size-adjust: from-font;
 		line-height: 1.5;
 		overflow-wrap: break-word;
 	}
@@ -64,6 +64,7 @@
 	h2,
 	h3 {
 		font-family: var(--font-heading);
+		font-size-adjust: from-font;
 		font-weight: 600;
 		letter-spacing: -0.01em;
 		text-wrap: balance;

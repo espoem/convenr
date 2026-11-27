@@ -38,22 +38,35 @@ export function useBoardView(
 			return serverGrid.view;
 		}
 
-		return temporalReady && zone !== null
-			? gridView(
-					datedLayout(event.slots, zone, event.firstDayOfWeek),
-					event.slotLength,
-					formatLocale,
-				)
-			: serverGrid.inReferenceZone;
+		if (!temporalReady || zone === null || zone === event.referenceZone) {
+			return serverGrid.inReferenceZone;
+		}
+
+		return gridView(
+			datedLayout(event.slots, zone, event.firstDayOfWeek),
+			event.slotLength,
+			formatLocale,
+		);
 	}, [serverGrid, temporalReady, zone, event, formatLocale]);
 
 	const windows = useMemo(() => {
-		if (serverGrid.kind === "dated" && (!temporalReady || zone === null)) {
+		if (
+			serverGrid.kind === "dated" &&
+			(!temporalReady || zone === null || zone === event.referenceZone)
+		) {
 			return serverGrid.windows;
 		}
 
 		return maximalWindows(view.layout, event.slotLength, event.participants);
-	}, [serverGrid, temporalReady, zone, view.layout, event.slotLength, event.participants]);
+	}, [
+		serverGrid,
+		temporalReady,
+		zone,
+		view.layout,
+		event.referenceZone,
+		event.slotLength,
+		event.participants,
+	]);
 
 	return { view, windows };
 }

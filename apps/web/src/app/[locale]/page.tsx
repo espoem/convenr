@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { ClientMessages } from "@/components/client-messages";
 import { CreateEventForm } from "@/components/create-event-form";
 import { MyEvents } from "@/components/my-events";
 import { PageMain, PageRegion } from "@/components/page-region";
@@ -18,24 +19,26 @@ export default async function StartPage({ searchParams }: PageProps<"/[locale]">
 
 	return (
 		<PageShell>
-			<PageMain className="gap-10">
-				{deleted ? (
-					<PageRegion width="measure">
-						<output className="block font-semibold">{t("accountDeleted")}</output>
+			<ClientMessages namespaces={["Create", "MyEvents"]}>
+				<PageMain className="gap-10">
+					{deleted ? (
+						<PageRegion width="measure">
+							<output className="block font-semibold">{t("accountDeleted")}</output>
+						</PageRegion>
+					) : null}
+					<PageRegion width="measure" className="gap-3">
+						<h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
+						<p className="text-lg">{t("lead")}</p>
 					</PageRegion>
-				) : null}
-				<PageRegion width="measure" className="gap-3">
-					<h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
-					<p className="text-lg">{t("lead")}</p>
-				</PageRegion>
-				<MyEvents />
-				<PageRegion as="section" width="form" aria-labelledby="create" className="gap-6">
-					<h2 id="create" className="text-2xl">
-						{t("create")}
-					</h2>
-					<CreateEventForm options={options} />
-				</PageRegion>
-			</PageMain>
+					<MyEvents />
+					<PageRegion as="section" width="form" aria-labelledby="create" className="gap-6">
+						<h2 id="create" className="text-2xl">
+							{t("create")}
+						</h2>
+						<CreateEventForm options={options} />
+					</PageRegion>
+				</PageMain>
+			</ClientMessages>
 		</PageShell>
 	);
 }

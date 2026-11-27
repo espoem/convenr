@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { ClientMessages } from "@/components/client-messages";
 import { CreatedLinks } from "@/components/created-links";
 import { PageMain } from "@/components/page-region";
 import { PageShell } from "@/components/page-shell";
@@ -25,15 +26,17 @@ export default async function CreatedPage({ params }: PageProps<"/[locale]/e/[se
 
 	return (
 		<PageShell>
-			<PageMain width="form" className="gap-6">
-				<h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
-				<CreatedLinks
-					id={id}
-					segment={segment}
-					locale={await currentLocale()}
-					inAccount={inAccount}
-				/>
-			</PageMain>
+			<ClientMessages namespaces={["Created", "Copy"]}>
+				<PageMain width="form" className="gap-6">
+					<h1 className="text-3xl sm:text-4xl">{t("heading")}</h1>
+					<CreatedLinks
+						id={id}
+						segment={segment}
+						locale={await currentLocale()}
+						inAccount={inAccount}
+					/>
+				</PageMain>
+			</ClientMessages>
 		</PageShell>
 	);
 }

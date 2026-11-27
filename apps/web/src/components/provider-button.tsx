@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { z } from "zod";
+import { z } from "zod/mini";
 
 import { PROVIDER_MARKS } from "@/components/provider-mark";
 import { Button } from "@/components/ui/button";
 import type { Provider } from "@/domain/provider-address";
 import type { Locale } from "@/i18n/routing";
 import type { ProviderPurpose } from "@/server/providers";
+
+// Strict CSP forbids `new Function`, which Zod's JIT compiler otherwise probes (ADR 0003).
+z.config({ jitless: true });
 
 function isAllowedTarget(url: string): boolean {
 	if (url.startsWith("/") && !url.startsWith("//")) {
@@ -21,7 +24,7 @@ function isAllowedTarget(url: string): boolean {
 	}
 }
 
-const targetSchema = z.object({ url: z.string().refine(isAllowedTarget) });
+const targetSchema = z.object({ url: z.string().check(z.refine(isAllowedTarget)) });
 
 /**
  * Signs in through a provider, or adds it to the account. With scripts, it posts in the
