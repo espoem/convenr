@@ -5,6 +5,7 @@ dist/
 coverage/
 test-results/
 playwright-report/
+apps/web/vitals-report/
 *.tsbuildinfo
 .env
 .env.*

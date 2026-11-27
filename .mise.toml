@@ -125,6 +125,15 @@ description = "Run both SDKs' acceptance tests and the README's API guide agains
 depends = ["db:up"]
 run = "node apps/web/scripts/sdk-acceptance.mts"
 
+[tasks.vitals]
+description = "Run Web Vitals and Lighthouse benchmarks against the production build (needs `mise run build`); starts PostgreSQL"
+depends = ["db:up"]
+run = "node apps/web/scripts/vitals.mts"
+
+[tasks."vitals:static"]
+description = "Check gzipped initial JS and CSS bundle budgets from the production build (needs `mise run build`)"
+run = "node apps/web/scripts/vitals-static.mts"
+
 [tasks.up]
 description = "Build and start the application and PostgreSQL in containers"
 run = "scripts/compose.sh up --build --detach --wait"
@@ -172,4 +181,5 @@ run = [
   "mise run openapi:breaking",
   "mise run sdk:check",
   "mise run build",
+  "mise run vitals:static",
 ]

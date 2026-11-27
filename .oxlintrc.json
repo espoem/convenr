@@ -9,7 +9,7 @@
 		"correctness": "error",
 		"suspicious": "error",
 		"pedantic": "error",
-		"perf": "warn"
+		"perf": "error"
 	},
 	"rules": {
 		"typescript/no-explicit-any": "error",
@@ -63,6 +63,8 @@
 		"anti-slop/no-widen-then-assert": "error",
 		"anti-slop/require-readable-spacing": "error",
 		"anti-slop/require-safety-comment-for-type-assertion": "error",
+		"oxc/no-barrel-file": "error",
+		"convenr/no-external-assets": "error",
 		"convenr/no-spec-references": "error"
 	},
 	"jsPlugins": [
@@ -74,6 +76,29 @@
 			// A polyfill is imported for its side effect.
 			"files": ["apps/web/src/instrumentation-client.ts", "apps/web/src/polyfills.generated.ts"],
 			"rules": { "import/no-unassigned-import": "off" }
+		},
+		{
+			// Client modules use zod/mini (jitless) so pages stay light and CSP-clean (ADR 0003, ADR 0013).
+			"files": [
+				"apps/web/src/components/**/*.{ts,tsx}",
+				"apps/web/src/i18n/routing.ts",
+				"apps/web/src/lib/local-events.ts",
+				"apps/web/src/lib/event-version.ts",
+				"apps/web/src/instrumentation-client.ts"
+			],
+			"rules": {
+				"eslint/no-restricted-imports": [
+					"error",
+					{
+						"paths": [
+							{
+								"name": "zod",
+								"message": "Use \"zod/mini\" with z.config({ jitless: true }) in client code (ADR 0003, ADR 0013)."
+							}
+						]
+					}
+				]
+			}
 		}
 	],
 	"ignorePatterns": [

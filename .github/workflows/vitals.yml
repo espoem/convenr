@@ -1,0 +1,58 @@
+name: Web Vitals
+
+# Runs Lighthouse and scripted INP benchmarks against the standalone production build without
+# blocking pull requests, merges or deployments (ADR 0013).
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vitals
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  vitals:
+    name: Web Vitals benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CONTAINER_ENGINE: docker
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
+        with:
+          install_args: node npm:@nubjs/nub docker-compose
+      - name: Install dependencies
+        run: nub ci
+      - name: Build production app
+        run: mise run build
+      - name: Read Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./apps/web/package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browser
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-full-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install Chromium
+        working-directory: apps/web
+        run: nubx playwright install --with-deps chromium
+      - name: Run Web Vitals benchmarks
+        run: mise run vitals
+      - name: Upload Web Vitals reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vitals-report
+          path: apps/web/vitals-report
+          retention-days: 14
